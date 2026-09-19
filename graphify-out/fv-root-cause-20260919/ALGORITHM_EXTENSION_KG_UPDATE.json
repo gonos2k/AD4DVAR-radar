@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6530,
-    "edges": 64812,
-    "communities": 231,
+    "nodes": 6568,
+    "edges": 64884,
+    "communities": 238,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -106,5 +106,17 @@
     "cost": "completed304.54s340426752bytes; earlier180s timeout retained, not a numerical failure or completion",
     "limits": "local endpoints only, no finite-path certificate; no generic classifier, production minmod response, typed prior learning, general D7, or full CI",
     "record": "MINMOD_JOINT_INVERSE_REVIEW.md"
+  },
+  "pr165_followup": {
+    "baseline": "main aee38b77",
+    "closed": [
+      "archived inverse numerical/source validation with mutation regressions",
+      "per-cell limiter and per-face sign signatures"
+    ],
+    "spatial_inverse": "4x5 26 controls; nominal oracle gradient6.96e-12, H min1.015, adjoint residual2.65e-16; first perturbed reanalysis failed eight-step stationarity budget; no response completion claim",
+    "product_gn": "default tolerances; step_tolerance_unverified; gradient1.33e-4 despite objective gap6.42e-12",
+    "tests": "37 distinct focused tests passed in6.22s; no full CI or old long experiments repeated",
+    "record": "MINMOD_SPATIAL_INVERSE_REVIEW.md",
+    "diagnosis": "Exact negative sine perturbation accepted Newton iterates00\u201305 preserve limiter choices but change face signs; scales shrink1,.5,.25,.125,.03125,.03125. Diagnostic stopped after branch mismatch; no perturbed root claim."
   }
 }

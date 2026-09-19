@@ -51,3 +51,67 @@ def test_joint_inverse_rejects_active_limiter_tie():
             q, q.new_ones(3, 4), q.new_ones(4, 3), edges,
             q.new_tensor(.1), q.new_tensor(1.),
         ))
+
+
+def test_branch_signature_keeps_signed_faces_and_per_cell_slope_choices():
+    dtype = torch.float64
+    height, width = 4, 5
+    y = torch.arange(height + 1, dtype=dtype)[:, None].expand(height + 1, width + 1)
+    x = torch.arange(width + 1, dtype=dtype)[None, :].expand(height + 1, width + 1)
+    basis = torch.stack((y, x, x * y, 0.5 * (x.square() - y.square()), x.square() * y))
+    coefficients = torch.tensor([-0.055, -0.08, 0.07, 0.04, 0.0], dtype=dtype)
+    qx, qy = probe.t.face_volume_fluxes(torch.einsum("k,kij->ij", coefficients, basis))
+    assert bool((qx < 0).any())
+    assert bool((qx > 0).any())
+    assert bool((qy < 0).any())
+    assert bool((qy > 0).any())
+    assert bool((qx == 0).any()) is False
+    assert bool((qy == 0).any()) is False
+
+    echo = torch.tensor(
+        [
+            [30.0, 31.0, 31.8, 33.0, 34.0],
+            [31.0, 32.1, 33.0, 34.1, 35.0],
+            [32.0, 32.9, 34.0, 34.9, 36.0],
+            [33.0, 34.1, 35.3, 36.1, 37.3],
+        ],
+        dtype=dtype,
+    )
+    edges = tuple(torch.ones(n, dtype=dtype) for n in (height, height, width, width))
+    result = probe.inspect_branches(
+        lambda: probe.t._euler_minmod(
+            echo, qx, qy, edges, echo.new_tensor(0.1), echo.new_tensor(100.0)
+        )
+    )
+    choices = result["choices"][0]
+    assert choices[0]["choose_left"] == [[False, True, False], [True, False, True]]
+    assert choices[1]["choose_left"] == [[False, False, False], [True, True, True]]
+    assert choices[0]["slope_sign"] == [[1, 1, 1], [1, 1, 1]]
+    assert len(result["face_signs"][0]["qx"]) == height
+    assert len(result["face_signs"][0]["qx"][0]) == width + 1
+    other = echo.new_tensor([
+        [30, 31, 31.8, 33, 34], [31, 31.9, 33, 33.9, 35],
+        [32, 33.1, 34, 35.1, 36], [33, 34.2, 35.3, 36.2, 37.1],
+    ])
+    changed = probe.inspect_branches(lambda: probe.t._euler_minmod(
+        other, qx, qy, edges, echo.new_tensor(.1), echo.new_tensor(100.),
+    ))
+    original_mask = torch.tensor(choices[0]["choose_left"])
+    changed_mask = torch.tensor(changed["choices"][0][0]["choose_left"])
+    assert not bool(original_mask.all()) and not bool(changed_mask.all())
+    assert torch.equal(changed_mask, ~original_mask)
+    assert result["choices"] != changed["choices"]
+    assert result["face_signs"] == changed["face_signs"]
+
+
+def test_strict_opposite_slopes_have_a_smooth_zero_limiter():
+    echo = torch.tensor([[1., 2., 1.], [2., 4., 2.], [4., 7., 4.]], dtype=torch.float64)
+    edges = tuple(echo.new_ones(3) for _ in range(4))
+    trace = probe.inspect_branches(lambda: probe.t._euler_minmod(
+        echo, echo.new_ones(3, 4), echo.new_ones(4, 3), edges,
+        echo.new_tensor(.1), echo.new_tensor(1.),
+    ))
+    choice = trace["choices"][0][0]
+    assert choice["slope_sign"] == [[0]]
+    assert choice["left_sign"] == [[1]]
+    assert choice["right_sign"] == [[-1]]

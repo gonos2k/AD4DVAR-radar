@@ -1,0 +1,12 @@
+Product GN: step_tolerance_unverified
+Nominal minmod stationary solve complete
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_minmod_inverse_probe.py", line 418, in <module>
+    result = run_spatial_smoke() if args.spatial_smoke else run_probe(spatial=args.spatial, checkpoint=args.output)
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_minmod_inverse_probe.py", line 322, in run_probe
+    refined = _oracle.polish(objective, control, changed)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_sensitivity_probe.py", line 156, in polish
+    raise RuntimeError("verification point is not sufficiently stationary")
+RuntimeError: verification point is not sufficiently stationary

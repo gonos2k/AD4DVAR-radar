@@ -319,16 +319,7 @@ def run_probe(*, spatial=False, checkpoint=None):
             for sign in (-1, 1):
                 stamp = time.monotonic()
                 changed = p+sign*h*direction
-                try:
-                    refined = _oracle.polish(objective, control, changed)
-                except RuntimeError as error:
-                    report.update(status="failed", failure={
-                        "direction": name, "h": h, "sign": sign,
-                        "reason": str(error),
-                        "elapsed_seconds": time.monotonic()-stamp,
-                    })
-                    save()
-                    raise
+                refined = _oracle.polish(objective, control, changed)
                 trace = inspect_branches(lambda: forecast(refined, changed))
                 same_branch = (trace["choices"], trace["face_signs"]) == (branches["choices"], branches["face_signs"])
                 row["endpoints"].append({

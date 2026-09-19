@@ -105,3 +105,42 @@ def test_joint_inverse_panel_preserves_local_scope(tmp_path, monkeypatch, corrup
         assert 'fvMinmodJointInverse' in panel
         assert '일반 minmod FSOI' in panel
         assert 'background_parameter' in panel
+
+
+@pytest.mark.parametrize('field,value,reason', [
+    ('gradient_max', float('nan'), 'gradient_max'),
+    ('gradient_max', 1e-6, 'gradient_max'),
+    ('adjoint_relative_residual', float('inf'), 'adjoint_relative_residual'),
+    ('adjoint_relative_residual', -1e-12, 'adjoint_relative_residual'),
+    ('hessian_min_eigenvalue', -1., 'Hessian'),
+    ('source_sha256', {}, 'identity'),
+])
+def test_joint_inverse_rejects_invalid_evidence(field, value, reason):
+    joint = json.loads((EVIDENCE / 'minmod_joint_inverse_final.json').read_text())
+    joint[field] = value
+    with pytest.raises(SystemExit, match=reason):
+        PUBLISHER._validate_joint_inverse(joint)
+
+
+@pytest.mark.parametrize('mutation,reason', [
+    ('zero_margin', 'branch margin'), ('negative_error', 'reanalysis numbers'),
+    ('wrong_error', 'absolute_error'), ('source_hash', 'identity'),
+])
+def test_joint_inverse_panel_rejects_mutated_numeric_or_source_evidence(
+    tmp_path, monkeypatch, mutation, reason,
+):
+    joint = json.loads((EVIDENCE / 'minmod_joint_inverse_final.json').read_text())
+    if mutation == 'zero_margin':
+        joint['stationary_branch']['minimum_scaled_slope_margin'] = 0.
+    elif mutation == 'negative_error':
+        joint['reanalysis'][0]['absolute_error'] = -1.
+    elif mutation == 'wrong_error':
+        joint['reanalysis'][0]['absolute_error'] = 1.
+    else:
+        joint['source_sha256'][next(iter(joint['source_sha256']))] = '0'*64
+    (tmp_path / 'minmod_joint_inverse_final.json').write_text(json.dumps(joint))
+    monkeypatch.setattr(PUBLISHER, 'HERE', tmp_path)
+    monkeypatch.setattr(PUBLISHER, 'LONG_HORIZON_PATH', tmp_path / 'absent.json')
+    response = json.loads((EVIDENCE / 'rotation240_stable_response_18.json').read_text())
+    with pytest.raises(SystemExit, match=reason):
+        PUBLISHER._panel(response, 1., None)
