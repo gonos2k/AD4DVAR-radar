@@ -1,0 +1,39 @@
+{
+  "scope": "actual finite_volume_step minmod;5x9 CPUFP64;fixedflow CFL0.2;initial-field direction only; no replay/inverse certification",
+  "adjoint_inner_product_error": 0.0,
+  "ramp_tie": [
+    {
+      "h": 0.0001,
+      "center_ad": 0.8350000000000001,
+      "center_right": 0.8950000000051972,
+      "center_left": 0.809999999997757,
+      "one_sided_split_l2": 0.16552945357897225,
+      "ad_right_l2": 0.12599603168417736,
+      "ad_left_l2": 0.044440972090498396
+    },
+    {
+      "h": 1e-05,
+      "center_ad": 0.8350000000000001,
+      "center_right": 0.8950000000673696,
+      "center_left": 0.8099999999622297,
+      "one_sided_split_l2": 0.16552945361948315,
+      "ad_right_l2": 0.1259960317344914,
+      "ad_left_l2": 0.044440972084752596
+    },
+    {
+      "h": 1e-06,
+      "center_ad": 0.8350000000000001,
+      "center_right": 0.8950000003338232,
+      "center_left": 0.810000000406319,
+      "one_sided_split_l2": 0.16552945374691808,
+      "ad_right_l2": 0.12599603191865327,
+      "ad_left_l2": 0.044440971974831885
+    }
+  ],
+  "python": "3.12.13",
+  "torch": "2.13.0",
+  "source_sha256": {
+    "src/advar/transport.py": "d81f409970046bd86b2838339948e01c4840b2be2b613f1e66551bc70a468264",
+    "tests/test_fv_minmod_derivative_branches.py": "d048ed201eb8fe0313549b4fbf8137bfeac9115018cd887a1b4cc8fe223b2556"
+  }
+}

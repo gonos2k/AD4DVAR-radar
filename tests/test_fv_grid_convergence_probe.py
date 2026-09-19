@@ -49,3 +49,34 @@ def test_empty_shape_has_no_defined_centroid_or_width():
     assert shape["variance_yx_m2"] is None
     assert shape["maximum_echo"] == 0.0
     assert shape["area_above_threshold_m2"] == 0.0
+
+
+def test_minmod_one_lead_forwards_reconstruction_to_primal_and_jvp(
+    monkeypatch,
+):
+    step_reconstructions: list[str] = []
+    advance_reconstructions: list[str] = []
+    original_step = _PROBE.transport.finite_volume_step
+    original_advance = _PROBE._advance
+
+    def step_wrapper(*args, **kwargs):
+        step_reconstructions.append(kwargs.get("reconstruction", "donorcell"))
+        return original_step(*args, **kwargs)
+
+    def advance_wrapper(*args, **kwargs):
+        reconstruction = (
+            args[-1] if len(args) >= 7 else kwargs.get("reconstruction", "donorcell")
+        )
+        advance_reconstructions.append(reconstruction)
+        return original_advance(*args, **kwargs)
+
+    monkeypatch.setattr(_PROBE.transport, "finite_volume_step", step_wrapper)
+    monkeypatch.setattr(_PROBE, "_advance", advance_wrapper)
+    report = _PROBE.run_probe((16,), leads=1, reconstruction="minmod")
+
+    assert report["scheme"] == "current minmod SSPRK2"
+    assert all(row["reconstruction"] == "minmod" for row in report["results"])
+    assert advance_reconstructions == ["minmod"] * len(_PROBE.CASES)
+    expected_steps = sum(2 * row["substeps_per_lead"] for row in report["results"])
+    assert len(step_reconstructions) == expected_steps
+    assert set(step_reconstructions) == {"minmod"}

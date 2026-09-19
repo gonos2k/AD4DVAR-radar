@@ -16,6 +16,9 @@ import torch
 
 
 ROOT = Path(__file__).resolve().parents[2]
+# Source hashes independently checked against c192c0df (the measured revision).
+# Pin the fingerprint so offline/shallow checkouts can validate archived reports.
+TRANSPORT_SOURCE_FINGERPRINT = "e619a8bf0fdf4d8da492ca4beec84ede1cb06242ec0aa92ce998a91011889cfb"
 MEASURED_REVISION = "ce6e36a2dcfb2f823647e7cabb5369dca3c9f200"
 HERE = Path(__file__).resolve().parent
 REPORT_PATH = HERE / "rotation240_stable_response_18.json"
@@ -92,6 +95,59 @@ def _load_optional_central(report):
         "negative_gradient_max": float(central["negative"]["gradient_max"]),
         "negative_impact": {**central["negative"], "step": -central["step"]},
     }
+
+
+def _validate_transport_comparison(reports):
+    """Validate this saved comparison before assigning scheme labels in HTML."""
+    cases = {"translation", "rotation", "area_preserving_strain"}
+    sizes = [32, 64, 128]
+    expected_rows = {(case, size) for case in cases for size in sizes}
+    baseline = reports["donorcell"]
+    for scheme, data in reports.items():
+        expected = {
+            "status": "complete", "scheme": f"current {scheme} SSPRK2",
+            "domain_side_m": 48000.0, "interval_seconds": 600.0,
+            "leads": 18, "sizes": sizes, "max_courant": 0.5,
+            "device": "cpu", "dtype": "float64",
+            "boundary_condition": "known-zero exterior with complete known initial field",
+        }
+        if any(data.get(key) != value for key, value in expected.items()):
+            raise SystemExit("transport comparison scheme/domain/time/boundary mismatch")
+        if len(data.get("cases", [])) != 3 or set(data["cases"]) != cases:
+            raise SystemExit("transport comparison must contain the three unique cases")
+        for key in ("source_sha256", "oracle", "shape_policy", "python", "torch", "device", "dtype"):
+            if not data.get(key) or data[key] != baseline.get(key):
+                raise SystemExit(f"transport comparison has different {key}")
+        rows = data.get("results", [])
+        keys = [(row["case"], row["size"]) for row in rows]
+        if len(keys) != len(expected_rows) or set(keys) != expected_rows:
+            raise SystemExit("transport comparison has missing or duplicate case/grid rows")
+        for row in rows:
+            if (row.get("reconstruction") != scheme
+                    or row.get("spacing_m") != 48000 / row["size"]
+                    or row.get("echo_area_threshold") != 0.1
+                    or [lead.get("lead_minutes") for lead in row["leads"]] != list(range(10, 181, 10))):
+                raise SystemExit("transport comparison row scheme/grid/time/threshold mismatch")
+            if (type(row.get("substeps_per_lead")) is not int or row["substeps_per_lead"] <= 0
+                    or not _finite(row.get("actual_max_cfl")) or not 0 <= row["actual_max_cfl"] <= 0.5):
+                raise SystemExit("transport comparison has an invalid CFL schedule")
+            final = row["leads"][-1]
+            values = (final["relative_echo_l2"], row["derivative"]["jvp_relative_to_independent_oracle"],
+                      final["predicted_shape"]["maximum_echo"], final["reference_shape"]["maximum_echo"])
+            if any(type(v) not in (int, float) or not math.isfinite(v) or v < 0 for v in values) or values[-1] == 0:
+                raise SystemExit("transport comparison has invalid displayed metrics")
+    donor_rows = {(r["case"], r["size"]): r for r in baseline["results"]}
+    for row in reports["minmod"]["results"]:
+        donor = donor_rows[(row["case"], row["size"])]
+        if any(row.get(key) != donor.get(key) for key in ("substeps_per_lead", "actual_max_cfl")):
+            raise SystemExit("transport comparison uses different CFL schedules")
+    # These archived runs predate tensor input hashes. Bind their common
+    # deterministic initial/flow/boundary generators to the measured revision.
+    sources = baseline["source_sha256"]
+    hashes = {Path(name).name: value for name, value in sources.items()}
+    fingerprint = hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest()
+    if len(hashes) != len(sources) or fingerprint != TRANSPORT_SOURCE_FINGERPRINT:
+        raise SystemExit("transport comparison sources do not match the measured revision")
 
 
 def _colour(value, scale):
@@ -213,12 +269,13 @@ def _panel(report, scale, central):
         )
     comparison = ""
     paths = [HERE / f"fv_comparison_{scheme}_180min.json" for scheme in ("donorcell", "minmod")]
-    if all(path.is_file() for path in paths):
+    if any(path.is_file() for path in paths):
+        if not all(path.is_file() for path in paths):
+            raise SystemExit("transport comparison requires both scheme reports")
+        reports = {scheme: json.loads(path.read_text()) for scheme, path in zip(("donorcell", "minmod"), paths)}
+        _validate_transport_comparison(reports)
         comparison_rows = []
-        for scheme, path in zip(("donorcell", "minmod"), paths):
-            data = json.loads(path.read_text())
-            if data["leads"] != 18 or data["sizes"] != [32, 64, 128]:
-                raise SystemExit("transport comparison requires the same 180-minute grids")
+        for scheme, data in reports.items():
             for row in data["results"]:
                 if row["size"] != 128:
                     continue

@@ -28,7 +28,7 @@ All sampled states remain nonnegative. Maximum transformed budget residuals are 
 
 The donor-cell L2 and JVP values exactly reproduce every saved 32/64/128 result from the earlier 180-minute probe. The new run was needed for shape metrics, not a replacement of prior evidence. Its translation added x-variance is approximately 2.025e6 m^2, consistent with |u| T dx.
 
-For minmod these are outputs of the AD-selected limiter branches versus the continuous reference. Branch stability is explicitly unverified. This is not a classical differentiability certificate, a JVP/VJP inner-product test, or an exact Hessian/FSOI result. Reduced field error alone does not justify lifting donorcell-only inverse-response gates.
+For minmod these are outputs of the AD-selected limiter branches versus the continuous reference. Branch stability is explicitly unverified. The long-duration comparison is not a classical differentiability certificate, a JVP/VJP inner-product test, or an exact Hessian/FSOI result. Subsequent focused tie tests are recorded in MINMOD_BRANCH_AND_PUBLISHER_REVIEW.md: their inner-product check passes but does not establish two-sided differentiability. Reduced field error alone does not justify lifting donorcell-only inverse-response gates.
 
 ## Cost and remaining checkpoints
 
