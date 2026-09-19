@@ -253,6 +253,7 @@ def refine_fv_stationarity(
     face_branch_margin(current, current, frozen)
     gradient = torch.func.grad(lambda c: robust_objective(c, observations, frozen))
     records: list[dict[str, float | int]] = []
+    norm = math.inf
     for iteration in range(maximum_iterations + 1):
         cost, _ = _evaluate_control(current, observations, frozen)
         g = gradient(current)
