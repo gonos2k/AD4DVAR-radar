@@ -1,0 +1,35 @@
+{
+  "scope": "isolated NN y-to-features-to-std path; raw observations/B/score fixed; research-only",
+  "production_learning_eligible": false,
+  "neural_prior_eligible": false,
+  "parameter_retuning": false,
+  "control_count": 24,
+  "parameter_count": 3,
+  "stationarity_max": 1.8596617301636087e-11,
+  "endpoint_stationarity_max": 1.9400120399026832e-11,
+  "hessian_min_eigenvalue": 15.789358491865187,
+  "adjoint_relative_residual": 9.587472418381467e-11,
+  "directional_isolated": -4.1615539083972194e-11,
+  "finite_difference_steps": [
+    0.1,
+    0.05
+  ],
+  "finite_difference_slopes": [
+    -4.1613602348071835e-11,
+    -4.161449180042909e-11
+  ],
+  "finite_difference_errors": [
+    1.93673590035914e-15,
+    1.0472835431063442e-15
+  ],
+  "prior_total_minus_frozen": -4.1615539248147926e-11,
+  "isolated_minus_prior": 1.64175731901622e-19,
+  "face_branch_margins": [
+    0.00496348458651991,
+    0.004963484537116028,
+    0.0049634845865199175,
+    0.004963484561466117
+  ],
+  "same_face_signs": true,
+  "model_path": "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/fv_neural_std.pt"
+}

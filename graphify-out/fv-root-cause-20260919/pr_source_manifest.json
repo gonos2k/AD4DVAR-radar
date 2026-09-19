@@ -1,0 +1,11 @@
+{
+  "source_sha256": {
+    "src/advar/variational.py": "daff731193324b2df43eeedda13c373558fab65e6f511d7a65ec2707e16d8020",
+    "src/advar/fv_sensitivity.py": "d8a025a22f291b4c77d24a47ef63d3fce5fcf414a19ad734ed4cb31ebd8dd534",
+    "examples/weather_scenarios/fv_rotation_demo.py": "5c7297fc9ee1b0d799560c31cc1276f4073797e240834165c4b0854749d57565",
+    "examples/weather_scenarios/fv_neural_observation_path_probe.py": "405db2e40dd6354ef4ac16424583a191aede34f383fe0d954ee179cc611bd60e",
+    "examples/weather_scenarios/template.html": "efa8a377c8d6aa25044a16fcae8a40b654bf73dafee52ecc5d5ecccdae4b91e3",
+    "pyproject.toml": "ff25bd8d72a4f6d91622e8336ba08e6a8ffbad6194165db3684b656168fbabc8"
+  },
+  "scope": "PR packaging source snapshot; verification relocation and isolated NN-path follow-up"
+}

@@ -1,4 +1,7 @@
-"""Unmocked synthetic completion path for Phase 1 automated learning."""
+"""Real P1/FSOI numerical validation with a test policy trust store.
+
+This checks learning eligibility, not neural-parameter updates.
+"""
 
 from dataclasses import replace
 from pathlib import Path

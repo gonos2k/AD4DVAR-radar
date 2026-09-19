@@ -1,0 +1,11 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-I",
+    "graphify-out/fv-root-cause-20260919/verify_rotation240.py"
+  ],
+  "returncode": 0,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 4257300480,
+  "elapsed_seconds": 48.42788633299642
+}

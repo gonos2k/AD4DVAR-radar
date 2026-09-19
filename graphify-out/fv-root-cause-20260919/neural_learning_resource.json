@@ -1,0 +1,14 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "examples/weather_scenarios/fv_neural_learning_probe.py",
+    "--checkpoint",
+    "graphify-out/fv-root-cause-20260919/fv_neural_std.pt",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/fv_neural_learning.json"
+  ],
+  "returncode": 0,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 362725376,
+  "elapsed_seconds": 173.42226279099123
+}

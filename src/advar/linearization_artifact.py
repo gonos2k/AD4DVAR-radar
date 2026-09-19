@@ -616,6 +616,8 @@ def _validate_loaded_state(state: P1LinearizationState) -> None:
     ):
         raise ValueError("P1 artifact active controls mismatch")
     trajectory = _analysis_trajectory(state.control, linearization.frozen)
+    if trajectory.displacement_yx is None:
+        raise ValueError("FV trajectory is not supported by legacy P1 artifacts")
     tolerance = linearization.frozen.nowcast_config.contract_absolute_tolerance
     expected_state = (
         trajectory.frames_linear[-1],

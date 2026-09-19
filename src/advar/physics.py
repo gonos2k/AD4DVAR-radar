@@ -88,6 +88,12 @@ def remap_core(
     displacement_yx: Tensor,
     cell: RemapCell,
 ) -> Tensor:
+    """Translate an equal-area grid with frozen bilinear overlap weights.
+
+    With no boundary loss, a fractional shift a adds a*(1-a) cells squared
+    to the spatial variance along that axis. Conservation does not mean zero
+    numerical diffusion; callers should remap each lead from its initial field.
+    """
     fraction_y, fraction_x = remap_fractions(
         echo,
         displacement_yx,
@@ -110,6 +116,7 @@ def remap_core(
 
 
 def react_core(echo: Tensor, log_growth: Tensor | float) -> Tensor:
+    """Apply a dimensionless integrated log-growth increment, not a rate."""
     growth = torch.as_tensor(
         log_growth,
         dtype=echo.dtype,

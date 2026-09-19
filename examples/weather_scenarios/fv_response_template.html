@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>ADVAR · FV 관측 응답 실증</title>
+    <style>
+      :root {
+        --paper: #edeee4;
+        --paper2: #e4e6da;
+        --panel: #f7f8f0;
+        --ink: #23291f;
+        --muted: #5c6354;
+        --faint: #7b816d;
+        --rule: #c6cab6;
+        --red: #7a1f2b;
+        --blue: #1b4c63;
+        --cyan: #6e9daa;
+        --yellow: #d5b34c;
+        --disp: Hahmlet, "Apple SD Gothic Neo", serif;
+        --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, monospace;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-width: 0; }
+      body {
+        background: var(--paper); color: var(--ink); font-family: var(--body);
+        font-size: 16px; line-height: 1.55; word-break: keep-all;
+        overflow-x: hidden;
+        background-image: repeating-linear-gradient(to right, var(--rule) 0 1px, transparent 1px 52px),
+          repeating-linear-gradient(to bottom, var(--rule) 0 1px, transparent 1px 52px);
+        background-attachment: fixed;
+      }
+      .wrap { max-width: 1320px; margin: auto; padding: 24px clamp(14px, 3vw, 38px) 64px; }
+      .eyebrow { display: flex; gap: .8rem; align-items: center; margin: 0 0 .7rem; color: var(--faint); font: 500 .75rem var(--mono); letter-spacing: .05em; }
+      .eyebrow:after { content: ""; height: 1px; background: var(--rule); flex: 1; }
+      .masthead { display: flex; justify-content: space-between; align-items: end; gap: 24px; border-bottom: 2px solid var(--ink); padding-bottom: 18px; }
+      h1 { font: 800 clamp(2.15rem, 6vw, 5.3rem)/.94 var(--disp); letter-spacing: -.045em; margin: 0; }
+      .mastcopy { max-width: 650px; }
+      .dek { font: 400 clamp(1.08rem, 2vw, 1.5rem)/1.35 var(--disp); margin: 0; }
+      .dek em { color: var(--red); font-style: normal; }
+      .subdek { color: var(--muted); margin: .55rem 0 0; }
+      .badge { font: 500 .72rem var(--mono); color: var(--blue); border: 1px solid var(--blue); padding: .35rem .55rem; white-space: nowrap; }
+      .panel { background: color-mix(in srgb, var(--panel) 92%, transparent); border: 1px solid var(--rule); min-width: 0; }
+      .panel-title { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--rule); padding: 9px 13px 7px; margin: 0; font: 500 .74rem var(--mono); letter-spacing: .08em; color: var(--muted); }
+      .panel-title small { font: 400 .78rem var(--body); letter-spacing: 0; color: var(--faint); overflow-wrap: anywhere; }
+      .lab { margin-top: 22px; display: grid; gap: 12px; grid-template-columns: minmax(0, 1.55fr) minmax(250px, .72fr) minmax(215px, .58fr); grid-template-areas: "stage stage stage" "controls read dial"; }
+      #stage { grid-area: stage; }
+      .stage-tools, .legend, .controls-body, .read-body, .dial-body, .status-body { padding: 10px 12px; }
+      .stage-tools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--rule); }
+      button, select, input { font: inherit; }
+      button, select { border: 1px solid var(--rule); border-radius: 2px; background: transparent; color: var(--ink); padding: 7px 10px; min-height: 44px; cursor: pointer; }
+      button:hover, select:hover { background: var(--paper2); border-color: var(--faint); }
+      button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+      button[aria-pressed="true"] { background: var(--red); color: var(--panel); border-color: var(--red); }
+      .heatmaps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--rule); }
+      .heatmap { position: relative; background: var(--panel); min-width: 0; }
+      .heatmap canvas { display: block; width: 100%; height: auto; aspect-ratio: 1; image-rendering: auto; }
+      .heatmap h3 { position: absolute; z-index: 1; top: 7px; left: 9px; right: 9px; margin: 0; color: var(--ink); background: color-mix(in srgb, var(--panel) 86%, transparent); font: 500 .7rem var(--mono); padding: 2px 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .heatmap p { position: absolute; inset: 45% 12px auto; margin: 0; text-align: center; color: var(--muted); }
+      .legend { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: .78rem; border-top: 1px solid var(--rule); }
+      .diff-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 9px 12px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .8rem; }
+      #differenceView { display: none; }
+      #stage.difference-on #differenceView { display: block; border-top: 1px solid var(--rule); }
+      .difference-view canvas { aspect-ratio: 1; }
+      .swatch { display: inline-block; width: 40px; height: 9px; vertical-align: middle; margin-right: 4px; background: linear-gradient(90deg,#183c56,#5f9aaa,#e9dd73,#d88947,#641f2b); }
+      .swatch.signed { background: linear-gradient(90deg,#1b4c63,#dce1d2,#7a1f2b); }
+      #controls { grid-area: controls; } #read { grid-area: read; } #dial { grid-area: dial; }
+      .control-row { display: grid; gap: 5px; margin-bottom: 12px; }
+      .control-row label { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: .9rem; }
+      output, .mono { font: 500 .82rem var(--mono); color: var(--ink); }
+      input[type="range"] { accent-color: var(--red); width: 100%; height: 30px; cursor: ew-resize; }
+      .button-row { display: flex; gap: 6px; flex-wrap: wrap; } .button-row button { flex: 1 1 100px; }
+      .read-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--rule); }
+      .read-row:last-child { border: 0; } .read-row dt { color: var(--muted); font-size: .88rem; } .read-row dd { margin: 0; text-align: right; font: 500 1rem var(--mono); }
+      .read-row.hero { display: block; background: var(--paper2); margin: -2px -4px 6px; padding: 9px 8px; } .read-row.hero dd { color: var(--red); font-size: 1.65rem; margin-top: 2px; }
+      .read-note { color: var(--faint); font-size: .77rem; margin: 9px 0 0; }
+      #dial canvas { display: block; width: 100%; height: 190px; } .dial-caption { color: var(--muted); font-size: .76rem; margin: 5px 4px 0; }
+      .response-panel { margin-top: 12px; }
+      .sensitivity-tools { display: flex; gap: 6px; flex-wrap: wrap; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+      .status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+      .status-card { padding: 10px; background: var(--paper2); border-left: 3px solid var(--red); min-width: 0; }
+      .status-card strong { display: block; font: 600 1rem var(--disp); } .status-card span { color: var(--muted); font-size: .85rem; }
+      .check-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+      .check-list li { display: grid; grid-template-columns: 7.5rem 5rem 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--rule); align-items: baseline; font-size: .88rem; }
+      .check-list li:last-child { border: 0; } .pass { color: #2d684c; } .fail { color: var(--red); } .unverified { color: #8b6d21; }
+      .notice { padding: 13px; margin-top: 12px; background: var(--paper2); color: var(--muted); }
+      .notice strong { display: block; color: var(--ink); font: 600 1.15rem var(--disp); margin-bottom: 3px; }
+      .foot { border-top: 1px solid var(--rule); margin-top: 34px; padding-top: 13px; color: var(--faint); font-size: .8rem; }
+      #sha256 { overflow-wrap: anywhere; }
+      #sensitivityCanvas, #differenceCanvas { max-height: 360px; }
+      @media (max-width: 1050px) { .lab { grid-template-columns: minmax(0,1.2fr) minmax(0,.8fr); grid-template-areas: "stage stage" "controls read" "dial dial"; } .status-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+      @media (max-width: 680px) { .wrap { padding-top: 16px; } .masthead { display: block; } .mastcopy { margin-top: 16px; } .badge { display: inline-block; margin-top: 12px; } .lab { grid-template-columns: 1fr; grid-template-areas: "stage" "controls" "read" "dial"; } .heatmaps { grid-template-columns: repeat(2,minmax(0,1fr)); } .heatmap canvas { aspect-ratio: 1; } .status-grid { grid-template-columns: 1fr; } .check-list li { grid-template-columns: 1fr; gap: 1px; } }
+      @media (prefers-reduced-motion: reduce) { *, *:before, *:after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <p class="eyebrow">ADVAR 연구 실험실 · FV 관측 응답과 조건부 민감도</p>
+      <header class="masthead">
+        <h1>응답을<br />추적하다</h1>
+        <div class="mastcopy">
+          <p class="dek">같은 유한체적 수송에서, <em>관측 변화가 무엇을 바꾸는가?</em></p>
+          <p class="subdek">실제 저장 프레임과 조건부 관측 응답을 함께 읽습니다. 이 화면은 <strong>4 × 5 동일 모형 검증</strong>이며 날씨 예보 성능이 아닙니다.</p>
+          <span class="badge" id="dataBadge">자료 확인 중</span>
+        </div>
+      </header>
+
+      <div class="lab" aria-label="FV 응답 시각화 실험실">
+        <section class="panel" id="stage" aria-labelledby="stageTitle">
+          <h2 class="panel-title" id="stageTitle"><span>시간별 dBZ 프레임</span><small id="timeLabel">자료 없음</small></h2>
+          <div class="stage-tools" role="toolbar" aria-label="프레임 조작">
+            <button type="button" id="play" aria-pressed="false">재생</button>
+            <button type="button" id="reset">초기화</button>
+            <span style="flex:1"></span><span class="badge" id="gridLabel">격자 —</span>
+          </div>
+          <div class="heatmaps">
+            <div class="heatmap"><h3 id="observationTitle">관측 · 저장값</h3><canvas id="observationCanvas" role="img" aria-label="관측 dBZ 격자"></canvas><p id="observationEmpty" hidden>관측 자료 없음</p></div>
+            <div class="heatmap"><h3>FV 예측 · 분석 이후</h3><canvas id="forecastCanvas" role="img" aria-label="FV 예측 dBZ 격자"></canvas><p id="forecastEmpty" hidden>예측 자료 없음</p></div>
+            <div class="heatmap"><h3>검증 truth · 저장값</h3><canvas id="truthCanvas" role="img" aria-label="검증 truth dBZ 격자"></canvas><p id="truthEmpty" hidden>truth 자료 없음</p></div>
+            <div class="heatmap"><h3 id="persistenceTitle">persistence · 기준선</h3><canvas id="persistenceCanvas" role="img" aria-label="persistence dBZ 격자"></canvas><p id="persistenceEmpty" hidden>기준선 자료 없음</p></div>
+          </div>
+          <div class="legend"><span><i class="swatch"></i>dBZ · 공통 낮음 → 높음</span><span id="rangeLabel">공통 색 범위 —</span><span>프레임은 저장된 시각만 표시</span></div>
+          <div class="diff-tools"><button type="button" id="differenceToggle" aria-pressed="false">예측 − truth 보기</button><span id="differenceLabel">차이 보기 꺼짐</span></div>
+          <div id="differenceView" class="difference-view"><div class="heatmap"><h3>예측 − truth · signed dBZ</h3><canvas id="differenceCanvas" role="img" aria-label="예측과 truth의 signed dBZ 차이"></canvas><p id="differenceEmpty" hidden>현재 시각의 예측 또는 truth 자료 없음</p></div><div class="legend"><span><i class="swatch signed"></i>음수 · 0 · 양수</span><span id="differenceRange">오차 공통 범위 —</span><span>대칭 색 범위 · 원자료 프레임만 사용</span></div></div>
+          <div class="stage-tools"><label for="timeline">타임라인 <output id="timelineValue">—</output></label><input id="timeline" type="range" min="0" max="4" step="1" value="2" aria-label="관측 및 예측 타임라인" /></div>
+        </section>
+
+        <section class="panel" id="controls" aria-labelledby="controlsTitle">
+          <h2 class="panel-title" id="controlsTitle"><span>프레임 조작</span><small>Space · ← → · Home</small></h2>
+          <div class="controls-body">
+            <div class="button-row"><button type="button" id="prev">이전 시각</button><button type="button" id="next">다음 시각</button></div>
+            <div class="notice"><strong id="scopeTitle">범위 확인 중</strong><span id="scopeCopy">연구용 FV 응답 자료를 불러옵니다.</span></div>
+          </div>
+        </section>
+
+        <section class="panel" id="read" aria-labelledby="readTitle" aria-live="polite">
+          <h2 class="panel-title" id="readTitle"><span>판독 · 현재 시각</span><small id="statusLabel">자료 없음</small></h2>
+          <dl class="read-body">
+            <div class="read-row hero"><dt>시각</dt><dd id="readTime">—</dd></div>
+            <div class="read-row"><dt>FV MAE <small id="forecastLead"></small></dt><dd id="forecastMae">N/A</dd></div>
+            <div class="read-row"><dt>persistence MAE <small id="persistenceLead"></small></dt><dd id="persistenceMae">N/A</dd></div>
+            <div class="read-row"><dt>gradient max</dt><dd id="gradientMax">N/A</dd></div>
+            <div class="read-row"><dt>adjoint residual</dt><dd id="adjointResidual">N/A</dd></div>
+            <div class="read-row"><dt>normal products</dt><dd id="normalProducts">N/A</dd></div>
+            <div class="read-row"><dt>curvature</dt><dd id="curvature">N/A</dd></div>
+            <p class="read-note">공통 dBZ 색 범위는 모든 저장 프레임에서 고정합니다. 조건부 GN 응답은 exact FSOI가 아닙니다.</p>
+          </dl>
+        </section>
+
+        <section class="panel" id="dial" aria-labelledby="dialTitle">
+          <h2 class="panel-title" id="dialTitle"><span>리드별 MAE</span><small>저장 metrics</small></h2>
+          <div class="dial-body"><canvas id="dialCanvas" role="img" aria-label="FV와 persistence MAE 비교"></canvas><p class="dial-caption" id="dialCaption">자료를 불러오면 비교선을 그립니다.</p></div>
+        </section>
+      </div>
+
+      <section class="panel response-panel" aria-labelledby="responseTitle">
+        <h2 class="panel-title" id="responseTitle"><span>조건부 GN 관측 민감도</span><small id="sensitivityLabel">관측 시각 0</small></h2>
+        <div class="sensitivity-tools" role="toolbar" aria-label="관측 응답 시각 선택">
+          <span>관측 시각</span><button type="button" data-sensitivity="0" aria-pressed="true">−2분</button><button type="button" data-sensitivity="1" aria-pressed="false">−1분</button><button type="button" data-sensitivity="2" aria-pressed="false">0분</button>
+        </div>
+        <div class="heatmaps" style="grid-template-columns:minmax(0,1fr);"><div class="heatmap"><h3>∂미래 MSE / ∂관측 dBZ · 부호 있는 민감도</h3><canvas id="sensitivityCanvas" role="img" aria-label="선택한 관측 시각의 미래 MSE 민감도"></canvas><p id="sensitivityEmpty" hidden>응답 자료 없음</p></div></div>
+        <div class="legend"><span><i class="swatch signed"></i>음수 · 0 · 양수</span><span id="sensitivityRange">signed 공통 범위 —</span><span>GN inverse · fixed branch · research only</span></div>
+      </section>
+
+      <section class="panel response-panel" aria-labelledby="checksTitle">
+        <h2 class="panel-title" id="checksTitle"><span>조건부 성공 상태</span><small>통과와 미검증을 분리</small></h2>
+        <div class="status-body">
+          <div class="status-grid">
+            <div class="status-card"><strong>현재 자료</strong><span id="scopeStatus">확인 중</span></div>
+            <div class="status-card"><strong>정확한 FSOI</strong><span class="unverified">pending · 제품 적격성 미검증</span></div>
+            <div class="status-card"><strong>D7</strong><span class="unverified">pending · 별도 검증 필요</span></div>
+            <div class="status-card"><strong>learning</strong><span class="unverified">pending · 별도 검증 필요</span></div>
+          </div>
+          <ul class="check-list" id="checkList" aria-label="검증 체크 목록"></ul>
+          <p class="notice"><strong>해석 범위</strong>이 결과는 4 × 5 동일 모형 합성 검증의 조건부 응답입니다. 운영 날씨 예보 skill, 전역 최적성, 정확한 FSOI, D7 자원, 학습 효과를 주장하지 않습니다.</p>
+        </div>
+      </section>
+
+      <p class="foot">ADVAR · generated <span id="generatedAt">—</span> · sha256 <span id="sha256">—</span></p>
+    </main>
+    <script>
+      "use strict";
+      const DATA = __FV_RESPONSE_DATA__;
+      const $ = (id) => document.getElementById(id);
+      const state = { frame: 2, sensitivity: 0, difference: false, playing: false, timer: 0 };
+      const fieldPalette = ["#183c56", "#27627a", "#5f9aaa", "#b9cbb7", "#e9dd73", "#d88947", "#9c3b36", "#641f2b"];
+      const signedPalette = ["#1b4c63", "#6e9daa", "#dce1d2", "#f7f8f0", "#d8898b", "#7a1f2b"];
+      const finite = (v) => typeof v === "number" && Number.isFinite(v);
+      const grid = () => DATA && Array.isArray(DATA.grid) ? DATA.grid : [0, 0];
+      const shape = () => grid()[0] * grid()[1];
+      function flatField(value) {
+        if (!Array.isArray(value)) return null;
+        if (value.length === shape() && value.every((v) => v === null || finite(v))) return value;
+        if (value.length === grid()[0] && value.every((row) => Array.isArray(row) && row.length === grid()[1])) return value.flat();
+        return null;
+      }
+      function allFinite(values) { return (flatField(values) || []).filter(finite); }
+      function dbzRange() {
+        const values = [];
+        [DATA.observations_dbz, DATA.forecast_dbz, DATA.truth_dbz, [DATA.persistence_dbz]].forEach((series) => (series || []).forEach((frame) => values.push(...allFinite(frame))));
+        if (finite(DATA.color_min) && finite(DATA.color_max) && DATA.color_max > DATA.color_min) return [DATA.color_min, DATA.color_max];
+        if (!values.length) return [0, 1];
+        const lo = Math.min(...values), hi = Math.max(...values);
+        return [lo, hi > lo ? hi : lo + 1];
+      }
+      function sensitivityRange() {
+        const values = [];
+        (DATA.sensitivity_dbz || []).forEach((frame) => values.push(...allFinite(frame)));
+        const declared = Math.max(Math.abs(Number(DATA.sensitivity_min) || 0), Math.abs(Number(DATA.sensitivity_max) || 0));
+        const observed = values.length ? Math.max(...values.map((v) => Math.abs(v))) : 0;
+        return Math.max(declared, observed, 1e-12);
+      }
+      function canvasSize(canvas) { const rect = canvas.getBoundingClientRect(); const dpr = Math.min(window.devicePixelRatio || 1, 2); canvas.width = Math.max(1, Math.round(rect.width * dpr)); canvas.height = Math.max(1, Math.round(rect.height * dpr)); const ctx = canvas.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return [ctx, rect.width, rect.height]; }
+      function color(value, lo, hi, palette, centered) { if (!finite(value) || !finite(lo) || !finite(hi) || hi <= lo) return null; const denominator = centered ? Math.max(Math.abs(lo), Math.abs(hi)) : hi - lo; const t = centered ? (value / denominator + 1) / 2 : (value - lo) / denominator; return palette[Math.max(0, Math.min(palette.length - 1, Math.floor(Math.max(0, Math.min(.999999, t)) * palette.length)))]; }
+      function draw(canvas, values, centered = false, forcedRange = null) { const [ctx, width, height] = canvasSize(canvas); ctx.clearRect(0, 0, width, height); const flat = flatField(values); if (!flat) return false; const valid = flat.filter(finite); if (!valid.length) return false; const range = forcedRange || (centered ? [-sensitivityRange(), sensitivityRange()] : dbzRange()); const rows = grid()[0], cols = grid()[1], cw = width / cols, ch = height / rows; flat.forEach((v, i) => { const fill = color(v, range[0], range[1], centered ? signedPalette : fieldPalette, centered); if (!fill) return; ctx.fillStyle = fill; ctx.fillRect((i % cols) * cw, Math.floor(i / cols) * ch, Math.ceil(cw + .25), Math.ceil(ch + .25)); }); return true; }
+      function number(value, digits = 4) { return finite(value) ? value.toFixed(digits) : "N/A"; }
+      function scientific(value) { return finite(value) ? value.toExponential(3) : "N/A"; }
+      function currentTruth() { return DATA && DATA.truth_dbz && DATA.truth_dbz[state.frame]; }
+      function difference(a, b) { const left = flatField(a), right = flatField(b); if (!left || !right) return null; return left.map((v, i) => finite(v) && finite(right[i]) ? v - right[i] : null); }
+      function differenceRange() { const values = []; (DATA.forecast_dbz || []).forEach((frame, i) => values.push(...allFinite(difference(frame, (DATA.truth_dbz || [])[i + 2])))); return values.length ? Math.max(...values.map((v) => Math.abs(v)), 1e-12) : 1; }
+      function render() {
+        if (!DATA) return;
+        const times = DATA.times_minutes || [], t = times[state.frame];
+        $("timeLabel").textContent = finite(t) ? `t ${t > 0 ? "+" : ""}${t}분` : "자료 없음";
+        $("timelineValue").textContent = finite(t) ? `${t > 0 ? "+" : ""}${t}분` : "—";
+        $("readTime").textContent = finite(t) ? `${t > 0 ? "+" : ""}${t}분` : "—";
+        const obs = DATA.observations_dbz ? DATA.observations_dbz[Math.min(state.frame, 2)] : null;
+        const forecastIndex = state.frame - 2, forecast = forecastIndex >= 0 && DATA.forecast_dbz ? DATA.forecast_dbz[forecastIndex] : null;
+        const truth = currentTruth();
+        $("observationTitle").textContent = state.frame <= 2 ? "관측 · 저장값" : "관측 · t=0 유지";
+        $("persistenceTitle").textContent = state.frame < 2 ? "persistence · t=0 이전 미발행" : "persistence · 기준선";
+        const persistence = state.frame >= 2 ? DATA.persistence_dbz : null;
+        const drawn = [draw($("observationCanvas"), obs), draw($("forecastCanvas"), forecast), draw($("truthCanvas"), truth), draw($("persistenceCanvas"), persistence)];
+        ["observationEmpty", "forecastEmpty", "truthEmpty", "persistenceEmpty"].forEach((id, i) => $(id).hidden = drawn[i]);
+        const fm = DATA.metrics && DATA.metrics.forecast_mae, pm = DATA.metrics && DATA.metrics.persistence_mae;
+        const lead = forecastIndex - 1;
+        const availableMetric = lead >= 0 && lead < 2;
+        $("statusLabel").textContent = availableMetric ? "고정 20화소 평가" : "미래 점수 미발행";
+        $("forecastLead").textContent = availableMetric ? `(리드 +${lead + 1}분)` : "(리드 미발행)";
+        $("persistenceLead").textContent = availableMetric ? `(리드 +${lead + 1}분)` : "(리드 미발행)";
+        $("forecastMae").textContent = availableMetric && fm && finite(fm[lead]) ? number(fm[lead]) + " dBZ" : "N/A";
+        $("persistenceMae").textContent = availableMetric && pm && finite(pm[lead]) ? number(pm[lead]) + " dBZ" : "N/A";
+        $("gradientMax").textContent = scientific(DATA.metrics && DATA.metrics.gradient_max);
+        $("adjointResidual").textContent = scientific(DATA.metrics && DATA.metrics.adjoint_relative_residual);
+        $("normalProducts").textContent = finite(DATA.metrics && DATA.metrics.normal_products) ? String(DATA.metrics.normal_products) : "N/A";
+        $("curvature").textContent = DATA.metrics && DATA.metrics.curvature ? DATA.metrics.curvature : "N/A";
+        const diff = difference(forecast, truth), diffScale = differenceRange(), diffDrawn = state.difference && draw($("differenceCanvas"), diff, true, [-diffScale, diffScale]);
+        $("differenceEmpty").hidden = diffDrawn;
+        $("differenceRange").textContent = `오차 공통 범위 ±${number(diffScale, 4)} dBZ`;
+        $("differenceLabel").textContent = state.difference ? `예측 − truth · ±${number(differenceRange(), 4)} dBZ` : "차이 보기 꺼짐";
+        renderSensitivity();
+      }
+      function renderSensitivity() {
+        const values = DATA && DATA.sensitivity_dbz && DATA.sensitivity_dbz[state.sensitivity];
+        const drawn = draw($("sensitivityCanvas"), values, true);
+        $("sensitivityEmpty").hidden = drawn;
+        $("sensitivityLabel").textContent = `관측 시각 ${DATA.times_minutes[state.sensitivity]}분`;
+        $("sensitivityRange").textContent = `±${scientific(sensitivityRange())} dBZ (MSE/dBZ)`;
+        document.querySelectorAll("[data-sensitivity]").forEach((button) => button.setAttribute("aria-pressed", String(Number(button.dataset.sensitivity) === state.sensitivity)));
+      }
+      function plot() { const [ctx, width, height] = canvasSize($("dialCanvas")); ctx.clearRect(0, 0, width, height); const fm = DATA && DATA.metrics && DATA.metrics.forecast_mae; const pm = DATA && DATA.metrics && DATA.metrics.persistence_mae; if (!Array.isArray(fm) || !Array.isArray(pm)) return; const all = fm.concat(pm).filter(finite); if (!all.length) return; const max = Math.max(...all) || 1; const x = (i) => 18 + i * (width - 36) / Math.max(1, fm.length - 1); const y = (v) => height - 22 - v / max * (height - 38); ctx.strokeStyle = "#c6cab6"; ctx.beginPath(); ctx.moveTo(18, 8); ctx.lineTo(18, height - 22); ctx.lineTo(width - 8, height - 22); ctx.stroke(); [[fm, "#7a1f2b"], [pm, "#1b4c63"]].forEach(([values, stroke]) => { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.beginPath(); values.forEach((v, i) => { if (!finite(v)) return; if (i === 0) ctx.moveTo(x(i), y(v)); else ctx.lineTo(x(i), y(v)); }); ctx.stroke(); values.forEach((v, i) => { if (!finite(v)) return; ctx.fillStyle = stroke; ctx.beginPath(); ctx.arc(x(i), y(v), 3, 0, 2 * Math.PI); ctx.fill(); }); }); $("dialCaption").textContent = "빨강 FV · 파랑 persistence · 실제 metrics"; }
+      function checks() { const checks = Array.isArray(DATA && DATA.checks) ? DATA.checks : []; $("checkList").innerHTML = checks.map((item) => `<li><strong>${String(item.label || "check")}</strong><b class="${String(item.status || "unverified")}">${String(item.status || "unverified")}</b><span>${String(item.detail || "")}</span></li>`).join(""); const scope = DATA.scope || "연구용 FV 응답"; const range = dbzRange(); $("scopeTitle").textContent = scope; $("scopeCopy").textContent = "고정 branch에서 계산한 조건부 응답입니다."; $("scopeStatus").textContent = "conditional · research only"; $("dataBadge").textContent = DATA.source && DATA.source.generated_at ? `국소 ${checks.filter(c => c.status === "pass").length} 통과 · ${checks.filter(c => c.status === "unverified").length} 미검증` : "자료 확인됨"; $("gridLabel").textContent = `${grid()[0]} × ${grid()[1]} cell`; $("rangeLabel").textContent = `공통 범위 ${number(range[0], 2)}–${number(range[1], 2)} dBZ`; $("generatedAt").textContent = DATA.source && DATA.source.generated_at || "—"; $("sha256").textContent = DATA.source && DATA.source.sha256 || "—"; }
+      function setFrame(value) { state.frame = Math.max(0, Math.min(4, value)); $("timeline").value = String(state.frame); render(); }
+      function tick() { setFrame((state.frame + 1) % 5); }
+      $("timeline").addEventListener("input", (event) => setFrame(Number(event.target.value))); $("prev").addEventListener("click", () => setFrame(state.frame - 1)); $("next").addEventListener("click", () => setFrame(state.frame + 1)); $("reset").addEventListener("click", () => setFrame(2)); $("differenceToggle").addEventListener("click", () => { state.difference = !state.difference; $("stage").classList.toggle("difference-on", state.difference); $("differenceToggle").setAttribute("aria-pressed", String(state.difference)); render(); }); $("play").addEventListener("click", () => { state.playing = !state.playing; $("play").textContent = state.playing ? "일시정지" : "재생"; $("play").setAttribute("aria-pressed", String(state.playing)); if (state.playing) state.timer = setInterval(tick, 1200); else clearInterval(state.timer); }); document.querySelectorAll("[data-sensitivity]").forEach((button) => button.addEventListener("click", () => { state.sensitivity = Number(button.dataset.sensitivity); renderSensitivity(); })); window.addEventListener("resize", () => { render(); plot(); }); document.addEventListener("keydown", (event) => { if (event.target.matches("input,select,button")) return; if (event.code === "Space") { event.preventDefault(); $("play").click(); } else if (event.key === "ArrowLeft") setFrame(state.frame - 1); else if (event.key === "ArrowRight") setFrame(state.frame + 1); else if (event.key === "Home") setFrame(0); });
+      if (DATA) { checks(); render(); plot(); } else { $("dataBadge").textContent = "자료 없음"; $("scopeTitle").textContent = "자료가 아직 없습니다"; }
+    </script>
+  </body>
+</html>

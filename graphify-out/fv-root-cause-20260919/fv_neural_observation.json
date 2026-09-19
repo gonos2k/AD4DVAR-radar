@@ -1,0 +1,32 @@
+{
+  "scope": "4x5 CPU FP64 total NN observation-input response; fixed state_dict; research-only",
+  "production_learning_eligible": false,
+  "neural_prior_eligible": false,
+  "parameter_retuning": false,
+  "control_count": 24,
+  "parameter_count": 3,
+  "stationarity_max": 1.8596617301636087e-11,
+  "hessian_min_eigenvalue": 15.789358491865187,
+  "adjoint_relative_residual": 9.587472418381467e-11,
+  "frozen_adjoint_relative_residual": 9.587472418381467e-11,
+  "directional_total": -0.0007801787329055514,
+  "directional_frozen_stats": -0.0007801786912900122,
+  "frozen_stats_directional_difference": -4.1615539248147926e-11,
+  "finite_difference_slopes": [
+    -0.0007801794430171836,
+    -0.0007801789104721604
+  ],
+  "finite_difference_errors": [
+    7.101116321480902e-10,
+    1.7756660898593513e-10
+  ],
+  "taylor_plus_errors": [
+    7.752569128826778e-09,
+    1.9382304496657185e-09
+  ],
+  "endpoint_stationarity_max": 1.8922224898076934e-11,
+  "same_face_signs": true,
+  "model_path": "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/fv_neural_std.pt",
+  "nn_effect_resolved": false,
+  "nn_effect_resolution_scope": "Comparison with finest central-FD error; not a rigorous uncertainty bound"
+}

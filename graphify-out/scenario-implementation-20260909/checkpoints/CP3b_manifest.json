@@ -1,0 +1,181 @@
+{
+  "checkpoint": "CP3b",
+  "registered_request": "2026-09-09 20:09 JST",
+  "status": "frozen before holdout execution",
+  "candidate": "minmod",
+  "grid_size": 128,
+  "domain_side_m": 48000,
+  "lead_interval_seconds": 600,
+  "lead_count": 18,
+  "speed_bound_mps": 3.0,
+  "max_courant": 0.5,
+  "profile": "exp(-r2/2)*max(1-r2/9,0)^4; rotated physical ellipse",
+  "candidate_sha256": {
+    "examples/weather_scenarios/muscl_experiment.py": "3d38fa3cc2ede7975e512ca5de2fe6c6039ea02867f859805c11a4462713a84b",
+    "src/advar/transport.py": "e6bfbe52b0e3182d173b11768e73d718db35f2c1163590aa7d15995f761f8031"
+  },
+  "thresholds": {
+    "relative_echo_l2": 0.1,
+    "axis_width_relative_error": 0.05,
+    "orientation_error_degrees": 2.0,
+    "center_error_pixels": 1.0,
+    "relative_transformed_budget_residual": 1e-12,
+    "minimum_echo": 0.0,
+    "oracle_relative_l2_8_vs_16": 1e-08,
+    "truth_anisotropy_minimum": 0.1
+  },
+  "rules": [
+    "No tuning/resolution/CFL changes after results",
+    "All leads must pass applicable accuracy/invariant gates",
+    "Orientation not evaluated if truth anisotropy below fixed threshold; report coverage, not automatic pass",
+    "No full-distribution or P1/FSO/learning success claim",
+    "Known complete field and known-zero exterior only"
+  ],
+  "cases": [
+    {
+      "name": "reverse_oblique_translation",
+      "A_per_second": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "b_mps": [
+        -0.6,
+        0.25
+      ],
+      "growth_per_second": 1.3888888888888888e-05,
+      "initial_center_xy_m": [
+        -3000,
+        1000
+      ],
+      "initial_scale_xy_m": [
+        2600,
+        4100
+      ],
+      "initial_angle_degrees": 20,
+      "support_radius_bound_m": 22482.27766016838,
+      "max_component_speed_bound_mps": 0.6
+    },
+    {
+      "name": "reverse_rotation",
+      "A_per_second": [
+        [
+          0.0,
+          9.69627362219072e-05
+        ],
+        [
+          -9.69627362219072e-05,
+          0.0
+        ]
+      ],
+      "b_mps": [
+        0.0,
+        0.0
+      ],
+      "growth_per_second": -1.8518518518518518e-05,
+      "initial_center_xy_m": [
+        2000,
+        -3000
+      ],
+      "initial_scale_xy_m": [
+        3200,
+        4200
+      ],
+      "initial_angle_degrees": -15,
+      "support_radius_bound_m": 16205.55127546399,
+      "max_component_speed_bound_mps": 2.3271056693257726
+    },
+    {
+      "name": "shear",
+      "A_per_second": [
+        [
+          0.0,
+          3.240740740740741e-05
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "b_mps": [
+        0.0,
+        0.0
+      ],
+      "growth_per_second": 0.0,
+      "initial_center_xy_m": [
+        -2000,
+        -1000
+      ],
+      "initial_scale_xy_m": [
+        2800,
+        3900
+      ],
+      "initial_angle_degrees": 25,
+      "support_radius_bound_m": 16601.28825264926,
+      "max_component_speed_bound_mps": 0.7777777777777778
+    },
+    {
+      "name": "strain",
+      "A_per_second": [
+        [
+          1.688162562906987e-05,
+          0.0
+        ],
+        [
+          0.0,
+          -1.688162562906987e-05
+        ]
+      ],
+      "b_mps": [
+        0.0,
+        0.0
+      ],
+      "growth_per_second": 3.240740740740741e-05,
+      "initial_center_xy_m": [
+        -3000,
+        2000
+      ],
+      "initial_scale_xy_m": [
+        2600,
+        4300
+      ],
+      "initial_angle_degrees": -10,
+      "support_radius_bound_m": 19806.661530556787,
+      "max_component_speed_bound_mps": 0.4051590150976768
+    },
+    {
+      "name": "rotation_strain",
+      "A_per_second": [
+        [
+          1.2940920590292465e-05,
+          -5.8177641733144315e-05
+        ],
+        [
+          5.8177641733144315e-05,
+          -1.2940920590292465e-05
+        ]
+      ],
+      "b_mps": [
+        0.0,
+        0.0
+      ],
+      "growth_per_second": -9.259259259259259e-06,
+      "initial_center_xy_m": [
+        2500,
+        -2000
+      ],
+      "initial_scale_xy_m": [
+        3000,
+        4000
+      ],
+      "initial_angle_degrees": 35,
+      "support_radius_bound_m": 17481.796436523888,
+      "max_component_speed_bound_mps": 1.7068454957624828
+    }
+  ]
+}

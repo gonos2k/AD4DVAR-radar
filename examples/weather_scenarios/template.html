@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ADVAR Radar Demo · 이동과 검증</title>
+<style>
+:root{--paper:#EDEEE4;--paper2:#E4E6DA;--panel:#F7F8F0;--ink:#23291F;--muted:#5C6354;--faint:#7B816D;--rule:#C6CAB6;--red:#7A1F2B;--blue:#1B4C63;--cyan:#6E9DAA;--yellow:#D5B34C;--disp:Hahmlet,"Apple SD Gothic Neo",serif;--body:"IBM Plex Sans KR","Apple SD Gothic Neo",sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace}
+*{box-sizing:border-box}html,body{margin:0;min-width:0}body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;word-break:keep-all;overflow-x:hidden;background-image:repeating-linear-gradient(to right,var(--rule) 0 1px,transparent 1px 52px),repeating-linear-gradient(to bottom,var(--rule) 0 1px,transparent 1px 52px);background-attachment:fixed}.wrap{max-width:1320px;margin:auto;padding:24px clamp(14px,3vw,38px) 72px}.eyebrow{display:flex;gap:.8rem;align-items:center;margin:0 0 .7rem;color:var(--faint);font:500 .75rem var(--mono);letter-spacing:.1em}.eyebrow:after{content:"";height:1px;background:var(--rule);flex:1}.masthead{display:flex;justify-content:space-between;align-items:end;gap:24px;border-bottom:2px solid var(--ink);padding-bottom:18px}.masthead h1{font:800 clamp(2.3rem,6vw,5.5rem)/.92 var(--disp);letter-spacing:-.045em;margin:0}.masthead-copy{max-width:510px}.masthead-copy p{margin:0}.dek{font:400 clamp(1.1rem,2vw,1.55rem)/1.35 var(--disp)}.dek em{font-style:normal;color:var(--red)}.subdek{color:var(--muted);margin-top:.55rem}.badge{font:500 .72rem var(--mono);color:var(--blue);border:1px solid var(--blue);padding:.35rem .55rem;white-space:nowrap}
+.lab{margin-top:22px;display:grid;gap:12px;grid-template-columns:minmax(0,1.55fr) minmax(250px,.72fr) minmax(215px,.58fr);grid-template-areas:"stage stage stage" "controls read dial"}.panel{background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--rule);min-width:0}.panel-title{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid var(--rule);padding:9px 13px 7px;margin:0;font:500 .74rem var(--mono);letter-spacing:.08em;color:var(--muted)}.panel-title small{font:400 .78rem var(--body);letter-spacing:0;color:var(--faint)}#stage{grid-area:stage}.stage-tools{display:flex;gap:5px;flex-wrap:wrap;padding:8px 12px;border-bottom:1px solid var(--rule)}button,select,input{font:inherit}button,select{border:1px solid var(--rule);border-radius:2px;background:transparent;color:var(--ink);padding:7px 10px;min-height:44px;cursor:pointer}button:hover,select:hover{background:var(--paper2);border-color:var(--faint)}button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}button[aria-pressed="true"]{background:var(--red);color:var(--panel);border-color:var(--red)}button:disabled,select:disabled,input:disabled{opacity:.45;cursor:not-allowed}.heatmaps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--rule);min-height:270px}.heatmap{position:relative;background:var(--panel);min-width:0}.heatmap[hidden]{display:none}.heatmap canvas{display:block;width:100%;height:auto;aspect-ratio:1;image-rendering:auto}.heatmap h3{position:absolute;z-index:1;top:7px;left:9px;margin:0;color:var(--ink);background:color-mix(in srgb,var(--panel) 86%,transparent);font:500 .7rem var(--mono);padding:2px 5px}.heatmap p{position:absolute;inset:45% 12px auto;margin:0;text-align:center;color:var(--muted)}.legend{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 12px;color:var(--muted);font-size:.78rem}.swatch{display:inline-block;width:34px;height:9px;vertical-align:middle;margin-right:4px;background:linear-gradient(90deg,#1b4c63,#6e9daa,#ede46c,#d58442,#7a1f2b)}.swatch.err{background:linear-gradient(90deg,#1b4c63,#dce1d2,#7a1f2b)}
+#controls{grid-area:controls}.controls-body{padding:12px}.control-row{display:grid;gap:5px;margin-bottom:12px}.control-row label{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:.9rem}.control-row output{font:500 .82rem var(--mono);color:var(--ink)}input[type=range]{accent-color:var(--red);width:100%;height:30px;cursor:ew-resize}.button-row{display:flex;gap:6px;flex-wrap:wrap}.button-row button{flex:1 1 105px}.scenario-copy{border-top:1px solid var(--rule);margin-top:13px;padding-top:11px;color:var(--muted);font-size:.9rem}.scenario-copy strong{display:block;font:600 1.15rem var(--disp);color:var(--ink);margin-bottom:3px}.scenario-copy p{margin:.35rem 0}.lesson{color:var(--red)!important}.commit{display:block;margin-top:10px;color:var(--faint);font:400 .7rem var(--mono);overflow-wrap:anywhere}
+#read{grid-area:read}.read-body{padding:5px 12px 11px}.read-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--rule)}.read-row:last-child{border:0}.read-row dt{color:var(--muted);font-size:.88rem}.read-row dd{font:500 1rem var(--mono);margin:0;text-align:right}.read-row.hero{display:block;background:var(--paper2);margin:6px -4px;padding:9px 8px}.read-row.hero dd{font-size:1.65rem;color:var(--red);margin-top:2px}.read-note{font-size:.77rem;color:var(--faint);margin:9px 0 0}.na{color:var(--faint)!important;font-family:var(--body)!important}
+#dial{grid-area:dial}.dial-body{padding:4px 8px 9px}.dial-body canvas{display:block;width:100%;height:190px}.dial-caption{font-size:.76rem;color:var(--muted);margin:0 4px}.empty{padding:26px 18px;color:var(--muted);border-top:1px solid var(--rule);background:var(--paper2)}.empty strong{display:block;color:var(--ink);font:600 1.2rem var(--disp);margin-bottom:5px}
+.learn{margin-top:46px;border-top:2px solid var(--ink)}.learn>summary{cursor:pointer;list-style:none;padding:16px 0 12px;font:800 clamp(1.5rem,3vw,2.4rem)/1.1 var(--disp)}.learn>summary::-webkit-details-marker,.lesson-block>summary::-webkit-details-marker{display:none}.learn>summary:before{content:"＋";font-family:var(--mono);font-weight:400;color:var(--red);margin-right:.35rem}.learn[open]>summary:before{content:"−"}.lesson-block{border-top:1px solid var(--rule)}.lesson-block:last-child{border-bottom:1px solid var(--rule)}.lesson-block>summary{cursor:pointer;padding:13px 0;font:600 1.12rem var(--disp)}.lesson-block>summary:before{content:"＋";font:400 1rem var(--mono);color:var(--red);display:inline-block;width:1.5rem}.lesson-block[open]>summary:before{content:"−"}.lesson-body{max-width:76ch;padding:0 0 20px;color:var(--muted)}.lesson-body p{margin:.15rem 0 .9rem}.lesson-body strong{color:var(--ink)}.equation{font:italic 1.05rem Georgia,serif;color:var(--ink);background:var(--paper2);border-left:3px solid var(--red);padding:11px 14px;margin:10px 0;overflow-x:auto;white-space:nowrap}.foot{border-top:1px solid var(--rule);margin-top:38px;padding-top:13px;color:var(--faint);font-size:.82rem}
+@media (max-width:1050px){.lab{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);grid-template-areas:"stage stage" "controls read" "dial dial"}.dial-body canvas{height:220px}}@media (max-width:680px){.wrap{padding-top:16px}.masthead{display:block}.masthead-copy{margin-top:16px}.badge{display:inline-block;margin-top:12px}.lab{grid-template-columns:1fr;grid-template-areas:"stage" "controls" "read" "dial"}.heatmaps{grid-template-columns:1fr;min-height:0}.heatmap canvas{height:270px}.heatmap[hidden]{display:none}.dial-body canvas{height:220px}.panel-title{font-size:.7rem}.stage-tools button{flex:1 1 auto}.learn{margin-top:32px}}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+.verification{margin-top:20px;padding:16px;background:var(--panel);border:2px solid var(--blue)}.verification h2{margin:0 0 8px;font-size:1.3rem}.verification dl{display:grid;grid-template-columns:110px 1fr;gap:8px;margin:12px 0}.verification dt{font-weight:bold}.verification dd{margin:0;overflow-wrap:anywhere}.verification .result{font-weight:bold;color:var(--red)}.verification table{width:100%;border-collapse:collapse;font-size:.85rem}.verification th,.verification td{text-align:left;padding:8px;border-bottom:1px solid var(--rule)}.verification .table-scroll{overflow:auto}.verification small{display:block;color:var(--muted)}@media(max-width:680px){.verification dl{grid-template-columns:1fr;gap:4px}.verification dd{margin-bottom:8px}}
+</style>
+<style>
+.heatmap h3{max-width:calc(100% - 18px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:680px){.heatmap canvas{height:auto;aspect-ratio:1}}
+.detection-panel { margin-top: 16px; }
+.detection-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 12px; }
+.detection-cards article { min-width: 0; }
+.detection-cards h3 { margin: 0 0 8px; }
+.detection-cards dl { margin: 0; }
+.diagnostic-note { margin: 12px; color: var(--muted); font-size: .9rem; }
+@media (max-width: 680px) { .detection-cards { grid-template-columns: 1fr; } }
+
+.verification{margin-top:20px;padding:16px;background:var(--panel);border:2px solid var(--blue)}.verification h2{margin:0 0 8px;font-size:1.3rem}.verification dl{display:grid;grid-template-columns:110px 1fr;gap:8px;margin:12px 0}.verification dt{font-weight:bold}.verification dd{margin:0;overflow-wrap:anywhere}.verification .result{font-weight:bold;color:var(--red)}.verification table{width:100%;border-collapse:collapse;font-size:.85rem}.verification th,.verification td{text-align:left;padding:8px;border-bottom:1px solid var(--rule)}.verification .table-scroll{overflow:auto}.verification small{display:block;color:var(--muted)}@media(max-width:680px){.verification dl{grid-template-columns:1fr;gap:4px}.verification dd{margin-bottom:8px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <p class="eyebrow">ADVAR 교육용 레이더 데모 · Phase 1</p>
+  <header class="masthead">
+    <h1>이동을<br>검증하다</h1>
+    <div class="masthead-copy">
+      <p class="dek">관측한 반사도가 움직일 때, <em>예측은 얼마나 남는가?</em></p>
+      <p class="subdek">기존 P0 교육 사례와 같은 입력의 P0·FV 자료동화 비교를 선택합니다. 각 결과의 방정식·평가 영역·종료 상태를 함께 확인하세요.</p>
+      <span class="badge" id="dataBadge">자료 확인 중</span>
+    </div>
+  </header>
+
+
+<section class="verification" aria-labelledby="verificationTitle">
+<h2 id="verificationTitle">이 사례로 무엇을 검증하나요?</h2>
+<p id="verificationQuestion"></p>
+<dl><dt>실행한 모형</dt><dd id="verificationModel"></dd><dt>비교 기준</dt><dd>선택한 선행시간에서 같은 유효 화소의 예측 MAE가 persistence MAE보다 작은가? 이는 수치 비교이며 통계적 유의성이나 전체 모델 성공 판정은 아닙니다.</dd><dt>현재 결과</dt><dd class="result" id="verificationResult" aria-live="polite"></dd><dt>평가 범위</dt><dd id="verificationDomain"></dd><dt>해석·한계</dt><dd id="verificationLimit"></dd><dt>같은 입력 비교</dt><dd id="methodComparison">—</dd><dt>경계 입력</dt><dd id="boundaryAssumption">—</dd><dt>추정된 운동</dt><dd id="inferredMotion">—</dd><dt>실제 장의 운동 검증</dt><dd id="fieldMotion">—</dd><dt>운동 검증의 범위</dt><dd id="motionLimit">—</dd><dt>분석 종료</dt><dd id="solverOutcome">—</dd><dt>아직 검증 안 됨</dt><dd id="verificationPending">—</dd></dl>
+<details><summary>사례·방법별 저장 결과를 한눈에 보기</summary><small>행을 선택하면 아래 지도도 해당 사례로 바뀝니다. 개선 시각 수는 각 선행시간의 공통 유효영역 비교이며, 시각·사례 사이에 고정된 영역의 성능을 뜻하지 않습니다.</small><div class="table-scroll"><table><thead><tr><th>사례</th><th>예측 MAE가 작은 시각</th><th>같거나 구분 불가</th><th>큰 시각</th><th>미평가</th></tr></thead><tbody id="verificationSummary"></tbody></table></div></details>
+<small id="verificationSource"></small>
+</section>
+
+<div class="lab" aria-label="레이더 예측 실험실">
+    <section class="panel" id="stage" aria-labelledby="stageTitle">
+      <h2 class="panel-title" id="stageTitle"><span>공간 비교</span><small id="leadLabel">리드 10분</small></h2>
+      <div class="stage-tools" role="toolbar" aria-label="공간 보기 선택">
+        <button type="button" id="play" aria-pressed="false">재생</button>
+        <button type="button" id="stop">정지</button>
+        <button type="button" id="reset">초기화</button>
+        <button type="button" id="observedToggle" aria-pressed="false">과거 관측 보기</button>
+        <span style="flex:1"></span>
+        <span id="gridLabel" class="badge">48 × 48</span>
+      </div>
+      <div class="heatmaps" id="heatmaps">
+        <div class="heatmap" id="truthPane"><h3>정답 truth</h3><canvas id="truthCanvas" role="img" aria-label="검증 정답 반사도(dBZ) 격자"></canvas><p class="canvasEmpty" hidden>정답 자료 없음</p></div>
+        <div class="heatmap" id="forecastPane"><h3>예측 forecast</h3><canvas id="forecastCanvas" role="img" aria-label="ADVAR 예측 반사도(dBZ) 격자"></canvas><p class="canvasEmpty" hidden>예측 자료 없음</p></div>
+        <div class="heatmap" id="errorPane"><h3>오차 truth − forecast · 양수: 과소예측</h3><canvas id="errorCanvas" role="img" aria-label="정답에서 예측을 뺀 반사도 오차 격자. 양수는 과소예측, 음수는 과대예측"></canvas><p class="canvasEmpty" hidden>오차를 계산할 자료 없음</p></div>
+        <div class="heatmap" id="observedPane" hidden><h3>관측 latest</h3><canvas id="observedCanvas" role="img" aria-label="최근 관측 반사도(dBZ) 격자"></canvas><p class="canvasEmpty" hidden>관측 자료 없음</p></div>
+      </div>
+      <div class="legend"><span><i class="swatch"></i>반사도(dBZ) · 낮음 → 높음</span><span><i class="swatch err"></i>오차 · 음수(과대) → 양수(과소)</span><span id="rangeLabel">dBZ 범위 —</span><span id="errorRange">오차 범위 —</span></div>
+      <div class="empty" id="emptyState" hidden><strong>검증 자료가 아직 없습니다</strong><span>시나리오 JSON에 관측·정답·예측 격자를 넣으면 이 자리에서 비교할 수 있습니다. 빈 화면을 성공한 예측처럼 해석하지 마세요.</span></div>
+    </section>
+
+    <section class="panel" id="controls" aria-labelledby="controlsTitle">
+      <h2 class="panel-title" id="controlsTitle"><span>실험 조작</span><small>키보드: Space · ← → · Home</small></h2>
+      <div class="controls-body">
+        <div class="control-row"><label for="scenario"><span>시나리오</span></label><select id="scenario" aria-label="검증 시나리오 선택"></select></div>
+        <div class="control-row"><label for="lead"><span>예측 리드타임</span><output id="leadValue">10분</output></label><input id="lead" type="range" min="1" max="18" step="1" value="1" aria-label="예측 리드타임"></div>
+        <div class="button-row"><button type="button" id="prevLead">이전 리드</button><button type="button" id="nextLead">다음 리드</button></div>
+        <div class="scenario-copy"><strong id="scenarioName">자료를 선택하세요</strong><p id="scenarioDescription">시나리오 설명이 여기에 표시됩니다.</p><p class="lesson" id="scenarioLesson"></p><span class="commit" id="sourceCommit"></span><p id="motionState"></p><p id="motionEvidence"></p></div>
+      </div>
+    </section>
+
+    <section class="panel" id="read" aria-labelledby="readTitle" aria-live="polite">
+      <h2 class="panel-title" id="readTitle"><span>판독</span><small id="statusLabel">자료 없음</small></h2>
+      <dl class="read-body">
+        <div class="read-row hero"><dt>예측 MAE</dt><dd id="mae">N/A</dd></div>
+        <div class="read-row"><dt>Persistence MAE</dt><dd id="persistenceMae">N/A</dd></div>
+        <div class="read-row"><dt>Persistence 대비 개선</dt><dd id="skill">N/A</dd></div>
+        <div class="read-row"><dt>채점 픽셀 / 전체</dt><dd id="pixels">N/A</dd></div>
+        <div class="read-row"><dt>평가 비율</dt><dd id="coverage">N/A</dd></div>
+        <div class="read-row"><dt>예측 유효영역</dt><dd id="validArea">N/A</dd></div>
+        <div class="read-row"><dt>confidence · 확률 아님</dt><dd id="confidence">N/A</dd></div>
+        <p class="read-note">N/A는 결측이거나 해당 리드의 조건부 점수가 없다는 뜻입니다.</p>
+      </dl>
+    </section>
+
+    <section class="panel" id="dial" aria-labelledby="dialTitle">
+      <h2 class="panel-title" id="dialTitle"><span>리드타임 곡선</span><small>MAE vs persistence</small></h2>
+      <div class="dial-body"><canvas id="dialCanvas" role="img" aria-label="리드타임별 예측 MAE와 persistence MAE 곡선"></canvas><p class="dial-caption" id="dialCaption">자료를 선택하면 곡선을 그립니다.</p></div>
+    </section>
+  </div>
+
+  <section class="panel detection-panel" aria-labelledby="detectionTitle">
+    <h2 class="panel-title" id="detectionTitle">예측이 놓친 에코 · 합성 진단</h2>
+    <p class="diagnostic-note">탐지율·CSI는 평가영역 안의 값입니다. 평가 밖 정답 에코도 함께 확인하세요. 미제공은 무에코 예측과 다릅니다.</p>
+    <div class="detection-cards" id="detectionCards"></div>
+    <p class="diagnostic-note" id="issuedMissing"></p>
+  </section>
+
+  <details class="learn" open>
+    <summary>한 장으로 읽는 모형</summary>
+    <div id="lessonBlocks">
+      <details class="lesson-block"><summary>가정 · 무엇을 고정했나</summary><div class="lesson-body"><p><strong>관측 시각의 반사도장과 이동 벡터, 로그 성장률을 상태로 둡니다.</strong> 각 선행시간은 초기장에서 직접 이동해 계산하며, 앞 리드의 결과를 다시 보간해 이어 붙이지 않습니다. 이 교육용 화면은 회전·변형·새로운 대류 생성까지 계산한다고 말하지 않습니다.</p><div class="equation">q = 10^(z/10) − 10^(zmin/10)<br>q<sub>h</sub> = exp(g Σ<sub>j=0..h−1</sub> ρ<sup>j</sup>) R<sub>(h·d)</sub> q<sub>0</sub> &nbsp;&nbsp; ρ = e<sup>−Δt/τ</sup></div><p id="lessonAssumption">시나리오의 기대 현상을 선택한 뒤 정답 격자와 비교해 보세요.</p></div></details>
+      <details class="lesson-block"><summary>에코 보존 · 무엇이 보존되나</summary><div class="lesson-body"><p><strong>성장·감쇠가 없고 경계 유출이 없는 순수 수송에서 경계 안의 선형 에코량 합을 셉니다.</strong> 격자 밖으로 나간 양은 경계 유출로 기록되며, dBZ 값의 평균을 보존한다는 뜻이 아닙니다. 물이나 강수량 보존으로 확대 해석하지 마세요.</p></div></details>
+      <details class="lesson-block"><summary>결측 · 빈 칸을 점수에 넣지 않는 이유</summary><div class="lesson-body"><p><strong>현재 선행시간에서 예측·persistence·정답이 함께 유효한 화소로 비교합니다. 선행시간별 평가영역은 달라질 수 있습니다.</strong> 결측을 0으로 채우면 비가 오지 않은 것으로 바뀌어 MAE가 왜곡됩니다. 현재 리드의 채점 픽셀 수와 평가 비율, 예측 유효영역을 함께 확인하세요.</p></div></details>
+      <details class="lesson-block"><summary>정답확률 아님 · confidence를 어떻게 읽나</summary><div class="lesson-body"><p><strong>confidence는 보정된 정답 확률이 아닙니다.</strong> 국소 경향 근거와 위치·성장 불확실성을 반영한 모형 신뢰 지표이며, 실제 확률 보장을 뜻하지 않습니다. 숫자가 높다고 미래 강수의 발생 확률로 읽지 마세요.</p></div></details>
+      <details class="lesson-block"><summary>한계 · 이 실험이 말하지 않는 것</summary><div class="lesson-body"><p><strong id="lessonLimit">실자료의 운영 성능과 전역 최적성은 이 화면의 범위가 아닙니다.</strong></p><p>작은 합성 격자에서 방정식과 구현의 정합성을 살피는 1차 이론 실증입니다. 시나리오마다 표시되는 한계 문장을 먼저 읽고, 점수의 적용 범위를 정하세요.</p></div></details>
+    </div>
+  </details>
+  <details class="learn" id="fvLearningEvidence">
+    <summary>정상점·민감도·학습 검증 — 별도 4×5 합성 실험</summary>
+    <div class="lesson-body">
+      <p><strong>240×240 회전 사례의 인증 결과가 아닙니다.</strong> 같은 FV 방정식의 작은 CPU FP64 실험에서 정확한 Hessian으로 정상점을 보정하고 관측오차 크기를 학습했습니다. 일반 FV 배경장 prior·운영 학습은 미검증입니다.</p>
+      <p>기존 실패 사례의 기울기 노름: 1.371e-08 → 2.258e-11. Hessian 최소 고유값 15.5094, 조건수 1302.5.</p>
+      <p>학습 매개변수 θ = log(관측오차 배율). 정확한 매개변수 민감도 6.1843434e-05. 관측 민감도와 이 매개변수 미분을 구분합니다.</p>
+      <p>고정된 별도 검증 자료의 가중 dBZ MSE: 0.000199175126182 → 0.000199174605188. 개선율 0.000262%. 재적재 점수 차이 0.000e+00. 국소 수치 오차 추정치 8.161e-13 (엄밀한 오차 상한 아님). 판정: 통과.</p>
+      <p>작은 유한 섭동의 관측 영향은 재동화 Taylor 시험으로 검증했습니다. 현재 학습은 양의 오차 크기 한 개의 갱신이며, 전역 최적성이나 실자료 일반화를 증명하지 않습니다.</p>
+      <p><a href="../../graphify-out/fv-root-cause-20260919/fv_learning.json">학습 원시 결과</a> · <a href="../../graphify-out/fv-root-cause-20260919/refine_failed_endpoint.json">정상점 원시 결과</a> · <a href="../../graphify-out/fv-root-cause-20260919/STATIONARITY_PROGRESS.md">검증 범위</a></p>
+    </div>
+  </details>
+  <details class="learn" id="fvNeuralEvidence">
+    <summary>실제 신경망 학습·FSOI 수치 검증 — 별도 4×5 합성 실험</summary>
+    <div class="lesson-body">
+      <p>현재 240×240 회전 분석은 국소 1차 정상성 검사를 통과했습니다. 아래 학습은 별도의 작은 FV 실험이며, 240×240 학습이나 배경장 neural prior 검증 결과가 아닙니다.</p>
+      <p>3개 매개변수의 실제 신경망이 관측오차 표준편차를 출력합니다. 정확한 Hessian과 혼합 미분으로 한 번 갱신한 뒤, 다른 초기장·잡음의 자료를 다시 동화했습니다.</p>
+      <p>별도 자료의 dBZ MSE: 0.00019917512618196 → 0.00019917472238659. 감소 4.03795e-10 (0.000203%). 국소 오차 추정 척도 6.76332e-13 (엄밀한 상한 아님). 모델 저장·재적재 후 제어값·예측장·점수 차이 모두 0.</p>
+      <p>고정된 학습 모델에서 관측→특징 정규화→오차 가중치와 초기 배경장 B=y[0] 경로를 함께 미분했습니다. 전체 관측 민감도 방향값 -7.801787329e-04; 재동화 중앙차분 오차 7.101e-10 → 1.776e-10.</p>
+      <p>신경망 경로만의 추가 영향 4.162e-11는 가장 작은 차분 오차보다 작아 독립 판별되지 않았습니다. 작은 합성 실험의 학습·재적재 증거이며, 지속 학습·실자료 성능·일반 FV 운영 적격성은 미검증입니다.</p>
+      <p>후속 분리 시험: 원관측·배경장·점수를 고정하고 특징→신경망 오차 경로만 변화시킨 재동화에서 민감도 -4.16155391e-11, 중앙차분 오차 1.937e-15로 이 국소 경로를 확인했습니다. 전체 관측을 변화시키는 실험과는 구분합니다. <a href="../../graphify-out/fv-root-cause-20260919/fv_neural_observation_path.json">분리 시험 원시 결과</a></p>
+      <p><a href="../../graphify-out/fv-root-cause-20260919/fv_neural_learning.json">신경망 학습 원시 결과</a> · <a href="../../graphify-out/fv-root-cause-20260919/fv_neural_observation.json">전체 관측 민감도</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stationarity.json">240×240 국소 정상성</a> · <a href="../../graphify-out/fv-root-cause-20260919/LOCAL_VERIFICATION_RESULTS.md">검증 범위와 미완료 항목</a></p>
+    </div>
+  </details>
+  <p class="foot">ADVAR Phase 1 · 간격 <span id="intervalLabel">10</span>분 · source <span id="footerCommit">—</span></p>
+</main>
+
+<script id="demo-data" type="application/json">__DEMO_DATA__</script>
+<script>
+'use strict';
+
+const $ = id => document.getElementById(id);
+let DATA = null;
+try {
+  const raw = $('demo-data').textContent.trim();
+  if (raw.length > 20) DATA = JSON.parse(raw);
+} catch (error) {
+  console.warn('demo data could not be parsed', error);
+}
+
+const state = {scenario: 0, lead: 1, playing: false, observed: false, timer: 0};
+const palette = ['#183c56','#27627a','#5f9aaa','#b9cbb7','#e9dd73','#d88947','#9c3b36','#641f2b'];
+
+function finite(value) {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function validGrid(grid) {
+  return Array.isArray(grid) && grid.length > 0
+    && grid.every(row => Array.isArray(row) && row.length === grid[0].length);
+}
+
+function gridAt(grid, y, x) {
+  const value = grid?.[y]?.[x];
+  return finite(value) ? value : null;
+}
+
+function current() {
+  return DATA?.scenarios?.[state.scenario] || null;
+}
+
+function currentMeta() { return {...(DATA?.meta || {}), ...(current()?.meta || {})}; }
+
+function metric() {
+  return current()?.metrics?.[state.lead - 1] || null;
+}
+
+function format(value, suffix = '') {
+  return finite(value) ? `${value.toFixed(2)}${suffix}` : 'N/A';
+}
+
+function formatPct(value) {
+  return finite(value) ? `${(value * 100).toFixed(1)}%` : 'N/A';
+}
+
+function formatDelta(value) {
+  return finite(value) ? `${value >= 0 ? '+' : ''}${value.toFixed(2)} dBZ` : 'N/A';
+}
+
+function setText(id, value, na = false) {
+  $(id).textContent = value;
+  $(id).classList.toggle('na', na || value === 'N/A');
+}
+
+function sourceGrid(kind) {
+  const scenario = current();
+  if (!scenario) return null;
+  if (kind === 'truth') return scenario.truth?.[state.lead - 1];
+  if (kind === 'forecast') return scenario.forecast?.[state.lead - 1];
+  if (kind === 'observed') return scenario.observations?.[2];
+  return null;
+}
+
+function colorFor(value, min, max, error = false) {
+  if (!finite(value)) return null;
+  if (error) {
+    const span = Math.max(Math.abs(min), Math.abs(max), 1e-9);
+    const t = Math.max(-1, Math.min(1, value / span));
+    if (t < 0) {
+      return `rgb(${Math.round(27 + 180 * (t + 1))},${Math.round(76 + 150 * (t + 1))},${Math.round(99 + 130 * (t + 1))})`;
+    }
+    return `rgb(${Math.round(220 - 145 * t)},${Math.round(225 - 175 * t)},${Math.round(210 - 165 * t)})`;
+  }
+  const t = Math.max(0, Math.min(.999999, (value - min) / Math.max(max - min, 1e-9)));
+  return palette[Math.floor(t * palette.length)];
+}
+
+function canvasSize(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const width = Math.max(1, Math.round(rect.width * dpr));
+  const height = Math.max(1, Math.round(rect.height * dpr));
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  const context = canvas.getContext('2d');
+  context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return {context, width: rect.width, height: rect.height};
+}
+
+function drawGrid(canvas, grid, {error = false, fixedMin = null, fixedMax = null} = {}) {
+  const {context, width, height} = canvasSize(canvas);
+  context.clearRect(0, 0, width, height);
+  if (!validGrid(grid)) return false;
+  const rows = grid.length;
+  const cols = grid[0].length;
+  let min = finite(fixedMin) ? fixedMin : Infinity;
+  let max = finite(fixedMax) ? fixedMax : -Infinity;
+  for (const row of grid) {
+    for (const value of row) {
+      if (finite(value) && !finite(fixedMin)) {
+        min = Math.min(min, value);
+      }
+      if (finite(value) && !finite(fixedMax)) {
+        max = Math.max(max, value);
+      }
+    }
+  }
+  if (!finite(min)) return false;
+  if (error) {
+    const span = Math.max(Math.abs(min), Math.abs(max));
+    min = -span;
+    max = span;
+  }
+  const cellW = width / cols;
+  const cellH = height / rows;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const value = gridAt(grid, y, x);
+      if (value === null) continue;
+      context.fillStyle = colorFor(value, min, max, error);
+      context.fillRect(x * cellW, y * cellH, Math.ceil(cellW + .3), Math.ceil(cellH + .3));
+    }
+  }
+  return true;
+}
+
+function renderStage() {
+  const scenario = current();
+  const meta = currentMeta();
+  const truth = sourceGrid('truth');
+  const forecast = sourceGrid('forecast');
+  const error = validGrid(truth) && validGrid(forecast)
+    ? truth.map((row, y) => row.map((value, x) => (
+      finite(value) && finite(forecast?.[y]?.[x]) ? value - forecast[y][x] : null
+    )))
+    : null;
+  $('observedPane').hidden = !state.observed;
+  const plots = [
+    ['truthCanvas', truth, false],
+    ['forecastCanvas', forecast, false],
+    ['errorCanvas', error, true],
+    ['observedCanvas', sourceGrid('observed'), false],
+  ];
+  let any = false;
+  for (const [id, grid, isError] of plots) {
+    const pane = $(id).parentElement;
+    const drawn = drawGrid($(id), grid, {
+      error: isError,
+      fixedMin: isError ? null : (meta.color_min_dbz ?? meta.min_dbz),
+      fixedMax: isError ? null : (meta.color_max_dbz ?? meta.max_dbz),
+    });
+    const check = scenario.field_motion?.[state.lead - 1];
+    const diagnostic = id === 'truthCanvas' ? check?.truth : id === 'forecastCanvas' ? check?.forecast : null;
+    if (drawn && diagnostic) drawMotion($(id), diagnostic, meta);
+    pane.querySelector('.canvasEmpty').hidden = drawn;
+    any = any || drawn;
+  }
+  $('emptyState').hidden = Boolean(DATA && scenario && any);
+  $('statusLabel').textContent = any ? '합성 검증 자료' : '자료 없음';
+  $('dataBadge').textContent = any ? (scenario.method_label || 'P0 기준선 · FSO/학습 미실행') : '검증 자료 없음';
+  const errorValues = error ? error.flat().filter(finite) : [];
+  const errorSpan = errorValues.length ? Math.max(...errorValues.map(Math.abs)) : null;
+  $('errorRange').textContent = finite(errorSpan) ? `오차 색상 범위 ±${errorSpan.toFixed(2)} dBZ (현재 리드)` : '오차 범위 없음';
+  $('rangeLabel').textContent = `dBZ ${meta.color_min_dbz ?? meta.min_dbz ?? '—'} … ${meta.color_max_dbz ?? meta.max_dbz ?? '—'}${scenario.comparison ? ' · P0/FV 공통 고정 표시 범위' : ''}`;
+  $('statusLabel').textContent = scenario?.state?.data_status || scenario?.state?.status || '미확인';
+}
+
+function drawMotion(canvas, diagnostic, meta) {
+  if (!diagnostic?.centroid_xy_m) return;
+  const {context, width, height} = canvasSize(canvas);
+  const [rows, cols] = meta.grid_shape;
+  const sx = width / (cols * meta.spacing_m), sy = height / (rows * meta.spacing_m);
+  const point = ([x,y]) => [width / 2 + x * sx, height / 2 + y * sy];
+  const [x,y] = point(diagnostic.centroid_xy_m);
+  const [rx,ry] = point(diagnostic.reference_centroid_xy_m);
+  context.save();
+  if (finite(diagnostic.reference_axis_angle_deg) && diagnostic.reference_widths_m) {
+    const a = diagnostic.reference_axis_angle_deg * Math.PI / 180, length = diagnostic.reference_widths_m[0];
+    context.setLineDash([4,3]); context.strokeStyle = '#fff'; context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(rx-Math.cos(a)*length*sx, ry-Math.sin(a)*length*sy);
+    context.lineTo(rx+Math.cos(a)*length*sx, ry+Math.sin(a)*length*sy); context.stroke();
+    context.setLineDash([]);
+  }
+  context.strokeStyle = '#fff'; context.lineWidth = 3;
+  context.beginPath(); context.moveTo(rx,ry); context.lineTo(x,y); context.stroke();
+  context.fillStyle = '#111'; context.beginPath(); context.arc(x,y,4,0,2*Math.PI); context.fill();
+  if (finite(diagnostic.axis_angle_deg) && diagnostic.widths_m) {
+    const a = diagnostic.axis_angle_deg * Math.PI / 180;
+    const length = diagnostic.widths_m[0];
+    context.beginPath();
+    context.moveTo(x - Math.cos(a)*length*sx, y - Math.sin(a)*length*sy);
+    context.lineTo(x + Math.cos(a)*length*sx, y + Math.sin(a)*length*sy);
+    context.strokeStyle = '#111'; context.lineWidth = 2; context.stroke();
+  }
+  context.restore();
+}
+
+function renderRead() {
+  const m = metric();
+  const scenario = current();
+  const meta = currentMeta();
+  const total = Array.isArray(meta.grid_shape)
+    ? meta.grid_shape.reduce((a, b) => a * b, 1)
+    : null;
+  setText('mae', format(m?.mae, ' dBZ'));
+  setText('persistenceMae', format(m?.persistence_mae, ' dBZ'));
+  const improvement = finite(m?.mae) && finite(m?.persistence_mae)
+    ? m.persistence_mae - m.mae
+    : null;
+  setText('skill', formatDelta(improvement));
+  setText('pixels', finite(m?.scored_pixels)
+    ? `${m.scored_pixels.toLocaleString()} / ${total ? total.toLocaleString() : '—'}`
+    : 'N/A');
+  setText('coverage', finite(m?.scored_fraction) ? formatPct(m.scored_fraction) : 'N/A');
+  setText('validArea', finite(m?.valid_fraction) ? formatPct(m.valid_fraction) : 'N/A');
+  setText('confidence', finite(m?.confidence) ? formatPct(m.confidence) : 'N/A');
+  $('scenarioName').textContent = scenario?.name || '자료를 선택하세요';
+  $('scenarioDescription').textContent = scenario?.description || '시나리오 설명이 여기에 표시됩니다.';
+  $('scenarioLesson').textContent = scenario?.lesson
+    ? `이번 시나리오의 관찰 포인트: ${scenario.lesson}` : '';
+  $('sourceCommit').textContent = scenario?.model_limit
+    ? `한계: ${scenario.model_limit}` : '';
+  $('leadValue').textContent = `${state.lead * (meta.interval_minutes || 10)}분`;
+  $('leadLabel').textContent = `리드 ${state.lead * (meta.interval_minutes || 10)}분`;
+  $('lead').value = state.lead;
+  $('lead').max = Math.max(1, scenario?.metrics?.length || 18);
+  $('lead').disabled = !scenario;
+  const motion = scenario?.state?.displacement_yx;
+  const coefficients = scenario?.state?.psi_coefficients;
+  $('motionState').textContent = Array.isArray(motion)
+    ? `추정 이동 (행, 열): ${motion.map(v => format(v)).join(', ')} 화소/${meta.interval_minutes || 10}분 · 로그 성장: ${format(scenario.state.log_growth_per_step)}/step`
+    : coefficients ? `추정 속도 (x,y): ${coefficients.slice(0,2).map(v=>v.toFixed(4)).join(', ')} m/s · 각속도 ${coefficients[2].toExponential(4)} rad/s` : '이동 추정 자료 없음';
+  const stateInfo = scenario?.state;
+  $('motionEvidence').textContent = coefficients ? 'FV 공동 역문제로 추정한 계수입니다. 실제 예측장의 회전 여부는 위 운동 검증과 함께 확인합니다.' : stateInfo?.motion_pair_count === 0
+    ? `관측쌍에서 이동을 추정하지 못함 · 사용 경로: ${stateInfo.dynamics_source || stateInfo.tendency_source}`
+    : `이동 관측쌍 ${stateInfo?.motion_pair_count ?? '—'}개 · 선택 ${stateInfo?.motion_pair_selection || '—'} · 근거 ${stateInfo?.tendency_source || '—'}`;
+  renderDetection(m);
+}
+
+function renderDetection(m) {
+  const container = $('detectionCards');
+  container.replaceChildren();
+  for (const threshold of ['10', '20']) {
+    const values = m?.detection?.[threshold];
+    const article = document.createElement('article');
+    const title = document.createElement('h3');
+    title.textContent = `${threshold} dBZ 이상`;
+    article.append(title);
+    const list = document.createElement('dl');
+    const counts = value => finite(value) ? value.toLocaleString() : 'N/A';
+    const rows = [
+      ['CSI', format(values?.csi)],
+      ['탐지율', formatPct(values?.pod)],
+      ['탐지 / 미탐지 / 오경보', [values?.hits, values?.misses, values?.false_alarms].map(counts).join(' / ')],
+      ['정답 에코 전체', counts(values?.truth_echo_pixels)],
+      ['평가 밖 정답 에코', counts(values?.excluded_truth_echo_pixels)],
+    ];
+    for (const [label, value] of rows) {
+      const row = document.createElement('div');
+      row.className = 'read-row';
+      const dt = document.createElement('dt');
+      const dd = document.createElement('dd');
+      dt.textContent = label;
+      dd.textContent = value;
+      row.append(dt, dd);
+      list.append(row);
+    }
+    article.append(list);
+    container.append(article);
+  }
+  $('issuedMissing').textContent = finite(m?.issued_missing_pixels)
+    ? `예측 미제공 ${m.issued_missing_pixels.toLocaleString()}화소 · 에코가 없으면 일부 지표는 분모가 0이므로 N/A입니다.`
+    : '예측 미제공 화소 자료 없음';
+}
+
+function drawDial() {
+  const {context, width, height} = canvasSize($('dialCanvas'));
+  context.clearRect(0, 0, width, height);
+  const metrics = current()?.metrics;
+  if (!Array.isArray(metrics) || !metrics.length) {
+    $('dialCaption').textContent = '점수 자료가 없어 곡선을 그릴 수 없습니다.';
+    return;
+  }
+  const values = metrics.map(m => finite(m?.mae) ? m.mae : null);
+  const base = metrics.map(m => finite(m?.persistence_mae) ? m.persistence_mae : null);
+  const all = values.concat(base).filter(finite);
+  if (!all.length) {
+    $('dialCaption').textContent = '점수 자료가 없어 곡선을 그릴 수 없습니다.';
+    return;
+  }
+  const pad = {l: 36, r: 10, t: 14, b: 27};
+  const max = Math.max(...all) * 1.12 || 1;
+  context.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--rule');
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(pad.l, pad.t);
+  context.lineTo(pad.l, height - pad.b);
+  context.lineTo(width - pad.r, height - pad.b);
+  context.stroke();
+  context.font = '10px "IBM Plex Mono",monospace';
+  context.fillStyle = '#5C6354';
+  context.fillText(`${currentMeta().interval_minutes || 10}분`, pad.l - 4, height - 8);
+  context.fillText(`${(metrics.length) * (currentMeta().interval_minutes || 10)}분`, width - 40, height - 8);
+  context.fillText(`${max.toFixed(1)} dBZ`, 2, pad.t + 4);
+  const x = i => pad.l + i / (metrics.length - 1 || 1) * (width - pad.l - pad.r);
+  const y = value => height - pad.b - value / max * (height - pad.t - pad.b);
+  function line(series, color) {
+    context.strokeStyle = color;
+    context.lineWidth = 2;
+    context.beginPath();
+    series.forEach((value, i) => {
+      if (!finite(value)) return;
+      const px = x(i);
+      const py = y(value);
+      if (i === 0 || !finite(series[i - 1])) context.moveTo(px, py);
+      else context.lineTo(px, py);
+    });
+    context.stroke();
+  }
+  line(values, '#7A1F2B');
+  line(base, '#1B4C63');
+  const markerX = x(Math.min(state.lead - 1, metrics.length - 1));
+  context.strokeStyle = '#23291F';
+  context.setLineDash([3, 3]);
+  context.beginPath();
+  context.moveTo(markerX, pad.t);
+  context.lineTo(markerX, height - pad.b);
+  context.stroke();
+  context.setLineDash([]);
+  context.font = '11px "IBM Plex Mono",monospace';
+  context.fillStyle = '#7A1F2B';
+  context.fillText('예측', width - 68, 14);
+  context.fillStyle = '#1B4C63';
+  context.fillText('persist', width - 68, 28);
+  $('dialCaption').textContent = `선택 리드 ${state.lead * (currentMeta().interval_minutes || 10)}분 · 세로선은 현재 위치`;
+}
+
+
+const verificationQuestions = {
+  translation: ['같은 방향으로 움직이는 두 에코를 관측에서 추정한 전역 이동으로 따라가는가?', 'P0 병진 모형에 맞는 사례입니다. 점수가 좋아도 이동량 식별성·보존·수렴까지 검증한 것은 아닙니다.'],
+  growth_decay: ['움직이지 않는 에코의 강도 감쇠를 예측하는가?', '정답은 dBZ 편차를 감쇠시킵니다. 에코 q의 γq 반응식에 대한 정확해 시험은 아닙니다.'],
+  rotation: ['방향이 바뀌는 에코를 현재 모형이 따라가는가?', 'P0는 전역 병진만 추정합니다. 이 합성장은 단일 강체 회전의 정확해도 아니므로 새 FV의 회전 검증으로 사용하지 않습니다.'],
+  splitting_opposingcells: ['서로 반대 방향으로 가는 두 세포를 하나의 이동량으로 설명할 수 있는가?', '현재 P0의 표현 한계를 확인하는 사례입니다. 예측이 유한하다는 이유로 두 운동을 검증했다고 하지 않습니다.'],
+  newcell_birth: ['관측 이후 생긴 새 에코를 놓치는 위치와 오차는 어디인가?', '현재 방정식과 관측에는 독립 발생을 예측할 정보가 없습니다. 낮은 전체 MAE만으로 새 세포 예측 성공을 판정하지 않습니다.'],
+  boundary_outflow: ['경계 밖으로 나가는 에코의 위치와 도메인 내 오차는 어떻게 변하는가?', 'MAE만으로 경계 보존·무반사·무순환을 증명할 수 없습니다. 경계 수지 검증은 별도입니다.'],
+  missing_coverage: ['관측이 없는 영역을 무강수와 구분하고 실제 채점 영역을 표시하는가?', '결측 영역을 제외한 점수입니다. 전체 영역 예측 성공이 아니며 새 FV 자료동화는 아직 결측 관측을 지원하지 않습니다.']
+};
+function comparison(m) {
+  if (!finite(m?.mae) || !finite(m?.persistence_mae) || !(m.scored_pixels > 0)) return 'unscored';
+  const difference = m.persistence_mae - m.mae;
+  return difference > 0.0001 ? 'better' : difference < -0.0001 ? 'worse' : 'equal';
+}
+function renderVerification() {
+  const scenario = current(), m = metric(), meta = currentMeta();
+  if (!scenario) return;
+  const [question, limit] = verificationQuestions[scenario.id] || [scenario.expectation, scenario.model_limit];
+  $('verificationQuestion').textContent = `${scenario.name}: ${question}`;
+  $('verificationModel').textContent = meta.model;
+  const verdict = {better:'예측 오차가 더 작음', worse:'예측 오차가 더 큼', equal:'저장 정밀도에서 차이를 구분하기 어려움', unscored:'채점할 근거 없음'}[comparison(m)];
+  $('verificationResult').textContent = `${scenario.solver && !scenario.solver.stationarity_verified ? '[정상성 미검증 수치 비교] ' : ''}+${m?.lead_minutes ?? state.lead * 10}분 · ${verdict} · 예측 ${finite(m?.mae) ? m.mae.toFixed(4) : 'N/A'} / persistence ${finite(m?.persistence_mae) ? m.persistence_mae.toFixed(4) : 'N/A'} dBZ`;
+  const detection = m?.detection?.['20'];
+  $('verificationDomain').textContent = `채점 ${m?.scored_pixels ?? 0}화소 / ${meta.grid_shape.reduce((a,b)=>a*b,1)}화소. 20 dBZ 이상 정답 중 채점영역 미탐지 ${detection?.misses ?? '자료 없음'}화소, 평가 밖 ${detection?.excluded_truth_echo_pixels ?? '자료 없음'}화소. 저장 MAE 소수 넷째 자리의 차이 ≤0.0001은 구분하지 않습니다.`;
+  $('verificationLimit').textContent = limit;
+  const paired = scenario.comparison?.[state.lead - 1];
+  $('methodComparison').textContent = paired ? `고정 ${paired.domain_pixels}화소 · P0 ${finite(paired.p0_mae) ? paired.p0_mae.toFixed(4) : '미평가'} / FV ${finite(paired.fv_mae) ? paired.fv_mae.toFixed(4) : '미평가'} dBZ. P0 미제공 ${paired.p0_missing} / FV 미제공 ${paired.fv_missing}화소.` : '기존 P0 저장 사례: 같은 입력의 새 FV 계산 미연결';
+  const solver = scenario.solver;
+  $('boundaryAssumption').textContent = scenario.comparison ? 'FV에는 분석식에서 얻은 알려진 시간별 유입 경계와 support=1을 제공합니다. P0에는 이 경계 입력이 없습니다. 차이는 경계 정보의 영향도 포함하며 순수한 solver 우열이 아닙니다.' : '기존 P0의 경계/관측 유효영역 정책';
+  $('inferredMotion').textContent = scenario.state?.psi_coefficients ? `관측에서 추정한 ψ 계수: ${scenario.state.psi_coefficients.map(v=>v.toExponential(4)).join(', ')} · 로그 성장 ${Number(scenario.state.log_growth_per_interval).toExponential(4)}/관측 간격` : (scenario.state?.displacement_yx ? `추정 이동 (행,열) ${scenario.state.displacement_yx.map(v=>v.toFixed(5)).join(', ')} 화소/관측 간격` : '추정 결과 없음');
+  const motionCheck = scenario.field_motion?.[state.lead - 1];
+  const angle = v => finite(v) ? `${v.toFixed(3)}°` : '판별 불가';
+  const describeMotion = value => value ? `중심각 변화 ${angle(value.polar_change_deg)} · 주축 변화 ${angle(value.axis_change_deg)} · 중심 반경 ${finite(value.radius_m) ? value.radius_m.toFixed(1) + ' m' : '판별 불가'} · 비등방성 ${finite(value.anisotropy) ? value.anisotropy.toFixed(3) : '판별 불가'}` : '측정 자료 없음';
+  $('fieldMotion').textContent = motionCheck ? `정답: ${describeMotion(motionCheck.truth)} / 예측: ${describeMotion(motionCheck.forecast)}` : '이 저장 사례에는 독립적인 운동 측정값이 없습니다. MAE만으로 회전 성공을 판정하지 않습니다.';
+  $('motionLimit').textContent = motionCheck ? '최근 관측 대비 q의 알려진 배경을 뺀 양의 에코로 측정합니다. 중심각만으로 회전을 판정하지 않으며 주축 변화(180° 모호성)도 대조합니다. 경계에서 잘리는 경우 이론 회전각과 직접 같지 않습니다. +y는 화면 아래 방향이어서 양의 회전은 화면에서 시계 방향입니다. 검은 점·선은 에코 중심·주축, 흰 실선은 최근 관측 중심에서의 이동, 흰 점선은 최근 관측의 주축입니다. 판정 기준 미확정: 수치 비교만 표시합니다.' : '운동 검증 미연결';
+  const gradientTolerance = meta.analysis_config?.gradient_tolerance;
+  const gradientCheck = solver && finite(solver.selected_gradient_norm) && finite(gradientTolerance) ? ` · 기울기 기준 ${gradientTolerance.toExponential(1)} ${solver.selected_gradient_norm <= gradientTolerance ? '충족' : '미충족'}` : '';
+  $('solverOutcome').textContent = solver ? `${solver.reason} · 기울기 norm ${finite(solver.selected_gradient_norm) ? solver.selected_gradient_norm.toExponential(3) : '미확인'} · 목적함수 ${solver.initial_objective} → ${solver.final_objective}${gradientCheck} · 정상성 ${solver.stationarity_verified ? '국소 1차 검증 통과 (선언한 방향 표본; 최소점·FSO 적격성 아님)' : '미검증'}` : (scenario.state?.status === 'failed' ? `계산 실패: ${scenario.state.reason}` : 'P0 직접 추정: 변분 solver 미사용');
+  $('verificationPending').textContent = scenario.comparison ? '이 계산은 합성 사례의 조건부 비교입니다. 정확한 FSO/FSOI·지속 학습·일반 기상 성공은 미검증입니다.' : '기존 P0 결과입니다. 새 FV 자료동화·FSO/FSOI·학습은 이 사례에서 미검증입니다.';
+  $('gridLabel').textContent = meta.grid_shape.join(' × ') + (meta.spacing_m ? ` · ${meta.grid_shape[1]*meta.spacing_m/1000} × ${meta.grid_shape[0]*meta.spacing_m/1000} km · Δx ${meta.spacing_m} m` : '');
+  $('intervalLabel').textContent = meta.interval_minutes;
+  $('footerCommit').textContent = meta.source_commit;
+  $('lessonBlocks').hidden = !!scenario.comparison;
+  $('verificationSource').textContent = `저장 계산 결과 · ${meta.generator} · source ${meta.source_commit} · 화면 조작은 모델을 재실행하지 않습니다.`;
+  $('verificationSummary').replaceChildren();
+  DATA.scenarios.forEach((item,index)=>{
+    const counts={better:0,equal:0,worse:0,unscored:0};item.metrics.forEach(m=>counts[comparison(m)]++);
+    const row=document.createElement('tr'), name=document.createElement('td'), button=document.createElement('button');
+    button.textContent=item.name;button.addEventListener('click',()=>{$('scenario').value=index;$('scenario').dispatchEvent(new Event('change'));});name.append(button);row.append(name);
+    ['better','equal','worse','unscored'].forEach(key=>{const cell=document.createElement('td');cell.textContent=counts[key];row.append(cell);});$('verificationSummary').append(row);
+  });
+}
+
+function render() {
+  renderVerification();
+  renderStage();
+  renderRead();
+  drawDial();
+}
+
+function populate() {
+  const scenarios = DATA?.scenarios || [];
+  $('scenario').replaceChildren();
+  scenarios.forEach((item, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    option.textContent = item.name || item.id || `시나리오 ${index + 1}`;
+    $('scenario').append(option);
+  });
+  const hasData = Boolean(DATA && Array.isArray(scenarios) && scenarios.length);
+  ['scenario', 'play', 'stop', 'reset', 'observedToggle', 'prevLead', 'nextLead', 'lead']
+    .forEach(id => $(id).disabled = !hasData);
+  const meta = currentMeta();
+  $('gridLabel').textContent = Array.isArray(meta.grid_shape)
+    ? meta.grid_shape.join(' × ') : '격자 —';
+  $('intervalLabel').textContent = meta.interval_minutes || '—';
+  $('footerCommit').textContent = meta.source_commit || '—';
+  $('lessonAssumption').textContent = hasData
+    ? '시나리오의 기대 현상을 고른 뒤 정답 격자와 비교해 보세요.'
+    : '시나리오 JSON이 들어오면 가정과 기대 현상을 표시합니다.';
+  if (hasData) {
+    $('lead').max = Math.max(1, scenarios[0]?.metrics?.length || 18);
+    state.scenario = Math.max(0, scenarios.findIndex(item => item.id === DATA.initial_scenario_id));
+    $('scenario').value = String(state.scenario);
+  } else {
+    $('dataBadge').textContent = '검증 자료 없음';
+  }
+  render();
+}
+
+function setLead(value) {
+  const max = Math.max(1, current()?.metrics?.length || 18);
+  state.lead = Math.max(1, Math.min(max, Number(value) || 1));
+  render();
+}
+
+function stop() {
+  state.playing = false;
+  clearInterval(state.timer);
+  $('play').setAttribute('aria-pressed', 'false');
+  $('play').textContent = '재생';
+}
+
+function play() {
+  if (!current()) return;
+  if (state.playing) {
+    stop();
+    return;
+  }
+  state.playing = true;
+  $('play').setAttribute('aria-pressed', 'true');
+  $('play').textContent = '일시정지';
+  clearInterval(state.timer);
+  state.timer = setInterval(() => {
+    const max = Math.max(1, current()?.metrics?.length || 18);
+    setLead(state.lead >= max ? 1 : state.lead + 1);
+  }, 700);
+}
+
+function reset() {
+  stop();
+  state.lead = 1;
+  state.observed = false;
+  $('observedToggle').setAttribute('aria-pressed', 'false');
+  render();
+}
+
+$('scenario').addEventListener('change', event => {
+  stop();
+  state.scenario = Number(event.target.value) || 0;
+  state.lead = 1;
+  render();
+});
+$('lead').addEventListener('input', event => setLead(event.target.value));
+$('prevLead').addEventListener('click', () => setLead(state.lead - 1));
+$('nextLead').addEventListener('click', () => setLead(state.lead + 1));
+$('play').addEventListener('click', play);
+$('stop').addEventListener('click', stop);
+$('reset').addEventListener('click', reset);
+$('observedToggle').addEventListener('click', () => {
+  state.observed = !state.observed;
+  $('observedToggle').setAttribute('aria-pressed', String(state.observed));
+  renderStage();
+});
+window.addEventListener('resize', render);
+document.addEventListener('keydown', event => {
+  if (event.target.matches('input,select,button,summary')) return;
+  if (event.code === 'Space') {
+    event.preventDefault();
+    play();
+  } else if (event.key === 'ArrowRight') {
+    setLead(state.lead + 1);
+  } else if (event.key === 'ArrowLeft') {
+    setLead(state.lead - 1);
+  } else if (event.key === 'Home') {
+    reset();
+  }
+});
+populate();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "python": "3.12.13 (main, Mar  3 2026, 12:39:30) [Clang 17.0.0 (clang-1700.6.3.2)]",
+  "torch": "2.13.0",
+  "device": "CPU",
+  "files": {
+    "src/advar/variational.py": "9950b9f6de06d4ad0b30d4bf2a1a60a29380f55651742d0b03e02cde1a3f0501",
+    "src/advar/fv_sensitivity.py": "0d83bca9c5621798bc0b57f761be5fe90023a7028781f116c175eb256d59b536",
+    "examples/weather_scenarios/fv_rotation_demo.py": "e5344e411a4c766b51f9d72e2f2031309c064fbf02d129856c2e15e503bdecf5",
+    "examples/weather_scenarios/fv_neural_learning_probe.py": "c0194a8fde100519c57c70921c248e16f5290f6b96ccfd86f18f534564eeedf2",
+    "examples/weather_scenarios/fv_neural_observation_probe.py": "6598b8c7f2ba6549a0e491a0ee9b4d6f6fcb4c00d5f0d72013d8b2073784d8e3",
+    "tests/test_fv_stationarity_verification.py": "6e51e6bb30d4c6ed1afb2d9a9185e776e339853cb1e7b47a6732a7ab4189f0d4",
+    "tests/test_fv_neural_learning_probe.py": "d2b7e7496cf8a67d22a9a5f1e5ca132c6435fd31f624b50ba8019396d2a9037f",
+    "examples/weather_scenarios/template.html": "0891168ef34264255acf903abee5363fccbd9a9da53e99066f1432ce10b50b77",
+    "examples/weather_scenarios/index.html": "b4efc1093903b4bf5a371dfbd0049478ab19e40355325a2bd1b516db86c472ae"
+  },
+  "scope": "Final source snapshot; executed numerical evidence scope in LOCAL_VERIFICATION_RESULTS.md",
+  "scenario_count": 13,
+  "initial_scenario_id": "pde_rigid_rotation_visible_fv"
+}

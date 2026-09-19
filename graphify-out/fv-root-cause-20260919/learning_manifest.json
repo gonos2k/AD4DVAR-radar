@@ -1,0 +1,13 @@
+{
+  "scope": "Final file hashes; execution reuse is described separately in LEARNING_RESULTS.md",
+  "python": "3.12.13",
+  "torch": "2.13.0",
+  "sha256": {
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "examples/weather_scenarios/fv_learning_probe.py": "e5ced51bbbd36441028fbce2a53e293e0ccec2063a29a88bd4511799abf938a4",
+    "tests/test_fv_stationary_sensitivity.py": "1f90b15434123da2fbf448f3e8489bcd42ef6b2e55e5e3beecd3290b3947ab33",
+    "tests/test_fv_learning_probe.py": "083dcf93a06164b286ada35cc50a75c691266b76b188898c80157fe433468b48",
+    "graphify-out/fv-root-cause-20260919/fv_learning.json": "4cfcfab2e6fec49080ea6228738f0c145e3f91bf4913239f31abba9f98639b1d",
+    "graphify-out/fv-root-cause-20260919/fv_observation_scale.pt": "3ed69781cfda3e47a2c0f97cac0cb5a30a47320cbc7588575231eb7817c17642"
+  }
+}

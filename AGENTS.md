@@ -1,49 +1,57 @@
-# ADVAR 작업 원칙
+# ADVAR Working Principles
 
-## 팀 에이전트
+## Team and Environment
 
-- 팀 에이전트는 `gpt-5.6-luna`(`lunar`) 모델과 `high` 추론 수준을 사용한다.
-- 서브에이전트는 공유 `.venv`나 의존성 잠금 파일을 재생성하지 않는다. 시험에는
-  지정된 Python 실행기를 명시적으로 사용하고, 별도 환경이 필요하면 임시 경로에 만든다.
-- 메인은 통합과 판단에 집중하고, 소규모 팀을 범위가 명확한 독립 작업에 적극 활용한다.
-  중복 조사는 피하며, 파일 근거와 짧은 요약으로 공유해 메인 에이전트의 토큰 사용을 줄인다.
+- Actively delegate bounded, independent tasks to small teams of `gpt-5.6-luna`
+  (`lunar`) agents with `high` reasoning to reduce token usage. Reuse existing
+  evidence, avoid duplicate work, and report concise findings with source
+  locations. The main agent integrates results and makes decisions.
+- Separate team reviews into GREEN and RED roles: GREEN checks correctness and
+  supporting evidence; RED looks for counterexamples, failure modes, and gaps.
+- Before ending each session, have the GREEN and RED subagent teams review the
+  session's changes and verification evidence. Resolve actionable findings or
+  record remaining issues explicitly before the final handoff.
+- Do not recreate the shared `.venv` or dependency lock files. Use `.venv/bin/python`
+  explicitly from the repository root; use a temporary environment if isolation
+  is needed.
 
-## 작업 단계
+## Mathematical and Numerical Reasoning
 
-- 1차 목표는 이론적 실증이다. 명시된 모형 가정, 수식·구현의 정합성, 독립 합성
-  수치 시험과 재현 가능한 실행으로 완료 여부를 판단한다.
-- 실자료를 활용한 체계는 2차 목표다. 실자료 성능·보정·현업 규모 검증의 부재를
-  1차 목표의 미완료 사유로 세지 않는다.
-- 완료율은 합의한 단계별 체크리스트의 충족 여부다. 모든 입력·환경의 무결성이나
-  전체 비선형 문제의 전역 최적성을 보장한다는 뜻으로 사용하지 않는다.
+- Think from mathematical and numerical analysis perspectives before designing,
+  implementing, reviewing, or changing code. Identify the governing
+  equations, discrete operators, assumptions, boundary conditions, and invariants.
+  Check consistency, stability, convergence, error, and derivative correctness.
+- Establish the cause and supported domain before choosing a fix. Prefer theoretical
+  consistency over patches that merely hide symptoms.
+- Check input/output contracts, resource costs, and runtime constraints.
+- Preserve the distinction between reflectivity and the echo proxy, missing data
+  and clear sky, and model capability and observational evidence. Check spatial and
+  temporal alignment and the evaluation domain.
 
-## 수정 전 검토
+## Implementation
 
-- 구현하거나 수정하기 전에 수학적, 공학적, 수치해석적 관점에서 먼저 검토한다.
-- 수학적으로는 모형의 가정, 수식, 제약과 불변량의 정합성을 확인한다.
-- 공학적으로는 입력·출력 계약, 자원 사용과 실행 환경의 제약을 확인한다.
-- 수치해석적으로는 오차, 안정성, 수렴성과 미분의 정합성을 확인한다.
-- 기상학적으로는 반사도·에코량의 의미, 시공간 정합성, 모형의 표현 한계와 평가영역을 확인한다.
-- 증상만 없애는 단순 패치보다 이론적 정합성을 우선한다. 원인과 적용 범위를 확인한 뒤 수정 방법을 선택한다.
+- Code must be simple, clear, concise, and intuitive.
+- Choose the smallest theoretically consistent change. Avoid unrelated refactoring,
+  unnecessary abstractions, duplicate logic, and unnecessary or redundant validation
+  layers. Preserve validation required by mathematical and input/output contracts.
+- Use names and control flow that explain intent. Comments should explain
+  mathematical reasons or non-obvious constraints, not repeat the code.
+- Check cancellation, overflow, underflow, limits at zero, and boundary behavior.
+  Keep derivatives finite in inactive numerical branches as well.
+- Preserve automatic differentiation. Do not use `.item()`, `float()`, or `detach()`
+  to disconnect quantities being differentiated. Separate fixed branch decisions
+  and diagnostics from differentiable calculations.
+- Set tolerances from units, dtype, and the relevant component scale. Do not hide
+  errors behind unrelated large values.
 
-## 코드
+## Verification and Records
 
-- 코드는 단순하고, 명료하고, 간단하고, 직관적이어야 한다.
-- 이론적 정합성을 만족하는 해결책 중 가장 작은 변경을 우선한다. 요청과 무관한 리팩터링을 섞지 않는다.
-- 이름과 흐름만으로 의도를 이해할 수 있게 작성한다. 불필요한 추상화, 중복, 우회 경로를 만들지 않는다.
-- 주석은 코드의 동작을 반복하지 않고, 수학적 근거와 쉽게 드러나지 않는 제약을 설명한다.
-
-## 수학과 수치 계산
-
-- 수학적으로 같은 식이라도 상쇄오차, 오버플로, 원점의 극한과 경계에서의 동작을 확인한다.
-- 자동미분 경로를 보존한다. 미분 대상 계산에서 `.item()`, `float()`, `detach()`로 텐서를 계산 그래프에서 분리하지 않는다.
-- 분기 선택과 진단에만 필요한 값은 미분 대상과 명확히 구분한다.
-- 허용오차는 단위, 자료형, 해당 성분의 척도에 맞춘다. 관련 없는 큰 값으로 오류를 숨기지 않는다.
-- 수치 안정성을 위한 분기에는 사용하지 않는 분기의 도함수도 유한한지 확인한다.
-
-## 검증과 기록
-
-- 결함은 가능한 작은 입력으로 재현하고, 수정한 동작을 검증하는 회귀 테스트를 추가한다.
-- 영향받는 테스트를 실행한다. 상위 작업 지침에 따라 전체 baseline 테스트를 반복하지 않는다.
-- 여러 결함을 처리할 때는 체크리스트에 수정 사항, 검증 결과와 남은 한계를 기록한다.
-- 기존 사용자 변경을 보존하고, 확인한 사실과 추정을 구분해 보고한다.
+- Evaluate execution success, numerical convergence, forecast accuracy, and model
+  validity separately; evidence for one does not establish the others.
+- Reproduce defects with small inputs and add regressions that distinguish the
+  corrected behavior from the defect. Run affected tests and reuse existing results;
+  repeat broader baseline tests only when changes or unresolved failures justify it.
+- Record plans, progress, findings, test evidence, and remaining limits in KG and
+  task checklists. Keep this file limited to reusable working instructions.
+- Preserve existing user changes. Distinguish verified results from assumptions,
+  local numerical checks from integration evidence, and proposals from applied fixes.
