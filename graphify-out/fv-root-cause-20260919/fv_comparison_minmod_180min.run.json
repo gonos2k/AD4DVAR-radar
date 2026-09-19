@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "examples/weather_scenarios/fv_grid_convergence_probe.py",
+    "--leads",
+    "18",
+    "--reconstruction",
+    "minmod",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/fv_comparison_minmod_180min.json"
+  ],
+  "returncode": 0,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 336707584,
+  "elapsed_seconds": 44.4756207090104
+}

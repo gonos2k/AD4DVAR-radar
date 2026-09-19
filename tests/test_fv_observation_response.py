@@ -1117,3 +1117,57 @@ def test_first_observation_rejects_initial_transform_join():
             initial_control(frozen), observations, frozen,
             **_response_kwargs(observations, boundary_echo, boundary_support),
         )
+
+
+@pytest.mark.parametrize("floor, scale", [(0.0, 1.0), (-10.0, 4.0)])
+@pytest.mark.parametrize("factor", [0.5, 2.0])
+def test_initial_transform_nonzero_control_mixed_derivative(floor, scale, factor):
+    from advar.variational import _initial_analysis_dbz
+
+    _, frozen, _, _ = _PROBE.make_case()
+    epsilon = 2.0 ** -20
+    frozen = replace(
+        frozen,
+        nowcast_config=replace(frozen.nowcast_config, min_dbz=floor),
+        analysis_config=replace(
+            frozen.analysis_config, echo_transform_scale_dbz=scale,
+            transform_epsilon=epsilon,
+        ),
+    )
+    background = torch.full_like(frozen.initial_background_dbz, floor + scale * factor * epsilon)
+    field = torch.full_like(background, 0.3)
+    direction = torch.ones_like(background)
+
+    def transform(b, c):
+        return _initial_analysis_dbz(c, replace(frozen, initial_background_dbz=b))
+
+    def background_gradient(b, c):
+        return torch.func.grad(lambda value: transform(value, c).sum())(b)
+
+    derivative, mixed = torch.func.jvp(
+        lambda c: background_gradient(background, c), (field,), (direction,)
+    )
+    # Closed form: exp(t)=exp(a*c)*(exp(z)-1). This oracle avoids the
+    # inverse-softplus implementation and exposes both mixed dependencies.
+    z = ((background - floor) / scale).clamp_min(epsilon)
+    a = frozen.analysis_config.initial_increment_scale_dbz / scale
+    k = torch.exp(a * field)
+    exp_minus_z = torch.exp(-z)
+    denominator = exp_minus_z + k * (-torch.expm1(-z))
+    expected = k / denominator if factor > 1 else torch.zeros_like(background)
+    expected_mixed = (
+        a * k * exp_minus_z / denominator.square()
+        if factor > 1 else torch.zeros_like(background)
+    )
+    torch.testing.assert_close(derivative, expected, rtol=1e-12, atol=1e-12)
+    torch.testing.assert_close(mixed, expected_mixed, rtol=1e-12, atol=1e-12)
+    _, control_derivative = torch.func.jvp(
+        lambda c: transform(background, c), (field,), (direction,)
+    )
+    assert bool((control_derivative > 0).all())
+    step = 1e-4
+    mixed_fd = (
+        background_gradient(background, field + step)
+        - background_gradient(background, field - step)
+    ) / (2 * step)
+    torch.testing.assert_close(mixed, mixed_fd, rtol=1e-7, atol=1e-12)

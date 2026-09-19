@@ -307,6 +307,10 @@ def test_parameterized_background_uses_fixed_censored_representative():
             pcg_relative_tolerance=1.0e-10,
         ),
     )
+    changed_configured = replace(
+        changed_frozen,
+        analysis_config=configured.analysis_config,
+    )
     result = solve_analysis(observations, configured)
     control, _ = refine_fv_stationarity(
         result.control,
@@ -317,12 +321,12 @@ def test_parameterized_background_uses_fixed_censored_representative():
         maximum_normal_products=96,
     )
     changed_result = solve_analysis(
-        changed_observations, configured
+        changed_observations, changed_configured
     )
     changed_control, _ = refine_fv_stationarity(
         changed_result.control,
         changed_observations,
-        configured,
+        changed_configured,
         gradient_tolerance=1.0e-10,
         maximum_iterations=4,
         maximum_normal_products=96,
@@ -340,7 +344,7 @@ def test_parameterized_background_uses_fixed_censored_representative():
     )
     changed_forecast = forecast_fv_analysis(
         changed_control,
-        configured,
+        changed_configured,
         leads=2,
         boundary_start_interval=2,
         boundary_echo=future_echo,
@@ -357,7 +361,9 @@ def test_parameterized_background_uses_fixed_censored_representative():
         lambda value: robust_objective(value, observations, configured)
     )(control)
     changed_gradient = torch.func.grad(
-        lambda value: robust_objective(value, changed_observations, configured)
+        lambda value: robust_objective(
+            value, changed_observations, changed_configured
+        )
     )(control)
     torch.testing.assert_close(
         gradient, changed_gradient, rtol=0.0, atol=0.0
@@ -406,7 +412,7 @@ def test_parameterized_background_uses_fixed_censored_representative():
         control, observations, configured, **kwargs
     )
     changed_response = compute_fv_observation_response(
-        control, changed_observations, configured, **kwargs
+        changed_control, changed_observations, changed_configured, **kwargs
     )
     assert response.sensitivity_theta is not None
     assert changed_response.sensitivity_theta is not None
