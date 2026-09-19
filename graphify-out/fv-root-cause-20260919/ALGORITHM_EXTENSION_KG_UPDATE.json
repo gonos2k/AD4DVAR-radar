@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6502,
-    "edges": 64776,
-    "communities": 234,
+    "nodes": 6508,
+    "edges": 64786,
+    "communities": 238,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -76,5 +76,15 @@
     "limits": "local only; caller builder must be twice differentiable; no finite perturbation certificate",
     "record": "BACKGROUND_CONTRACT_REVIEW.md",
     "validation": "13 distinct focused cases passed across runs; censored reanalysis/forecast and y/theta response invariant; typecheck0 errors0 warnings; GREEN/RED complete; no full CI"
+  },
+  "pr162_followup": {
+    "baseline": "main c40a1203, PR162 merged",
+    "regressions": "freshly prepared changed state end-to-end; nonzero B/control mixed derivatives; 12 distinct focused tests passed",
+    "comparison": "same48km180min32/64/128; fixed echo0.1 threshold; minmod field L2 at128=3.53/1.51/0.72percent",
+    "derivatives": "minmod AD-selected JVP errors17.48/8.26/4.25percent; limiter stability unverified; exact-response donorcell restriction unchanged",
+    "cost": "final donorcell38.44s332808192bytes; minmod44.48s336707584bytes; wholeD7 notrun",
+    "record": "REGRESSION_AND_TRANSPORT_COMPARISON.md",
+    "html": "original demo arrays preserved; new separate comparison table verified in Aside desktop DOM/screenshot",
+    "ci": "no full CI restarted"
   }
 }

@@ -211,6 +211,40 @@ def _panel(report, scale, central):
             '<p>처방 유동의 장시간 수치확산 검사이며, 240×240 역문제나 전체 D7 비용 검증이 아닙니다. '
             '<a href="../../graphify-out/fv-root-cause-20260919/fv_grid_convergence_180min.json">3시간 원시 결과·소스 해시</a></p>'
         )
+    comparison = ""
+    paths = [HERE / f"fv_comparison_{scheme}_180min.json" for scheme in ("donorcell", "minmod")]
+    if all(path.is_file() for path in paths):
+        comparison_rows = []
+        for scheme, path in zip(("donorcell", "minmod"), paths):
+            data = json.loads(path.read_text())
+            if data["leads"] != 18 or data["sizes"] != [32, 64, 128]:
+                raise SystemExit("transport comparison requires the same 180-minute grids")
+            for row in data["results"]:
+                if row["size"] != 128:
+                    continue
+                last = row["leads"][-1]
+                peak_ratio = last["predicted_shape"]["maximum_echo"] / last["reference_shape"]["maximum_echo"]
+                label = {"translation": "병진", "rotation": "회전", "area_preserving_strain": "변형"}[row["case"]]
+                comparison_rows.append(
+                    f"<tr><td>{label}</td><td>{scheme}</td>"
+                    f"<td>{last['relative_echo_l2']:.2%}</td>"
+                    f"<td>{row['derivative']['jvp_relative_to_independent_oracle']:.2%}</td>"
+                    f"<td>{peak_ratio:.2%}</td></tr>"
+                )
+        comparison = (
+            '<h3 id="fvTransportComparison">같은 3시간 조건의 저확산 후보 비교</h3>'
+            '<p>48km·128격자·동일 초기장과 알려진 영 경계에서 계산했습니다. '
+            '원래 애니메이션을 교체한 결과가 아닌 별도 처방 유동 시험입니다. '
+            'max 비율은 기준해 최대 에코에 대한 예측 최대 에코의 비율입니다.</p>'
+            '<div style="max-width:100%;overflow-x:auto"><table style="border-spacing:12px 6px;white-space:nowrap">'
+            '<thead><tr><th>유동</th><th>수송</th><th>에코 L₂ 오차</th><th>기준 대비 AD JVP 오차</th><th>max 비율</th></tr></thead>'
+            f'<tbody>{"".join(comparison_rows)}</tbody></table></div>'
+            '<p>minmod의 형상 오차는 감소했지만 limiter 분기 안정성과 정확 FSO/FSOI 연결은 미검증입니다. '
+            '검열 raw 숫자의 민감도 0은 검열 관측을 제거해도 영향이 없다는 뜻이 아닙니다.</p>'
+            '<p><a href="../../graphify-out/fv-root-cause-20260919/fv_comparison_donorcell_180min.json">donor-cell 원시 결과</a> · '
+            '<a href="../../graphify-out/fv-root-cause-20260919/fv_comparison_minmod_180min.json">minmod 원시 결과</a> · '
+            '<a href="../../graphify-out/fv-root-cause-20260919/REGRESSION_AND_TRANSPORT_COMPARISON.md">검증 범위·폭·면적·비용</a></p>'
+        )
     return f'''  <details class="learn" id="fvResponseEvidence">
     <summary>240×240 FV 관측 민감도·유한 섭동 연구 검증</summary>
     <div class="lesson-body">
@@ -231,6 +265,7 @@ def _panel(report, scale, central):
       <p>각 actual 값은 perturbed observations를 다시 자료동화해 얻은 값이고, h·s는 저장 응답의 signed linear prediction입니다. 두 양의 h에서 Taylor error 비는 <strong>{taylor_ratio:.9f}</strong>로 측정됐습니다. h를 절반으로 줄이자 오차가 약 4분의 1이 되어 2차 Taylor 잔차와 일치합니다. 다만 이 크기의 섭동에서는 1차 예측에 비해 잔차가 큽니다. 국소 미분 검증과 유한 변화량의 근사 정확도는 구분해야 합니다.</p>
       <p>{central_text}</p>
       {long_horizon}
+      {comparison}
       <p><a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.json">최종 응답 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.pt">응답 tensor</a>{central_link} · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg">민감도 −20분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg">−10분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg">0분</a></p>
     </div>
   </details>

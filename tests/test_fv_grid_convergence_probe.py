@@ -6,6 +6,7 @@ from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 import pytest
+import torch
 
 _SPEC = spec_from_file_location(
     "fv_grid_convergence_probe",
@@ -31,3 +32,20 @@ def test_spatial_and_jvp_errors_decrease_on_refinement(case_name: str, convergen
     assert all(row["max_transformed_budget_residual"] < 1e-12 for row in rows)
     assert rows[1]["leads"][-1]["relative_echo_l2"] < rows[0]["leads"][-1]["relative_echo_l2"]
     assert rows[1]["derivative"]["jvp_relative_to_independent_oracle"] < rows[0]["derivative"]["jvp_relative_to_independent_oracle"]
+
+
+def test_shape_moments_include_uniform_cell_interior():
+    # Four cells cover [-2,2]^2: each coordinate has variance 4/3 m^2.
+    shape = _PROBE._shape(torch.ones((2, 2), dtype=torch.float64), 2.0, 0.5)
+    assert shape["centroid_yx_m"] == pytest.approx([0.0, 0.0])
+    assert shape["variance_yx_m2"] == pytest.approx([4 / 3, 4 / 3])
+    assert shape["maximum_echo"] == 1.0
+    assert shape["area_above_threshold_m2"] == 16.0
+
+
+def test_empty_shape_has_no_defined_centroid_or_width():
+    shape = _PROBE._shape(torch.zeros((2, 2), dtype=torch.float64), 2.0, 0.5)
+    assert shape["centroid_yx_m"] is None
+    assert shape["variance_yx_m2"] is None
+    assert shape["maximum_echo"] == 0.0
+    assert shape["area_above_threshold_m2"] == 0.0

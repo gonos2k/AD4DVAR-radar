@@ -42,3 +42,16 @@ on held-out outcomes or relax stationarity gates to obtain a pass.
   exact-response transport backend. See BACKGROUND_CONTRACT_REVIEW.md for metrics
   and branch/derivative checkpoints; increasing substeps alone does not remove
   donor-cell spatial diffusion.
+
+## PR162 regression completion and comparison
+
+- [x] Use the second input's freshly prepared state throughout the censored
+  analysis/refinement/forecast/response regression, with unchanged numeric outputs.
+- [x] Preserve nonzero-control B and mixed B/control derivatives in repository
+  tests using closed-form and central gradient-difference oracles.
+- [x] Measure existing donorcell and minmod on identical 180-minute conditions,
+  with fixed physical threshold, moments/peak/area, field error and selected-AD
+  JVP diagnostics. Results and scope: REGRESSION_AND_TRANSPORT_COMPARISON.md.
+- [ ] Certify limiter branches and discrete derivatives before an inverse
+  minmod response/reanalysis or any donorcell-only gate change. The comparison
+  improves field-error evidence, not general FV/FSOI or typed-prior completion.

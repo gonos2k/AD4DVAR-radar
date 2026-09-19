@@ -1,6 +1,6 @@
 """Small prescribed-flow FV grid and derivative convergence probe.
 
-This probe exercises the current donor-cell transport core against independent
+This probe exercises the selected donor-cell or minmod transport core against independent
 characteristic cell averages.  It is intentionally limited to a complete
 known field with known-zero exterior; it does not evaluate P1, FSO, FSOI, or
 forecast skill.
@@ -27,7 +27,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 from affine_holdout import affine_cell_averages, affine_face_fluxes  # noqa: E402
-from finite_volume_probe import cell_averages  # noqa: E402
+from finite_volume_probe import cell_averages, moments  # noqa: E402
 
 
 SIDE = 48000.0
@@ -60,7 +60,7 @@ def _rotation_case() -> dict:
 
 def _strain_case() -> dict:
     # This is the frozen CP3b area-preserving strain, reused as an analytic
-    # oracle only; the minmod candidate is not part of this probe.
+    # oracle only; both reconstructions use the same prescribed flow.
     return {
         "name": "area_preserving_strain",
         "kind": "affine",
@@ -116,7 +116,8 @@ def _schedule(qx: torch.Tensor, qy: torch.Tensor, size: int, speed_bound: float)
 
 
 def _advance(echo: torch.Tensor, qx: torch.Tensor, qy: torch.Tensor,
-             substeps: int, dt: float, growth_rate: float) -> torch.Tensor:
+             substeps: int, dt: float, growth_rate: float,
+             reconstruction: str = "donorcell") -> torch.Tensor:
     size = echo.shape[0]
     zeros = tuple(torch.zeros(size, dtype=echo.dtype) for _ in range(4))
     ones = tuple(torch.ones(size, dtype=echo.dtype) for _ in range(4))
@@ -127,7 +128,7 @@ def _advance(echo: torch.Tensor, qx: torch.Tensor, qy: torch.Tensor,
             echo, support, qx, qy, dt_seconds=dt,
             spacing_yx=(spacing, spacing), log_growth=growth_rate * dt,
             boundary_echo=(zeros, zeros), boundary_support=(ones, ones),
-            max_courant=MAX_COURANT,
+            max_courant=MAX_COURANT, reconstruction=reconstruction,
         )
         echo = result.echo
     return echo
@@ -137,17 +138,34 @@ def _relative(a: torch.Tensor, b: torch.Tensor) -> float:
     return float(torch.linalg.vector_norm(a - b) / torch.linalg.vector_norm(b).clamp_min(torch.finfo(a.dtype).tiny))
 
 
+def _shape(echo: torch.Tensor, spacing: float, threshold: float) -> dict:
+    """Moments of the piecewise-constant cell-average field, in physical units."""
+    if bool(echo.sum() > 0):
+        centroid_xy, width_xy = moments(echo, spacing)
+        center = centroid_xy.flip(0).tolist()
+        spread = (width_xy.flip(0).square() + spacing**2 / 12).tolist()
+    else:
+        center, spread = None, None
+    return {
+        "centroid_yx_m": center, "variance_yx_m2": spread,
+        "maximum_echo": float(echo.max()),
+        "area_above_threshold_m2": int((echo > threshold).sum()) * spacing**2,
+    }
+
+
 def _derivative_record(case: dict, size: int, qx: torch.Tensor, qy: torch.Tensor,
-                       substeps: int, dt: float, leads: int) -> dict:
+                       substeps: int, dt: float, leads: int, reconstruction: str) -> dict:
     """Compare core JVP with the independent characteristic/affine derivative."""
     total_time = leads * INTERVAL
     initial = _oracle(case, size, 0.0)
 
     def trajectory(amplitude: torch.Tensor) -> torch.Tensor:
         # The branch decisions (face signs and schedule) are fixed at the
-        # nominal amplitude; this is the differentiable local model being checked.
+        # nominal amplitude. Minmod AD selects local limiter branches; this
+        # comparison does not certify those branches or an exact inverse response.
         return _advance(initial, amplitude * qx, amplitude * qy, substeps * leads,
-                        dt, float(case.get("growth_rate", case.get("growth_per_second", 0.0))))
+                        dt, float(case.get("growth_rate", case.get("growth_per_second", 0.0))),
+                        reconstruction)
 
     nominal = torch.ones((), dtype=torch.float64, requires_grad=True)
     _, jvp = torch.func.jvp(trajectory, (nominal,), (torch.ones_like(nominal),))
@@ -159,15 +177,20 @@ def _derivative_record(case: dict, size: int, qx: torch.Tensor, qy: torch.Tensor
         "jvp_norm": float(torch.linalg.vector_norm(jvp)),
         "oracle_derivative_norm": float(torch.linalg.vector_norm(oracle_derivative)),
         "oracle_fd_step": h,
+        "limiter_branch_stability": "unverified" if reconstruction == "minmod" else "not_applicable",
     }
 
 
-def run_case(case: dict, size: int, leads: int = LEADS) -> dict:
+def run_case(case: dict, size: int, leads: int = LEADS,
+             reconstruction: str = "donorcell") -> dict:
     spacing = SIDE / size
     qx, qy = _flow(case, size)
     substeps, dt, actual_cfl = _schedule(qx, qy, size, case["speed_bound_mps"])
     growth_rate = float(case.get("growth_rate", case.get("growth_per_second", 0.0)))
     echo = _oracle(case, size, 0.0)
+    # All three analytic initial profiles have unit pointwise peak. Hold this
+    # physical threshold fixed across grids, schemes and forecast times.
+    threshold = 0.1
     records = []
     budget_max = 0.0
     started = time.perf_counter()
@@ -182,7 +205,7 @@ def run_case(case: dict, size: int, leads: int = LEADS) -> dict:
                 echo, torch.ones_like(echo), qx, qy, dt_seconds=dt,
                 spacing_yx=(spacing, spacing), log_growth=growth_rate * dt,
                 boundary_echo=(zeros, zeros), boundary_support=(ones, ones),
-                max_courant=MAX_COURANT,
+                max_courant=MAX_COURANT, reconstruction=reconstruction,
             )
             echo = result.echo
             restored_mass = math.exp(-growth_rate * dt) * float(echo.sum()) * spacing**2
@@ -198,10 +221,13 @@ def run_case(case: dict, size: int, leads: int = LEADS) -> dict:
             "relative_echo_l2": _relative(echo, truth),
             "minimum_echo": float(echo.min()),
             "transformed_budget_residual": lead_residual,
+            "predicted_shape": _shape(echo, spacing, threshold),
+            "reference_shape": _shape(truth, spacing, threshold),
         })
-    derivative = _derivative_record(case, size, qx, qy, substeps, dt, leads)
+    derivative = _derivative_record(case, size, qx, qy, substeps, dt, leads, reconstruction)
     return {
         "case": case["name"], "size": size, "spacing_m": spacing,
+        "reconstruction": reconstruction, "echo_area_threshold": threshold,
         "substeps_per_lead": substeps, "actual_max_cfl": actual_cfl,
         "wall_seconds": time.perf_counter() - started,
         "max_transformed_budget_residual": budget_max,
@@ -209,12 +235,15 @@ def run_case(case: dict, size: int, leads: int = LEADS) -> dict:
     }
 
 
-def run_probe(sizes: tuple[int, ...] = (32, 64, 128), *, leads: int = LEADS) -> dict:
+def run_probe(sizes: tuple[int, ...] = (32, 64, 128), *, leads: int = LEADS,
+              reconstruction: str = "donorcell") -> dict:
     if type(leads) is not int or not 1 <= leads <= 18:
         raise ValueError("leads must be an integer in [1, 18]")
+    if reconstruction not in ("donorcell", "minmod"):
+        raise ValueError("reconstruction must be donorcell or minmod")
     started = time.perf_counter()
     with torch.no_grad():
-        results = [run_case(case, size, leads) for size in sizes for case in CASES]
+        results = [run_case(case, size, leads, reconstruction) for size in sizes for case in CASES]
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     return {
         "status": "complete", "scope": "prescribed-flow FV PDE grid/JVP convergence only; no P1/FSO/FSOI, learning, or forecast-skill claim",
@@ -222,7 +251,9 @@ def run_probe(sizes: tuple[int, ...] = (32, 64, 128), *, leads: int = LEADS) -> 
         "oracle": "existing characteristic cell_averages plus existing CP3b affine_cell_averages for area-preserving strain",
         "cases": [case["name"] for case in CASES], "sizes": list(sizes),
         "domain_side_m": SIDE, "interval_seconds": INTERVAL, "leads": leads,
-        "max_courant": MAX_COURANT, "scheme": "current donorcell SSPRK2",
+        "max_courant": MAX_COURANT, "scheme": f"current {reconstruction} SSPRK2",
+        "shape_policy": "cell-center moments including dx^2/12 cell variance; fixed echo threshold 0.1 (unit pointwise initial peak) across grids and schemes",
+        "derivative_scope": "AD JVP versus continuous reference; no limiter branch or inverse-response certification",
         "python": platform.python_version(), "torch": torch.__version__,
         "device": "cpu", "dtype": "float64", "threads": torch.get_num_threads(),
         "source_sha256": {str(path.resolve()): hashlib.sha256(path.read_bytes()).hexdigest()
@@ -238,13 +269,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sizes", nargs="+", type=int, default=[32, 64, 128])
     parser.add_argument("--leads", type=int, default=LEADS)
+    parser.add_argument("--reconstruction", choices=("donorcell", "minmod"), default="donorcell")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     if any(size < 16 or size > 128 for size in args.sizes):
         parser.error("sizes must be in [16, 128]")
     if not 1 <= args.leads <= 18:
         parser.error("leads must be in [1, 18]")
-    report = run_probe(tuple(args.sizes), leads=args.leads)
+    report = run_probe(tuple(args.sizes), leads=args.leads, reconstruction=args.reconstruction)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n")
     print(args.output)
