@@ -1,0 +1,111 @@
+{
+  "scope": "external learned background composition on 4x5 CPU FP64 donorcell FV; research-only",
+  "production_learning_eligible": false,
+  "typed_neural_prior_application": false,
+  "legacy_fsoi_eligible": false,
+  "truth_seeded_background": false,
+  "fixed_support_and_sigma": true,
+  "parameter_count": 3,
+  "learning_rate": 0.05,
+  "chain_rule": {
+    "background_gradient_max": 1.4970096987817517e-06,
+    "background_stationarity_max": 8.892428460249846e-12,
+    "background_adjoint_relative_residual": 9.58076152472499e-11,
+    "direct_y_gradient_max": 0.003811024641272631,
+    "direct_y_stationarity_max": 8.892428460249846e-12,
+    "direct_y_adjoint_relative_residual": 9.58076152472499e-11,
+    "total_y_gradient_max": 0.003811024641272631,
+    "total_y_stationarity_max": 8.892428460249846e-12,
+    "total_y_adjoint_relative_residual": 9.58076152472499e-11,
+    "total_theta": [
+      -2.837751338545199e-07,
+      -8.651140630678688e-08,
+      -2.8200036066860254e-08
+    ],
+    "chain_theta": [
+      -2.83775133854551e-07,
+      -8.651140630686021e-08,
+      -2.8200036066860492e-08
+    ],
+    "theta_chain_max_error": 7.333452438650122e-20,
+    "total_y_chain_max_error": 3.426248271643645e-19,
+    "total_y_norm": 0.008399606561368742,
+    "chain_y_norm": 2.547987494812339e-06,
+    "identity_y_chain_norm": 2.547597771689073e-06,
+    "background_y_nonidentity_norm": 1.4632995152822989e-09,
+    "background_norm": 92.59039239800465,
+    "gB_norm": 2.547597771689073e-06,
+    "background_y_nonidentity_definition": "||(B_y^T-I^T) g_B||; score-cotangent contribution, not ||B_y-I||"
+  },
+  "theta_directional_prediction": -1.0299863372621763e-07,
+  "y_directional_prediction": -0.0007804766127246245,
+  "theta_finite_reanalysis": [
+    {
+      "h": 0.001,
+      "actual_change": -1.0298743674812434e-10,
+      "centered_slope": -1.0299863409000617e-07,
+      "plus_gradient_max": 1.4776894985413236e-11,
+      "minus_gradient_max": 1.5819810739170492e-11,
+      "face_box_margin": 0.004963219105000264,
+      "predicted_slope": -1.0299863372621763e-07,
+      "slope_error": 3.637885409215542e-16
+    },
+    {
+      "h": 0.0005,
+      "actual_change": -5.1496571411421485e-11,
+      "centered_slope": -1.0299866371583054e-07,
+      "plus_gradient_max": 1.1076535305284962e-11,
+      "minus_gradient_max": 7.478948016448328e-12,
+      "face_box_margin": 0.0049632198619537415,
+      "predicted_slope": -1.0299863372621763e-07,
+      "slope_error": 2.998961290408796e-14
+    }
+  ],
+  "y_finite_reanalysis": [
+    {
+      "h": 0.001,
+      "actual_change": -7.727239708331922e-07,
+      "centered_slope": -0.0007804773232650768,
+      "plus_gradient_max": 4.979805535488581e-12,
+      "minus_gradient_max": 1.2889668499216356e-11,
+      "face_box_margin": 0.004936776123338751,
+      "predicted_slope": -0.0007804766127246245,
+      "slope_error": 7.105404523219047e-10
+    },
+    {
+      "h": 0.0005,
+      "actual_change": -3.883000577381611e-07,
+      "centered_slope": -0.0007804767904612004,
+      "plus_gradient_max": 1.2097114976405976e-11,
+      "minus_gradient_max": 8.388898950495438e-12,
+      "face_box_margin": 0.0049499980236635665,
+      "predicted_slope": -0.0007804766127246245,
+      "slope_error": 1.7773657589106873e-10
+    }
+  ],
+  "theta_initial": [
+    0.1,
+    -0.2,
+    0.15
+  ],
+  "theta_updated": [
+    0.1000000141887567,
+    -0.1999999956744297,
+    0.1500000014100018
+  ],
+  "train_score_before": 0.00019968182535688465,
+  "train_score_after": 0.00019968182535242763,
+  "train_score_change": -4.457019605816348e-15,
+  "holdout_score_before": 0.00019915885379014916,
+  "holdout_score_after": 0.00019915885379036535,
+  "holdout_gain": -2.1618991319360958e-16,
+  "checkpoint_reload": {
+    "theta_max_abs": 0.0,
+    "score_abs": 0.0,
+    "control_max_abs": 0.0,
+    "forecast_max_abs": 0.0
+  },
+  "same_face_signs": true,
+  "support_digest_unchanged": true,
+  "evidence_limits": "local exact-adjoint/FD checks only; no global Hessian, typed-prior, FSOI, or production claim"
+}

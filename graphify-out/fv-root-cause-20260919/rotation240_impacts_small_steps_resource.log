@@ -1,0 +1,14 @@
+INFO:advar.fv_sensitivity:FV root iteration 0: gradient max 188.38150863756607; gradient norm 188.4213418159631
+INFO:advar.fv_sensitivity:FV root iteration 1: gradient max 0.00041815128362621135; gradient norm 0.00043546237973550358
+INFO:advar.fv_sensitivity:FV root iteration 2: gradient max 1.3075057583617107e-08; gradient norm 2.0289901295744578e-08
+INFO:advar.fv_sensitivity:FV root iteration 3: gradient max 1.3083391698102877e-08; gradient norm 1.7671642156448404e-08
+INFO:advar.fv_sensitivity:FV root iteration 4: gradient max 1.3057776778032867e-08; gradient norm 1.6698816972875349e-08
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_large_response_probe.py", line 113, in <module>
+    run(impacts=args.impacts, leads=args.leads)
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_large_response_probe.py", line 94, in run
+    refined, records = refine_fv_stationarity(start, changed, contract(y),
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/fv_sensitivity.py", line 336, in refine_fv_stationarity
+    raise ValueError(
+ValueError: FV stationary refinement iteration budget exhausted: gradient_norm=1.669881697287535e-08; steps=[{'iteration': 0, 'gradient_before': 188.4213418159631, 'gradient_after': 0.0004354623797355036, 'gradient_max_before': 188.38150863756607, 'gradient_max_after': 0.00041815128362621135, 'step_scale': 1.0, 'normal_products': 19, 'linear_relative_residual': 6.089687636214154e-07, 'linear_absolute_tolerance': 1e-09, 'face_margin': 0.27304593441706093}, {'iteration': 1, 'gradient_before': 0.0004354623797355036, 'gradient_after': 2.0289901295744578e-08, 'gradient_max_before': 0.00041815128362621135, 'gradient_max_after': 1.3075057583617107e-08, 'step_scale': 1.0, 'normal_products': 27, 'linear_relative_residual': 2.1964056010095936e-06, 'linear_absolute_tolerance': 1e-09, 'face_margin': 0.27309512937672253}, {'iteration': 2, 'gradient_before': 2.0289901295744578e-08, 'gradient_after': 1.7671642156448404e-08, 'gradient_max_before': 1.3075057583617107e-08, 'gradient_max_after': 1.3083391698102877e-08, 'step_scale': 0.25, 'normal_products': 5, 'linear_relative_residual': 0.04804056752570421, 'linear_absolute_tolerance': 1e-09, 'face_margin': 0.27317842364237155}, {'iteration': 3, 'gradient_before': 1.7671642156448404e-08, 'gradient_after': 1.669881697287535e-08, 'gradient_max_before': 1.3083391698102877e-08, 'gradient_max_after': 1.3057776778032867e-08, 'step_scale': 0.125, 'normal_products': 5, 'linear_relative_residual': 0.05563097401734947, 'linear_absolute_tolerance': 1e-09, 'face_margin': 0.27317842365106865}]

@@ -88,3 +88,35 @@ observation-error update nor its replay removes the existing prior-support gate.
 - Prescribed-flow grid convergence passed on translation, rotation and strain.
   Final 128-grid JVP/oracle relative errors remain about 10–13%; decreasing error
   supports consistency but is not high-accuracy or general P1 evidence.
+
+
+## Source and regression continuity
+
+The measured nominal response is retained as historical evidence with its exact
+source in `nominal_source/fv_sensitivity.py` (SHA-256 `69bbf85a...`). An AST
+comparison against the current module differs only in `refine_fv_stationarity`;
+the response definitions are identical, and transport/variational hashes match
+those recorded by the run. `rotation240_source_continuity.json` also binds the
+saved response and refined checkpoints. This avoids presenting old hashes as a
+new run or repeating an unchanged 461-second adjoint solely for metadata.
+
+Additional affected tests: 42 passed in 71.74 s; root-refinement tests: 4 passed
+in 13.73 s. GREEN/RED found no new stencil or replay-chunk defect. RED's nominal
+source-binding concern is resolved by the exact recovered source and explicit
+historical label. Finite reanalysis remains an independent unfinished checkpoint.
+
+
+## Second large perturbation and learned-background review
+
+The 0.001 dBZ reanalysis used all four root corrections, reaching maximum
+1.30578e-8 (L2 1.66988e-8), still above the unchanged 1e-8 gate. Run time was
+612.48 s / 1.930 GB; the 0.0005 case was not reached. Its accepted controls
+are now retained, so subsequent diagnostics do not need to repeat the solve.
+The dominant component is log growth. A one-ULP probe rules out a simple
+one-ULP control-spacing explanation; exponential scaling and gradient evaluation
+roundoff are being investigated. This is not a declared numerical lower bound.
+
+A nonzero-theta external learned background verifies a nonidentity cotangent
+contribution and the complete fixed-support chain. Its heldout score worsened
+by 2.16e-16 after the fixed update: no improvement claim is made. This does not
+extend the typed neural-prior or legacy FSOI contract.

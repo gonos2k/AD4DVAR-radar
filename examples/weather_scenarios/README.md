@@ -208,3 +208,32 @@ OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I examples/weather_scenari
 The measured run took331s and4.69GiB peak sampled RSS. It ended at the outer-iteration limit, so the page preserves unverified stationarity. The white dashed line is the initial observed principal axis; the black line is the current field axis.
 
 The September19 default uses the stricter stopping run. To reproduce it, add `--maximum-outer-iterations 12 --step-tolerance 1e-10` to `fv_rotation_demo.py` and write `graphify-out/fv-root-cause-20260919/fv_rotation240_strict.json`. Pass that JSON first to the same integration command, followed by the existing small-case JSON. The run met the gradient threshold after6outer iterations (477s/4.76GiB); stationarity certification remains unavailable. Previous240² artifacts are retained as the baseline.
+
+
+### September 19 algorithm extensions
+
+The current PR keeps nominal sensitivity, finite reanalysis, and learning evidence
+separate. `PR_CHECKLIST.md` in `graphify-out/fv-root-cause-20260919/` is the current
+status; earlier completion statements apply to their recorded scope and commit.
+
+Reproduce the small, independently prescribed-flow grid study:
+
+```sh
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I examples/weather_scenarios/fv_grid_convergence_probe.py --output /tmp/advar-fv-grid.json
+```
+
+The final 128-grid directional derivative errors are still about 10–13%; decreasing
+errors support consistency rather than high accuracy at that resolution.
+Persistent observation-error learning uses a fixed three-update schedule and keeps
+held-out data out of training and step selection:
+
+```sh
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I examples/weather_scenarios/fv_persistent_learning_probe.py --checkpoint /tmp/advar-fv-learning.pt --output /tmp/advar-fv-learning.json
+```
+
+The saved 240×240 exact adjoint covers all 18 forecast leads, with actual relative
+residual 4.28e-11. Its finite-reanalysis check is separate and still in progress.
+The large response probe requires the locally retained `rotation240_refined.pt`;
+large field checkpoints and generated HTML are deliberately not Git artifacts.
+CI and deployment checks are deferred until algorithm completion. Real-data and
+operational validation belong to Phase 2.

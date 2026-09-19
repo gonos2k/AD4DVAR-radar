@@ -36,3 +36,8 @@ residual 4.28390e-11, 41 Hessian products, 461.12 s / 1.933 GB sampled RSS.
 The first 0.01 dBZ reanalysis failed after reaching gradient L2 1.3584e-8;
 its maximum component was not retained. This is not completed FSOI validation.
 Evidence: rotation240_response_18.json and rotation240_impacts_large_step_failure.json.
+
+External learned-mean composition (fixed nonzero theta) now has chain-rule and
+finite-reanalysis evidence, with exact checkpoint reload. Its held-out score
+worsened by 2.16e-16, so no improvement claim is made. Typed prior/legacy FSOI
+integration remains separate and incomplete. See FV_EXTERNAL_BACKGROUND_PHASE1_RESULTS.md.
