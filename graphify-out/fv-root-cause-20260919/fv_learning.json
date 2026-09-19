@@ -1,0 +1,62 @@
+{
+  "scope": "4x5 CPU FP64 donorcell exact stationary observation-scale learning; research-only",
+  "production_learning_eligible": false,
+  "stationarity_verified": false,
+  "control_count": 24,
+  "initial_log_scale": 0.0,
+  "updated_log_scale": -1.5460858445934886e-05,
+  "parameter_gradient": 6.184343378373954e-05,
+  "predicted_impact": -9.561525755409443e-10,
+  "train_score_before": 0.00019969749864968343,
+  "train_score_after": 0.00019969654251271235,
+  "train_score_change": -9.56136971084088e-10,
+  "holdout_score_before": 0.00019917512618195977,
+  "holdout_score_after": 0.0001991746051878452,
+  "holdout_gain": 5.209941145764129e-10,
+  "finite_difference_steps": [
+    0.001,
+    0.0005,
+    0.00025
+  ],
+  "finite_difference_gradients": [
+    6.184347588458132e-05,
+    6.1843444305892e-05,
+    6.184343631421068e-05
+  ],
+  "finite_difference_last_error": 2.530471139702492e-12,
+  "finite_difference_step_error": 7.991681318444965e-12,
+  "finite_difference_stationarity_max": 1.9035426013225276e-11,
+  "stationarity_max": 2.0316338888992647e-11,
+  "adjoint_relative_residual": 9.570891230109512e-11,
+  "branch_margin": 0.00496352080610888,
+  "same_face_signs": true,
+  "base_solver_reason": "step_tolerance_unverified",
+  "updated_solver_reason": "no_accepted_step",
+  "holdout_base_solver_reason": "step_tolerance_unverified",
+  "holdout_updated_solver_reason": "step_tolerance_unverified",
+  "curvature": "exact_robust_hessian",
+  "reused_evidence": "Training and three FD levels from fv_learning_preliminary.json; theta unchanged",
+  "holdout_inference": "shared solve_analysis then exact local root polish for both parameters and reload",
+  "checkpoint_scope": "parameter-only checkpoint; deterministic heldout fixture reconstructed, same prescribed contract retained for replay",
+  "numerical_error_scope": "local linearized estimate with factor 10, not a rigorous neighborhood bound",
+  "holdout_base_diagnostics": {
+    "gradient_max": 2.357834066879505e-11,
+    "gradient_norm": 3.089460912473784e-11,
+    "hessian_min_eigenvalue": 15.848442637151152,
+    "local_score_error_scale": 4.79010849643773e-14
+  },
+  "holdout_updated_diagnostics": {
+    "gradient_max": 1.3467643666942308e-11,
+    "gradient_norm": 2.1739799073800448e-11,
+    "hessian_min_eigenvalue": 15.848898571184861,
+    "local_score_error_scale": 3.370584161710758e-14
+  },
+  "score_roundoff_scale": 4.4225762203966516e-20,
+  "holdout_error_budget": 8.160697080724707e-13,
+  "holdout_gain_above_error_budget": true,
+  "reload_train_score_error": 0.0,
+  "reload_holdout_score_error": 0.0,
+  "reload_holdout_control_max_abs": 0.0,
+  "reload_holdout_forecast_max_abs": 0.0,
+  "holdout_branch_margin": 0.004379475161809495
+}

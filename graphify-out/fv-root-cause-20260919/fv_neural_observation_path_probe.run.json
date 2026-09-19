@@ -1,0 +1,12 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "examples/weather_scenarios/fv_neural_observation_path_probe.py",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/fv_neural_observation_path.json"
+  ],
+  "returncode": 0,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 331366400,
+  "elapsed_seconds": 73.5857705840026
+}

@@ -1,0 +1,20 @@
+{
+  "scope": "4x5 CPU FP64 local exact-Hessian gradient-root oracle; production result remains unverified",
+  "before": {
+    "reason": "no_accepted_step",
+    "selected_gradient_norm": 1.3706207623089832e-08,
+    "outer_iterations": 7,
+    "pcg_iterations": 153,
+    "initial_objective": 34.09252137860264,
+    "final_objective": 0.03504881343060583,
+    "stationarity_verified": false
+  },
+  "after_gradient_max": 1.5382334295210853e-11,
+  "after_gradient_norm": 2.2575458460999058e-11,
+  "hessian_min_eigenvalue": 15.50939875046734,
+  "hessian_condition_number": 1302.4674226601844,
+  "local_linearized_control_error_estimate": 1.4555985582818803e-12,
+  "control_step_norm": 7.930392569796207e-11,
+  "minimum_checked_step_face_box_margin": 0.0025107461127010585,
+  "sampled_local_evidence_not_interval_certificate": true
+}

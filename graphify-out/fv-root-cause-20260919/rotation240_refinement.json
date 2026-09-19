@@ -1,0 +1,19 @@
+{
+  "scope": "240x240 local matrix-free gradient-root refinement",
+  "gradient_norm_tolerance": 1e-08,
+  "gradient_norm": 3.899394700401996e-09,
+  "gradient_max": 3.8403516468775954e-09,
+  "control_change_norm": 1.6107580058676296e-09,
+  "steps": [
+    {
+      "iteration": 0,
+      "gradient_before": 6.726553427083052e-07,
+      "gradient_after": 3.899394700401996e-09,
+      "step_scale": 1.0,
+      "normal_products": 11,
+      "linear_relative_residual": 0.0009949009907564376,
+      "linear_absolute_tolerance": 1e-09,
+      "face_margin": 0.2756304563843399
+    }
+  ]
+}

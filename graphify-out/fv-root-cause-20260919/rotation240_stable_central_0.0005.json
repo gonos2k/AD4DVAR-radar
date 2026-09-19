@@ -1,0 +1,66 @@
+{
+  "scope": "240x240 exact local central response check; fixed analytic boundaries and verification",
+  "step": 0.0005,
+  "leads": 18,
+  "directional_slope": 0.0022684523069402378,
+  "nominal_score": 0.0008456228942333736,
+  "positive": {
+    "actual_change": 1.915419274854755e-06,
+    "linear_prediction": 1.134226153470119e-06,
+    "taylor_error": 7.811931213846361e-07,
+    "gradient_max": 1.4287835530587406e-10,
+    "gradient_norm": 5.200153189265376e-10,
+    "face_margin": 0.27449965280465594
+  },
+  "negative": {
+    "actual_change": -3.529332785293408e-07,
+    "linear_prediction": -1.134226153470119e-06,
+    "taylor_error": 7.812928749407781e-07,
+    "gradient_max": 2.931101117571201e-10,
+    "gradient_norm": 6.623230143354094e-10,
+    "face_margin": 0.27559775538357073,
+    "start_face_margin": 0.27560264199135626,
+    "resumed": false,
+    "refinement": [
+      {
+        "iteration": 0,
+        "gradient_before": 0.0012416580558015048,
+        "gradient_after": 1.349333692372777e-07,
+        "gradient_max_before": 0.0012405161480677496,
+        "gradient_max_after": 9.405269558375277e-08,
+        "step_scale": 1.0,
+        "normal_products": 24,
+        "linear_relative_residual": 5.484446026860723e-07,
+        "linear_absolute_tolerance": 1e-09,
+        "face_margin": 0.276487380950503
+      },
+      {
+        "iteration": 1,
+        "gradient_before": 1.349333692372777e-07,
+        "gradient_after": 6.623230143354094e-10,
+        "gradient_max_before": 9.405269558375277e-08,
+        "gradient_max_after": 2.931101117571201e-10,
+        "step_scale": 1.0,
+        "normal_products": 6,
+        "linear_relative_residual": 0.004382798308512382,
+        "linear_absolute_tolerance": 1e-09,
+        "face_margin": 0.27648738095077363
+      }
+    ]
+  },
+  "central_slope": 0.002268352553384096,
+  "central_slope_error": 9.975355614189746e-08,
+  "response_tensor_sha256": "29379cebde6e321e701c4ca0d2c1544c152d306ebf7633faf7e01bb86d6136ec",
+  "refined_checkpoint_sha256": "98684981144a3a9a9c975758935d71fa67cda5fb8448954e5e662a27348e222b",
+  "positive_checkpoint_sha256": "93b3dc687670fa241f3fe03ad0b2f51a14a25cd5e6b7b95c82a7f96936727e40",
+  "negative_checkpoint_sha256": "f422e044e74517a1a26ab2c809497c66d239610b91269e3928ce93e7c8ad607f",
+  "central_probe_sha256": "fe212adaf179eacf94546692f9f7fbb98844d06258d4ce426f504b26ac453537",
+  "source_hashes": {
+    "src/advar/fv_sensitivity.py": "78cf5819bd135af1eadd92996acc68ba979b195181f1ac0065d1eb11ec521646",
+    "src/advar/variational.py": "daff731193324b2df43eeedda13c373558fab65e6f511d7a65ec2707e16d8020",
+    "src/advar/transport.py": "d81f409970046bd86b2838339948e01c4840b2be2b613f1e66551bc70a468264",
+    "examples/weather_scenarios/fv_large_response_probe.py": "97ca15664b0080d5868a0bdbf85a3769ea0fe9a238738ae69d705ad82b0f0f8d"
+  },
+  "negative_refinement_seconds": 313.13371395799913,
+  "wall_seconds": 341.9994394160167
+}

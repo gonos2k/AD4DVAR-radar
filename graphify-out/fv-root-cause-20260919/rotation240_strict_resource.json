@@ -1,0 +1,18 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-I",
+    "-u",
+    "examples/weather_scenarios/fv_rotation_demo.py",
+    "--maximum-outer-iterations",
+    "12",
+    "--step-tolerance",
+    "1e-10",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/fv_rotation240_strict.json"
+  ],
+  "returncode": 0,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 5111447552,
+  "elapsed_seconds": 477.2094849580026
+}

@@ -1,0 +1,9 @@
+{
+  "observations": true,
+  "truth": true,
+  "persistence": true,
+  "p0_forecast": true,
+  "p0_metrics": true,
+  "fv_forecast": true,
+  "fv_metrics": true
+}

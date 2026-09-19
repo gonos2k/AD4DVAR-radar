@@ -50,6 +50,11 @@ from .physics import (
     freeze_remap_cell,
     remap,
 )
+from .transport import (
+    BoundarySchedule,
+    bounded_fv_coefficients,
+    finite_volume_trajectory,
+)
 from ._runtime import numerical_runtime_identity_digest
 from ._learned_input import (
     LEARNED_RADAR_INPUT_CHANNELS,
@@ -3088,6 +3093,21 @@ class FrozenObservationWhitener:
 
 
 @dataclass(frozen=True)
+class FVAnalysisTransport:
+    """Frozen contract for the opt-in C4a FV residual path."""
+
+    psi_basis: Tensor
+    coefficient_limits: Tensor
+    substeps_per_interval: int
+    spacing_yx: tuple[float, float]
+    boundary_echo: BoundarySchedule
+    boundary_support: BoundarySchedule
+    reconstruction: str = "minmod"
+    max_courant: float = 0.5
+    replay: bool = True
+
+
+@dataclass(frozen=True)
 class FrozenOuterState:
     input_frames_dbz: Tensor
     background_frames_dbz: Tensor | None
@@ -3114,6 +3134,7 @@ class FrozenOuterState:
     smooth_edge_left_index: Tensor
     smooth_edge_right_index: Tensor
     smooth_edge_physical_weight: Tensor
+    fv_transport: FVAnalysisTransport | None = None
     observation_derived_initial_background: bool = True
     neural_prior_std_dbz: Tensor | None = None
     neural_prior_valid_mask: Tensor | None = None
@@ -3138,8 +3159,160 @@ class FrozenOuterState:
 @dataclass(frozen=True)
 class AnalysisTrajectory:
     frames_linear: Tensor
-    displacement_yx: Tensor
+    displacement_yx: Tensor | None
     log_growth_per_step: Tensor
+    psi_coefficients: Tensor | None = None
+    support_frames: Tensor | None = None
+
+
+def _legacy_displacement(trajectory: AnalysisTrajectory) -> Tensor:
+    """Narrow displacement at callers that explicitly require legacy motion."""
+
+    displacement = trajectory.displacement_yx
+    if displacement is None:
+        raise NotImplementedError(
+            "legacy displacement diagnostics are unavailable for FV analysis"
+        )
+    return displacement
+
+
+def _clone_fv_boundary_schedule(
+    schedule: object,
+    *,
+    name: str,
+    steps: int,
+    reference: Tensor,
+    require_full_support: bool = False,
+) -> BoundarySchedule:
+    if not isinstance(schedule, (tuple, list)) or len(schedule) != steps:
+        raise ValueError(f"{name} must have length {steps}")
+    frozen_steps = []
+    for step, stages in enumerate(schedule):
+        if not isinstance(stages, (tuple, list)) or len(stages) != 2:
+            raise ValueError(f"{name}[{step}] must contain two stages")
+        frozen_stages = []
+        for stage_index, edges in enumerate(stages):
+            if not isinstance(edges, (tuple, list)) or len(edges) != 4:
+                raise ValueError(
+                    f"{name}[{step}][{stage_index}] must contain four edges"
+                )
+            frozen_edges = []
+            for edge_index, edge in enumerate(edges):
+                if not isinstance(edge, Tensor):
+                    raise TypeError(
+                        f"{name}[{step}][{stage_index}][{edge_index}] "
+                        "must be a Tensor"
+                    )
+                if edge.dtype != reference.dtype or edge.device != reference.device:
+                    raise ValueError(
+                        f"{name}[{step}][{stage_index}][{edge_index}] "
+                        "must match the analysis dtype and device"
+                    )
+                expected_shape = (
+                    (reference.shape[-2],)
+                    if edge_index < 2
+                    else (reference.shape[-1],)
+                )
+                if edge.shape != expected_shape:
+                    raise ValueError(
+                        f"{name}[{step}][{stage_index}][{edge_index}] "
+                        f"must have shape {expected_shape}"
+                    )
+                if not bool(torch.all(torch.isfinite(edge))):
+                    raise ValueError(f"{name} must contain finite tensors")
+                frozen_edge = edge.detach().clone()
+                if require_full_support:
+                    tolerance = 16 * torch.finfo(edge.dtype).eps
+                    if not bool(torch.all(frozen_edge >= 1 - tolerance)):
+                        raise ValueError(
+                            "FV C4a requires fully known boundary support"
+                        )
+                frozen_edges.append(frozen_edge)
+            frozen_stages.append(tuple(frozen_edges))
+        frozen_steps.append(tuple(frozen_stages))
+    return tuple(frozen_steps)  # type: ignore[return-value]
+
+
+def _freeze_fv_analysis_transport(
+    value: FVAnalysisTransport,
+    *,
+    reference: Tensor,
+) -> FVAnalysisTransport:
+    if not isinstance(value, FVAnalysisTransport):
+        raise TypeError("fv_transport must be an FVAnalysisTransport")
+    if reference.device.type != "cpu":
+        raise ValueError("C4a FV analysis currently requires CPU tensors")
+    if value.psi_basis.requires_grad or value.coefficient_limits.requires_grad:
+        raise ValueError("FV basis and coefficient limits must be fixed tensors")
+    if (
+        value.psi_basis.dtype != reference.dtype
+        or value.coefficient_limits.dtype != reference.dtype
+        or value.psi_basis.device != reference.device
+        or value.coefficient_limits.device != reference.device
+    ):
+        raise ValueError("FV basis and coefficient limits must match analysis tensors")
+    if value.psi_basis.ndim != 3 or value.psi_basis.shape[1:] != (
+        reference.shape[-2] + 1,
+        reference.shape[-1] + 1,
+    ):
+        raise ValueError("psi_basis must have shape [K-1, H+1, W+1]")
+    if (
+        value.coefficient_limits.ndim != 1
+        or value.coefficient_limits.shape[0] != value.psi_basis.shape[0]
+        or not bool(torch.all(torch.isfinite(value.coefficient_limits)))
+        or not bool(torch.all(value.coefficient_limits > 0))
+    ):
+        raise ValueError("coefficient_limits must be finite positive [K-1]")
+    if type(value.substeps_per_interval) is not int or value.substeps_per_interval <= 0:
+        raise ValueError("substeps_per_interval must be a positive integer")
+    if (
+        not isinstance(value.spacing_yx, (tuple, list))
+        or len(value.spacing_yx) != 2
+        or any(
+            isinstance(spacing, bool)
+            or not isinstance(spacing, (int, float))
+            or not math.isfinite(float(spacing))
+            or float(spacing) <= 0
+            for spacing in value.spacing_yx
+        )
+    ):
+        raise ValueError("spacing_yx must contain finite positive values")
+    if value.reconstruction not in ("donorcell", "minmod"):
+        raise ValueError("unsupported FV reconstruction")
+    if (
+        isinstance(value.max_courant, bool)
+        or not isinstance(value.max_courant, (int, float))
+        or not math.isfinite(float(value.max_courant))
+        or not 0 < float(value.max_courant) <= 1
+    ):
+        raise ValueError("max_courant must be in (0, 1]")
+    if not isinstance(value.replay, bool):
+        raise TypeError("replay must be a bool")
+    steps = 2 * value.substeps_per_interval
+    boundary_echo = _clone_fv_boundary_schedule(
+        value.boundary_echo,
+        name="boundary_echo",
+        steps=steps,
+        reference=reference,
+    )
+    boundary_support = _clone_fv_boundary_schedule(
+        value.boundary_support,
+        name="boundary_support",
+        steps=steps,
+        reference=reference,
+        require_full_support=True,
+    )
+    return FVAnalysisTransport(
+        psi_basis=value.psi_basis.detach().clone(),
+        coefficient_limits=value.coefficient_limits.detach().clone(),
+        substeps_per_interval=value.substeps_per_interval,
+        spacing_yx=(float(value.spacing_yx[0]), float(value.spacing_yx[1])),
+        boundary_echo=boundary_echo,
+        boundary_support=boundary_support,
+        reconstruction=value.reconstruction,
+        max_courant=float(value.max_courant),
+        replay=value.replay,
+    )
 
 
 @dataclass(frozen=True)
@@ -3546,6 +3719,30 @@ class AnalysisResult:
 
 
 @dataclass(frozen=True)
+class FVAnalysisResult:
+    """Research-only FV analysis output without a legacy forecast state.
+
+    ``stationarity_verified`` is false after solving. Explicit verification
+    checks numerical first-order stationarity and declared local directional
+    samples; it does not certify a minimum, an implicit solution path, or
+    legacy FSO/learning eligibility. Reproduction requires the caller's
+    observations and frozen FV contract as well.
+    """
+
+    control: Tensor
+    trajectory: AnalysisTrajectory
+    initial_objective: float
+    final_objective: float
+    outer_iterations: int
+    pcg_iterations: int
+    reason: str
+    selected_gradient_norm: float
+    stationarity_verified: bool = False
+    improved: bool = False
+    escape_status: str = "no_descent_found"
+
+
+@dataclass(frozen=True)
 class P1LinearizationState:
     """Minimum accepted-analysis state needed for delayed P1 FSO."""
 
@@ -3758,9 +3955,19 @@ def prepare_analysis(
     background_age_minutes: float | None = None,
     grid_time_contract: RadarGridTimeContract | None = None,
     neural_prior: NeuralPriorApplication | None = None,
+    fv_transport: FVAnalysisTransport | None = None,
 ) -> tuple[AnalysisObservations, FrozenOuterState]:
     nowcast_config = nowcast_config or NowcastConfig()
     analysis_config = analysis_config or AnalysisConfig()
+    if fv_transport is not None:
+        if analysis_config.execution_mode != "research":
+            raise ValueError("C4a FV transport is research-only")
+        if neural_prior is not None:
+            raise ValueError("C4a FV transport does not support neural priors")
+        if grid_time_contract is not None:
+            raise ValueError(
+                "C4a FV transport does not yet support a grid/time contract"
+            )
     if analysis_config.motion_increment_scale_mps is not None:
         if grid_time_contract is None:
             raise ValueError(
@@ -4052,6 +4259,8 @@ def prepare_analysis(
     )
     quality = _quality_weight(frames_dbz, quality_weight)
     valid = finite & qc & (quality > 0)
+    if fv_transport is not None and not bool(torch.all(valid)):
+        raise ValueError("C4a FV transport requires fully valid observations")
     if (
         common_bias_group_index is not None
         and not bool(torch.any((common_bias_group_index >= 0) & valid))
@@ -4281,6 +4490,18 @@ def prepare_analysis(
             initial_support = initial_support | prior_support
         initial_background_dbz = prior_background
     causal_only = initial_support & ~detected[0]
+    if fv_transport is not None and not bool(torch.all(initial_support)):
+        raise ValueError(
+            "C4a FV transport requires fully known initial active support"
+        )
+    frozen_fv_transport = (
+        None
+        if fv_transport is None
+        else _freeze_fv_analysis_transport(
+            fv_transport,
+            reference=frames_dbz,
+        )
+    )
     active_field_index = torch.nonzero(
         initial_support.flatten(),
         as_tuple=False,
@@ -4336,6 +4557,7 @@ def prepare_analysis(
         smooth_edge_left_index=smooth_edge_left_index,
         smooth_edge_right_index=smooth_edge_right_index,
         smooth_edge_physical_weight=smooth_edge_physical_weight,
+        fv_transport=frozen_fv_transport,
         observation_derived_initial_background=(neural_prior is None),
         neural_prior_std_dbz=(
             None if prior_std_dbz is None else prior_std_dbz.detach().clone()
@@ -4461,8 +4683,13 @@ def _active_smoothness_graph(
 
 
 def initial_control(frozen: FrozenOuterState) -> Tensor:
+    dynamic_size = (
+        frozen.fv_transport.coefficient_limits.numel() + 1
+        if frozen.fv_transport is not None
+        else 3
+    )
     return frozen.initial_background_dbz.new_zeros(
-        frozen.active_field_index.numel() + 3
+        frozen.active_field_index.numel() + dynamic_size
     )
 
 
@@ -4476,6 +4703,67 @@ def _warm_started_control(
     field_size = frozen.active_field_index.numel()
     control[:field_size] = seed_control.flatten()[frozen.active_field_index]
     return control
+
+
+def _fv_initial_control_candidate(
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    *,
+    control: Tensor | None = None,
+) -> tuple[Tensor, str]:
+    """Try small data-based ψ moves away from a selected FV AD branch.
+
+    The returned status is ``"improved"`` only when an actual
+    ``_evaluate_control`` cost is lower than the supplied/zero control.  A
+    ``"no_descent_found"`` result is an exploration outcome, never a
+    stationarity certificate.  Empty ψ blocks return the base control with
+    ``"no_descent_found"``; an invalid base has status
+    ``"invalid_initial_objective"``.
+    """
+
+    if frozen.fv_transport is None:
+        raise ValueError("FV initial control candidate requires FV transport")
+    _validate_observations(observations)
+    base = initial_control(frozen) if control is None else control.detach().clone()
+    _validate_control(base, frozen)
+    coefficient_count = frozen.fv_transport.coefficient_limits.numel()
+    if coefficient_count == 0:
+        return base, "no_descent_found"
+    try:
+        with torch.no_grad():
+            base_cost = float(_evaluate_control(base, observations, frozen)[0])
+    except (ArithmeticError, ValueError):
+        return base, "invalid_initial_objective"
+    if not math.isfinite(base_cost):
+        return base, "invalid_initial_objective"
+
+    field_size = frozen.active_field_index.numel()
+    best = base
+    improved = False
+    best_cost = base_cost
+    magnitudes = (0.1, 0.01, 0.001)
+    directions = []
+    for index in range(coefficient_count):
+        for magnitude in magnitudes:
+            direction = base.new_zeros(coefficient_count)
+            direction[index] = magnitude
+            directions.extend((direction, -direction))
+    combined = base.new_full((coefficient_count,), 0.01)
+    directions.extend((combined, -combined))
+    for direction in directions:
+        trial = base.clone()
+        trial[field_size : field_size + coefficient_count] += direction
+        try:
+            with torch.no_grad():
+                trial_cost = float(_evaluate_control(trial, observations, frozen)[0])
+        except (ArithmeticError, ValueError):
+            continue
+        tolerance = 32 * torch.finfo(base.dtype).eps * max(
+            abs(base_cost), abs(best_cost), torch.finfo(base.dtype).tiny
+        )
+        if math.isfinite(trial_cost) and trial_cost < best_cost - tolerance:
+            best, best_cost, improved = trial, trial_cost, True
+    return best, "improved" if improved else "no_descent_found"
 
 
 def _precursor_seed_control(frozen: FrozenOuterState) -> Tensor:
@@ -4538,6 +4826,62 @@ def analysis_trajectory(
     )
 
 
+
+def forecast_fv_analysis(
+    control: Tensor,
+    frozen: FrozenOuterState,
+    *,
+    leads: int,
+    boundary_start_interval: int,
+    boundary_echo: BoundarySchedule,
+    boundary_support: BoundarySchedule,
+) -> AnalysisTrajectory:
+    """Continue the research FV analysis with explicitly supplied future traces.
+
+    Observations occupy interval indices 0, 1, 2. Future stage traces must
+    start at index 2; returned frame zero is the end-of-analysis state.
+    The caller owns the truth of this relative-time label and prescribed
+    boundary data. No absolute-time or operational forecast claim is made.
+
+    Recomputing from ``control`` preserves field/ψ/growth derivatives through
+    both analysis and forecast. This does not differentiate the optimizer or
+    establish observation-space FSO/FSOI. ψ and interval growth stay constant.
+    """
+    fv = frozen.fv_transport
+    if fv is None:
+        raise ValueError("forecast_fv_analysis requires an FV analysis contract")
+    if type(boundary_start_interval) is not int or boundary_start_interval != 2:
+        raise ValueError("future boundaries must start at analysis interval 2")
+    if type(leads) is not int or leads <= 0:
+        raise ValueError("leads must be a positive integer")
+    analyzed = analysis_trajectory(control, frozen)
+    if analyzed.psi_coefficients is None or analyzed.support_frames is None:
+        raise RuntimeError("FV analysis did not provide coefficients and support")
+    frames, support = finite_volume_trajectory(
+        analyzed.frames_linear[-1],
+        analyzed.support_frames[-1],
+        analyzed.psi_coefficients,
+        analyzed.log_growth_per_step,
+        psi_basis=fv.psi_basis,
+        leads=leads,
+        substeps_per_interval=fv.substeps_per_interval,
+        interval_seconds=frozen.nowcast_config.interval_minutes * 60.0,
+        spacing_yx=fv.spacing_yx,
+        boundary_echo=boundary_echo,
+        boundary_support=boundary_support,
+        reconstruction=fv.reconstruction,
+        max_courant=fv.max_courant,
+        replay=fv.replay,
+    )
+    return AnalysisTrajectory(
+        frames_linear=frames,
+        displacement_yx=None,
+        log_growth_per_step=analyzed.log_growth_per_step,
+        psi_coefficients=analyzed.psi_coefficients,
+        support_frames=support,
+    )
+
+
 def _analysis_trajectory(
     control: Tensor,
     frozen: FrozenOuterState,
@@ -4560,6 +4904,48 @@ def _analysis_trajectory(
         analyzed_dbz,
         min_dbz=nowcast.min_dbz,
     )
+    if frozen.fv_transport is not None:
+        fv = frozen.fv_transport
+        coefficient_count = fv.coefficient_limits.numel()
+        psi_coefficients = bounded_fv_coefficients(
+            dynamics_control[:coefficient_count],
+            psi_basis=fv.psi_basis,
+            coefficient_limits=fv.coefficient_limits,
+            dt_seconds=(
+                nowcast.interval_minutes
+                * 60.0
+                / fv.substeps_per_interval
+            ),
+            spacing_yx=fv.spacing_yx,
+            reconstruction=fv.reconstruction,
+            max_courant=fv.max_courant,
+        )
+        growth = nowcast.max_log_growth_per_step * torch.tanh(
+            dynamics_control[coefficient_count]
+        )
+        frames, support_frames = finite_volume_trajectory(
+            initial_echo,
+            frozen.initial_support_mask.to(dtype=initial_echo.dtype),
+            psi_coefficients,
+            growth,
+            psi_basis=fv.psi_basis,
+            leads=2,
+            substeps_per_interval=fv.substeps_per_interval,
+            interval_seconds=nowcast.interval_minutes * 60.0,
+            spacing_yx=fv.spacing_yx,
+            boundary_echo=fv.boundary_echo,
+            boundary_support=fv.boundary_support,
+            reconstruction=fv.reconstruction,
+            max_courant=fv.max_courant,
+            replay=fv.replay,
+        )
+        return AnalysisTrajectory(
+            frames_linear=frames,
+            displacement_yx=None,
+            log_growth_per_step=growth,
+            psi_coefficients=psi_coefficients,
+            support_frames=support_frames,
+        )
     displacement, growth = _decode_dynamics(
         dynamics_control,
         frozen.baseline_state,
@@ -5447,13 +5833,13 @@ def _polish_final_linearization(
                     continue
                 if not _analysis_window_is_representable(
                     candidate_frozen,
-                    candidate_trajectory.displacement_yx,
+                    _legacy_displacement(candidate_trajectory),
                 ):
                     continue
                 if (
                     config.motion_increment_scale_mps is None
                     and not _motion_is_admissible(
-                        candidate_trajectory.displacement_yx,
+                        _legacy_displacement(candidate_trajectory),
                         candidate_frozen,
                     )
                 ):
@@ -6247,7 +6633,8 @@ def solve_analysis(
     frozen: FrozenOuterState,
     *,
     control: Tensor | None = None,
-) -> AnalysisResult:
+) -> AnalysisResult | FVAnalysisResult:
+    fv_mode = frozen.fv_transport is not None
     _validate_observations(observations)
     _validate_observation_common_bias_contract(
         observations,
@@ -6266,6 +6653,8 @@ def solve_analysis(
             reference_frozen,
         )
     except EchoPositivityError:
+        if fv_mode:
+            raise ValueError("FV reference objective violates physical echo")
         return _fallback_result(
             frozen,
             reference_control,
@@ -6292,6 +6681,8 @@ def solve_analysis(
                 frozen,
             )
         except EchoPositivityError:
+            if fv_mode:
+                raise ValueError("FV initial objective violates physical echo")
             return _fallback_result(
                 frozen,
                 control,
@@ -6299,13 +6690,41 @@ def solve_analysis(
                 "positivity_violation",
             )
     current_cost = float(current_cost_tensor.detach())
-    current_amplitude = _amplitude_diagnostics(
-        observations,
-        frozen,
-        current_trajectory,
-        include_spatial_diagnostics=False,
-    )
+    current_amplitude: _AmplitudeDiagnostics | None = None
+    escape_status = "no_descent_found"
+    if fv_mode:
+        tolerance = 32 * torch.finfo(control.dtype).eps * max(
+            abs(reference_cost), abs(current_cost), torch.finfo(control.dtype).tiny
+        )
+        if current_cost > reference_cost + tolerance:
+            control = reference_control.detach().clone()
+            frozen = reference_frozen
+            current_cost_tensor = reference_cost_tensor
+            current_trajectory = reference_trajectory
+            current_cost = reference_cost
+        control, escape_status = _fv_initial_control_candidate(
+            observations,
+            frozen,
+            control=control,
+        )
+        if escape_status == "improved":
+            frozen = _freeze_analysis_remap_cells(control, frozen)
+            current_cost_tensor, current_trajectory = _evaluate_control(
+                control,
+                observations,
+                frozen,
+            )
+            current_cost = float(current_cost_tensor.detach())
+    else:
+        current_amplitude = _amplitude_diagnostics(
+            observations,
+            frozen,
+            current_trajectory,
+            include_spatial_diagnostics=False,
+        )
     if not bool(torch.any(observations.valid_mask)):
+        if fv_mode:
+            raise ValueError("FV analysis requires valid observations")
         return _fallback_result(
             frozen,
             control,
@@ -6313,6 +6732,8 @@ def solve_analysis(
             "no_valid_observations",
         )
     if not bool(torch.any(frozen.initial_support_mask)):
+        if fv_mode:
+            raise ValueError("FV analysis requires initial state support")
         return _fallback_result(
             frozen,
             control,
@@ -6320,6 +6741,8 @@ def solve_analysis(
             "no_initial_state_support",
         )
     if not math.isfinite(reference_cost):
+        if fv_mode:
+            raise ValueError("FV reference objective is nonfinite")
         return _fallback_result(
             frozen,
             control,
@@ -6327,6 +6750,8 @@ def solve_analysis(
             "nonfinite_reference_objective",
         )
     if not math.isfinite(current_cost):
+        if fv_mode:
+            raise ValueError("FV initial objective is nonfinite")
         return _fallback_result(
             frozen,
             control,
@@ -6335,18 +6760,21 @@ def solve_analysis(
         )
 
     config = frozen.analysis_config
-    if (
-        current_amplitude.has_insufficient_information
-        and config.amplitude_information_policy == "operational_fallback"
-    ):
-        return _fallback_result(
-            frozen,
-            control,
-            reference_cost,
-            "insufficient_amplitude_information",
-            amplitude_diagnostics=current_amplitude,
-            amplitude_diagnostics_source="rejected_candidate",
-        )
+    if not fv_mode:
+        if current_amplitude is None:
+            raise RuntimeError("legacy analysis amplitude diagnostics are missing")
+        if (
+            current_amplitude.has_insufficient_information
+            and config.amplitude_information_policy == "operational_fallback"
+        ):
+            return _fallback_result(
+                frozen,
+                control,
+                reference_cost,
+                "insufficient_amplitude_information",
+                amplitude_diagnostics=current_amplitude,
+                amplitude_diagnostics_source="rejected_candidate",
+            )
     field_size = frozen.active_field_index.numel()
     damping = config.initial_damping
     total_pcg_iterations = 0
@@ -6354,6 +6782,7 @@ def solve_analysis(
     converged = False
     reason = "maximum_outer_iterations"
     completed_iterations = 0
+    selected_gradient_norm = math.nan
 
     for outer_iteration in range(1, config.maximum_outer_iterations + 1):
         completed_iterations = outer_iteration
@@ -6388,7 +6817,22 @@ def solve_analysis(
 
         gradient = pullback(residual)[0]
         gradient_norm = float(torch.linalg.vector_norm(gradient).detach())
+        selected_gradient_norm = gradient_norm
         if not math.isfinite(gradient_norm):
+            if fv_mode:
+                return _fv_analysis_result(
+                    control,
+                    current_trajectory,
+                    reference_cost,
+                    current_cost,
+                    completed_iterations,
+                    total_pcg_iterations,
+                    "nonfinite_gradient",
+                    selected_gradient_norm,
+                    escape_status=escape_status,
+                    observations=observations,
+                    frozen=frozen,
+                )
             return _failed_result(
                 accepted_any,
                 control,
@@ -6402,7 +6846,11 @@ def solve_analysis(
             )
         if gradient_norm <= config.gradient_tolerance:
             converged = True
-            reason = "gradient_tolerance"
+            reason = (
+                "gradient_tolerance_unverified"
+                if fv_mode
+                else "gradient_tolerance"
+            )
             break
 
         accepted = False
@@ -6418,7 +6866,9 @@ def solve_analysis(
                     rtol=config.pcg_relative_tolerance,
                     max_iterations=config.maximum_pcg_iterations,
                 )
-            except (ArithmeticError, RuntimeError, ValueError):
+            except (ArithmeticError, RuntimeError, ValueError) as error:
+                if fv_mode and isinstance(error, RuntimeError):
+                    raise
                 linear = None
             if linear is None:
                 damping = min(config.maximum_damping, 4.0 * damping)
@@ -6444,27 +6894,28 @@ def solve_analysis(
                     ).detach()
                 )
                 candidate = control + step
-                candidate_displacement, _ = _decode_dynamics(
-                    candidate[field_size:],
-                    frozen_iteration.baseline_state,
-                    config,
-                    frozen_iteration.nowcast_config,
-                    frozen_iteration.motion_limits_yx,
-                    frozen_iteration.grid_time_contract,
-                )
-                if (
-                    config.motion_increment_scale_mps is None
-                    and not _motion_is_admissible(
-                        candidate_displacement,
-                        frozen_iteration,
+                if not fv_mode:
+                    candidate_displacement, _ = _decode_dynamics(
+                        candidate[field_size:],
+                        frozen_iteration.baseline_state,
+                        config,
+                        frozen_iteration.nowcast_config,
+                        frozen_iteration.motion_limits_yx,
+                        frozen_iteration.grid_time_contract,
                     )
-                ):
-                    continue
-                if not _analysis_window_is_representable(
-                    frozen_iteration,
-                    candidate_displacement,
-                ):
-                    continue
+                    if (
+                        config.motion_increment_scale_mps is None
+                        and not _motion_is_admissible(
+                            candidate_displacement,
+                            frozen_iteration,
+                        )
+                    ):
+                        continue
+                    if not _analysis_window_is_representable(
+                        frozen_iteration,
+                        candidate_displacement,
+                    ):
+                        continue
                 candidate_frozen = _freeze_analysis_remap_cells(
                     candidate,
                     frozen_iteration,
@@ -6480,19 +6931,29 @@ def solve_analysis(
                     candidate_cost = float(candidate_cost_tensor.detach())
                 except EchoPositivityError:
                     continue
-                candidate_amplitude = _amplitude_diagnostics(
-                    observations,
-                    candidate_frozen,
-                    candidate_trajectory,
-                    include_spatial_diagnostics=False,
-                )
-                if not _amplitude_trial_is_admissible(
-                    current_amplitude,
-                    candidate_amplitude,
-                    config.maximum_unresolved_amplitude_fraction,
-                    control.dtype,
-                ):
+                except (ArithmeticError, ValueError):
+                    if not fv_mode:
+                        raise
                     continue
+                candidate_amplitude: _AmplitudeDiagnostics | None = None
+                if not fv_mode:
+                    candidate_amplitude = _amplitude_diagnostics(
+                        observations,
+                        candidate_frozen,
+                        candidate_trajectory,
+                        include_spatial_diagnostics=False,
+                    )
+                    if current_amplitude is None:
+                        raise RuntimeError(
+                            "legacy analysis amplitude diagnostics are missing"
+                        )
+                    if not _amplitude_trial_is_admissible(
+                        current_amplitude,
+                        candidate_amplitude,
+                        config.maximum_unresolved_amplitude_fraction,
+                        control.dtype,
+                    ):
+                        continue
                 actual = current_cost - candidate_cost
                 ratio = actual / predicted if predicted > 0 else -math.inf
                 if not (
@@ -6504,7 +6965,13 @@ def solve_analysis(
 
                 control = candidate.detach()
                 current_cost = candidate_cost
-                current_amplitude = candidate_amplitude
+                if not fv_mode:
+                    if candidate_amplitude is None:
+                        raise RuntimeError(
+                            "legacy candidate amplitude diagnostics are missing"
+                        )
+                    current_amplitude = candidate_amplitude
+                current_trajectory = candidate_trajectory
                 accepted_any = True
                 accepted = True
                 if ratio > 0.75:
@@ -6519,7 +6986,11 @@ def solve_analysis(
                 )
                 if relative_step <= config.step_tolerance:
                     converged = True
-                    reason = "step_tolerance"
+                    reason = (
+                        "step_tolerance_unverified"
+                        if fv_mode
+                        else "step_tolerance"
+                    )
                 break
             if accepted:
                 break
@@ -6531,6 +7002,20 @@ def solve_analysis(
                 if linear_system_solved
                 else "pcg_failed"
             )
+            if fv_mode:
+                return _fv_analysis_result(
+                    control,
+                    current_trajectory,
+                    reference_cost,
+                    current_cost,
+                    completed_iterations,
+                    total_pcg_iterations,
+                    failure_reason,
+                    selected_gradient_norm,
+                    escape_status=escape_status,
+                    observations=observations,
+                    frozen=frozen,
+                )
             return _failed_result(
                 accepted_any,
                 control,
@@ -6546,6 +7031,20 @@ def solve_analysis(
             break
 
     if not accepted_any and not converged:
+        if fv_mode:
+            return _fv_analysis_result(
+                control,
+                current_trajectory,
+                reference_cost,
+                current_cost,
+                completed_iterations,
+                total_pcg_iterations,
+                "no_accepted_step",
+                selected_gradient_norm,
+                escape_status=escape_status,
+                observations=observations,
+                frozen=frozen,
+            )
         return _fallback_result(
             frozen,
             control,
@@ -6553,6 +7052,20 @@ def solve_analysis(
             "no_accepted_step",
             completed_iterations,
             total_pcg_iterations,
+        )
+    if fv_mode:
+        return _fv_analysis_result(
+            control,
+            current_trajectory,
+            reference_cost,
+            current_cost,
+            completed_iterations,
+            total_pcg_iterations,
+            reason,
+            selected_gradient_norm,
+            escape_status=escape_status,
+            observations=observations,
+            frozen=frozen,
         )
     return _analysis_result(
         control,
@@ -6583,6 +7096,7 @@ def variational_nowcast(
     background_frames_dbz: Tensor | None = None,
     background_age_minutes: float | None = None,
     grid_time_contract: RadarGridTimeContract | None = None,
+    fv_transport: FVAnalysisTransport | None = None,
     operational_calibration_manifest: (
         OperationalCalibrationManifest | None
     ) = None,
@@ -6595,6 +7109,10 @@ def variational_nowcast(
     analysis_input_derivation_artifact_digest: str | None = None,
     audit: bool = False,
 ) -> tuple[ForecastResult, AnalysisResult]:
+    if fv_transport is not None:
+        raise NotImplementedError(
+            "FV analysis result is research-only and cannot produce a forecast"
+        )
     nowcast_config = nowcast_config or NowcastConfig()
     analysis_config = analysis_config or AnalysisConfig()
     if neural_prior is not None:
@@ -6669,6 +7187,7 @@ def variational_nowcast(
         background_age_minutes=background_age_minutes,
         grid_time_contract=grid_time_contract,
         neural_prior=neural_prior,
+        fv_transport=fv_transport,
     )
     if (
         analysis_config.execution_mode == "operational"
@@ -6678,8 +7197,10 @@ def variational_nowcast(
     ):
         raise ValueError(
             "operational mosaic analysis requires source availability history"
-        )
+    )
     analysis = solve_analysis(observations, frozen)
+    if not isinstance(analysis, AnalysisResult):
+        raise RuntimeError("FV analysis result cannot enter forecast assembly")
     (
         analysis_config_json,
         analysis_config_digest,
@@ -6923,6 +7444,78 @@ def _evaluate_control(
     )
 
 
+def _fv_analysis_result(
+    control: Tensor,
+    trajectory: AnalysisTrajectory,
+    initial_objective: float,
+    final_objective: float,
+    outer_iterations: int,
+    pcg_iterations: int,
+    reason: str,
+    selected_gradient_norm: float,
+    *,
+    escape_status: str,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+) -> FVAnalysisResult:
+    """Materialize the bounded FV loop result without legacy state claims."""
+
+    try:
+        final_gradient = torch.func.grad(robust_objective, argnums=0)(
+            control,
+            observations,
+            frozen,
+        )
+        selected_gradient_norm = float(
+            torch.linalg.vector_norm(final_gradient).detach()
+        )
+    except (ArithmeticError, ValueError):
+        selected_gradient_norm = math.nan
+
+    detached_trajectory = replace(
+        trajectory,
+        frames_linear=trajectory.frames_linear.detach(),
+        displacement_yx=(
+            None
+            if trajectory.displacement_yx is None
+            else trajectory.displacement_yx.detach()
+        ),
+        log_growth_per_step=trajectory.log_growth_per_step.detach(),
+        psi_coefficients=(
+            None
+            if trajectory.psi_coefficients is None
+            else trajectory.psi_coefficients.detach()
+        ),
+        support_frames=(
+            None
+            if trajectory.support_frames is None
+            else trajectory.support_frames.detach()
+        ),
+    )
+    dtype = control.dtype
+    tolerance = 32 * torch.finfo(dtype).eps * max(
+        abs(initial_objective), abs(final_objective), torch.finfo(dtype).tiny
+    )
+    improved = (
+        math.isfinite(initial_objective)
+        and math.isfinite(final_objective)
+        and final_objective < initial_objective - tolerance
+    )
+    return FVAnalysisResult(
+        control=control.detach().clone(),
+        trajectory=detached_trajectory,
+        initial_objective=initial_objective,
+        final_objective=final_objective,
+        outer_iterations=outer_iterations,
+        pcg_iterations=pcg_iterations,
+        reason=reason,
+        selected_gradient_norm=selected_gradient_norm,
+        stationarity_verified=False,
+        improved=improved,
+        escape_status=escape_status,
+    )
+
+
 def _failed_result(
     accepted_any: bool,
     control: Tensor,
@@ -6977,7 +7570,7 @@ def _analysis_result(
     initial_trajectory = _analysis_trajectory(control, frozen)
     initial_reachability_margin = _analysis_window_reachability_margin(
         frozen,
-        initial_trajectory.displacement_yx,
+        _legacy_displacement(initial_trajectory),
     )
     if initial_reachability_margin < 0:
         return _fallback_result(
@@ -7081,7 +7674,7 @@ def _analysis_result(
     trajectory = _analysis_trajectory(control, frozen)
     reachability_margin = _analysis_window_reachability_margin(
         frozen,
-        trajectory.displacement_yx,
+        _legacy_displacement(trajectory),
     )
     if reachability_margin < 0:
         return _fallback_result(
@@ -7175,11 +7768,11 @@ def _analysis_result(
             amplitude_diagnostics_source="rejected_candidate",
         )
     motion_speed_saturation_margin = _motion_speed_saturation_margin(
-        trajectory.displacement_yx,
+        _legacy_displacement(trajectory),
         frozen,
     )
     motion_saturation_margin_mps = _motion_saturation_margin_mps(
-        trajectory.displacement_yx,
+        _legacy_displacement(trajectory),
         frozen,
     )
     growth_saturation_margin = (
@@ -7224,7 +7817,7 @@ def _analysis_result(
         )
     state = RadarState(
         echo_linear=frames[-1],
-        displacement_yx=trajectory.displacement_yx,
+        displacement_yx=_legacy_displacement(trajectory),
         log_growth_per_step=trajectory.log_growth_per_step,
     )
     initial_background_mask = torch.cat(
@@ -7240,7 +7833,7 @@ def _analysis_result(
     ) = merge_current_support(
         frozen.observed_mask,
         initial_background_mask,
-        trajectory.displacement_yx,
+        _legacy_displacement(trajectory),
         frozen.nowcast_config,
     )
     observation_source_support = (
@@ -7311,7 +7904,7 @@ def _analysis_result(
     )
     motion_saturation_margin = (
         frozen.motion_limits_yx
-        - torch.abs(trajectory.displacement_yx)
+        - torch.abs(_legacy_displacement(trajectory))
     )
     analysis_verified_support = torch.zeros_like(source_support)
     analysis_motion_verified_support = torch.zeros_like(source_support)
@@ -7713,7 +8306,7 @@ def _local_analysis_evidence_supports(
         _local_component_evidence_from_pair_spans(
             observation_linear,
             interval_detected,
-            trajectory.displacement_yx,
+            _legacy_displacement(trajectory),
             trajectory.log_growth_per_step,
             ((0, 1), (1, 2)),
             ((0, 1), (1, 2)),
@@ -7743,6 +8336,10 @@ def _analysis_window_reachability_margin(
     frozen: FrozenOuterState,
     displacement_yx: Tensor,
 ) -> float:
+    if frozen.fv_transport is not None:
+        raise NotImplementedError(
+            "FV reachability diagnostics are deferred to C4b"
+        )
     support = frozen.initial_support_mask.to(dtype=displacement_yx.dtype)
     threshold = frozen.analysis_config.minimum_control_reachability
     margins: list[Tensor] = []
@@ -7820,6 +8417,10 @@ def _amplitude_diagnostics(
     *,
     include_spatial_diagnostics: bool = True,
 ) -> _AmplitudeDiagnostics:
+    if frozen.fv_transport is not None:
+        raise NotImplementedError(
+            "amplitude diagnostics for FV support are deferred to C4b"
+        )
     prediction_dbz = echo_to_dbz(
         trajectory.frames_linear,
         min_dbz=frozen.nowcast_config.min_dbz,
@@ -7833,9 +8434,8 @@ def _amplitude_diagnostics(
         trajectory,
         enabled=include_spatial_diagnostics,
     )
-    initial_detected = frozen.detected_masks[0].to(
-        dtype=trajectory.displacement_yx.dtype
-    )
+    displacement = _legacy_displacement(trajectory)
+    initial_detected = frozen.detected_masks[0].to(dtype=displacement.dtype)
     amplitude_floor = (
         frozen.analysis_config.detection_limit_dbz
         - frozen.analysis_config.censor_temperature_dbz
@@ -7867,7 +8467,7 @@ def _amplitude_diagnostics(
     for step in (1, 2):
         initial_reach = remap(
             initial_detected,
-            step * trajectory.displacement_yx,
+            step * displacement,
         )
         precursor_required = frozen.detected_masks[step] & (
             initial_reach
@@ -8326,9 +8926,8 @@ def _established_growth_envelope_diagnostics(
         min_dbz=nowcast.min_dbz,
         max_dbz=nowcast.max_dbz,
     )
-    initial_detected = frozen.detected_masks[0].to(
-        dtype=trajectory.displacement_yx.dtype
-    )
+    displacement = _legacy_displacement(trajectory)
+    initial_detected = frozen.detected_masks[0].to(dtype=displacement.dtype)
     excess_fractions: list[Tensor] = []
     maximum_ratios: list[Tensor] = []
     nan = trajectory.frames_linear.new_full((), math.nan)
@@ -8336,7 +8935,7 @@ def _established_growth_envelope_diagnostics(
     for index, step in enumerate((1, 2)):
         initial_reach = remap(
             initial_detected,
-            step * trajectory.displacement_yx,
+            step * displacement,
         )
         established = frozen.detected_masks[step] & (
             initial_reach >= analysis.minimum_control_reachability
@@ -8348,7 +8947,7 @@ def _established_growth_envelope_diagnostics(
 
         envelope_echo = advance(
             initial_upper_echo,
-            step * trajectory.displacement_yx,
+            step * displacement,
             step * nowcast.max_log_growth_per_step,
             frozen.analysis_remap_cells[index],
         )
@@ -8824,7 +9423,7 @@ def _analysis_feasibility_margins(
             frozen.analysis_config,
         ),
         motion_saturation_fraction=_motion_saturation_margin_fraction(
-            trajectory.displacement_yx,
+            _legacy_displacement(trajectory),
             frozen,
         ),
         motion_speed_saturation_mps=motion_speed_saturation_margin_mps,
@@ -9047,6 +9646,8 @@ def _freeze_analysis_remap_cells(
     control: Tensor,
     frozen: FrozenOuterState,
 ) -> FrozenOuterState:
+    if frozen.fv_transport is not None:
+        return frozen
     field_size = frozen.active_field_index.numel()
     displacement, _ = _decode_dynamics(
         control[field_size:],
@@ -9070,6 +9671,8 @@ def _analysis_remap_cells_match(
 ) -> bool:
     """Return whether ``control`` stays on the retained remap branch."""
 
+    if frozen.fv_transport is not None:
+        return False
     field_size = frozen.active_field_index.numel()
     displacement, _ = _decode_dynamics(
         control[field_size:],
@@ -9327,7 +9930,12 @@ def _validate_control(
     frozen: FrozenOuterState,
 ) -> None:
     active_index = frozen.active_field_index
-    expected = active_index.numel() + 3
+    dynamic_size = (
+        frozen.fv_transport.coefficient_limits.numel() + 1
+        if frozen.fv_transport is not None
+        else 3
+    )
+    expected = active_index.numel() + dynamic_size
     if (
         control.ndim != 1
         or control.numel() != expected
@@ -9565,6 +10173,37 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
     )
 
 
+def _clone_fv_analysis_transport(
+    value: FVAnalysisTransport | None,
+) -> FVAnalysisTransport | None:
+    if value is None:
+        return None
+
+    def clone_schedule(schedule: BoundarySchedule) -> BoundarySchedule:
+        return cast(
+            BoundarySchedule,
+            tuple(
+                tuple(
+                    tuple(edge.detach().clone() for edge in edges)
+                    for edges in stages
+                )
+                for stages in schedule
+            ),
+        )
+
+    return FVAnalysisTransport(
+        psi_basis=_clone_tensor(value.psi_basis),
+        coefficient_limits=_clone_tensor(value.coefficient_limits),
+        substeps_per_interval=value.substeps_per_interval,
+        spacing_yx=value.spacing_yx,
+        boundary_echo=clone_schedule(value.boundary_echo),
+        boundary_support=clone_schedule(value.boundary_support),
+        reconstruction=value.reconstruction,
+        max_courant=value.max_courant,
+        replay=value.replay,
+    )
+
+
 def _clone_frozen_outer_state(frozen: FrozenOuterState) -> FrozenOuterState:
     """Detach the retained adjoint model from all caller-owned storage."""
 
@@ -9610,6 +10249,7 @@ def _clone_frozen_outer_state(frozen: FrozenOuterState) -> FrozenOuterState:
         smooth_edge_physical_weight=_clone_tensor(
             frozen.smooth_edge_physical_weight
         ),
+        fv_transport=_clone_fv_analysis_transport(frozen.fv_transport),
         observation_derived_initial_background=(
             frozen.observation_derived_initial_background
         ),
@@ -9701,6 +10341,31 @@ def _optional_tensor_digest(value: Tensor | None) -> str | None:
     return None if value is None else tensor_digest(value)
 
 
+def _fv_analysis_transport_digest_values(
+    value: FVAnalysisTransport,
+) -> dict[str, object]:
+    def schedule_digest(schedule: BoundarySchedule) -> tuple[tuple[tuple[str, ...], ...], ...]:
+        return tuple(
+            tuple(
+                tuple(tensor_digest(edge) for edge in edges)
+                for edges in stages
+            )
+            for stages in schedule
+        )
+
+    return {
+        "psi_basis": tensor_digest(value.psi_basis),
+        "coefficient_limits": tensor_digest(value.coefficient_limits),
+        "substeps_per_interval": value.substeps_per_interval,
+        "spacing_yx": list(value.spacing_yx),
+        "boundary_echo": schedule_digest(value.boundary_echo),
+        "boundary_support": schedule_digest(value.boundary_support),
+        "reconstruction": value.reconstruction,
+        "max_courant": value.max_courant,
+        "replay": value.replay,
+    }
+
+
 def _frozen_outer_state_digest_values(
     frozen: FrozenOuterState,
 ) -> dict[str, object]:
@@ -9748,10 +10413,6 @@ def _frozen_outer_state_digest_values(
             list(offset)
             for offset in frozen.amplitude_displacement_offsets_yx
         ],
-        "analysis_remap_cells": [
-            {"y": cell.y, "x": cell.x}
-            for cell in frozen.analysis_remap_cells
-        ],
         "smooth_edge_left_index": tensor_digest(
             frozen.smooth_edge_left_index
         ),
@@ -9762,6 +10423,15 @@ def _frozen_outer_state_digest_values(
             frozen.smooth_edge_physical_weight
         ),
     }
+    if frozen.fv_transport is None:
+        values["analysis_remap_cells"] = [
+            {"y": cell.y, "x": cell.x}
+            for cell in frozen.analysis_remap_cells
+        ]
+    else:
+        values["fv_transport"] = _fv_analysis_transport_digest_values(
+            frozen.fv_transport
+        )
     if not frozen.observation_derived_initial_background:
         values["observation_derived_initial_background"] = False
         values["neural_prior_std_dbz"] = _optional_tensor_digest(

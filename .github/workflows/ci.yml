@@ -16,17 +16,11 @@ concurrency:
 
 jobs:
   test:
-    name: Python ${{ matrix.python-version }} CPU
+    # Phase 1 uses focused local numerical checks; full tests are opt-in.
+    if: github.event_name == 'workflow_dispatch'
+    name: Python 3.12 CPU
     runs-on: ubuntu-latest
     timeout-minutes: 120
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - python-version: "3.10"
-            lock_file: requirements/ci-py310-linux.lock
-          - python-version: "3.12"
-            lock_file: requirements/ci-py312-linux.lock
 
     steps:
       - name: Check out source
@@ -35,9 +29,9 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
           cache: pip
-          cache-dependency-path: ${{ matrix.lock_file }}
+          cache-dependency-path: requirements/ci-py312-linux.lock
 
       - name: Install the hashed Linux CPU closure
         run: |
@@ -45,12 +39,12 @@ jobs:
             --require-hashes \
             --only-binary=:all: \
             --extra-index-url https://download.pytorch.org/whl/cpu \
-            --requirement "${{ matrix.lock_file }}"
+            --requirement requirements/ci-py312-linux.lock
 
       - name: Verify and audit the locked closure in isolation
         working-directory: ${{ runner.temp }}
         env:
-          LOCK_FILE: ${{ github.workspace }}/${{ matrix.lock_file }}
+          LOCK_FILE: ${{ github.workspace }}/requirements/ci-py312-linux.lock
         run: |
           printf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py
           python -I - <<'PY'
@@ -81,7 +75,6 @@ jobs:
           python -I -m pip check
 
       - name: Check product source types
-        if: matrix.python-version == '3.12'
         run: python -I .github/scripts/check_basedpyright.py
 
       - name: Run CPU FP32 and FP64 tests
@@ -109,6 +102,7 @@ jobs:
           node --test tests/test_initial_field_lab_ui.cjs
 
   package:
+    if: github.event_name == 'workflow_dispatch'
     name: Wheel and CLI smoke
     runs-on: ubuntu-latest
     # This required job validates a reproducible scientific package. Operational

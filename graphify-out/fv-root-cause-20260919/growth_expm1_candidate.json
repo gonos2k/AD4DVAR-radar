@@ -1,0 +1,96 @@
+{
+  "scope": "in-memory expm1 growth-factor diagnostic; no product edit or adjoint claim",
+  "candidate": "addcmul(value, value, expm1(log_growth)) for |log_growth|<0.125; original exp factors/guards retained",
+  "gate": "unchanged max(abs(gradient)) <= 1e-8",
+  "scalar_checks": {
+    "logs": [
+      -0.125,
+      -1e-06,
+      0.0,
+      1e-06,
+      0.125
+    ],
+    "max_small_abs_error_vs_exp": 0.0,
+    "max_small_relative_error_vs_exp": 0.0,
+    "minimum_factor": 0.8824969025845955,
+    "all_factors_positive": true,
+    "fallback_boundary_matches_exp": true,
+    "per_step_240_log_growth": -1.7710970265228216e-06
+  },
+  "source_sha256": {
+    "src/advar/transport.py": "db5c032539adba4439395e78958e8f8ae0ff928121985ad1dd89110eba5021fa",
+    "src/advar/fv_sensitivity.py": "78cf5819bd135af1eadd92996acc68ba979b195181f1ac0065d1eb11ec521646",
+    "candidate_step_source": "041d482de7e2527e7e2435b00a30fbbc59c88a2d017e65af8b16a1521b827993"
+  },
+  "results": {},
+  "baseline_current": {
+    "nominal_refined": {
+      "gradient": {
+        "gradient_max": 3.8403516468775954e-09,
+        "gradient_norm": 3.899394700401996e-09,
+        "dominant_index": 57603,
+        "dominant_value": 3.8403516468775954e-09
+      }
+    },
+    "impact_0.001_c4": {
+      "gradient": {
+        "gradient_max": 1.3057776778032867e-08,
+        "gradient_norm": 1.669881697287535e-08,
+        "dominant_index": 57603,
+        "dominant_value": -1.3057776778032867e-08
+      }
+    }
+  },
+  "candidate_addcmul": {
+    "nominal_refined": {
+      "before": {
+        "gradient_max": 2.0781155520412185e-08,
+        "gradient_norm": 2.079307069301561e-08,
+        "dominant_index": 57603,
+        "dominant_value": 2.0781155520412185e-08
+      },
+      "after": {
+        "gradient_max": 5.730426691431985e-10,
+        "gradient_norm": 8.840094706605689e-10,
+        "dominant_index": 57603,
+        "dominant_value": 5.730426691431985e-10
+      },
+      "records": [
+        {
+          "iteration": 0,
+          "gradient_before": 2.079307069301561e-08,
+          "gradient_after": 8.840094706605689e-10,
+          "gradient_max_before": 2.0781155520412185e-08,
+          "gradient_max_after": 5.730426691431985e-10,
+          "step_scale": 1.0,
+          "normal_products": 2,
+          "linear_relative_residual": 0.03235855248077508,
+          "linear_absolute_tolerance": 1e-09,
+          "face_margin": 0.2756305101374632
+        }
+      ],
+      "accepted_controls": [
+        "growth_addcmul_nominal_refined_step1.pt"
+      ],
+      "candidate_control": "growth_addcmul_nominal_refined_final.pt"
+    },
+    "impact_0.001_c4": {
+      "before": {
+        "gradient_max": 9.467479538944994e-09,
+        "gradient_norm": 1.4027777670484249e-08,
+        "dominant_index": 57603,
+        "dominant_value": 9.467479538944994e-09
+      },
+      "after": {
+        "gradient_max": 9.467479538944994e-09,
+        "gradient_norm": 1.4027777670484249e-08,
+        "dominant_index": 57603,
+        "dominant_value": 9.467479538944994e-09
+      },
+      "records": [],
+      "accepted_controls": [],
+      "candidate_control": "growth_addcmul_impact_0.001_c4_final.pt"
+    }
+  },
+  "wall_seconds": 43.8858693340153
+}

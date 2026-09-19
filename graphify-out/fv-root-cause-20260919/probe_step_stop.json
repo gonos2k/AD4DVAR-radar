@@ -1,0 +1,239 @@
+{
+  "scope": "same12x12 rotation, only step_tolerance changes; cap12, other tolerances fixed",
+  "sources": {
+    "examples/weather_scenarios/fv_original_cases.py": "c1c39c12ebf4c22bfc47594e85193c2445b8640a370723e332e649d24909b889",
+    "src/advar/variational.py": "c9c336803daea0d6781fc147fd026122d8720cd3cce945d737728d2c5f47c24d",
+    "src/advar/transport.py": "8bbf9c189c87322cef5b4a723c19fde62a7ae648410718747898ad42aee222e7",
+    "graphify-out/fv-root-cause-20260919/probe_step_stop.py": "553f784936db0aab975317877f1058cbfe68759eb7d890dddd9b1dc9234b61ef"
+  },
+  "runs": [
+    {
+      "step_tolerance": 1e-05,
+      "seconds": 23.7613835829834,
+      "state": {
+        "status": "unverified",
+        "reason": "step_tolerance_unverified",
+        "stationarity_verified": false,
+        "selected_gradient_norm": 1.8687165001051538e-05,
+        "outer_iterations": 5,
+        "pcg_iterations": 75,
+        "escape_status": "improved",
+        "improved": true,
+        "psi_coefficients": [
+          -0.01967002656056619,
+          0.005170973632438037,
+          4.911378187798538e-05
+        ],
+        "log_growth_per_interval": -0.0004819124853547519
+      },
+      "solver": {
+        "reason": "step_tolerance_unverified",
+        "stationarity_verified": false,
+        "initial_objective": 22.373463504953367,
+        "final_objective": 0.5777330818354814,
+        "outer_iterations": 5,
+        "pcg_iterations": 75,
+        "selected_gradient_norm": 1.8687165001051538e-05,
+        "escape_status": "improved",
+        "decoded_psi_coefficients": [
+          -0.01967002656056619,
+          0.005170973632438037,
+          4.911378187798538e-05
+        ],
+        "decoded_log_growth_per_interval": -0.0004819124853547519
+      },
+      "metrics": [
+        {
+          "lead_minutes": 10,
+          "mae": 0.0361,
+          "persistence_mae": 0.08463738473020468,
+          "scored_pixels": 144,
+          "scored_fraction": 1.0,
+          "valid_fraction": 1.0,
+          "confidence": null,
+          "issued_pixels": 144,
+          "issued_missing_pixels": 0,
+          "unscored_pixels": 0,
+          "detection": {
+            "10": {
+              "hits": 144,
+              "misses": 0,
+              "false_alarms": 0,
+              "csi": 1.0,
+              "pod": 1.0,
+              "truth_echo_pixels": 144,
+              "scored_truth_echo_pixels": 144,
+              "excluded_truth_echo_pixels": 0,
+              "truth_positive_outside_common": 0
+            },
+            "20": {
+              "hits": 143,
+              "misses": 1,
+              "false_alarms": 0,
+              "csi": 0.9931,
+              "pod": 0.9931,
+              "truth_echo_pixels": 144,
+              "scored_truth_echo_pixels": 144,
+              "excluded_truth_echo_pixels": 0,
+              "truth_positive_outside_common": 0
+            }
+          },
+          "missing_pixels": 0,
+          "domain_pixels": 144
+        },
+        {
+          "lead_minutes": 20,
+          "mae": 0.0531,
+          "persistence_mae": 0.17027659105889809,
+          "scored_pixels": 144,
+          "scored_fraction": 1.0,
+          "valid_fraction": 1.0,
+          "confidence": null,
+          "issued_pixels": 144,
+          "issued_missing_pixels": 0,
+          "unscored_pixels": 0,
+          "detection": {
+            "10": {
+              "hits": 144,
+              "misses": 0,
+              "false_alarms": 0,
+              "csi": 1.0,
+              "pod": 1.0,
+              "truth_echo_pixels": 144,
+              "scored_truth_echo_pixels": 144,
+              "excluded_truth_echo_pixels": 0,
+              "truth_positive_outside_common": 0
+            },
+            "20": {
+              "hits": 108,
+              "misses": 36,
+              "false_alarms": 0,
+              "csi": 0.75,
+              "pod": 0.75,
+              "truth_echo_pixels": 144,
+              "scored_truth_echo_pixels": 144,
+              "excluded_truth_echo_pixels": 0,
+              "truth_positive_outside_common": 0
+            }
+          },
+          "missing_pixels": 0,
+          "domain_pixels": 144
+        }
+      ]
+    },
+    {
+      "step_tolerance": 1e-10,
+      "seconds": 33.518694916012464,
+      "state": {
+        "status": "unverified",
+        "reason": "gradient_tolerance_unverified",
+        "stationarity_verified": false,
+        "selected_gradient_norm": 2.913400989710731e-07,
+        "outer_iterations": 8,
+        "pcg_iterations": 109,
+        "escape_status": "improved",
+        "improved": true,
+        "psi_coefficients": [
+          -0.019669918872080337,
+          0.005171532315426204,
+          4.911387437893835e-05
+        ],
+        "log_growth_per_interval": -0.0004819080879936654
+      },
+      "solver": {
+        "reason": "gradient_tolerance_unverified",
+        "stationarity_verified": false,
+        "initial_objective": 22.373463504953367,
+        "final_objective": 0.5777330818308475,
+        "outer_iterations": 8,
+        "pcg_iterations": 109,
+        "selected_gradient_norm": 2.913400989710731e-07,
+        "escape_status": "improved",
+        "decoded_psi_coefficients": [
+          -0.019669918872080337,
+          0.005171532315426204,
+          4.911387437893835e-05
+        ],
+        "decoded_log_growth_per_interval": -0.0004819080879936654
+      },
+      "metrics": [
+        {
+          "lead_minutes": 10,
+          "mae": 0.0361,
+          "persistence_mae": 0.08463738473020468,
+          "scored_pixels": 144,
+          "scored_fraction": 1.0,
+          "valid_fraction": 1.0,
+          "confidence": null,
+          "issued_pixels": 144,
+          "issued_missing_pixels": 0,
+          "unscored_pixels": 0,
+          "detection": {
+            "10": {
+              "hits": 144,
+              "misses": 0,
+              "false_alarms": 0,
+              "csi": 1.0,
+              "pod": 1.0,
+              "truth_echo_pixels": 144,
+              "scored_truth_echo_pixels": 144,
+              "excluded_truth_echo_pixels": 0,
+              "truth_positive_outside_common": 0
+            },
+            "20": {
+              "hits": 143,
+              "misses": 1,
+              "false_alarms": 0,
+              "csi": 0.9931,
+              "pod": 0.9931,
+              "truth_echo_pixels": 144,
+              "scored_truth_echo_pixels": 144,
+              "excluded_truth_echo_pixels": 0,
+              "truth_positive_outside_common": 0
+            }
+          },
+          "missing_pixels": 0,
+          "domain_pixels": 144
+        },
+        {
+          "lead_minutes": 20,
+          "mae": 0.0531,
+          "persistence_mae": 0.17027659105889809,
+          "scored_pixels": 144,
+          "scored_fraction": 1.0,
+          "valid_fraction": 1.0,
+          "confidence": null,
+          "issued_pixels": 144,
+          "issued_missing_pixels": 0,
+          "unscored_pixels": 0,
+          "detection": {
+            "10": {
+              "hits": 144,
+              "misses": 0,
+              "false_alarms": 0,
+              "csi": 1.0,
+              "pod": 1.0,
+              "truth_echo_pixels": 144,
+              "scored_truth_echo_pixels": 144,
+              "excluded_truth_echo_pixels": 0,
+              "truth_positive_outside_common": 0
+            },
+            "20": {
+              "hits": 108,
+              "misses": 36,
+              "false_alarms": 0,
+              "csi": 0.75,
+              "pod": 0.75,
+              "truth_echo_pixels": 144,
+              "scored_truth_echo_pixels": 144,
+              "excluded_truth_echo_pixels": 0,
+              "truth_positive_outside_common": 0
+            }
+          },
+          "missing_pixels": 0,
+          "domain_pixels": 144
+        }
+      ]
+    }
+  ]
+}

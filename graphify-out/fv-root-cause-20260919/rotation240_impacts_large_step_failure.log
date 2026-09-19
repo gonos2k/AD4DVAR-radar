@@ -1,0 +1,13 @@
+INFO:advar.fv_sensitivity:FV root iteration 0: gradient norm 1884.2061224463239
+INFO:advar.fv_sensitivity:FV root iteration 1: gradient norm 0.063529687765491755
+INFO:advar.fv_sensitivity:FV root iteration 2: gradient norm 0.00014885359546046469
+INFO:advar.fv_sensitivity:FV root iteration 3: gradient norm 1.3584006223631322e-08
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_large_response_probe.py", line 96, in <module>
+    run(impacts=args.impacts, leads=args.leads)
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_large_response_probe.py", line 78, in run
+    refined, records = refine_fv_stationarity(control, changed, contract(y),
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/fv_sensitivity.py", line 306, in refine_fv_stationarity
+    raise ValueError(
+ValueError: FV stationary residual did not decrease: gradient_norm=1.3584006223631322e-08; last_trial_norm=1.3584006220164147e-08; steps=[{'iteration': 0, 'gradient_before': 1884.206122446324, 'gradient_after': 0.06352968776549175, 'step_scale': 1.0, 'normal_products': 19, 'linear_relative_residual': 6.173959693970419e-07, 'linear_absolute_tolerance': 1e-09, 'face_margin': 0.19863957017552009}, {'iteration': 1, 'gradient_before': 0.06352968776549175, 'gradient_after': 0.0001488535954604647, 'step_scale': 1.0, 'normal_products': 27, 'linear_relative_residual': 3.621188537869873e-07, 'linear_absolute_tolerance': 1e-09, 'face_margin': 0.19863957017775224}, {'iteration': 2, 'gradient_before': 0.0001488535954604647, 'gradient_after': 1.3584006223631322e-08, 'step_scale': 1.0, 'normal_products': 18, 'linear_relative_residual': 3.150178555444816e-06, 'linear_absolute_tolerance': 1e-09, 'face_margin': 0.20682487393079857}]

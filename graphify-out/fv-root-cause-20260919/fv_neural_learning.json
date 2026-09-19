@@ -1,0 +1,55 @@
+{
+  "scope": "4x5 CPU FP64 donorcell tiny neural observation-error update; research-only",
+  "production_learning_eligible": false,
+  "control_count": 24,
+  "parameter_count": 3,
+  "parameter_gradient": [
+    0.0001185811699523305,
+    -6.104241891521672e-06,
+    1.5460858445934886e-05
+  ],
+  "predicted_directional_slope": 0.00010440499474139929,
+  "finite_difference_slopes": [
+    0.00010440491865417335,
+    0.00010440497571657394
+  ],
+  "finite_difference_stationarity_max": 1.9024025410541157e-11,
+  "stationarity_max": 2.0316338888992647e-11,
+  "adjoint_relative_residual": 9.570891230109512e-11,
+  "hessian_min_eigenvalue": 15.789461110815267,
+  "train_score_before": 0.00019969749864968343,
+  "train_score_after": 0.0001996939142174439,
+  "holdout_score_before": 0.00019917512618195977,
+  "holdout_score_after": 0.00019917472238659394,
+  "holdout_gain": 4.0379536582371527e-10,
+  "holdout_error_budget": 6.763319463247708e-13,
+  "holdout_gain_above_numerical_error": true,
+  "numerical_error_scope": "local linearized estimate, not rigorous bound",
+  "initial_parameters": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "updated_parameters": [
+    -2.9645292488082624e-05,
+    1.526060472880418e-06,
+    -3.8652146114837215e-06
+  ],
+  "holdout_base_diagnostics": {
+    "gradient_max": 2.357834066879505e-11,
+    "hessian_min_eigenvalue": 15.848442637151152,
+    "local_score_error_scale": 4.79010849643773e-14
+  },
+  "holdout_updated_diagnostics": {
+    "gradient_max": 6.756508763930413e-12,
+    "hessian_min_eigenvalue": 15.848343823906902,
+    "local_score_error_scale": 1.9732065442337592e-14
+  },
+  "reload_errors": {
+    "score": 0.0,
+    "control": 0.0,
+    "forecast": 0.0
+  },
+  "same_face_signs": true,
+  "face_margin": 0.0049634647685045915
+}

@@ -1,0 +1,5 @@
+{
+  "variational_sha256_loaded_for_solve": "c9c336803daea0d6781fc147fd026122d8720cd3cce945d737728d2c5f47c24d",
+  "matches_previous_verified_source": true,
+  "note": "Optional verifier and documentation added while existing solver run was active. Numeric solver code unchanged; subsequent verification loads the new source."
+}

@@ -13,6 +13,68 @@ from torch import Tensor
 TensorFunction = Callable[[Tensor], Tensor]
 
 
+def recompute(
+    function: Callable[..., Tensor | tuple[Tensor, ...]], *inputs: Tensor
+) -> Tensor | tuple[Tensor, ...]:
+    """Evaluate a deterministic tensor function, replaying its tape in reverse AD.
+
+    Pass every tensor dependency explicitly. Return a tensor or tuple of tensors;
+    do not mutate inputs or use randomness/mutable closure state. Only
+    inputs are saved; connected block inputs preserve higher-order derivatives.
+    This helper supports JVP/VJP compositions, not batched ``vmap`` transforms.
+    Inputs must be real floating tensors. Autocast is unsupported during either
+    evaluation or differentiation: replay must use the same precision policy.
+    """
+
+    if any(not isinstance(value, Tensor) or not value.is_floating_point()
+           for value in inputs):
+        raise TypeError("recompute inputs must be real floating tensors")
+    if torch.is_autocast_enabled("cpu") or torch.is_autocast_enabled("cuda"):
+        raise RuntimeError("recompute does not support autocast")
+
+    class Recomputed(torch.autograd.Function):
+        @staticmethod
+        def forward(*args):
+            result = function(*args)
+            # Identity VJPs can return an input itself; setup_context requires a view.
+            if isinstance(result, tuple):
+                return tuple(value.view_as(value) for value in result)
+            return result.view_as(result)
+
+        @staticmethod
+        def setup_context(ctx, inputs, output):
+            ctx.save_for_backward(*inputs)
+            ctx.save_for_forward(*inputs)
+            ctx.tuple_output = isinstance(output, tuple)
+
+        @staticmethod
+        def backward(ctx, *cotangents):
+            count = len(ctx.saved_tensors)
+            tuple_output = ctx.tuple_output
+
+            def reverse(*args):
+                vjp_result = torch.func.vjp(function, *args[:count])
+                pullback = cast(Callable[..., tuple[Tensor, ...]], vjp_result[1])
+                seed = args[count:] if tuple_output else args[count]
+                return pullback(seed)
+
+            # Mixed derivatives must not retain every replayed reverse tape.
+            return recompute(reverse, *ctx.saved_tensors, *cotangents)
+
+        @staticmethod
+        def jvp(ctx, *directions):
+            count = len(directions)
+
+            def tangent(*args):
+                return torch.func.jvp(function, args[:count], args[count:])[1]
+
+            # Reverse-over-forward transforms also need a bounded local tape.
+            return recompute(tangent, *ctx.saved_tensors, *directions)
+
+    result = Recomputed.apply(*inputs)
+    return cast(Tensor | tuple[Tensor, ...], result)
+
+
 def _check_real_tensor(name: str, value: Tensor) -> None:
     if not isinstance(value, Tensor):
         raise TypeError(f"{name} must be a torch.Tensor")

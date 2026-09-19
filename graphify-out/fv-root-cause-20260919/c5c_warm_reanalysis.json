@@ -1,0 +1,145 @@
+{
+  "scope": "shared public matrix-free solve_analysis, endpoints initialized from nominal control; four perturbed solves; no dense polish; GN approximate response",
+  "fixed_statistics_semantics": "Only y and B=y[0] are changed. Detection/valid masks, support, geometry, observation uncertainties, verification, metric weights, and future boundary schedules are fixed; prepare_analysis is not rerun.",
+  "branch_scope": "Endpoint signs and sufficient latent-box margins checked; this does not certify an unknown continuous optimizer path.",
+  "nominal_solver": {
+    "reason": "gradient_tolerance_unverified",
+    "selected_gradient_norm": 2.3040090488393156e-11,
+    "outer_iterations": 10,
+    "pcg_iterations": 153,
+    "initial_objective": 34.1012120633782,
+    "final_objective": 0.03504200505899915,
+    "stationarity_verified": false
+  },
+  "nominal_response": {
+    "gradient_max": 1.626980494773278e-11,
+    "normal_products": 18,
+    "adjoint_relative_residual": 2.8310840530044028e-12,
+    "face_margin": 0.002442779984180335,
+    "score": 0.044667476706952224,
+    "sensitivity_norm": 0.05472504749500052,
+    "gn_directional_slope": -0.07273934276219204,
+    "curvature": "irls_gauss_newton"
+  },
+  "perturbed_solver_count": 4,
+  "perturbations": [
+    {
+      "h": 0.001,
+      "sign": -1,
+      "score": 0.04474043589488563,
+      "score_change": 7.295918793340933e-05,
+      "solver": {
+        "reason": "no_accepted_step",
+        "selected_gradient_norm": 9.89723734739452e-07,
+        "outer_iterations": 3,
+        "pcg_iterations": 85,
+        "initial_objective": 34.08450728477476,
+        "final_objective": 0.035511225589277606,
+        "stationarity_verified": false
+      },
+      "gradient_over_h": 0.000989723734739452,
+      "detected_mask_all": true,
+      "valid_mask_all": true,
+      "initial_support_all": true,
+      "future_support_all": true,
+      "same_face_signs_as_nominal": true,
+      "face_box_margin": 0.0024347681294210554,
+      "branch_check": "pass"
+    },
+    {
+      "h": 0.001,
+      "sign": 1,
+      "score": 0.04459500109222393,
+      "score_change": -7.24756147282915e-05,
+      "solver": {
+        "reason": "gradient_tolerance_unverified",
+        "selected_gradient_norm": 2.027089641098939e-11,
+        "outer_iterations": 5,
+        "pcg_iterations": 67,
+        "initial_objective": 34.12062454175143,
+        "final_objective": 0.03639522270300872,
+        "stationarity_verified": false
+      },
+      "gradient_over_h": 2.027089641098939e-08,
+      "detected_mask_all": true,
+      "valid_mask_all": true,
+      "initial_support_all": true,
+      "future_support_all": true,
+      "same_face_signs_as_nominal": true,
+      "face_box_margin": 0.002298891430924136,
+      "branch_check": "pass"
+    },
+    {
+      "h": 0.0005,
+      "sign": -1,
+      "score": 0.04470389573680694,
+      "score_change": 3.641902985471873e-05,
+      "solver": {
+        "reason": "no_accepted_step",
+        "selected_gradient_norm": 7.402316415534019e-10,
+        "outer_iterations": 5,
+        "pcg_iterations": 119,
+        "initial_objective": 34.09252137860264,
+        "final_objective": 0.035048813430606084,
+        "stationarity_verified": false
+      },
+      "gradient_over_h": 1.4804632831068036e-06,
+      "detected_mask_all": true,
+      "valid_mask_all": true,
+      "initial_support_all": true,
+      "future_support_all": true,
+      "same_face_signs_as_nominal": true,
+      "face_box_margin": 0.002438780052734842,
+      "branch_check": "pass"
+    },
+    {
+      "h": 0.0005,
+      "sign": 1,
+      "score": 0.044631178608271656,
+      "score_change": -3.629809868056777e-05,
+      "solver": {
+        "reason": "no_accepted_step",
+        "selected_gradient_norm": 1.0201313070846567e-07,
+        "outer_iterations": 5,
+        "pcg_iterations": 153,
+        "initial_objective": 34.11057967650729,
+        "final_objective": 0.03549080768455406,
+        "stationarity_verified": false
+      },
+      "gradient_over_h": 0.00020402626141693134,
+      "detected_mask_all": true,
+      "valid_mask_all": true,
+      "initial_support_all": true,
+      "future_support_all": true,
+      "same_face_signs_as_nominal": true,
+      "face_box_margin": 0.0023708290696501143,
+      "branch_check": "pass"
+    }
+  ],
+  "central_slope_comparison": [
+    {
+      "h": 0.001,
+      "plus_score": 0.04459500109222393,
+      "minus_score": 0.04474043589488563,
+      "central_slope": -0.07271740133085042,
+      "gn_sensitivity_dot_direction": -0.07273934276219204,
+      "central_minus_gn": 2.1941431341626627e-05,
+      "absolute_error": 2.1941431341626627e-05,
+      "relative_error_to_gn": 0.0003016446191074357,
+      "same_face_signs": true
+    },
+    {
+      "h": 0.0005,
+      "plus_score": 0.044631178608271656,
+      "minus_score": 0.04470389573680694,
+      "central_slope": -0.0727171285352865,
+      "gn_sensitivity_dot_direction": -0.07273934276219204,
+      "central_minus_gn": 2.2214226905542533e-05,
+      "absolute_error": 2.2214226905542533e-05,
+      "relative_error_to_gn": 0.0003053949356975616,
+      "same_face_signs": true
+    }
+  ],
+  "elapsed_seconds": 46.299558166007046,
+  "total_reanalysis": false
+}

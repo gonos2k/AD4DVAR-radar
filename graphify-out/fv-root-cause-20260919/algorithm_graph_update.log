@@ -1,0 +1,7 @@
+Re-extracting code files in /Users/yhlee/ADVAR (no LLM needed)...
+  AST extraction: 252/252 files (100%)
+[graphify watch] Skipped graph.html: Graph has 6465 nodes - too large for HTML viz (limit: 5000). Use --no-viz, raise GRAPHIFY_VIZ_NODE_LIMIT, or reduce input size.
+[graphify watch] Rebuilt: 6465 nodes, 64684 edges, 233 communities
+[graphify watch] graph.json and GRAPH_REPORT.md updated in /Users/yhlee/ADVAR/graphify-out
+Code graph updated. For doc/paper/image changes run /graphify --update in your AI assistant.
+Tip: set GEMINI_API_KEY or GOOGLE_API_KEY to use Gemini for semantic extraction.

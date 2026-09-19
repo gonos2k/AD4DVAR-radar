@@ -1,0 +1,10 @@
+{
+  "scope": "external learned mean composition, fixed support and sigma; nonzero theta; not typed prior integration",
+  "files": {
+    "examples/weather_scenarios/fv_external_background_phase1.py": "092acb6bd90dbd2d79c326e3880dc32618c5eaf34f4b540de71fba3e5e8fa585",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/variational.py": "daff731193324b2df43eeedda13c373558fab65e6f511d7a65ec2707e16d8020",
+    "src/advar/transport.py": "db5c032539adba4439395e78958e8f8ae0ff928121985ad1dd89110eba5021fa",
+    "tests/test_fv_external_background_phase1.py": "d5dd52bec4578aae078debcc38d34d4daa347cf5eaf589718b480832701b820d"
+  }
+}

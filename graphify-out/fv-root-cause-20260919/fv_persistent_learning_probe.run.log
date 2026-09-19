@@ -1,0 +1,314 @@
+{
+  "scope": "4x5 CPU FP64 donorcell persistent NN observation-error learning; research-only",
+  "production_learning_eligible": false,
+  "neural_prior_eligible": false,
+  "parameter_count": 3,
+  "window_schedule": [
+    "train_a",
+    "train_b",
+    "train_a"
+  ],
+  "distinct_training_windows": true,
+  "optimizer": {
+    "algorithm": "SGD",
+    "learning_rate": 0.25,
+    "momentum": 0.5,
+    "fixed_schedule": true
+  },
+  "heldout_used_for_updates": false,
+  "heldout_data_immutable": true,
+  "initial_parameters": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "uninterrupted_steps": [
+    {
+      "step": 1,
+      "window": "train_a",
+      "parameter_before": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parameter_after": [
+        -2.9645292488082624e-05,
+        1.526060472880418e-06,
+        -3.8652146114837215e-06
+      ],
+      "parameter_update": [
+        -2.9645292488082624e-05,
+        1.526060472880418e-06,
+        -3.8652146114837215e-06
+      ],
+      "parameter_gradient": [
+        0.0001185811699523305,
+        -6.104241891521672e-06,
+        1.5460858445934886e-05
+      ],
+      "stationarity_max": 2.0316338888992647e-11,
+      "adjoint_relative_residual": 9.570891230109512e-11,
+      "hessian_min_eigenvalue": 15.789461110815267,
+      "train_score_before": 0.00019969749864968343,
+      "train_score_after": 0.0001996939142174439,
+      "gradient_direction_check": {
+        "response_norm": 0.00011974052689135343,
+        "direction": [
+          0.9903177564929636,
+          -0.05097891290440334,
+          0.12911967942118124
+        ],
+        "predicted_directional_slope": 0.00011974052689135343,
+        "finite_difference_slopes": [
+          0.00011974045617895953,
+          0.00011974050919891233
+        ],
+        "finite_difference_errors": [
+          7.071239389389375e-11,
+          1.7692441099410178e-11
+        ],
+        "endpoint_stationarity_max": 1.522830472833192e-11,
+        "face_branch_margins": [
+          0.004962884150998671,
+          0.00496083045500165,
+          0.004963215060606345,
+          0.004962188420119224
+        ],
+        "same_face_signs": true
+      }
+    },
+    {
+      "step": 2,
+      "window": "train_b",
+      "parameter_before": [
+        -2.9645292488082624e-05,
+        1.526060472880418e-06,
+        -3.8652146114837215e-06
+      ],
+      "parameter_after": [
+        -4.454501659800754e-05,
+        2.2396670347620395e-06,
+        -5.987943072263244e-06
+      ],
+      "parameter_update": [
+        -1.4899724109924918e-05,
+        7.136065618816216e-07,
+        -2.1227284607795222e-06
+      ],
+      "parameter_gradient": [
+        3.083114635344341e-07,
+        1.9769469823434883e-07,
+        7.604846201506468e-07
+      ],
+      "stationarity_max": 2.0246707088666938e-11,
+      "adjoint_relative_residual": 6.431519302078925e-11,
+      "hessian_min_eigenvalue": 15.331658077025736,
+      "train_score_before": 5.230520838697397e-05,
+      "train_score_after": 5.230520231956095e-05,
+      "gradient_direction_check": {
+        "response_norm": 8.440829400849116e-07,
+        "direction": [
+          0.36526204818618785,
+          0.23421240833804968,
+          0.9009595906228657
+        ],
+        "predicted_directional_slope": 8.440829400849117e-07,
+        "finite_difference_slopes": [
+          8.44083553134525e-07,
+          8.44083324455958e-07
+        ],
+        "finite_difference_errors": [
+          6.130496132610117e-13,
+          3.843710462930847e-13
+        ],
+        "endpoint_stationarity_max": 2.9457552716549706e-11,
+        "face_branch_margins": [
+          0.0007455529502140556,
+          0.0007452566771111653,
+          0.0007455929374423117,
+          0.0007454447927951349
+        ],
+        "same_face_signs": true
+      }
+    },
+    {
+      "step": 3,
+      "window": "train_a",
+      "parameter_before": [
+        -4.454501659800754e-05,
+        2.2396670347620395e-06,
+        -5.987943072263244e-06
+      ],
+      "parameter_after": [
+        -8.163976418737752e-05,
+        4.12251446047547e-06,
+        -1.0914502525238887e-05
+      ],
+      "parameter_update": [
+        -3.7094747589369974e-05,
+        1.8828474257134308e-06,
+        -4.926559452975643e-06
+      ],
+      "parameter_gradient": [
+        0.00011857954213763007,
+        -6.104176579090479e-06,
+        1.546078089034353e-05
+      ],
+      "stationarity_max": 1.093792677958616e-11,
+      "adjoint_relative_residual": 9.59586927286498e-11,
+      "hessian_min_eigenvalue": 15.789308258480077,
+      "train_score_before": 0.00019969211023586212,
+      "train_score_after": 0.0001996876239213697,
+      "gradient_direction_check": {
+        "response_norm": 0.00011973890149411724,
+        "direction": [
+          0.9903176048717623,
+          -0.050979059461225947,
+          0.12912078445201966
+        ],
+        "predicted_directional_slope": 0.00011973890149411726,
+        "finite_difference_slopes": [
+          0.00011973883083870273,
+          0.00011973888374653546
+        ],
+        "finite_difference_errors": [
+          7.065541452963304e-11,
+          1.7747581792311624e-11
+        ],
+        "endpoint_stationarity_max": 2.353088557338623e-11,
+        "face_branch_margins": [
+          0.004962791745272517,
+          0.004960737999591857,
+          0.004963122661164221,
+          0.004962095995779331
+        ],
+        "same_face_signs": true
+      }
+    }
+  ],
+  "resumed_steps": [
+    {
+      "step": 2,
+      "window": "train_b",
+      "parameter_before": [
+        -2.9645292488082624e-05,
+        1.526060472880418e-06,
+        -3.8652146114837215e-06
+      ],
+      "parameter_after": [
+        -4.454501659800754e-05,
+        2.2396670347620395e-06,
+        -5.987943072263244e-06
+      ],
+      "parameter_update": [
+        -1.4899724109924918e-05,
+        7.136065618816216e-07,
+        -2.1227284607795222e-06
+      ],
+      "parameter_gradient": [
+        3.083114635344341e-07,
+        1.9769469823434883e-07,
+        7.604846201506468e-07
+      ],
+      "stationarity_max": 2.0246707088666938e-11,
+      "adjoint_relative_residual": 6.431519302078925e-11,
+      "hessian_min_eigenvalue": 15.331658077025736,
+      "train_score_before": 5.230520838697397e-05,
+      "train_score_after": 5.230520231956095e-05,
+      "gradient_direction_check": {
+        "response_norm": 8.440829400849116e-07,
+        "direction": [
+          0.36526204818618785,
+          0.23421240833804968,
+          0.9009595906228657
+        ],
+        "predicted_directional_slope": 8.440829400849117e-07,
+        "finite_difference_slopes": [
+          8.44083553134525e-07,
+          8.44083324455958e-07
+        ],
+        "finite_difference_errors": [
+          6.130496132610117e-13,
+          3.843710462930847e-13
+        ],
+        "endpoint_stationarity_max": 2.9457552716549706e-11,
+        "face_branch_margins": [
+          0.0007455529502140556,
+          0.0007452566771111653,
+          0.0007455929374423117,
+          0.0007454447927951349
+        ],
+        "same_face_signs": true
+      }
+    },
+    {
+      "step": 3,
+      "window": "train_a",
+      "parameter_before": [
+        -4.454501659800754e-05,
+        2.2396670347620395e-06,
+        -5.987943072263244e-06
+      ],
+      "parameter_after": [
+        -8.163976418737752e-05,
+        4.12251446047547e-06,
+        -1.0914502525238887e-05
+      ],
+      "parameter_update": [
+        -3.7094747589369974e-05,
+        1.8828474257134308e-06,
+        -4.926559452975643e-06
+      ],
+      "parameter_gradient": [
+        0.00011857954213763007,
+        -6.104176579090479e-06,
+        1.546078089034353e-05
+      ],
+      "stationarity_max": 1.093792677958616e-11,
+      "adjoint_relative_residual": 9.59586927286498e-11,
+      "hessian_min_eigenvalue": 15.789308258480077,
+      "train_score_before": 0.00019969211023586212,
+      "train_score_after": 0.0001996876239213697,
+      "gradient_direction_check": {
+        "response_norm": 0.00011973890149411724,
+        "direction": [
+          0.9903176048717623,
+          -0.050979059461225947,
+          0.12912078445201966
+        ],
+        "predicted_directional_slope": 0.00011973890149411726,
+        "finite_difference_slopes": [
+          0.00011973883083870273,
+          0.00011973888374653546
+        ],
+        "finite_difference_errors": [
+          7.065541452963304e-11,
+          1.7747581792311624e-11
+        ],
+        "endpoint_stationarity_max": 2.353088557338623e-11,
+        "face_branch_margins": [
+          0.004962791745272517,
+          0.004960737999591857,
+          0.004963122661164221,
+          0.004962095995779331
+        ],
+        "same_face_signs": true
+      }
+    }
+  ],
+  "checkpoint": {
+    "step": 1,
+    "path": "graphify-out/fv-root-cause-20260919/fv_persistent_learning_step1.pt",
+    "fresh_model_optimizer": true,
+    "next_step": 1
+  },
+  "resume_max_parameter_difference": 0.0,
+  "resume_max_optimizer_state_difference": 0.0,
+  "holdout_score_before": 0.00019917512618195977,
+  "holdout_score_after_uninterrupted": 0.0001991740118858421,
+  "holdout_score_after_resumed": 0.0001991740118858421,
+  "holdout_gain_uninterrupted": 1.1142961176707246e-09,
+  "holdout_gain_above_roundoff": true,
+  "final_forecast_max_difference": 0.0,
+  "initial_holdout_forecast_norm": 132.14737983904598
+}

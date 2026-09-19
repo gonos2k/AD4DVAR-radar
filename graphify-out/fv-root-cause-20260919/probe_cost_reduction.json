@@ -1,0 +1,75 @@
+{
+  "endpoint": {
+    "reason": "no_accepted_step",
+    "selected_gradient_norm": 1.3706207623089832e-08,
+    "outer_iterations": 7,
+    "pcg_iterations": 153,
+    "initial_objective": 34.09252137860264,
+    "final_objective": 0.03504881343060583,
+    "stationarity_verified": false
+  },
+  "base_cost": 0.03504881343060583,
+  "trials": [
+    {
+      "damping": 1e-06,
+      "scale": 1.0,
+      "pcg_converged": true,
+      "predicted": 7.45028677077493e-20,
+      "subtracted_cost_change": -1.429412144204889e-15,
+      "factored_term_change": -1.4348856577943772e-15,
+      "gradient_norm": 2.3150751817092566e-11,
+      "step_norm": 7.95596151041197e-11
+    },
+    {
+      "damping": 1e-06,
+      "scale": 0.5,
+      "pcg_converged": true,
+      "predicted": 5.587714919837921e-20,
+      "subtracted_cost_change": -2.0192181260370035e-15,
+      "factored_term_change": -2.0206154274256867e-15,
+      "gradient_norm": 6.8445341006653e-09,
+      "step_norm": 3.977980755205985e-11
+    },
+    {
+      "damping": 1e-06,
+      "scale": 0.25,
+      "pcg_converged": true,
+      "predicted": 3.259500343531575e-20,
+      "subtracted_cost_change": -9.922618282587337e-16,
+      "factored_term_change": -9.986055471253868e-16,
+      "gradient_norm": 1.0270772868818896e-08,
+      "step_norm": 1.9889903776029926e-11
+    },
+    {
+      "damping": 0.001,
+      "scale": 1.0,
+      "pcg_converged": true,
+      "predicted": 7.450286750540968e-20,
+      "subtracted_cost_change": -3.2335245592207684e-15,
+      "factored_term_change": -3.2320215818155994e-15,
+      "gradient_norm": 2.715552417795759e-11,
+      "step_norm": 7.955453337001356e-11
+    },
+    {
+      "damping": 0.001,
+      "scale": 0.5,
+      "pcg_converged": true,
+      "predicted": 5.587556839811265e-20,
+      "subtracted_cost_change": -1.1796119636642288e-15,
+      "factored_term_change": -1.181977597690971e-15,
+      "gradient_norm": 6.842670051638249e-09,
+      "step_norm": 3.977726668500678e-11
+    },
+    {
+      "damping": 0.001,
+      "scale": 0.25,
+      "pcg_converged": true,
+      "predicted": 3.259381786040827e-20,
+      "subtracted_cost_change": -9.020562075079397e-16,
+      "factored_term_change": -9.044004489323266e-16,
+      "gradient_norm": 1.027052488981611e-08,
+      "step_norm": 1.988863334250339e-11
+    }
+  ],
+  "scope": "diagnostic only; floating residual evaluation errors remain"
+}

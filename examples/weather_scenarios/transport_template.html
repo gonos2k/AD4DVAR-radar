@@ -1,0 +1,1521 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>ADVAR · 주어진 속도장의 수송 실증</title>
+    <style>
+      :root {
+        --paper: #edeee4;
+        --paper2: #e4e6da;
+        --panel: #f7f8f0;
+        --ink: #23291f;
+        --muted: #5c6354;
+        --faint: #7b816d;
+        --rule: #c6cab6;
+        --red: #7a1f2b;
+        --blue: #1b4c63;
+        --cyan: #6e9daa;
+        --yellow: #d5b34c;
+        --disp: Hahmlet, "Apple SD Gothic Neo", serif;
+        --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-width: 0;
+      }
+      body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--body);
+        font-size: 16px;
+        line-height: 1.55;
+        word-break: keep-all;
+        overflow-x: hidden;
+        background-image:
+          repeating-linear-gradient(
+            to right,
+            var(--rule) 0 1px,
+            transparent 1px 52px
+          ),
+          repeating-linear-gradient(
+            to bottom,
+            var(--rule) 0 1px,
+            transparent 1px 52px
+          );
+        background-attachment: fixed;
+      }
+      .wrap {
+        max-width: 1320px;
+        margin: auto;
+        padding: 24px clamp(14px, 3vw, 38px) 72px;
+      }
+      .eyebrow {
+        display: flex;
+        gap: 0.8rem;
+        align-items: center;
+        margin: 0 0 0.7rem;
+        color: var(--faint);
+        font: 500 0.75rem var(--mono);
+        letter-spacing: 0.05em;
+      }
+      .eyebrow:after {
+        content: "";
+        height: 1px;
+        background: var(--rule);
+        flex: 1;
+      }
+      .masthead {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 24px;
+        border-bottom: 2px solid var(--ink);
+        padding-bottom: 18px;
+      }
+      .masthead h1 {
+        font: 800 clamp(2.15rem, 6vw, 5.3rem)/0.94 var(--disp);
+        letter-spacing: -0.045em;
+        margin: 0;
+      }
+      .masthead-copy {
+        max-width: 610px;
+      }
+      .masthead-copy p {
+        margin: 0;
+      }
+      .dek {
+        font: 400 clamp(1.08rem, 2vw, 1.5rem)/1.35 var(--disp);
+      }
+      .dek em {
+        font-style: normal;
+        color: var(--red);
+      }
+      .subdek {
+        color: var(--muted);
+        margin-top: 0.55rem;
+      }
+      .badge {
+        font: 500 0.72rem var(--mono);
+        color: var(--blue);
+        border: 1px solid var(--blue);
+        padding: 0.35rem 0.55rem;
+        white-space: nowrap;
+      }
+      .lab {
+        margin-top: 22px;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: minmax(0, 1.55fr) minmax(250px, 0.72fr) minmax(
+            215px,
+            0.58fr
+          );
+        grid-template-areas: "stage stage stage" "controls read dial";
+      }
+      .panel {
+        background: color-mix(in srgb, var(--panel) 92%, transparent);
+        border: 1px solid var(--rule);
+        min-width: 0;
+      }
+      .panel-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        border-bottom: 1px solid var(--rule);
+        padding: 9px 13px 7px;
+        margin: 0;
+        font: 500 0.74rem var(--mono);
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .panel-title small {
+        font: 400 0.78rem var(--body);
+        letter-spacing: 0;
+        color: var(--faint);
+      }
+      #stage {
+        grid-area: stage;
+      }
+      .stage-tools {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--rule);
+      }
+      button,
+      select,
+      input {
+        font: inherit;
+      }
+      button,
+      select {
+        border: 1px solid var(--rule);
+        border-radius: 2px;
+        background: transparent;
+        color: var(--ink);
+        padding: 7px 10px;
+        min-height: 44px;
+        cursor: pointer;
+      }
+      button:hover,
+      select:hover {
+        background: var(--paper2);
+        border-color: var(--faint);
+      }
+      button:focus-visible,
+      select:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--blue);
+        outline-offset: 2px;
+      }
+      button[aria-pressed="true"] {
+        background: var(--red);
+        color: var(--panel);
+        border-color: var(--red);
+      }
+      button:disabled,
+      select:disabled,
+      input:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .heatmaps {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1px;
+        background: var(--rule);
+        min-height: 270px;
+      }
+      .heatmap {
+        position: relative;
+        background: var(--panel);
+        min-width: 0;
+      }
+      .heatmap[hidden] {
+        display: none;
+      }
+      .heatmap canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1;
+        image-rendering: auto;
+      }
+      .heatmap h3 {
+        position: absolute;
+        z-index: 1;
+        top: 7px;
+        left: 9px;
+        right: 9px;
+        margin: 0;
+        color: var(--ink);
+        background: color-mix(in srgb, var(--panel) 86%, transparent);
+        font: 500 0.7rem var(--mono);
+        padding: 2px 5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .heatmap p {
+        position: absolute;
+        inset: 45% 12px auto;
+        margin: 0;
+        text-align: center;
+        color: var(--muted);
+      }
+      .legend {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 8px 12px;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+      .swatch {
+        display: inline-block;
+        width: 34px;
+        height: 9px;
+        vertical-align: middle;
+        margin-right: 4px;
+        background: linear-gradient(
+          90deg,
+          #183c56,
+          #5f9aaa,
+          #e9dd73,
+          #d88947,
+          #641f2b
+        );
+      }
+      .swatch.err {
+        background: linear-gradient(90deg, #1b4c63, #dce1d2, #7a1f2b);
+      }
+      #controls {
+        grid-area: controls;
+      }
+      .controls-body {
+        padding: 12px;
+      }
+      .control-row {
+        display: grid;
+        gap: 5px;
+        margin-bottom: 12px;
+      }
+      .control-row label {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .control-row output {
+        font: 500 0.82rem var(--mono);
+        color: var(--ink);
+      }
+      input[type="range"] {
+        accent-color: var(--red);
+        width: 100%;
+        height: 30px;
+        cursor: ew-resize;
+      }
+      .button-row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .button-row button {
+        flex: 1 1 105px;
+      }
+      .scenario-copy {
+        border-top: 1px solid var(--rule);
+        margin-top: 13px;
+        padding-top: 11px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .scenario-copy strong {
+        display: block;
+        font: 600 1.15rem var(--disp);
+        color: var(--ink);
+        margin-bottom: 3px;
+      }
+      .scenario-copy p {
+        margin: 0.35rem 0;
+      }
+      .lesson {
+        color: var(--red) !important;
+      }
+      .meta-line {
+        display: block;
+        margin-top: 10px;
+        color: var(--faint);
+        font: 400 0.7rem var(--mono);
+        overflow-wrap: anywhere;
+      }
+      #read {
+        grid-area: read;
+      }
+      .read-body {
+        padding: 5px 12px 11px;
+      }
+      .read-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px;
+        padding: 7px 0;
+        border-bottom: 1px solid var(--rule);
+      }
+      .read-row:last-child {
+        border: 0;
+      }
+      .read-row dt {
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+      .read-row dd {
+        font: 500 1rem var(--mono);
+        margin: 0;
+        text-align: right;
+      }
+      .read-row.hero {
+        display: block;
+        background: var(--paper2);
+        margin: 6px -4px;
+        padding: 9px 8px;
+      }
+      .read-row.hero dd {
+        font-size: 1.65rem;
+        color: var(--red);
+        margin-top: 2px;
+      }
+      .read-note {
+        font-size: 0.77rem;
+        color: var(--faint);
+        margin: 9px 0 0;
+      }
+      .na {
+        color: var(--faint) !important;
+        font-family: var(--body) !important;
+      }
+      #dial {
+        grid-area: dial;
+      }
+      .dial-body {
+        padding: 4px 8px 9px;
+      }
+      .dial-body canvas {
+        display: block;
+        width: 100%;
+        height: 190px;
+      }
+      .dial-caption {
+        font-size: 0.76rem;
+        color: var(--muted);
+        margin: 0 4px;
+      }
+      .empty {
+        padding: 26px 18px;
+        color: var(--muted);
+        border-top: 1px solid var(--rule);
+        background: var(--paper2);
+      }
+      .empty strong {
+        display: block;
+        color: var(--ink);
+        font: 600 1.2rem var(--disp);
+        margin-bottom: 5px;
+      }
+      .boundary-panel {
+        margin-top: 12px;
+      }
+      .boundary-body {
+        padding: 12px;
+        overflow-x: auto;
+      }
+      .boundary-note {
+        margin: 0 0 9px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .boundary-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 620px;
+        font-size: 0.84rem;
+      }
+      .boundary-table th,
+      .boundary-table td {
+        border-bottom: 1px solid var(--rule);
+        padding: 7px 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .boundary-table th {
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .boundary-table td:nth-child(n + 2) {
+        font-family: var(--mono);
+      }
+      .status-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .status-card {
+        padding: 9px;
+        background: var(--paper2);
+        border-left: 3px solid var(--red);
+      }
+      .status-card strong {
+        display: block;
+        font: 600 1rem var(--disp);
+      }
+      .status-card span {
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .resource-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+      }
+      .resource-table th,
+      .resource-table td {
+        padding: 5px 6px;
+        border-bottom: 1px solid var(--rule);
+        text-align: left;
+      }
+      .resource-table th {
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .resource-table td:last-child {
+        font-family: var(--mono);
+        text-align: right;
+      }
+      .learn {
+        margin-top: 46px;
+        border-top: 2px solid var(--ink);
+      }
+      .learn > summary {
+        cursor: pointer;
+        list-style: none;
+        padding: 16px 0 12px;
+        font: 800 clamp(1.5rem, 3vw, 2.4rem)/1.1 var(--disp);
+      }
+      .learn > summary::-webkit-details-marker,
+      .lesson-block > summary::-webkit-details-marker {
+        display: none;
+      }
+      .learn > summary:before {
+        content: "＋";
+        font-family: var(--mono);
+        font-weight: 400;
+        color: var(--red);
+        margin-right: 0.35rem;
+      }
+      .learn[open] > summary:before {
+        content: "−";
+      }
+      .lesson-block {
+        border-top: 1px solid var(--rule);
+      }
+      .lesson-block:last-child {
+        border-bottom: 1px solid var(--rule);
+      }
+      .lesson-block > summary {
+        cursor: pointer;
+        padding: 13px 0;
+        font: 600 1.12rem var(--disp);
+      }
+      .lesson-block > summary:before {
+        content: "＋";
+        font: 400 1rem var(--mono);
+        color: var(--red);
+        display: inline-block;
+        width: 1.5rem;
+      }
+      .lesson-block[open] > summary:before {
+        content: "−";
+      }
+      .lesson-body {
+        max-width: 76ch;
+        padding: 0 0 20px;
+        color: var(--muted);
+      }
+      .lesson-body p {
+        margin: 0.15rem 0 0.9rem;
+      }
+      .lesson-body strong {
+        color: var(--ink);
+      }
+      .equation {
+        font:
+          italic 1.05rem Georgia,
+          serif;
+        color: var(--ink);
+        background: var(--paper2);
+        border-left: 3px solid var(--red);
+        padding: 11px 14px;
+        margin: 10px 0;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      .links {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+      .links a {
+        color: var(--blue);
+        text-underline-offset: 3px;
+      }
+      .foot {
+        border-top: 1px solid var(--rule);
+        margin-top: 38px;
+        padding-top: 13px;
+        color: var(--faint);
+        font-size: 0.82rem;
+      }
+      @media (max-width: 1050px) {
+        .lab {
+          grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+          grid-template-areas: "stage stage" "controls read" "dial dial";
+        }
+        .dial-body canvas {
+          height: 220px;
+        }
+      }
+      @media (max-width: 680px) {
+        .wrap {
+          padding-top: 16px;
+        }
+        .masthead {
+          display: block;
+        }
+        .masthead-copy {
+          margin-top: 16px;
+        }
+        .badge {
+          display: inline-block;
+          margin-top: 12px;
+        }
+        .lab {
+          grid-template-columns: 1fr;
+          grid-template-areas: "stage" "controls" "read" "dial";
+        }
+        .heatmaps {
+          grid-template-columns: 1fr;
+          min-height: 0;
+        }
+        .heatmap canvas {
+          height: auto;
+          aspect-ratio: 1;
+        }
+        .dial-body canvas {
+          height: 220px;
+        }
+        .panel-title {
+          font-size: 0.7rem;
+        }
+        .stage-tools button {
+          flex: 1 1 auto;
+        }
+        .status-grid {
+          grid-template-columns: 1fr;
+        }
+        .learn {
+          margin-top: 32px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *:before,
+        *:after {
+          scroll-behavior: auto !important;
+          transition: none !important;
+          animation: none !important;
+        }
+      }
+    </style>
+    <style>
+      .panel-title {
+        flex-wrap: wrap;
+      }
+      .panel-title small {
+        overflow-wrap: anywhere;
+      }
+      .status-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .status-card {
+        min-width: 0;
+      }
+      @media (max-width: 680px) {
+        .status-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+    <style>
+      @media (min-width: 1051px) {
+        .heatmaps.with-error {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+      }
+      @media (min-width: 681px) and (max-width: 1050px) {
+        .heatmaps.with-error {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <p class="eyebrow">
+        ADVAR 교육 실험실 · 주어진 흐름의 수송과 기존 P1 학습의 분리 실증
+      </p>
+      <header class="masthead">
+        <h1>수송을<br />검증하다</h1>
+        <div class="masthead-copy">
+          <p class="dek">
+            같은 초기 에코가 이동할 때, <em>수치 수송은 무엇을 보존하는가?</em>
+          </p>
+          <p class="subdek">
+            교육용 비교 화면입니다. 표시량
+            <strong>q는 dBZ가 아닌 정규화 에코량</strong>이며, 주어진 속도장과
+            실제 계산 프레임을 나란히 읽습니다.
+          </p>
+          <span class="badge" id="dataBadge">자료 확인 중</span>
+        </div>
+      </header>
+      <div class="lab" aria-label="수송 수치 실증실">
+        <section class="panel" id="stage" aria-labelledby="stageTitle">
+          <h2 class="panel-title" id="stageTitle">
+            <span>공간 비교 · 정규화 에코량 q</span
+            ><small id="leadLabel">리드 0분</small>
+          </h2>
+          <div class="stage-tools" role="toolbar" aria-label="수송 프레임 조작">
+            <button type="button" id="play" aria-pressed="false">재생</button>
+            <button type="button" id="reset">초기화</button>
+            <button type="button" id="errorToggle" aria-pressed="false">
+              minmod−truth 오차
+            </button>
+            <span style="flex: 1"></span
+            ><span id="gridLabel" class="badge">64 × 64 cell mean</span>
+          </div>
+          <div class="heatmaps" id="heatmaps">
+            <div class="heatmap" id="truthPane">
+              <h3>정답 · 독립 특성선</h3>
+              <canvas
+                id="truthCanvas"
+                role="img"
+                aria-label="독립 특성선으로 만든 정답 정규화 에코량 격자"
+              ></canvas>
+              <p class="canvasEmpty" hidden>정답 자료 없음</p>
+            </div>
+            <div class="heatmap" id="donorPane">
+              <h3>donorcell · 1차 upwind</h3>
+              <canvas
+                id="donorCanvas"
+                role="img"
+                aria-label="donorcell 수송 결과 정규화 에코량 격자"
+              ></canvas>
+              <p class="canvasEmpty" hidden>donorcell 자료 없음</p>
+            </div>
+            <div class="heatmap" id="minmodPane">
+              <h3>minmod · SSPRK2 MUSCL</h3>
+              <canvas
+                id="minmodCanvas"
+                role="img"
+                aria-label="minmod 수송 결과 정규화 에코량 격자"
+              ></canvas>
+              <p class="canvasEmpty" hidden>minmod 자료 없음</p>
+            </div>
+            <div class="heatmap" id="errorPane" hidden>
+              <h3>signed error · minmod − truth</h3>
+              <canvas
+                id="errorCanvas"
+                role="img"
+                aria-label="minmod에서 truth를 뺀 signed 정규화 에코량 오차 격자"
+              ></canvas>
+              <p class="canvasEmpty" hidden>오차 자료 없음</p>
+            </div>
+          </div>
+          <div class="legend">
+            <span><i class="swatch"></i>q · 낮음 → 높음</span
+            ><span><i class="swatch err"></i>signed error · 음수 → 양수</span
+            ><span id="rangeLabel">고정 전역 색 범위 —</span
+            ><span id="errorRange">고정 오차 범위 —</span>
+          </div>
+          <div class="empty" id="emptyState" hidden>
+            <strong>검증 자료가 아직 없습니다</strong
+            ><span
+              >저장된 실제 계산 프레임이 있어야 이 자리에서 비교합니다.</span
+            >
+          </div>
+        </section>
+        <section class="panel" id="controls" aria-labelledby="controlsTitle">
+          <h2 class="panel-title" id="controlsTitle">
+            <span>실험 조작</span><small>Space · ← → · Home</small>
+          </h2>
+          <div class="controls-body">
+            <div class="control-row">
+              <label for="scenario"><span>수송 사례</span></label
+              ><select id="scenario" aria-label="수송 사례 선택"></select>
+            </div>
+            <div class="control-row">
+              <label for="lead"
+                ><span>리드타임</span><output id="leadValue">0분</output></label
+              ><input
+                id="lead"
+                type="range"
+                min="0"
+                max="18"
+                step="1"
+                value="0"
+                aria-label="리드타임 0분에서 180분"
+              />
+            </div>
+            <div class="button-row">
+              <button type="button" id="prevLead">이전</button
+              ><button type="button" id="nextLead">다음</button>
+            </div>
+            <div class="scenario-copy">
+              <strong id="scenarioName">자료를 선택하세요</strong>
+              <p id="scenarioDescription">사례 설명이 여기에 표시됩니다.</p>
+              <p class="lesson" id="scenarioLesson"></p>
+              <span class="meta-line" id="scenarioMeta"></span>
+            </div>
+          </div>
+        </section>
+        <section
+          class="panel"
+          id="read"
+          aria-labelledby="readTitle"
+          aria-live="polite"
+        >
+          <h2 class="panel-title" id="readTitle">
+            <span>판독 · 현재 프레임</span
+            ><small id="statusLabel">자료 없음</small>
+          </h2>
+          <dl class="read-body">
+            <div class="read-row hero">
+              <dt>리드</dt>
+              <dd id="readLead">0분</dd>
+            </div>
+            <div class="read-row">
+              <dt>donorcell 상대 에코 L2</dt>
+              <dd id="donorL2">N/A</dd>
+            </div>
+            <div class="read-row">
+              <dt>minmod 상대 에코 L2</dt>
+              <dd id="minmodL2">N/A</dd>
+            </div>
+            <div class="read-row">
+              <dt>donorcell 최대 축 폭 상대오차</dt>
+              <dd id="donorWidth">N/A</dd>
+            </div>
+            <div class="read-row">
+              <dt>minmod 최대 축 폭 상대오차</dt>
+              <dd id="minmodWidth">N/A</dd>
+            </div>
+            <div class="read-row">
+              <dt>방향 / 중심 오차 (minmod)</dt>
+              <dd id="minmodGeometry">N/A</dd>
+            </div>
+            <div class="read-row">
+              <dt>minimum echo · donor / minmod</dt>
+              <dd id="minimumEcho">N/A</dd>
+            </div>
+            <p class="read-note">
+              상대 L2와 축 폭 오차는 실제 프레임에 기록된 지표입니다. 양수라는
+              사실만으로 저확산을 뜻하지 않습니다.
+            </p>
+          </dl>
+        </section>
+        <section class="panel" id="dial" aria-labelledby="dialTitle">
+          <h2 class="panel-title" id="dialTitle">
+            <span>리드타임별 상대 에코 L2</span><small>실제 metrics</small>
+          </h2>
+          <div class="dial-body">
+            <canvas
+              id="dialCanvas"
+              role="img"
+              aria-label="리드타임별 donorcell과 minmod 상대 에코 L2 곡선"
+            ></canvas>
+            <p class="dial-caption" id="dialCaption">
+              사례를 선택하면 곡선을 그립니다.
+            </p>
+          </div>
+        </section>
+      </div>
+      <section class="panel boundary-panel" aria-labelledby="boundaryTitle">
+        <h2 class="panel-title" id="boundaryTitle">
+          <span>일반 경계 교육 상태</span
+          ><small id="integrationStatus">P1/FSO/FSOI 상태 확인 중</small>
+        </h2>
+        <div class="boundary-body">
+          <p class="boundary-note">
+            아래 표는 초기값 0에서 donorcell로 한 단계 계산한 출력과 독립
+            해석값입니다. 유입 에코 기여/지지율은 각각 (0, 0), (0, 1), (3.5,
+            0.5)입니다. CFL=0.1일 때 출력은 유입값의 0.095배입니다. 지지율을
+            에코에 다시 곱하지 않습니다. minmod의 일반 경계 연결은 아직 실증하지
+            않았습니다.
+          </p>
+          <table class="boundary-table">
+            <thead>
+              <tr>
+                <th>사례</th>
+                <th>계산 에코</th>
+                <th>계산 지지율</th>
+                <th>해석 에코</th>
+                <th>해석 지지율</th>
+              </tr>
+            </thead>
+            <tbody id="boundaryRows"></tbody>
+          </table>
+          <div class="status-grid">
+            <div class="status-card">
+              <strong>통합 상태</strong><span id="integrationDetail">—</span>
+            </div>
+            <div class="status-card">
+              <strong>D7 resource probe</strong>
+              <div id="resourceProbe">미측정</div>
+            </div>
+            <div class="status-card">
+              <strong>기존 P1 경로</strong>
+              <div id="existingLearning">실증 미실행</div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <details class="learn" open>
+        <summary>한 장으로 읽는 수송 실증</summary>
+        <div id="lessonBlocks">
+          <details class="lesson-block" open>
+            <summary>방정식 · 무엇을 계산하나</summary>
+            <div class="lesson-body">
+              <p>
+                <strong
+                  >정규화 에코량 q에 보존형 수송 방정식을 적용합니다.</strong
+                >
+                이 화면의 q는 dBZ가 아니며, 표시는 매 시각의 실제 계산
+                결과입니다.
+              </p>
+              <div class="equation">
+                ∂<sub>t</sub>q + ∇·(u q) = γq &nbsp;&nbsp; div u = 0
+              </div>
+              <p>
+                u는 주어진 속도장, γ는 소스/성장률입니다. truth는 독립적인
+                characteristic 해로 만들어져 수치해 자체를 다시 정답으로 삼지
+                않습니다.
+              </p>
+              <p id="lessonEquation">사례의 방정식 설명이 여기에 표시됩니다.</p>
+            </div>
+          </details>
+          <details class="lesson-block">
+            <summary>수치 선택 · positivity와 확산의 긴장</summary>
+            <div class="lesson-body">
+              <p>
+                <strong
+                  >CFL 조건과 positivity는 음의 에코량을 막는 안정성
+                  제약입니다.</strong
+                >
+                donorcell은 안전한 1차 upwind 수송의 기준선이고, minmod는
+                SSPRK2와 MUSCL 재구성으로 경사를 살리면서 limiter를 사용합니다.
+              </p>
+              <p>
+                안정성을 위해 제한을 강하게 걸면 수치 확산이 커질 수 있습니다.
+                따라서 상대 L2, 축 폭, 방향, 중심 오차를 함께 읽고 한 숫자로
+                결론 내리지 않습니다.
+              </p>
+            </div>
+          </details>
+          <details class="lesson-block">
+            <summary>경계와 격자 · 무엇을 고정했나</summary>
+            <div class="lesson-body">
+              <p>
+                <strong>경계 바깥은 known-zero, 유입은 없습니다.</strong> 내부
+                계산 격자는 128 × 128이고 화면은 이를 64 × 64 cell mean으로
+                표시합니다. div u = 0인 속도장과 고정 전역 색 범위를 사용하며
+                프레임마다 색을 재정규화하지 않습니다.
+              </p>
+              <p>
+                경계 밖으로 나간 양과 셀 평균화는 값의 해석에 영향을 줍니다.
+                화면의 color max는 모든 프레임에 공통입니다.
+              </p>
+            </div>
+          </details>
+          <details class="lesson-block">
+            <summary>무엇을 실증하지 않나</summary>
+            <div class="lesson-body">
+              <p>
+                <strong
+                  >위 수송 화면은 관측 기반 이동 추정과 새 회전 FV의 P1·FSO·FSOI
+                  경로에 연결되지 않습니다.</strong
+                >
+                이 화면에서는 주어진 속도장에 대한 donorcell·minmod 구현과 독립
+                truth의 비교만 다룹니다. 기존 P1 표는 별도 경로에서 1개 평균
+                파라미터를 1회 학습한 결과이며, 이 FV 수송 화면과 구분합니다.
+              </p>
+              <p>
+                작은 교육용 격자에서 수송 방정식, 경계 조건, 수치 확산을
+                확인하는 실증이며 운영 예보 성능이나 전역 최적성을 주장하지
+                않습니다.
+              </p>
+            </div>
+          </details>
+        </div>
+      </details>
+      <p class="links">
+        <a href="index.html">weather scenarios index</a
+        ><a href="muscl_experiment.py">MUSCL 구현 소스</a>
+      </p>
+      <p class="foot">
+        ADVAR · grid <span id="footerGrid">64</span> cell mean · generated
+        <span id="generatedAt">—</span> · acceptance
+        <span id="acceptance">—</span>
+      </p>
+    </main>
+    <script>
+      "use strict";
+      const DATA = __TRANSPORT_DATA__;
+      const $ = (id) => document.getElementById(id);
+      const state = {
+        scenario: 0,
+        lead: 0,
+        playing: false,
+        error: false,
+        timer: 0,
+      };
+      const fieldPalette = [
+        "#183c56",
+        "#27627a",
+        "#5f9aaa",
+        "#b9cbb7",
+        "#e9dd73",
+        "#d88947",
+        "#9c3b36",
+        "#641f2b",
+      ];
+      const errorPalette = [
+        "#1b4c63",
+        "#6e9daa",
+        "#dce1d2",
+        "#f7f8f0",
+        "#d8898b",
+        "#7a1f2b",
+      ];
+      function finite(value) {
+        return typeof value === "number" && Number.isFinite(value);
+      }
+      function meta() {
+        return (DATA && DATA.meta) || {};
+      }
+      function cases() {
+        return Array.isArray(DATA && DATA.cases) ? DATA.cases : [];
+      }
+      function currentCase() {
+        return cases()[state.scenario] || null;
+      }
+      function frames() {
+        return currentCase() && Array.isArray(currentCase().frames)
+          ? currentCase().frames
+          : [];
+      }
+      function currentFrame() {
+        return (
+          frames().find((frame) => frame && frame.minute === state.lead * 10) ||
+          frames()[state.lead] ||
+          null
+        );
+      }
+      function gridSize() {
+        return Number.isInteger(meta().grid_size) ? meta().grid_size : 64;
+      }
+      function expectedLength() {
+        return gridSize() * gridSize();
+      }
+      function validField(field) {
+        return (
+          Array.isArray(field) &&
+          field.length === expectedLength() &&
+          field.every((value) => value === null || finite(value))
+        );
+      }
+      function setText(id, value) {
+        $(id).textContent = value;
+        $(id).classList.toggle("na", value === "N/A");
+      }
+      function pct(value) {
+        return finite(value) ? (value * 100).toFixed(2) + "%" : "N/A";
+      }
+      function number(value, digits) {
+        return finite(value)
+          ? value.toFixed(digits === undefined ? 3 : digits)
+          : "N/A";
+      }
+      function widthMetric(values) {
+        if (!Array.isArray(values)) return "N/A";
+        const finiteValues = values.filter(finite);
+        return finiteValues.length
+          ? (
+              Math.max(...finiteValues.map((value) => Math.abs(value))) * 100
+            ).toFixed(2) + "%"
+          : "N/A";
+      }
+      function fieldColor(value, max) {
+        if (!finite(value) || !finite(max) || max <= 0) return null;
+        const t = Math.max(0, Math.min(0.999999, value / max));
+        return fieldPalette[Math.floor(t * fieldPalette.length)];
+      }
+      function signedColor(value, max) {
+        if (!finite(value) || !finite(max) || max <= 0) return null;
+        const t = Math.max(-1, Math.min(1, value / max));
+        return errorPalette[
+          Math.min(
+            errorPalette.length - 1,
+            Math.floor((t + 1) * 0.5 * errorPalette.length),
+          )
+        ];
+      }
+      function canvasContext(canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const width = Math.max(1, Math.round(rect.width * dpr));
+        const height = Math.max(1, Math.round(rect.height * dpr));
+        if (canvas.width !== width || canvas.height !== height) {
+          canvas.width = width;
+          canvas.height = height;
+        }
+        const context = canvas.getContext("2d");
+        context.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { context, width: rect.width, height: rect.height };
+      }
+      function drawField(canvas, field, isError) {
+        const result = canvasContext(canvas);
+        const context = result.context,
+          width = result.width,
+          height = result.height;
+        context.clearRect(0, 0, width, height);
+        if (!validField(field)) return false;
+        const size = gridSize(),
+          cellW = width / size,
+          cellH = height / size,
+          max = Number(isError ? meta().error_max : meta().color_max);
+        let drawn = false;
+        for (let row = 0; row < size; row++) {
+          for (let col = 0; col < size; col++) {
+            const value = field[row * size + col],
+              color = isError
+                ? signedColor(value, max)
+                : fieldColor(value, max);
+            if (!color) continue;
+            context.fillStyle = color;
+            context.fillRect(
+              col * cellW,
+              row * cellH,
+              Math.ceil(cellW + 0.25),
+              Math.ceil(cellH + 0.25),
+            );
+            drawn = true;
+          }
+        }
+        return drawn;
+      }
+      function errorField(frame) {
+        if (
+          !validField(frame && frame.minmod) ||
+          !validField(frame && frame.truth)
+        )
+          return null;
+        return frame.minmod.map((value, index) =>
+          finite(value) && finite(frame.truth[index])
+            ? value - frame.truth[index]
+            : null,
+        );
+      }
+      function renderMaps() {
+        document
+          .querySelector(".heatmaps")
+          .classList.toggle("with-error", state.error);
+        const frame = currentFrame(),
+          error = state.error ? errorField(frame) : null;
+        $("errorPane").hidden = !state.error;
+        const plots = [
+          ["truthCanvas", frame && frame.truth, false],
+          ["donorCanvas", frame && frame.donorcell, false],
+          ["minmodCanvas", frame && frame.minmod, false],
+          ["errorCanvas", error, true],
+        ];
+        let any = false;
+        plots.forEach((plot) => {
+          const id = plot[0],
+            field = plot[1],
+            isError = plot[2],
+            pane = $(id).parentElement,
+            drawn =
+              isError && !state.error
+                ? false
+                : drawField($(id), field, isError);
+          pane.querySelector(".canvasEmpty").hidden = drawn;
+          any = any || drawn;
+        });
+        $("emptyState").hidden = any;
+        $("statusLabel").textContent = any ? "실제 프레임 자료" : "자료 없음";
+        $("dataBadge").textContent = any
+          ? "검증 통과 · " + cases().length + "개 사례"
+          : "검증 자료 없음";
+        $("rangeLabel").textContent =
+          "고정 전역 색 범위 0 … " + number(meta().color_max, 3);
+        $("errorRange").textContent =
+          "고정 오차 범위 ±" + number(meta().error_max, 3);
+      }
+      function renderMetrics() {
+        const frame = currentFrame(),
+          donor = frame && frame.metrics && frame.metrics.donorcell,
+          minmod = frame && frame.metrics && frame.metrics.minmod,
+          minute = Number(
+            frame && frame.minute !== undefined
+              ? frame.minute
+              : state.lead * 10,
+          );
+        $("leadLabel").textContent = "리드 " + minute + "분";
+        $("leadValue").textContent = minute + "분";
+        $("readLead").textContent = minute + "분";
+        setText("donorL2", pct(donor && donor.relative_echo_l2));
+        setText("minmodL2", pct(minmod && minmod.relative_echo_l2));
+        setText(
+          "donorWidth",
+          widthMetric(donor && donor.axis_width_relative_error),
+        );
+        setText(
+          "minmodWidth",
+          widthMetric(minmod && minmod.axis_width_relative_error),
+        );
+        const geometry =
+          finite(minmod && minmod.orientation_error_degrees) &&
+          finite(minmod && minmod.center_error_pixels)
+            ? number(minmod.orientation_error_degrees, 2) +
+              "° / " +
+              number(minmod.center_error_pixels, 2) +
+              " px"
+            : "N/A";
+        setText("minmodGeometry", geometry);
+        const minimum =
+          finite(donor && donor.minimum_echo) &&
+          finite(minmod && minmod.minimum_echo)
+            ? number(donor.minimum_echo, 4) +
+              " / " +
+              number(minmod.minimum_echo, 4)
+            : "N/A";
+        setText("minimumEcho", minimum);
+        const item = currentCase();
+        $("scenarioName").textContent =
+          (item && item.title) || "자료를 선택하세요";
+        $("scenarioDescription").textContent =
+          (item && item.description) || "사례 설명이 여기에 표시됩니다.";
+        $("scenarioLesson").textContent = (item && item.lesson) || "";
+        $("scenarioMeta").textContent =
+          item && item.id
+            ? "case " +
+              item.id +
+              " · " +
+              frames().length +
+              " frames · q normalized echo"
+            : "";
+        $("lessonEquation").textContent =
+          (item && item.equation) || "사례의 방정식 설명이 여기에 표시됩니다.";
+        $("lead").value = state.lead;
+        $("lead").max = Math.max(
+          0,
+          Math.min(18, frames().length ? frames().length - 1 : 18),
+        );
+      }
+      function drawDial() {
+        const result = canvasContext($("dialCanvas")),
+          context = result.context,
+          width = result.width,
+          height = result.height;
+        context.clearRect(0, 0, width, height);
+        const series = [
+            { key: "donorcell", label: "donorcell", color: "#1B4C63" },
+            { key: "minmod", label: "minmod", color: "#7A1F2B" },
+          ],
+          values = series
+            .flatMap((item) =>
+              frames().map(
+                (frame) =>
+                  frame &&
+                  frame.metrics &&
+                  frame.metrics[item.key] &&
+                  frame.metrics[item.key].relative_echo_l2,
+              ),
+            )
+            .filter(finite);
+        if (!values.length) {
+          $("dialCaption").textContent =
+            "실제 metrics가 없어 곡선을 그릴 수 없습니다.";
+          return;
+        }
+        const pad = { l: 38, r: 12, t: 18, b: 28 },
+          max = Math.max(...values) * 1.12 || 1;
+        context.strokeStyle = "#C6CAB6";
+        context.lineWidth = 1;
+        context.beginPath();
+        context.moveTo(pad.l, pad.t);
+        context.lineTo(pad.l, height - pad.b);
+        context.lineTo(width - pad.r, height - pad.b);
+        context.stroke();
+        const x = (i) =>
+            pad.l +
+            (i / Math.max(frames().length - 1, 1)) * (width - pad.l - pad.r),
+          y = (value) =>
+            height - pad.b - (value / max) * (height - pad.t - pad.b);
+        series.forEach((item) => {
+          context.strokeStyle = item.color;
+          context.lineWidth = 2;
+          context.beginPath();
+          frames().forEach((frame, index) => {
+            const value =
+              frame &&
+              frame.metrics &&
+              frame.metrics[item.key] &&
+              frame.metrics[item.key].relative_echo_l2;
+            if (!finite(value)) return;
+            const px = x(index),
+              py = y(value),
+              previous =
+                frames()[index - 1] &&
+                frames()[index - 1].metrics &&
+                frames()[index - 1].metrics[item.key] &&
+                frames()[index - 1].metrics[item.key].relative_echo_l2;
+            if (index === 0 || !finite(previous)) context.moveTo(px, py);
+            else context.lineTo(px, py);
+          });
+          context.stroke();
+        });
+        const markerX = x(
+          Math.min(state.lead, Math.max(frames().length - 1, 0)),
+        );
+        context.strokeStyle = "#23291F";
+        context.setLineDash([3, 3]);
+        context.beginPath();
+        context.moveTo(markerX, pad.t);
+        context.lineTo(markerX, height - pad.b);
+        context.stroke();
+        context.setLineDash([]);
+        context.font = '10px \"IBM Plex Mono\",monospace';
+        context.fillStyle = "#5C6354";
+        context.fillText("0분", pad.l - 7, height - 8);
+        context.fillText(
+          Math.max(0, frames().length - 1) * 10 + "분",
+          Math.max(pad.l, width - 44),
+          height - 8,
+        );
+        context.fillText((max * 100).toFixed(1) + "%", 2, pad.t + 4);
+        context.font = '11px \"IBM Plex Mono\",monospace';
+        context.fillStyle = "#1B4C63";
+        context.fillText("donorcell", width - 83, 13);
+        context.fillStyle = "#7A1F2B";
+        context.fillText("minmod", width - 83, 28);
+        $("dialCaption").textContent =
+          "선택 리드 " + state.lead * 10 + "분 · 세로선은 현재 프레임";
+      }
+      function renderBoundary() {
+        const examples = Array.isArray(meta().boundary_examples)
+          ? meta().boundary_examples
+          : [];
+        $("boundaryRows").replaceChildren();
+        examples.forEach((example) => {
+          const tr = document.createElement("tr");
+          [
+            example.name,
+            example.echo,
+            example.support,
+            example.expected_echo,
+            example.expected_support,
+          ].forEach((value) => {
+            const td = document.createElement("td");
+            td.textContent = value === undefined ? "—" : String(value);
+            tr.append(td);
+          });
+          $("boundaryRows").append(tr);
+        });
+        $("integrationStatus").textContent =
+          meta().integration_status || "P1/FSO/FSOI 이 후보와 미연결";
+        $("integrationDetail").textContent =
+          meta().integration_status || "P1/FSO/FSOI 이 후보와 미연결";
+        const probe = meta().resource_probe;
+        $("resourceProbe").replaceChildren();
+        if (probe && typeof probe === "object") {
+          const table = document.createElement("table");
+          table.className = "resource-table";
+          const probeFields = [
+            ["size", "텐서 크기", ""],
+            ["steps", "스텝 수", ""],
+            ["forward_seconds", "Forward", " 초"],
+            ["jvp_seconds", "JVP", " 초"],
+            ["vjp_seconds", "VJP", " 초"],
+            ["peak_rss_bytes", "최대 RSS", " MB"],
+            ["adjoint_relative_error", "Adjoint 상대오차", ""],
+          ];
+          probeFields.forEach((field) => {
+            const key = field[0],
+              label = field[1],
+              unit = field[2];
+            if (probe[key] === undefined) return;
+            const tr = document.createElement("tr"),
+              th = document.createElement("th"),
+              td = document.createElement("td");
+            let value = probe[key];
+            if (key === "peak_rss_bytes" && finite(value))
+              value = (value / 1048576).toFixed(1);
+            else if (finite(value) && key !== "size" && key !== "steps")
+              value = Number(value).toPrecision(6);
+            th.textContent = label;
+            td.textContent = String(value) + unit;
+            tr.append(th, td);
+            table.append(tr);
+          });
+          $("resourceProbe").append(table);
+          const note = document.createElement("span");
+          note.textContent =
+            "초기화 포함 단일 호출·국소 3단계 측정. 전체 D7은 미완료입니다.";
+          $("resourceProbe").append(note);
+        } else {
+          $("resourceProbe").textContent = "미측정";
+        }
+        const learning = meta().existing_p1_learning;
+        $("existingLearning").replaceChildren();
+        if (learning && typeof learning === "object") {
+          const status = document.createElement("span");
+          status.textContent =
+            learning.status === "passed"
+              ? "실행 통과 · 평균 파라미터 1개, 학습 1회. 작은 합성 사례이며 새 FV와 미연결입니다."
+              : "기존 P1 학습 실증 미완료";
+          $("existingLearning").append(status);
+          const results = learning.results || {};
+          const keys = [
+            ["objective_before", "학습 전 검증 비용"],
+            ["objective_after", "학습 후 검증 비용"],
+            ["fsoi_predicted_impact", "FSOI 예상 변화"],
+            ["full_resolved_impact", "재분석한 실제 변화"],
+            ["reload_max_abs_error", "모델 재적재 오차"],
+            ["next_assimilation_max_abs_error", "재적재 후 예측 차이"],
+          ];
+          const table = document.createElement("table");
+          table.className = "resource-table";
+          keys.forEach(([key, label]) => {
+            if (results[key] === undefined) return;
+            const tr = document.createElement("tr"),
+              th = document.createElement("th"),
+              td = document.createElement("td");
+            th.textContent = label;
+            td.textContent = finite(results[key])
+              ? results[key].toPrecision(10)
+              : "N/A";
+            tr.append(th, td);
+            table.append(tr);
+          });
+          $("existingLearning").append(table);
+        } else {
+          $("existingLearning").textContent = "실증 미실행";
+        }
+      }
+      function renderAcceptance() {
+        const status = String(
+          meta().acceptance_status || "미확인",
+        ).toLowerCase();
+        $("dataBadge").textContent =
+          status === "passed"
+            ? "검증 통과 · 실제 프레임"
+            : status === "failed"
+              ? "검증 실패 · 자료 확인 필요"
+              : "검증 상태 " + (meta().acceptance_status || "미확인");
+      }
+      function render() {
+        renderMaps();
+        renderMetrics();
+        drawDial();
+        renderBoundary();
+        renderAcceptance();
+      }
+      function populate() {
+        const select = $("scenario");
+        select.replaceChildren();
+        cases().forEach((item, index) => {
+          const option = document.createElement("option");
+          option.value = String(index);
+          option.textContent = item.title || item.id || "사례 " + (index + 1);
+          select.append(option);
+        });
+        const enabled = cases().length > 0;
+        [
+          "scenario",
+          "play",
+          "reset",
+          "errorToggle",
+          "prevLead",
+          "nextLead",
+          "lead",
+        ].forEach((id) => ($(id).disabled = !enabled));
+        $("gridLabel").textContent =
+          gridSize() + " × " + gridSize() + " cell mean";
+        $("footerGrid").textContent =
+          gridSize() +
+          " (compute " +
+          (meta().computation_grid_size || "—") +
+          ")";
+        $("generatedAt").textContent = meta().generated_at || "—";
+        $("acceptance").textContent = meta().acceptance_status || "—";
+        if (enabled) {
+          $("scenario").value = "0";
+          $("lead").max = Math.max(0, Math.min(18, frames().length - 1));
+        }
+        render();
+      }
+      function stop() {
+        state.playing = false;
+        clearInterval(state.timer);
+        state.timer = 0;
+        $("play").setAttribute("aria-pressed", "false");
+        $("play").textContent = "재생";
+      }
+      function setLead(value) {
+        const max = Math.max(0, Math.min(18, frames().length - 1));
+        state.lead = Math.max(0, Math.min(max, Number(value) || 0));
+        render();
+      }
+      function togglePlay() {
+        if (!currentCase()) return;
+        if (state.playing) {
+          stop();
+          return;
+        }
+        state.playing = true;
+        $("play").setAttribute("aria-pressed", "true");
+        $("play").textContent = "일시정지";
+        clearInterval(state.timer);
+        state.timer = setInterval(() => {
+          const max = Math.max(0, Math.min(18, frames().length - 1));
+          setLead(state.lead >= max ? 0 : state.lead + 1);
+        }, 850);
+      }
+      function reset() {
+        stop();
+        state.lead = 0;
+        render();
+      }
+      $("scenario").addEventListener("change", (event) => {
+        stop();
+        state.scenario = Number(event.target.value) || 0;
+        state.lead = 0;
+        render();
+      });
+      $("lead").addEventListener("input", (event) =>
+        setLead(event.target.value),
+      );
+      $("prevLead").addEventListener("click", () => setLead(state.lead - 1));
+      $("nextLead").addEventListener("click", () => setLead(state.lead + 1));
+      $("play").addEventListener("click", togglePlay);
+      $("reset").addEventListener("click", reset);
+      $("errorToggle").addEventListener("click", () => {
+        state.error = !state.error;
+        $("errorToggle").setAttribute("aria-pressed", String(state.error));
+        renderMaps();
+      });
+      window.addEventListener("resize", render);
+      window.addEventListener("beforeunload", stop);
+      document.addEventListener("keydown", (event) => {
+        if (event.target.matches("input,select,button,summary")) return;
+        if (event.code === "Space") {
+          event.preventDefault();
+          togglePlay();
+        } else if (event.key === "ArrowRight") {
+          setLead(state.lead + 1);
+        } else if (event.key === "ArrowLeft") {
+          setLead(state.lead - 1);
+        } else if (event.key === "Home") {
+          reset();
+        }
+      });
+      populate();
+    </script>
+  </body>
+</html>

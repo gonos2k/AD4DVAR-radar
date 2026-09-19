@@ -1,0 +1,12 @@
+{
+  "nominal_source": "nominal_source/fv_sensitivity.py",
+  "nominal_source_sha256": "69bbf85a48a5b26815eac15935cdc1bd3b39155164f87eadf8e8dccff0b42549",
+  "current_source_sha256": "78cf5819bd135af1eadd92996acc68ba979b195181f1ac0065d1eb11ec521646",
+  "changed_top_level_definitions": [
+    "refine_fv_stationarity"
+  ],
+  "transport_and_variational_match_nominal_hashes": true,
+  "scope": "Historical nominal run; response definitions unchanged. Refinement stopping/callback changed for perturbation runs. No rerun claimed.",
+  "response_tensor_sha256": "b38d545c9bfae2465a4e234793d04288bc3a47fad5a5a57805683e0d667dbeff",
+  "refined_checkpoint_sha256": "19432ec7033b29c5767ca518cd2cbfdd091fbdea19fd4b763978abb47a77abee"
+}

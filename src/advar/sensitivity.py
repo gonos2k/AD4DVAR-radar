@@ -14907,6 +14907,8 @@ def _resolve_learning_step(
         changed_frozen,
         control=analysis.control,
     )
+    if not isinstance(resolved, AnalysisResult):
+        raise ValueError("FV research analysis is not supported by legacy FSOI")
     resolved_linearization = resolved.linearization
     converged = (
         resolved.converged
@@ -15712,6 +15714,8 @@ def _compute_variational_products(
     weighted_observation_residual = residual_fn(control)[
         :observation_count
     ].reshape_as(observations.dbz).detach()
+    if final_trajectory.displacement_yx is None:
+        raise ValueError("FV sensitivity requires its own forecast and linearization")
     final_state = RadarState(
         echo_linear=final_trajectory.frames_linear[-1],
         displacement_yx=final_trajectory.displacement_yx,
@@ -16216,6 +16220,8 @@ def _variational_state(
     frozen: FrozenOuterState,
 ) -> RadarState:
     trajectory = _analysis_trajectory(control, frozen)
+    if trajectory.displacement_yx is None:
+        raise ValueError("FV trajectory cannot be represented by a legacy RadarState")
     return RadarState(
         echo_linear=trajectory.frames_linear[-1],
         displacement_yx=trajectory.displacement_yx,
@@ -17347,6 +17353,8 @@ def _validate_variational_fso_lineage(
     ):
         raise ValueError("P1 linearization active controls mismatch")
     trajectory = _analysis_trajectory(analysis.control, frozen)
+    if trajectory.displacement_yx is None:
+        raise ValueError("FV trajectory is not a legacy P1 linearization")
     state_values = (
         (analysis.state.echo_linear, trajectory.frames_linear[-1]),
         (analysis.state.displacement_yx, trajectory.displacement_yx),
