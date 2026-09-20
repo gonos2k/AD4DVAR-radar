@@ -370,6 +370,26 @@ def _parameter_vjp_panel():
     )
 
 
+def _gn_response_panel():
+    path = HERE / "gn_refined_response.json"
+    if not path.exists():
+        return ""
+    data = json.loads(path.read_text())
+    digest = hashlib.sha256(json.dumps(data, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    w = data["workflow"]
+    if digest != "6961f433704297c6a0ef46157156113e5eabede035a3352cba943e41d6522586" or w["status"] != "eligible":
+        raise SystemExit("GN response archived identity mismatch")
+    return (
+        '<section id="fvGnResponse"><h3>실제 저장 GN → 명시적 정상점 보정 → 전체 응답</h3>'
+        f'<p>최대 gradient: {w["before"]["gradient_max"]:.3e} → {w["after"]["gradient_max"]:.3e}. '
+        f'실제 수반 상대잔차: {w["response"]["true_adjoint_relative_residual"]:.3e}.</p>'
+        '<p>고정된 검증장과 같은 국소 분기에서 기존 소형 oracle로 보정한 뒤, '
+        '행렬 없는 수반과 전체 61개 파라미터 민감도를 계산했습니다. '
+        '새 GN 실행·일반 minmod FSOI·학습 개선의 인증은 아닙니다. 보정 실패 시 민감도는 반환하지 않습니다.</p>'
+        '<p><a href="../../graphify-out/fv-root-cause-20260919/GN_RESPONSE_INTEGRATION.md">전후 상태·단계별 비용·실패 시험</a></p></section>'
+    )
+
+
 def _colour(value, scale):
     """Symmetric blue-paper-red colour for a normalized sensitivity value."""
     t = max(-1.0, min(1.0, float(value) / scale))
@@ -575,6 +595,7 @@ def _panel(report, scale, central):
       {_additional_directions_panel()}
       {_matrix_free_panel()}
       {_parameter_vjp_panel()}
+      {_gn_response_panel()}
       <p><a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.json">최종 응답 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.pt">응답 tensor</a>{central_link} · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg">민감도 −20분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg">−10분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg">0분</a></p>
     </div>
   </details>
