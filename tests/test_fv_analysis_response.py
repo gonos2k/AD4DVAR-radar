@@ -165,6 +165,7 @@ def test_failed_refinement_or_branch_change_returns_no_response(analytic_case, m
 def test_explicit_refinement_enables_actual_response(analytic_case):
     case = analytic_case
     original = case["stationary"] + torch.tensor([0.1, -0.1], dtype=torch.float64)
+    parameters_before = case["p"].clone()
     calls = []
 
     def refine(control, parameters):
@@ -179,5 +180,46 @@ def test_explicit_refinement_enables_actual_response(analytic_case):
     assert len(calls) == 1
     torch.testing.assert_close(calls[0], original)
     torch.testing.assert_close(result["control"], case["stationary"])
+    torch.testing.assert_close(case["p"], parameters_before)
     assert result["after"]["gradient_max"] < 1e-10
     assert result["response"].total_gradient.shape == case["p"].shape
+
+
+@pytest.mark.parametrize("raises", [False, True])
+def test_refiner_parameter_mutation_is_rejected_and_caller_parameter_is_preserved(analytic_case, raises):
+    case = analytic_case
+    original = case["stationary"] + torch.tensor([0.1, -0.1], dtype=torch.float64)
+    parameters_before = case["p"].clone()
+
+    def refine(_, parameters):
+        parameters.add_(1.0)
+        if raises:
+            raise RuntimeError("refiner failed after mutation")
+        return case["stationary"]
+
+    result = _call(case, original, refine=refine)
+    assert result["status"] == "ineligible"
+    assert result["response"] is None
+    torch.testing.assert_close(result["control"], original)
+    torch.testing.assert_close(case["p"], parameters_before)
+    if not raises:
+        assert "mutated parameters" in result["error"]
+
+
+@pytest.mark.parametrize("kind", ["shape", "dtype", "device"])
+def test_refiner_candidate_contract_is_checked_before_post_assessment(analytic_case, kind):
+    case = analytic_case
+    original = case["stationary"] + torch.tensor([0.1, -0.1], dtype=torch.float64)
+
+    def refine(_, __):
+        if kind == "shape":
+            return torch.zeros(3, dtype=torch.float64)
+        if kind == "dtype":
+            return case["stationary"].float()
+        return torch.empty_like(case["stationary"], device="meta")
+
+    result = _call(case, original, refine=refine)
+    assert result["status"] == "ineligible"
+    assert result["response"] is None
+    torch.testing.assert_close(result["control"], original)
+    assert "wrong" in result["error"]

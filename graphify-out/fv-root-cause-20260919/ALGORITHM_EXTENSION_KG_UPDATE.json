@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6679,
-    "edges": 65065,
-    "communities": 206,
+    "nodes": 6688,
+    "edges": 65079,
+    "communities": 247,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -273,6 +273,26 @@
     "fresh_gn_runs": 0,
     "nonlinear_reanalyses": 0,
     "focused_tests": 76,
+    "general_minmod_response_eligible": false
+  },
+  "pr171_followup": {
+    "baseline": "6354ecc7",
+    "refiner_parameter_isolation": "clone and reject mutation; invalid candidate layout refused",
+    "fresh_gn_runs": 1,
+    "nonlinear_reanalyses": 0,
+    "status": "eligible",
+    "gn_seconds": 27.634979834023397,
+    "timings": {
+      "assessment_seconds": 0.27608799998415634,
+      "refinement_seconds": 61.57928220904432,
+      "response_seconds": 23.373939499957487,
+      "total_seconds": 85.22934745799284
+    },
+    "gradient_before": 0.00013348760351817581,
+    "gradient_after": 6.962040319247187e-12,
+    "full_gradient_reference_relative_difference": 0.0,
+    "focused_tests": 83,
+    "evidence": "CURRENT_GN_RESPONSE_REVIEW.md",
     "general_minmod_response_eligible": false
   }
 }

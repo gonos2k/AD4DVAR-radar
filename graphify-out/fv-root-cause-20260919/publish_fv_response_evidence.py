@@ -390,6 +390,28 @@ def _gn_response_panel():
     )
 
 
+def _current_gn_panel():
+    path = HERE / "current_gn_response.json"
+    if not path.exists():
+        return ""
+    data = json.loads(path.read_text())
+    digest = hashlib.sha256(json.dumps(data, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if digest != "0a06c6cff235a1d5e2b6af0284f9c81f4547b5fb9feea7bf78904ae6bf770642" or data["workflow"]["status"] != "eligible":
+        raise SystemExit("current GN archived identity mismatch")
+    w = data["workflow"]
+    return (
+        '<section id="fvCurrentGn"><h3>현재 GN 실행 → 입력 보호 → 보정·전체 응답</h3>'
+        f'<p>현재 solver 결과를 직접 연결했습니다. 최대 gradient '
+        f'{w["before"]["gradient_max"]:.3e} → {w["after"]["gradient_max"]:.3e}; '
+        f'실제 수반 상대잔차 {w["response"]["true_adjoint_relative_residual"]:.3e}.</p>'
+        f'<p>GN {data["gn_seconds"]:.2f}초, 보정 {w["timings"]["refinement_seconds"]:.2f}초, '
+        f'응답 {w["timings"]["response_seconds"]:.2f}초. '
+        '보정기의 파라미터 변경은 거부하며 호출자 입력은 보존합니다.</p>'
+        '<p>같은 4×5 합성 사례의 현재 실행 검증입니다. 임의 입력의 수렴·일반 FSOI·학습 개선 인증은 아닙니다.</p>'
+        '<p><a href="../../graphify-out/fv-root-cause-20260919/CURRENT_GN_RESPONSE_REVIEW.md">입력 격리 시험·전체 실행 기록</a></p></section>'
+    )
+
+
 def _colour(value, scale):
     """Symmetric blue-paper-red colour for a normalized sensitivity value."""
     t = max(-1.0, min(1.0, float(value) / scale))
@@ -596,6 +618,7 @@ def _panel(report, scale, central):
       {_matrix_free_panel()}
       {_parameter_vjp_panel()}
       {_gn_response_panel()}
+      {_current_gn_panel()}
       <p><a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.json">최종 응답 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.pt">응답 tensor</a>{central_link} · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg">민감도 −20분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg">−10분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg">0분</a></p>
     </div>
   </details>

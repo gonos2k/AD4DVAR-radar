@@ -154,3 +154,10 @@ General minmod API eligibility and all previously listed learning/D7 limits rema
 - [x] Actual archived product GN control -> existing bounded oracle with fixed branch -> whole parameter response. Keep objective, score, 1e-10 gate and reference verification unchanged.
 - [x] One report records both controls, J/gradient/branch before and after, refinement use, actual adjoint residual, full sensitivity and separated costs. No fresh GN or perturbed reanalysis run.
 - [x] Small success/failure regressions, actual bounded execution, GREEN/RED review, KG and original demo update. General solver/FSOI/learning/D7 remain open.
+
+## PR171 follow-up — refiner input isolation and current GN
+
+- [x] Clone fixed p for external refinement; reject mutation and invalid candidate layout; regression covers successful/failed mutation with original p and control preserved.
+- [x] Freeze sources before one bounded current GN -> explicit refinement -> full response execution. Keep independent fixed verification and the same numerical gates.
+- [x] Record actual returned GN control, stage costs, before/after branch/gradient, full response and source stability; preserve archived evidence.
+- [x] Focused tests, GREEN/RED review, KG/checklist and original demo. General new-case convergence/FSOI/learning/D7 remain open.
