@@ -35,6 +35,21 @@ def _digest(value):
     return hashlib.sha256(value.detach().contiguous().numpy().tobytes()).hexdigest()
 
 
+# Root recorded by the archived PR168 producer, not the current checkout.
+ARCHIVED_ROOT = Path('/Users/yhlee/ADVAR')
+
+
+def check_archived_sources(fingerprints, *, archived_root=ARCHIVED_ROOT, root=ROOT):
+    """Preserve repository-relative identities when relocating a checkout."""
+    for archived_path, fingerprint in fingerprints.items():
+        relative = Path(archived_path).relative_to(archived_root)
+        if '..' in relative.parts:
+            raise ValueError('archived source escapes declared root')
+        current = root / relative
+        if hashlib.sha256(current.read_bytes()).hexdigest() != fingerprint:
+            raise ValueError('archived core source identity mismatch')
+
+
 def make_research_functions(obs, frozen, boundary, support, pattern, verification, expected_branch):
     """Fixed full-support mean-background contract; not a general FV API.
 
@@ -111,9 +126,7 @@ def run(output: Path):
     pattern = torch.linspace(-.2, .3, 20, dtype=torch.float64).reshape(4, 5)
     if _digest(c) != saved['input_identity']['control_sha256'] or _digest(p) != saved['input_identity']['parameters_sha256']:
         raise ValueError('archived nominal input identity mismatch')
-    for path, fingerprint in saved['cache_payload_identity']['core_source_sha256'].items():
-        if hashlib.sha256(Path(path).read_bytes()).hexdigest() != fingerprint:
-            raise ValueError('archived core source identity mismatch')
+    check_archived_sources(saved['cache_payload_identity']['core_source_sha256'])
     # Reproduce the archived conditional verification field, then hold it fixed.
     nominal_contract = replace(frozen, initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
     nominal_forecast = probe.echo_to_dbz(v.forecast_fv_analysis(
@@ -128,9 +141,12 @@ def run(output: Path):
     identity = {'control': _digest(c), 'parameters': _digest(p),
                 'verification': _digest(verification),
                 'saved_report': hashlib.sha256(saved_path.read_bytes()).hexdigest()}
+    preparation_seconds = time.monotonic()-started
+    response_started = time.monotonic()
     response = compute_local_response(objective, score, c, p, directions,
                                       branch_check=branch_check, input_identity=identity)
-    api_seconds = time.monotonic()-started
+    response_seconds = time.monotonic()-response_started
+    comparison_started = time.monotonic()
     H = torch.tensor(saved['hessian']['matrix'], dtype=torch.float64)
     gradient = torch.func.grad(objective)
     products = torch.stack([torch.func.jvp(lambda x: gradient(x, p), (c,), (basis,))[1]
@@ -146,7 +162,7 @@ def run(output: Path):
         'hvp_dense_relative_error': hvp_error,
         'declared_tolerances': {'hvp_dense': 1e-10, 'adjoint_dense': 1e-8, 'response_dense': 1e-6},
         'dense_min_eigenvalue': float(torch.linalg.eigvalsh(H)[0]),
-        'api_seconds': api_seconds, 'source_sha256': {
+        'preparation_seconds': preparation_seconds, 'response_seconds': response_seconds, 'source_sha256': {
             str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in (Path(__file__), ROOT/'src/advar/local_response.py', ROOT/'src/advar/matrix_free.py',
                          Path(probe.__file__), ROOT/'src/advar/variational.py', ROOT/'src/advar/transport.py')},
@@ -161,9 +177,13 @@ def run(output: Path):
                       'total': actual, 'dense_response': expected,
                       'relative_difference': abs(actual-expected)/abs(expected),
                       'archived_response': saved['adjoint']['response_sensitivity'][name],
+                      'full_vjp_projection': float(response.total_gradient.dot(direction)),
+                      'projection_relative_difference': float((response.total_gradient.dot(direction)-response.total[name]).abs()/response.total[name].abs()),
                       'mixed_gradient_max_difference': float((response.mixed_gradients[name]-cross).abs().max())}
     report.update(
         adjoint_dense_relative_error=adjoint_error, adjoint=response.adjoint.tolist(),
+        parameter_gradients={name: getattr(response, name).tolist() for name in
+                             ("direct_gradient", "indirect_gradient", "total_gradient")},
         gradient_max=response.gradient_max,
         actual_transpose_residual=response.true_adjoint_relative_residual,
         pcg_reported_residual=response.pcg_relative_residual,
@@ -178,10 +198,12 @@ def run(output: Path):
         bool(torch.isfinite(torch.linalg.eigvalsh(H)).all()) and report['dense_min_eigenvalue'] > 0
         and hvp_error <= 1e-10 and adjoint_error <= 1e-8
         and response.true_adjoint_relative_residual <= 1e-10
-        and all(row['relative_difference'] <= 1e-6 and row['mixed_gradient_max_difference'] == 0
+        and all(row['relative_difference'] <= 1e-6 and row['projection_relative_difference'] <= 1e-6
+                and row['mixed_gradient_max_difference'] == 0
                 for row in rows.values())
         and all(x == 0 for x in report['fresh_score_gradient_difference'].values())
-    ) else 'comparison_failed' 
+    ) else 'comparison_failed'
+    report['comparison_seconds'] = time.monotonic()-comparison_started
     report['elapsed_seconds'] = time.monotonic()-started
     output.write_text(json.dumps(report, indent=2)+'\n')
     return report

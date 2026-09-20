@@ -345,6 +345,31 @@ def _matrix_free_panel():
     )
 
 
+def _parameter_vjp_panel():
+    path = HERE / "minmod_parameter_vjp.json"
+    if not path.exists():
+        return ""
+    data = json.loads(path.read_text())
+    digest = hashlib.sha256(json.dumps(data, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if digest != "4c4f9678451b9c4ba9fff7c86d706eda5029053f9c2e47b7a547ebc720303a4d" or data["status"] != "complete":
+        raise SystemExit("parameter VJP archived identity mismatch")
+    rows = []
+    for name, row in data["directions"].items():
+        label = {"observation_sine60": "기존 sine", "theta": "배경 θ", "middle_time_bias": "중간 시각 편향"}[name]
+        rows.append(f'<tr><td>{label}</td><td>{row["full_vjp_projection"]:.8e}</td>'
+                    f'<td>{row["projection_relative_difference"]:.3e}</td></tr>')
+    return (
+        '<section id="fvParameterVjp"><h3>전체 파라미터 VJP · 기존 방향 대조</h3>'
+        '<p>관측 60개와 배경 계수 1개의 민감도를 파라미터 VJP 한 번으로 계산했습니다. '
+        '기존 세 방향으로 투영한 값과 방향별 응답을 비교합니다.</p>'
+        '<table style="border-spacing:12px 6px"><tr><th>방향</th><th>전체 VJP 투영</th><th>방향응답 대비 상대차이</th></tr>'
+        f'{"".join(rows)}</table>'
+        '<p>실제 저장 GN 제어값은 현재 gradient 검사에서 수반 계산 전에 거부됩니다. '
+        '새 optimizer·재분석 실행 및 일반 minmod FSOI 인증은 아닙니다.</p>'
+        '<p><a href="../../graphify-out/fv-root-cause-20260919/PARAMETER_VJP_REVIEW.md">실행 기록·단계별 비용</a></p></section>'
+    )
+
+
 def _colour(value, scale):
     """Symmetric blue-paper-red colour for a normalized sensitivity value."""
     t = max(-1.0, min(1.0, float(value) / scale))
@@ -549,6 +574,7 @@ def _panel(report, scale, central):
       {_local_path_panel()}
       {_additional_directions_panel()}
       {_matrix_free_panel()}
+      {_parameter_vjp_panel()}
       <p><a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.json">최종 응답 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.pt">응답 tensor</a>{central_link} · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg">민감도 −20분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg">−10분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg">0분</a></p>
     </div>
   </details>
