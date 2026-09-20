@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6568,
-    "edges": 64884,
-    "communities": 238,
+    "nodes": 6587,
+    "edges": 64910,
+    "communities": 248,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -118,5 +118,27 @@
     "tests": "37 distinct focused tests passed in6.22s; no full CI or old long experiments repeated",
     "record": "MINMOD_SPATIAL_INVERSE_REVIEW.md",
     "diagnosis": "Exact negative sine perturbation accepted Newton iterates00\u201305 preserve limiter choices but change face signs; scales shrink1,.5,.25,.125,.03125,.03125. Diagnostic stopped after branch mismatch; no perturbed root claim."
+  },
+  "pr166_followup": {
+    "baseline": "main bc63dc05",
+    "method": "saved nominal root; exact full-contract parameter JVP; H c_dot=-F_p d; both signed predictor/corrector; predeclared h=.001*2^-j",
+    "direction": "raw sin(k), k=0..59, theta fixed; no normalization",
+    "limits": "local observation response only; no finite-path certificate, generic minmod API, product GN stationarity or learning claim",
+    "timer": "captured monotonic start; isolated mock-clock check3.25s; historical records preserved",
+    "record": "MINMOD_LOCAL_PATH_REVIEW.md",
+    "status": "tested local observation response complete",
+    "accepted_h": [
+      0.000125,
+      6.25e-05
+    ],
+    "relative_errors": [
+      3.4729495244802896e-05,
+      8.682535736348258e-06
+    ],
+    "tests": "48 distinct focused tests; no full CI",
+    "html": "separate result table; Aside desktop checked; original frame arrays unchanged; new mobile check unavailable",
+    "cost": "coarse261.15s; cached resume158.40s; maximum sampled RSS357236736bytes",
+    "remaining": "theta reanalysis, general minmod, finite-impact range, typed learning, D7",
+    "team_review": "Luna high GREEN and RED final review clear; cache residual checks and metadata-only counter correction verified"
   }
 }

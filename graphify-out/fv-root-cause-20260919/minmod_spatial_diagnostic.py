@@ -4,6 +4,8 @@ from dataclasses import replace
 from pathlib import Path
 import torch
 
+diagnostic_started = time.monotonic()
+
 ROOT = Path('/Users/yhlee/ADVAR')
 PROBE_PATH = ROOT / 'examples/weather_scenarios/fv_minmod_inverse_probe.py'
 REPORT_PATH = ROOT / 'graphify-out/fv-root-cause-20260919/minmod_spatial_inverse.json'
@@ -156,6 +158,6 @@ except Exception as exc:
     result['status'] = 'failed'
     result['failure'] = {'type': type(exc).__name__, 'message': str(exc)}
 finally:
-    result['elapsed_seconds'] = time.monotonic() - result.get('_started', time.monotonic())
+    result['elapsed_seconds'] = time.monotonic() - diagnostic_started
     dump(result)
     print(json.dumps({k: result[k] for k in ('status','failure','perturbed_start','final','elapsed_seconds') if k in result}, indent=2), flush=True)
