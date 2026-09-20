@@ -223,3 +223,33 @@ def test_refiner_candidate_contract_is_checked_before_post_assessment(analytic_c
     assert result["response"] is None
     torch.testing.assert_close(result["control"], original)
     assert "wrong" in result["error"]
+
+
+@pytest.mark.parametrize("positive_curvature", [True, False])
+def test_matrix_free_refiner_integrates_or_refuses_without_partial_response(analytic_case, positive_curvature):
+    from advar.local_refinement import refine_stationary
+
+    case = analytic_case
+    original_objective = case["objective"]
+    if not positive_curvature:
+        case["objective"] = lambda c, p: -original_objective(c, p)
+    control = case["stationary"] + 0.1
+    saved_control, saved_p = control.clone(), case["p"].clone()
+
+    def refine(c, p):
+        return refine_stationary(
+            case["objective"], c, p, branch_check=case["branch_check"]
+        ).control
+
+    result = _call(case, control, refine=refine)
+    torch.testing.assert_close(control, saved_control, rtol=0, atol=0)
+    torch.testing.assert_close(case["p"], saved_p, rtol=0, atol=0)
+    if positive_curvature:
+        assert result["status"] == "eligible"
+        expected = case["p"] + case["stationary"] @ torch.linalg.solve(case["A"], case["B"])
+        torch.testing.assert_close(result["response"].total_gradient, expected)
+    else:
+        assert result["status"] == "ineligible"
+        assert result["response"] is None
+        torch.testing.assert_close(result["control"], saved_control, rtol=0, atol=0)
+        assert "positive definite" in result["error"]

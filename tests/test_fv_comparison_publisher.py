@@ -255,3 +255,13 @@ def test_current_gn_panel_and_identity(tmp_path, monkeypatch):
     monkeypatch.setattr(PUBLISHER,'HERE',tmp_path)
     with pytest.raises(SystemExit,match='current GN archived'):
         PUBLISHER._current_gn_panel()
+
+
+def test_matrix_free_refinement_panel_and_identity(tmp_path, monkeypatch):
+    assert '행렬 없는 정상점 보정' in PUBLISHER._matrix_free_refinement_panel()
+    data = json.loads((EVIDENCE/'matrix_free_refined_response.json').read_text())
+    data['refinement_diagnostics']['history'][0]['linear_relative_residual'] = 0.1
+    (tmp_path/'matrix_free_refined_response.json').write_text(json.dumps(data))
+    monkeypatch.setattr(PUBLISHER, 'HERE', tmp_path)
+    with pytest.raises(SystemExit, match='matrix-free refinement archived'):
+        PUBLISHER._matrix_free_refinement_panel()

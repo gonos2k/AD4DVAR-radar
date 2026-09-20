@@ -10,6 +10,7 @@ from types import SimpleNamespace
 import sys
 
 import torch
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,7 +28,8 @@ class _Frozen:
     initial_background_dbz: torch.Tensor
 
 
-def test_fresh_gn_forwards_exact_solver_control_after_verification(monkeypatch, tmp_path):
+@pytest.mark.parametrize("matrix_free_refine", [False, True])
+def test_fresh_gn_forwards_exact_solver_control_after_verification(monkeypatch, tmp_path, matrix_free_refine):
     events: list[str] = []
     forwarded: dict[str, object] = {}
     dtype = torch.float64
@@ -107,6 +109,8 @@ def test_fresh_gn_forwards_exact_solver_control_after_verification(monkeypatch, 
         forwarded.update({"control": control, "p": p, "directions": directions})
         assert control is solver_control
         assert events == ["forecast", "verification", "solve", "prepare"]
+        if matrix_free_refine:
+            assert kwargs["refine"](control, p) is solver_control
         return {"status": "ineligible", "response": None}
 
     workflow = SimpleNamespace(
@@ -118,11 +122,28 @@ def test_fresh_gn_forwards_exact_solver_control_after_verification(monkeypatch, 
         PRODUCER, "load",
         lambda name: bridge if name == "fv_minmod_matrix_free_probe" else workflow,
     )
+    if matrix_free_refine:
+        import advar.local_refinement as refinement
+
+        def fake_refine(objective, control, p, *, branch_check):
+            assert control is solver_control
+            assert branch_check(control, p) == ("branch", "fake")
+            return _Refined(control)
+
+        monkeypatch.setattr(refinement, "refine_stationary", fake_refine)
 
     output = tmp_path / "result.json"
-    report = PRODUCER.run(output, fresh_gn=True)
+    report = PRODUCER.run(output, fresh_gn=True, matrix_free_refine=matrix_free_refine)
 
     assert report["fresh_gn_runs"] == 1
     assert report["workflow"]["status"] == "ineligible"
     assert forwarded["control"] is solver_control
     assert events == ["forecast", "verification", "solve", "prepare"]
+    assert report["refinement_method"] == (
+        "matrix-free Newton-PCG" if matrix_free_refine else "dense small oracle"
+    )
+
+
+@dataclass(frozen=True)
+class _Refined:
+    control: torch.Tensor

@@ -1,0 +1,15 @@
+{
+  "exit_code": 0,
+  "timed_out": false,
+  "command": [
+    ".venv/bin/python",
+    "examples/weather_scenarios/fv_gn_response_probe.py",
+    "--matrix-free-refine",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/matrix_free_refined_response.json"
+  ],
+  "elapsed_seconds": 71.13235195801826,
+  "peak_rss_bytes": 354369536,
+  "platform": "macOS; ru_maxrss bytes; one child process",
+  "timeout_seconds": 180
+}
