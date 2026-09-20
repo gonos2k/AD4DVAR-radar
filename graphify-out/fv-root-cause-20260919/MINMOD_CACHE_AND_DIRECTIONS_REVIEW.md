@@ -85,3 +85,9 @@ prior learning and whole-chain D7 remain separate open tasks.
   viewport check was performed. The table retains horizontal overflow handling.
 - Graphify code-only cached refresh: 6607 nodes, 64944 edges, 226 communities,
   zero semantic LLM tokens. No semantic corpus rebuild.
+- RED's remaining scope notes: the inherited `direction` description names the
+  original sine/theta setup; the additional direction is unambiguously stored
+  in `selected_direction` and its literal tangent `parameter_direction` vector.
+  The linearization digest binds solver-cache data, not completed pair records;
+  publication binds the full archived report. This is not a general certificate
+  for arbitrary edited completion records.
