@@ -168,3 +168,33 @@ def test_local_path_panel_rejects_changed_evidence(tmp_path, monkeypatch, mutati
     monkeypatch.setattr(PUBLISHER, 'HERE', tmp_path)
     with pytest.raises(SystemExit, match='local path'):
         PUBLISHER._local_path_panel()
+
+
+def test_additional_directions_panel_uses_measured_results():
+    panel = PUBLISHER._additional_directions_panel()
+    assert 'fvMinmodAdditionalDirections' in panel
+    assert '중간 시각 공통 편향' in panel and '배경 θ' in panel
+
+
+@pytest.mark.parametrize('mutation', ['direct', 'direction', 'step', 'score', 'branch', 'gradient', 'error'])
+def test_additional_direction_evidence_rejects_mutation(mutation):
+    import hashlib
+    data = json.loads((EVIDENCE / 'minmod_theta_final.json').read_text())
+    fingerprint = hashlib.sha256(json.dumps(data, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    pair = data['pairs'][-1]
+    if mutation == 'direct':
+        data['adjoint']['direct'][0] += .001
+    elif mutation == 'direction':
+        data['selected_direction'] = 'middle_time_bias'
+    elif mutation == 'step':
+        pair['h'] *= .9
+    elif mutation == 'score':
+        pair['endpoints'][0]['score'] += .001
+    elif mutation == 'branch':
+        pair['endpoints'][0]['branch']['face_signs'] = []
+    elif mutation == 'gradient':
+        pair['endpoints'][0]['gradient_max'] = float('nan')
+    else:
+        pair['absolute_error'] = -1
+    with pytest.raises(SystemExit, match='direction result'):
+        PUBLISHER._validate_direction_result(data, 'theta', fingerprint)

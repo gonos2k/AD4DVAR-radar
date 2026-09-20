@@ -1,0 +1,62 @@
+..................................F.................................     [100%]
+=================================== FAILURES ===================================
+____________ test_joint_inverse_panel_preserves_local_scope[False] _____________
+
+tmp_path = PosixPath('/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/pytest-of-yhlee/pytest-153/test_joint_inverse_panel_prese0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10b9dd340>
+corrupt = False
+
+    @pytest.mark.parametrize('corrupt', [False, True])
+    def test_joint_inverse_panel_preserves_local_scope(tmp_path, monkeypatch, corrupt):
+        joint = json.loads((EVIDENCE / 'minmod_joint_inverse_final.json').read_text())
+        if corrupt:
+            joint['general_minmod_response_eligible'] = True
+        (tmp_path / 'minmod_joint_inverse_final.json').write_text(json.dumps(joint))
+        monkeypatch.setattr(PUBLISHER, 'HERE', tmp_path)
+        monkeypatch.setattr(PUBLISHER, 'LONG_HORIZON_PATH', tmp_path / 'absent.json')
+        response = json.loads((EVIDENCE / 'rotation240_stable_response_18.json').read_text())
+        if corrupt:
+            with pytest.raises(SystemExit, match='joint minmod report scope'):
+                PUBLISHER._panel(response, 1.0, None)
+        else:
+>           panel = PUBLISHER._panel(response, 1.0, None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_fv_comparison_publisher.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+graphify-out/fv-root-cause-20260919/publish_fv_response_evidence.py:504: in _panel
+    {_additional_directions_panel()}
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+graphify-out/fv-root-cause-20260919/publish_fv_response_evidence.py:280: in _additional_directions_panel
+    data = json.loads((HERE / f"minmod_{direction}_final.json").read_text())
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/pytest-of-yhlee/pytest-153/test_joint_inverse_panel_prese0/minmod_theta_final.json')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/pytest-of-yhlee/pytest-153/test_joint_inverse_panel_prese0/minmod_theta_final.json'
+
+/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py:1013: FileNotFoundError
+=============================== warnings summary ===============================
+tests/test_fv_minmod_local_path_probe.py: 18 warnings
+  /Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_fv_comparison_publisher.py::test_joint_inverse_panel_preserves_local_scope[False]
+1 failed, 67 passed, 18 warnings in 9.06s

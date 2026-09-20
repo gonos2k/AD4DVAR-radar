@@ -235,6 +235,72 @@ def _local_path_panel():
     )
 
 
+def _validate_direction_result(data, direction, fingerprint):
+    pairs = data["pairs"][-2:]
+    if (data["status"] != "complete" or data["selected_direction"] != direction
+            or data["finite_path_certified"] is not False
+            or data["general_minmod_response_eligible"] is not False
+            or len(pairs) != 2 or pairs[1]["j"] != pairs[0]["j"] + 1):
+        raise SystemExit("direction result scope/completion mismatch")
+    for pair in pairs:
+        s, fd, error = (pair[k] for k in
+                        ("response_sensitivity", "central_reanalysis", "absolute_error"))
+        if (not all(_finite(x) for x in (s, fd, error, pair["h"]))
+                or not s or pair["h"] != 1e-3*2.0**(-pair["j"]) or error < 0
+                or not math.isclose(error, abs(s-fd), rel_tol=1e-12,
+                                    abs_tol=8*math.ulp(max(abs(s), abs(fd))))
+                or error > 1e-4*abs(s) or not pair["derivative_pass"]
+                or not pair["predictors_ok"]
+                or [e["sign"] for e in pair["endpoints"]] != [-1, 1]):
+            raise SystemExit("direction result derivative evidence mismatch")
+        endpoints = pair["endpoints"]
+        if not math.isclose(fd, (endpoints[1]["score"]-endpoints[0]["score"])/(2*pair["h"]),
+                            rel_tol=1e-12, abs_tol=8*math.ulp(abs(fd))):
+            raise SystemExit("direction result endpoint score mismatch")
+        for endpoint in endpoints:
+            g = endpoint["gradient_max"]
+            branch = endpoint["branch"]
+            nominal = data["nominal_branch"]
+            if (not _finite(g) or not 0 <= g < 1e-10
+                    or not endpoint["same_local_branch"]
+                    or branch["choices"] != nominal["choices"]
+                    or branch["face_signs"] != nominal["face_signs"]):
+                raise SystemExit("direction result endpoint branch/stationarity mismatch")
+    actual = hashlib.sha256(json.dumps(data, sort_keys=True,
+                                      separators=(",", ":")).encode()).hexdigest()
+    if actual != fingerprint:
+        raise SystemExit("direction result archived identity mismatch")
+
+
+def _additional_directions_panel():
+    # Fingerprints bind the displayed numbers to completed measured reports.
+    measured = [('theta', '배경 θ', '9f01752de68a609e8497b5da59a96b6ea9fd90b79ed61235000b1dae7c1f7978'), ('middle_time_bias', '중간 시각 공통 편향', 'faba5a1846e963e6b3d2e6bd9d516320b34b1b60e15e66d2ac0ce9d58166f8a9')]
+    if not any((HERE / f"minmod_{name}_final.json").exists() for name, _, _ in measured):
+        return ""
+    rows = []
+    for direction, label, fingerprint in measured:
+        data = json.loads((HERE / f"minmod_{direction}_final.json").read_text())
+        _validate_direction_result(data, direction, fingerprint)
+        for pair in data["pairs"][-2:]:
+            rows.append(f'<tr><td>{label}</td><td>{pair["h"]:.6g}</td>'
+                        f'<td>{pair["response_sensitivity"]:.8e}</td>'
+                        f'<td>{pair["central_reanalysis"]:.8e}</td>'
+                        f'<td>{100*pair["relative_error_adjoint_denominator"]:.3e}%</td></tr>')
+    if not rows:
+        return ""
+    return (
+        '<section id="fvMinmodAdditionalDirections"><h3>4×5 minmod: 배경 파라미터와 중간 시각 편향</h3>'
+        '<p>같은 정상점·Hessian을 재사용하고 현재 점수의 직접항·제어 gradient를 다시 확인했습니다. '
+        'θ는 배경 평균장만, 중간 시각 편향은 두 번째 관측장의 20개 화소만 바꿉니다.</p>'
+        '<div style="max-width:100%;overflow-x:auto"><table style="border-spacing:12px 6px;white-space:nowrap">'
+        '<thead><tr><th>방향</th><th>h</th><th>수반 방향미분</th><th>중앙 재분석 차분</th><th>수반 대비 차이</th></tr></thead>'
+        f'<tbody>{"".join(rows)}</tbody></table></div>'
+        '<p>두 연속 크기의 양·음 재분석에서 최대 gradient &lt; 1e-10 및 54개 RK 단계의 분기를 확인했습니다. '
+        '고정 합성 점수의 국소 응답 검증이며 신경망 학습 개선·일반 minmod FSOI·유한 경로 인증은 아닙니다.</p>'
+        '<p><a href="../../graphify-out/fv-root-cause-20260919/MINMOD_CACHE_AND_DIRECTIONS_REVIEW.md">실행 기록·범위</a></p></section>'
+    )
+
+
 def _colour(value, scale):
     """Symmetric blue-paper-red colour for a normalized sensitivity value."""
     t = max(-1.0, min(1.0, float(value) / scale))
@@ -437,6 +503,7 @@ def _panel(report, scale, central):
       {comparison}
       {joint_inverse}
       {_local_path_panel()}
+      {_additional_directions_panel()}
       <p><a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.json">최종 응답 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.pt">응답 tensor</a>{central_link} · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg">민감도 −20분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg">−10분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg">0분</a></p>
     </div>
   </details>

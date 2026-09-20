@@ -314,8 +314,6 @@ def run(output: Path, *, resume: Path | None = None, direction_name: str = "obse
         if not resume_data.get("adjoint", {}).get("solution"):
             raise ValueError("resume has no stored adjoint")
         report = dict(resume_data)
-        if "metadata_correction" in report:
-            report["resume_provenance"] = {"historical_metadata_correction": report.pop("metadata_correction")}
         continuing = resume_data.get("selected_direction", "observation_sine60") == direction_name
         report["pairs"] = list(resume_data.get("pairs", [])) if continuing else []
         report["status"] = "running"
@@ -458,11 +456,6 @@ def run(output: Path, *, resume: Path | None = None, direction_name: str = "obse
     observation_tangent = tangents[direction_name]
     structural_accepted = _consecutive_pairs(report["pairs"], require_derivative=False)
     accepted = _consecutive_pairs(report["pairs"], require_derivative=True)
-    if accepted >= 2:
-        report["status"] = "complete"
-        report["elapsed_seconds"] = time.monotonic() - started
-        _write(output, report)
-        return report
     for j in range(resume_start_j, 12):
         h = 1e-3 * (2.0 ** (-j))
         endpoint_records = []
