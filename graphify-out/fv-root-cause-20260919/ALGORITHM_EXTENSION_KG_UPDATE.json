@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6607,
-    "edges": 64944,
-    "communities": 226,
+    "nodes": 6645,
+    "edges": 65010,
+    "communities": 194,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -117,7 +117,7 @@
     "product_gn": "default tolerances; step_tolerance_unverified; gradient1.33e-4 despite objective gap6.42e-12",
     "tests": "37 distinct focused tests passed in6.22s; no full CI or old long experiments repeated",
     "record": "MINMOD_SPATIAL_INVERSE_REVIEW.md",
-    "diagnosis": "Exact negative sine perturbation accepted Newton iterates00\u201305 preserve limiter choices but change face signs; scales shrink1,.5,.25,.125,.03125,.03125. Diagnostic stopped after branch mismatch; no perturbed root claim."
+    "diagnosis": "Exact negative sine perturbation accepted Newton iterates00–05 preserve limiter choices but change face signs; scales shrink1,.5,.25,.125,.03125,.03125. Diagnostic stopped after branch mismatch; no perturbed root claim."
   },
   "pr166_followup": {
     "baseline": "main bc63dc05",
@@ -181,5 +181,57 @@
     "ci": "full CPU/package not run",
     "scope": "local conditional minmod responses only; no general API/learning/finite path/D7 claim",
     "evidence": "MINMOD_CACHE_AND_DIRECTIONS_REVIEW.md"
+  },
+  "pr168_followup": {
+    "baseline": "8b306871",
+    "status": "conditional_research_bridge_complete",
+    "callable": "advar.local_response.compute_local_response",
+    "adapter": "examples/weather_scenarios/fv_minmod_matrix_free_probe.py:make_research_functions",
+    "hvp_basis_columns": 26,
+    "hvp_dense_relative_error": 0.0,
+    "actual_transpose_residual": 9.888163804832049e-11,
+    "adjoint_dense_relative_error": 3.3854477442456924e-12,
+    "responses": {
+      "observation_sine60": {
+        "direct": 0.003897655907627164,
+        "indirect": -0.0046534484194834195,
+        "total": -0.0007557925118562557,
+        "dense_response": -0.0007557925112229098,
+        "relative_difference": 8.37988994268905e-10,
+        "archived_response": -0.0007557925112229098,
+        "mixed_gradient_max_difference": 0.0
+      },
+      "theta": {
+        "direct": -0.004954021014218184,
+        "indirect": 0.0049540851133011155,
+        "total": 6.409908293123628e-08,
+        "dense_response": 6.409908768177652e-08,
+        "relative_difference": 7.411244700621648e-08,
+        "archived_response": 6.409908768177652e-08,
+        "mixed_gradient_max_difference": 0.0
+      },
+      "middle_time_bias": {
+        "direct": 0.0,
+        "indirect": -0.003038272528696361,
+        "total": -0.003038272528696361,
+        "dense_response": -0.0030382725286972937,
+        "relative_difference": 3.0703221662821036e-13,
+        "archived_response": -0.0030382725286972937,
+        "mixed_gradient_max_difference": 0.0
+      }
+    },
+    "distinct_focused_tests": 61,
+    "typecheck": "0 errors 0 warnings",
+    "nonlinear_reanalyses": 0,
+    "general_minmod_response_eligible": false,
+    "finite_path_certified": false,
+    "remaining": [
+      "product GN stationarity",
+      "typed prior learning",
+      "finite impact",
+      "whole-chain D7",
+      "general minmod response API"
+    ],
+    "evidence": "MINMOD_MATRIX_FREE_REVIEW.md"
   }
 }
