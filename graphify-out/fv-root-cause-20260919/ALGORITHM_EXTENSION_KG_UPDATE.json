@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6587,
-    "edges": 64910,
-    "communities": 248,
+    "nodes": 6607,
+    "edges": 64944,
+    "communities": 226,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -140,5 +140,46 @@
     "cost": "coarse261.15s; cached resume158.40s; maximum sampled RSS357236736bytes",
     "remaining": "theta reanalysis, general minmod, finite-impact range, typed learning, D7",
     "team_review": "Luna high GREEN and RED final review clear; cache residual checks and metadata-only counter correction verified"
+  },
+  "pr167_followup": {
+    "baseline": "0407b8e3",
+    "status": "bounded_tasks_complete",
+    "cache": "fresh Ec/Ep, literal directions, calculation AST/input/core identity, linearization digest, trusted legacy migration",
+    "directions": {
+      "theta": {
+        "steps": [
+          0.001,
+          0.0005
+        ],
+        "relative_errors": [
+          1.409618200795159e-07,
+          2.3018565565505726e-07
+        ],
+        "max_endpoint_gradient": 4.402750733434324e-11,
+        "fresh_score_derivative_difference": {
+          "rhs": 0.0,
+          "direct": 0.0
+        }
+      },
+      "middle_time_bias": {
+        "steps": [
+          0.001,
+          0.0005
+        ],
+        "relative_errors": [
+          6.73576938219302e-06,
+          1.6839322400702994e-06
+        ],
+        "max_endpoint_gradient": 1.3875577770106062e-11,
+        "fresh_score_derivative_difference": {
+          "rhs": 0.0,
+          "direct": 0.0
+        }
+      }
+    },
+    "distinct_focused_tests": 68,
+    "ci": "full CPU/package not run",
+    "scope": "local conditional minmod responses only; no general API/learning/finite path/D7 claim",
+    "evidence": "MINMOD_CACHE_AND_DIRECTIONS_REVIEW.md"
   }
 }

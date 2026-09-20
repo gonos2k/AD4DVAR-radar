@@ -1,0 +1,16 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "examples/weather_scenarios/fv_minmod_local_path_probe.py",
+    "--resume",
+    "graphify-out/fv-root-cause-20260919/minmod_theta.json",
+    "--direction",
+    "theta",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/minmod_theta_final.json"
+  ],
+  "returncode": 0,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 319586304,
+  "elapsed_seconds": 3.0271882499800995
+}

@@ -106,3 +106,21 @@ on held-out outcomes or relax stationarity gates to obtain a pass.
 The PR166 local observation task is closed at h=.000125 and .0000625; see
 MINMOD_LOCAL_PATH_REVIEW.md. Parameter reanalysis, general minmod response,
 original .001 finite impact, typed learning and whole D7 remain open.
+
+## PR167 cache and independent directions
+
+- [x] Check cached direct/rhs against freshly evaluated score derivatives, exact
+  parameter directions, and numerical contract/payload identity before reuse.
+- [x] Reuse the saved theta tangent for two consecutive plus/minus pairs at the
+  unchanged stationarity, branch and relative derivative gates.
+- [x] Predeclared second observation direction: uniform +1 at the middle of
+  three observation times, zero at the first/last times and theta. Use the same
+  h=.001*2^-j schedule, without changing direction or normalizing after results.
+- [x] Publish separate measured direction results; preserve the archived sine
+  result, original animation and all general-response/learning restrictions.
+
+Reuse the nominal Hessian and accepted controls. No repeat of the old sine,
+180-minute transport or 240-grid experiments is required for this follow-up.
+
+Closed in MINMOD_CACHE_AND_DIRECTIONS_REVIEW.md: both new directions passed
+at h=.001 and .0005. This closes these local response tasks only.
