@@ -90,3 +90,19 @@ on held-out outcomes or relax stationarity gates to obtain a pass.
 - [ ] Run the 4x5/26-control inverse with endpoint controls, scores, gradients,
   signatures and phase costs, then compare the default product GN tolerances.
   Local response and optimizer convergence are separate completion conditions.
+
+## PR166 local stationary path
+
+- [x] Correct diagnostic elapsed time from a captured monotonic start; isolated
+  AST check returns3.25s with injected timestamps10 and13.25. Historical reports
+  are preserved; no old experiment is rerun for this logging fix.
+- [x] Reuse the 26-control root, compute exact parameter-to-control tangent,
+  and test raw sin(k), k=0..59, theta fixed, with h=.001*2^-j.
+- [x] Obtain two successive matched-branch plus/minus stationary pairs at the
+  unchanged1e-10 gradient gate and compare central reanalysis with adjoint.
+- [x] Show measured local range separately from original .001 finite impact,
+  general minmod response, product GN convergence and learned forecast skill.
+
+The PR166 local observation task is closed at h=.000125 and .0000625; see
+MINMOD_LOCAL_PATH_REVIEW.md. Parameter reanalysis, general minmod response,
+original .001 finite impact, typed learning and whole D7 remain open.

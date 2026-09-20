@@ -144,3 +144,27 @@ def test_joint_inverse_panel_rejects_mutated_numeric_or_source_evidence(
     response = json.loads((EVIDENCE / 'rotation240_stable_response_18.json').read_text())
     with pytest.raises(SystemExit, match=reason):
         PUBLISHER._panel(response, 1., None)
+
+
+def test_local_path_panel_uses_completed_archived_pairs():
+    panel = PUBLISHER._local_path_panel()
+    assert 'fvMinmodLocalPath' in panel
+    assert 'h=0.001' in panel
+    assert '일반 minmod FSOI' in panel
+
+
+@pytest.mark.parametrize('mutation', ['gradient', 'finite_path', 'derivative', 'source'])
+def test_local_path_panel_rejects_changed_evidence(tmp_path, monkeypatch, mutation):
+    data = json.loads((PUBLISHER.HERE / 'minmod_local_path.json').read_text())
+    if mutation == 'gradient':
+        data['pairs'][-1]['endpoints'][0]['gradient_max'] = float('nan')
+    elif mutation == 'finite_path':
+        data['finite_path_certified'] = True
+    elif mutation == 'derivative':
+        data['pairs'][-1]['derivative_pass'] = False
+    else:
+        data['producer_sha256'] = '0' * 64
+    (tmp_path / 'minmod_local_path.json').write_text(json.dumps(data))
+    monkeypatch.setattr(PUBLISHER, 'HERE', tmp_path)
+    with pytest.raises(SystemExit, match='local path'):
+        PUBLISHER._local_path_panel()

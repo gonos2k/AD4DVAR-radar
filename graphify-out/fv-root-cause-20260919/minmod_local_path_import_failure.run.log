@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_minmod_local_path_probe.py", line 311, in <module>
+    result = run(args.output)
+             ^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_minmod_local_path_probe.py", line 55, in run
+    probe = _load_module(probe_path, "fv_minmod_inverse_for_local_path")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_minmod_local_path_probe.py", line 34, in _load_module
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/minmod_spatial_inverse_measured.py", line 29, in <module>
+    _spec.loader.exec_module(_oracle)
+  File "<frozen importlib._bootstrap_external>", line 995, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1132, in get_code
+  File "<frozen importlib._bootstrap_external>", line 1190, in get_data
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/fv_sensitivity_probe.py'

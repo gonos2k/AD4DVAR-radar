@@ -1,0 +1,12 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "examples/weather_scenarios/fv_minmod_local_path_probe.py",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/minmod_local_path.json"
+  ],
+  "returncode": 1,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 194052096,
+  "elapsed_seconds": 2.016159582999535
+}

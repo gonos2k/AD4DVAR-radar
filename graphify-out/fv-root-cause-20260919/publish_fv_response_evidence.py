@@ -192,6 +192,49 @@ def _validate_joint_inverse(joint):
         raise SystemExit("joint minmod archived report/source identity mismatch")
 
 
+def _local_path_panel():
+    path = HERE / "minmod_local_path.json"
+    if not path.is_file():
+        return ""
+    data = json.loads(path.read_text())
+    pairs = data["pairs"][-2:]
+    if (data["status"] != "complete" or len(pairs) != 2
+            or data["finite_path_certified"] is not False
+            or data["general_minmod_response_eligible"] is not False
+            or pairs[1]["j"] != pairs[0]["j"] + 1):
+        raise SystemExit("local path scope or completion mismatch")
+    for pair in pairs:
+        if not pair["derivative_pass"] or not pair["predictors_ok"]:
+            raise SystemExit("local path derivative/branch mismatch")
+        for endpoint in pair["endpoints"]:
+            g = endpoint["gradient_max"]
+            if not _finite(g) or not 0 <= g < 1e-10 or not endpoint["same_local_branch"]:
+                raise SystemExit("local path endpoint is not stationary on the branch")
+    # This panel publishes one archived measurement, including source/input IDs.
+    fingerprint = hashlib.sha256(json.dumps(data, sort_keys=True,
+                                            separators=(",", ":")).encode()).hexdigest()
+    if fingerprint != "db62cd14daa55af1e8a86b51a841eedb9535887fac3f81396ade48ac1e9cd998":
+        raise SystemExit("local path archived identity mismatch")
+    rows = "".join(
+        f'<tr><td>{p["h"]:.6g}</td><td>{p["response_sensitivity"]:.8e}</td>'
+        f'<td>{p["central_reanalysis"]:.8e}</td>'
+        f'<td>{p["relative_error_adjoint_denominator"]:.4%}</td></tr>' for p in pairs)
+    return (
+        '<section id="fvMinmodLocalPath"><h3>4×5 minmod: 같은 국소 분기의 관측 응답</h3>'
+        '<p>저장된 26제어 정상점에서 Hessian 기반 예측값을 보정했습니다. '
+        '동일한 raw sin(k), k=0…59 관측 방향·고정 배경 파라미터로 양·음 재분석을 수행했습니다. '
+        '최대 gradient &lt; 1e-10, 54개 RK 단계의 셀별 limiter·면별 유량 부호를 대조했습니다.</p>'
+        '<div style="max-width:100%;overflow-x:auto"><table style="border-spacing:12px 6px;white-space:nowrap">'
+        '<thead><tr><th>h (dBZ)</th><th>수반 방향미분</th><th>중앙 재분석 차분</th><th>수반 대비 차이</th></tr></thead>'
+        f'<tbody>{rows}</tbody></table></div>'
+        '<p>기존 h=0.001의 유한 영향 검증은 여전히 미완료입니다. '
+        '이 결과는 합성 조건부 점수의 국소 미분 검증이며, 전체 경로 인증·일반 minmod FSOI·'
+        '신경망 학습 개선·독립 예측 성능을 뜻하지 않습니다. 기존 애니메이션은 유지합니다.</p>'
+        '<p><a href="../../graphify-out/fv-root-cause-20260919/minmod_local_path.json">원시 결과·Hessian·경로 예측값</a> · '
+        '<a href="../../graphify-out/fv-root-cause-20260919/MINMOD_LOCAL_PATH_REVIEW.md">범위·실행 기록</a></p></section>'
+    )
+
+
 def _colour(value, scale):
     """Symmetric blue-paper-red colour for a normalized sensitivity value."""
     t = max(-1.0, min(1.0, float(value) / scale))
@@ -393,6 +436,7 @@ def _panel(report, scale, central):
       {long_horizon}
       {comparison}
       {joint_inverse}
+      {_local_path_panel()}
       <p><a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.json">최종 응답 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.pt">응답 tensor</a>{central_link} · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg">민감도 −20분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg">−10분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg">0분</a></p>
     </div>
   </details>
