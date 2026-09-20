@@ -1,0 +1,12 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "examples/weather_scenarios/fv_minmod_matrix_free_probe.py",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/minmod_matrix_free.json"
+  ],
+  "returncode": 0,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 344637440,
+  "elapsed_seconds": 44.373154792003334
+}

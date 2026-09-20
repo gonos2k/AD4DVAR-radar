@@ -301,6 +301,50 @@ def _additional_directions_panel():
     )
 
 
+def _matrix_free_panel():
+    path = HERE / "minmod_matrix_free.json"
+    if not path.exists():
+        return ""
+    data = json.loads(path.read_text())
+    limits = {"gradient_max": 1e-10, "actual_transpose_residual": 1e-10,
+              "hvp_dense_relative_error": 1e-10, "adjoint_dense_relative_error": 1e-8}
+    if (data["status"] != "complete" or data["dense_used_in_solver"] is not False
+            or data["nonlinear_reanalyses"] != 0 or data["hvp_basis_columns"] != 26
+            or data["general_minmod_response_eligible"] is not False
+            or data["finite_path_certified"] is not False
+            or not _finite(data["dense_min_eigenvalue"]) or data["dense_min_eigenvalue"] <= 0
+            or set(data["directions"]) != {"observation_sine60", "theta", "middle_time_bias"}
+            or any(not _finite(data[k]) or not 0 <= data[k] <= limit for k, limit in limits.items())):
+        raise SystemExit("matrix-free scope or residual mismatch")
+    rows = []
+    for name, row in data["directions"].items():
+        if (not all(_finite(row[k]) for k in ("direct", "indirect", "total", "dense_response", "relative_difference"))
+                or row["total"] != row["direct"] + row["indirect"]
+                or row["mixed_gradient_max_difference"] != 0
+                or not 0 <= row["relative_difference"] <= 1e-6):
+            raise SystemExit("matrix-free directional response mismatch")
+        label = {"observation_sine60": "기존 sine", "theta": "배경 θ", "middle_time_bias": "중간 시각 편향"}[name]
+        rows.append(f'<tr><td>{label}</td><td>{row["direct"]:.8e}</td>'
+                    f'<td>{row["indirect"]:.8e}</td><td>{row["total"]:.8e}</td>'
+                    f'<td>{row["relative_difference"]:.3e}</td></tr>')
+    digest = hashlib.sha256(json.dumps(data, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if digest != "4e3c3559709b57ebdb512e41184b754d7b32a560544fcbcf9fb9bea3e767fa90":
+        raise SystemExit("matrix-free archived identity mismatch")
+    return (
+        '<section id="fvMinmodMatrixFree"><h3>4×5 minmod: 행렬 없는 연구용 수반</h3>'
+        f'<p>실제 Hessian–벡터 곱으로 PCG {data["pcg_iterations"]}회, '
+        f'전치 수반 상대잔차 {data["actual_transpose_residual"]:.3e}. '
+        f'26개 기저 방향의 저장 Hessian 대비 상대차이 {data["hvp_dense_relative_error"]:.3e}. '
+        '조밀 행렬은 사후 대조에만 사용했고 새 재분석은 수행하지 않았습니다.</p>'
+        '<div style="max-width:100%;overflow-x:auto"><table style="border-spacing:12px 6px;white-space:nowrap">'
+        '<thead><tr><th>방향</th><th>직접항</th><th>간접항</th><th>합계</th><th>조밀 기준 상대차이</th></tr></thead>'
+        f'<tbody>{"".join(rows)}</tbody></table></div>'
+        '<p>고정 support·경계·정밀도와 검사한 국소 분기에 한정합니다. '
+        'θ의 두 큰 항은 서로 상쇄됩니다. 일반 minmod FSOI·제품 GN 정상성·학습 개선·전체 경로 인증은 아닙니다.</p>'
+        '<p><a href="../../graphify-out/fv-root-cause-20260919/MINMOD_MATRIX_FREE_REVIEW.md">실행 기록·연구용 호출법</a></p></section>'
+    )
+
+
 def _colour(value, scale):
     """Symmetric blue-paper-red colour for a normalized sensitivity value."""
     t = max(-1.0, min(1.0, float(value) / scale))
@@ -504,6 +548,7 @@ def _panel(report, scale, central):
       {joint_inverse}
       {_local_path_panel()}
       {_additional_directions_panel()}
+      {_matrix_free_panel()}
       <p><a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.json">최종 응답 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.pt">응답 tensor</a>{central_link} · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg">민감도 −20분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg">−10분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg">0분</a></p>
     </div>
   </details>

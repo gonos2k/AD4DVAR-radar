@@ -198,3 +198,30 @@ def test_additional_direction_evidence_rejects_mutation(mutation):
         pair['absolute_error'] = -1
     with pytest.raises(SystemExit, match='direction result'):
         PUBLISHER._validate_direction_result(data, 'theta', fingerprint)
+
+
+def test_matrix_free_panel_shows_separate_terms_and_scope():
+    panel = PUBLISHER._matrix_free_panel()
+    assert 'fvMinmodMatrixFree' in panel and '직접항' in panel and '간접항' in panel
+    assert '사후 대조' in panel and '일반 minmod FSOI' in panel
+
+
+@pytest.mark.parametrize('mutation', ['residual', 'total', 'source', 'scope', 'curvature', 'mixed'])
+def test_matrix_free_panel_rejects_damaged_evidence(tmp_path, monkeypatch, mutation):
+    data = json.loads((EVIDENCE/'minmod_matrix_free.json').read_text())
+    if mutation == 'residual':
+        data['actual_transpose_residual'] = 1e-3
+    elif mutation == 'total':
+        data['directions']['theta']['total'] += .001
+    elif mutation == 'curvature':
+        data['dense_min_eigenvalue'] = -1.
+    elif mutation == 'mixed':
+        data['directions']['theta']['mixed_gradient_max_difference'] = .1
+    elif mutation == 'source':
+        data['source_sha256'] = {}
+    else:
+        data['general_minmod_response_eligible'] = True
+    (tmp_path/'minmod_matrix_free.json').write_text(json.dumps(data))
+    monkeypatch.setattr(PUBLISHER,'HERE',tmp_path)
+    with pytest.raises(SystemExit, match='matrix-free'):
+        PUBLISHER._matrix_free_panel()

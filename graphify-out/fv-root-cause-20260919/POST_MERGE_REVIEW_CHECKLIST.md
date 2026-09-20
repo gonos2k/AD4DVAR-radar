@@ -124,3 +124,19 @@ Reuse the nominal Hessian and accepted controls. No repeat of the old sine,
 
 Closed in MINMOD_CACHE_AND_DIRECTIONS_REVIEW.md: both new directions passed
 at h=.001 and .0005. This closes these local response tasks only.
+
+## PR168 reusable research response and matrix-free bridge
+
+- [x] Isolate conditional local-response algebra with mandatory caller branch
+  checks, fresh direct/mixed derivatives, exact HVP PCG and true transpose residual.
+- [x] Keep minmod adaptation in the bounded full-support research example and
+  reject support, reconstruction or nominal branch outside that contract.
+- [x] Compare all 26 HVP basis columns with the archived Hessian (relative
+  Frobenius error <=1e-10), matrix-free/dense adjoints (<=1e-8), and all three
+  archived direction responses (relative difference <=1e-6). The independent
+  transpose residual must be <=1e-10. Criteria are declared before execution.
+- [x] Publish measured matrix-free diagnostics separately; no nonlinear
+  reanalysis, new direction, public donorcell-gate change or learning claim.
+
+Closed as a conditional research bridge in MINMOD_MATRIX_FREE_REVIEW.md.
+General minmod API eligibility and all previously listed learning/D7 limits remain open.
