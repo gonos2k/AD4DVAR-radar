@@ -32,6 +32,15 @@ def _quadratic_case():
 def test_quadratic_response_has_direct_and_implicit_terms_without_dense_solver(monkeypatch):
     A, B, C, control, p, objective, score, directions = _quadratic_case()
     expected_adjoint = torch.linalg.solve(A, torch.func.grad(score, argnums=0)(control, p))
+    expected_direct_gradient = torch.func.grad(score, argnums=1)(control, p)
+    expected_indirect_gradient = B.T @ expected_adjoint
+    expected_total_gradient = expected_direct_gradient + expected_indirect_gradient
+    # This direction makes the total response cancel while both constituent
+    # terms remain nonzero, so projections exercise the full gradient fields.
+    directions = dict(directions)
+    directions["cancellation"] = torch.stack(
+        (expected_total_gradient[1], -expected_total_gradient[0])
+    )
     monkeypatch.setattr(torch.linalg, "solve", lambda *args, **kwargs: pytest.fail("dense solve used"))
     result = compute_local_response(
         objective, score, control, p, directions,
@@ -39,6 +48,9 @@ def test_quadratic_response_has_direct_and_implicit_terms_without_dense_solver(m
         input_identity={"case": "quadratic-v1", "dtype": "float64"},
     )
     expected_direct = torch.func.grad(score, argnums=1)(control, p)
+    torch.testing.assert_close(result.direct_gradient, expected_direct_gradient, rtol=1e-11, atol=1e-12)
+    torch.testing.assert_close(result.indirect_gradient, expected_indirect_gradient, rtol=1e-11, atol=1e-12)
+    torch.testing.assert_close(result.total_gradient, expected_total_gradient, rtol=1e-11, atol=1e-12)
     for name, direction in directions.items():
         mixed = -B @ direction
         expected_indirect = -expected_adjoint @ mixed
@@ -46,6 +58,9 @@ def test_quadratic_response_has_direct_and_implicit_terms_without_dense_solver(m
         torch.testing.assert_close(result.direct[name], expected_direct @ direction, rtol=1e-11, atol=1e-12)
         torch.testing.assert_close(result.indirect[name], expected_indirect, rtol=1e-11, atol=1e-12)
         torch.testing.assert_close(result.total[name], expected_total, rtol=1e-11, atol=1e-12)
+        torch.testing.assert_close(result.direct[name], torch.dot(result.direct_gradient, direction), rtol=1e-11, atol=1e-12)
+        torch.testing.assert_close(result.indirect[name], torch.dot(result.indirect_gradient, direction), rtol=1e-11, atol=1e-12)
+        torch.testing.assert_close(result.total[name], torch.dot(result.total_gradient, direction), rtol=1e-11, atol=1e-12)
     assert result.gradient_max < 1e-10
     assert result.true_adjoint_residual < 1e-12
     assert result.pcg_relative_residual < 1e-10
@@ -56,6 +71,9 @@ def test_quadratic_response_has_direct_and_implicit_terms_without_dense_solver(m
     torch.testing.assert_close(result.score_control_gradient, C.T @ (C @ control - p), rtol=1e-11, atol=1e-12)
     for name, direction in directions.items():
         torch.testing.assert_close(result.mixed_gradients[name], -B @ direction, rtol=1e-11, atol=1e-12)
+    assert abs(float(result.direct["cancellation"])) > 1e-3
+    assert abs(float(result.indirect["cancellation"])) > 1e-3
+    assert abs(float(result.total["cancellation"])) < 1e-12
 
 
 def test_requires_float64_stationarity_branch_and_input_identity():

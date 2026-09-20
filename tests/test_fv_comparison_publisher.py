@@ -225,3 +225,13 @@ def test_matrix_free_panel_rejects_damaged_evidence(tmp_path, monkeypatch, mutat
     monkeypatch.setattr(PUBLISHER,'HERE',tmp_path)
     with pytest.raises(SystemExit, match='matrix-free'):
         PUBLISHER._matrix_free_panel()
+
+
+def test_parameter_vjp_panel_and_archive_guard(tmp_path, monkeypatch):
+    assert '전체 VJP 투영' in PUBLISHER._parameter_vjp_panel()
+    data = json.loads((EVIDENCE/'minmod_parameter_vjp.json').read_text())
+    data['directions']['theta']['full_vjp_projection'] += .1
+    (tmp_path/'minmod_parameter_vjp.json').write_text(json.dumps(data))
+    monkeypatch.setattr(PUBLISHER, 'HERE', tmp_path)
+    with pytest.raises(SystemExit, match='parameter VJP archived'):
+        PUBLISHER._parameter_vjp_panel()

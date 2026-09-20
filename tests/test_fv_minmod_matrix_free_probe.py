@@ -49,3 +49,42 @@ def test_branch_guard_rejects_changed_signature_and_transform_floor(case):
     p[:20] = frozen.nowcast_config.min_dbz
     with pytest.raises(ValueError,match='smooth branch'):
         check(c,p)
+
+
+def test_archived_sources_relocate_without_basename_collision(tmp_path):
+    import hashlib
+    old = tmp_path/'absent-checkout'
+    current = tmp_path/'new-checkout'
+    fingerprints = {}
+    for directory, content in [('src', b'core'), ('examples', b'example')]:
+        relative = Path(directory)/'same.py'
+        target = current/relative
+        target.parent.mkdir(parents=True)
+        target.write_bytes(content)
+        fingerprints[str(old/relative)] = hashlib.sha256(content).hexdigest()
+    assert not old.exists()
+    PROBE.check_archived_sources(fingerprints, archived_root=old, root=current)
+    (current/'src/same.py').write_bytes(b'changed')
+    with pytest.raises(ValueError, match='identity mismatch'):
+        PROBE.check_archived_sources(fingerprints, archived_root=old, root=current)
+
+
+def test_archived_sources_reject_outside_root(tmp_path):
+    for path in [tmp_path/'elsewhere/a.py', tmp_path/'old/../a.py']:
+        with pytest.raises(ValueError):
+            PROBE.check_archived_sources({str(path): 'unused'}, archived_root=tmp_path/'old', root=tmp_path/'new')
+
+
+def test_actual_archived_gn_result_is_rejected_before_adjoint(case, monkeypatch):
+    import advar.local_response as local
+    obs, frozen, boundary, support, saved = case
+    gn = json.loads((PROBE.EVIDENCE/'minmod_spatial_inverse.json').read_text())['product_gn']
+    c = torch.tensor(gn['control'], dtype=torch.float64)
+    p = torch.cat((obs.dbz.flatten(), obs.dbz.new_tensor([.02])))
+    pattern = torch.linspace(-.2,.3,20,dtype=torch.float64).reshape(4,5)
+    objective, score, check = PROBE.make_research_functions(obs,frozen,boundary,support,pattern,pattern,saved['nominal_branch'])
+    def no_solve(*args, **kwargs):
+        pytest.fail('unqualified GN result reached adjoint solver')
+    monkeypatch.setattr(local, 'pcg', no_solve)
+    with pytest.raises(ValueError, match='not stationary'):
+        local.compute_local_response(objective,score,c,p,{'theta':torch.eye(61,dtype=p.dtype)[-1]},branch_check=check,input_identity={'source':'archived product GN'})

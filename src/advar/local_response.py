@@ -28,6 +28,9 @@ class LocalResponse:
     direct: dict[str, Tensor]
     indirect: dict[str, Tensor]
     total: dict[str, Tensor]
+    direct_gradient: Tensor
+    indirect_gradient: Tensor
+    total_gradient: Tensor
     mixed_gradients: dict[str, Tensor]
     score_control_gradient: Tensor
     adjoint: Tensor
@@ -157,6 +160,20 @@ def compute_local_response(
     if true_relative > _PCG_RTOL:
         raise RuntimeError("true adjoint residual exceeds PCG tolerance")
 
+    # Form the complete parameter-space implicit term once.  This is the
+    # exact transpose product J_cp.T @ adjoint; directional responses below
+    # remain useful diagnostics and are checked against these gradients.
+    _, parameter_transpose_product = vjp(
+        lambda q: gradient(control, q), p, adjoint
+    )
+    _require_vector(
+        "parameter transpose product", parameter_transpose_product, dtype=p.dtype
+    )
+    indirect_gradient = -parameter_transpose_product
+    total_gradient = direct_gradient + indirect_gradient
+    _require_vector("indirect parameter gradient", indirect_gradient, dtype=p.dtype)
+    _require_vector("total parameter gradient", total_gradient, dtype=p.dtype)
+
     direct: dict[str, Tensor] = {}
     indirect: dict[str, Tensor] = {}
     total: dict[str, Tensor] = {}
@@ -185,6 +202,9 @@ def compute_local_response(
         direct=direct,
         indirect=indirect,
         total=total,
+        direct_gradient=direct_gradient,
+        indirect_gradient=indirect_gradient,
+        total_gradient=total_gradient,
         mixed_gradients=mixed_gradients,
         score_control_gradient=rhs,
         adjoint=adjoint,

@@ -140,3 +140,10 @@ at h=.001 and .0005. This closes these local response tasks only.
 
 Closed as a conditional research bridge in MINMOD_MATRIX_FREE_REVIEW.md.
 General minmod API eligibility and all previously listed learning/D7 limits remain open.
+
+## PR169 follow-up — portability and full parameter response
+
+- [x] Resolve archived source paths relative to declared archival root; test relocated root, same basenames and mismatch rejection. Preserve historical reports.
+- [x] Compute full parameter VJP once; project onto existing three directions (relative difference <=1e-6); retain direct/indirect components.
+- [x] Feed actual archived GN controls through the current objective/branch gate; reject before PCG. Qualified archived stationary point must pass unchanged gate.
+- [x] Separate preparation, response and comparison costs; new bounded measurement only, no optimizer/reanalysis reruns. Final GREEN/RED review and KG evidence.

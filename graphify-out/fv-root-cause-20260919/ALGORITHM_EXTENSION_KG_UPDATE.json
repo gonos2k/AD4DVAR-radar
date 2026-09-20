@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6645,
-    "edges": 65010,
-    "communities": 194,
+    "nodes": 6651,
+    "edges": 65018,
+    "communities": 238,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -233,5 +233,26 @@
       "general minmod response API"
     ],
     "evidence": "MINMOD_MATRIX_FREE_REVIEW.md"
+  },
+  "pr169_followup": {
+    "baseline": "c4ba18b7",
+    "path_portability": "fixed with declared archival root; old SHA256 unchanged",
+    "parameter_vjp": "full 61-entry direct/indirect/total gradients; three old direction projections pass",
+    "projection_relative_errors": {
+      "observation_sine60": 8.406308121736743e-14,
+      "theta": 4.059473388654648e-11,
+      "middle_time_bias": 2.85478583568856e-16
+    },
+    "actual_archived_gn": "rejected by current gradient gate before PCG; no optimizer rerun",
+    "focused_tests": 65,
+    "timings": {
+      "preparation_seconds": 0.09860862500499934,
+      "response_seconds": 23.638922667014413,
+      "comparison_seconds": 20.05775000003632,
+      "elapsed_seconds": 43.79528308304725
+    },
+    "nonlinear_reanalyses": 0,
+    "evidence": "PARAMETER_VJP_REVIEW.md",
+    "general_minmod_response_eligible": false
   }
 }
