@@ -147,3 +147,10 @@ General minmod API eligibility and all previously listed learning/D7 limits rema
 - [x] Compute full parameter VJP once; project onto existing three directions (relative difference <=1e-6); retain direct/indirect components.
 - [x] Feed actual archived GN controls through the current objective/branch gate; reject before PCG. Qualified archived stationary point must pass unchanged gate.
 - [x] Separate preparation, response and comparison costs; new bounded measurement only, no optimizer/reanalysis reruns. Final GREEN/RED review and KG evidence.
+
+## PR170 follow-up — explicit GN refinement to response
+
+- [x] Conditional workflow: stationary input skips refinement; unqualified input explicitly refines or rejects; failures never return sensitivity.
+- [x] Actual archived product GN control -> existing bounded oracle with fixed branch -> whole parameter response. Keep objective, score, 1e-10 gate and reference verification unchanged.
+- [x] One report records both controls, J/gradient/branch before and after, refinement use, actual adjoint residual, full sensitivity and separated costs. No fresh GN or perturbed reanalysis run.
+- [x] Small success/failure regressions, actual bounded execution, GREEN/RED review, KG and original demo update. General solver/FSOI/learning/D7 remain open.

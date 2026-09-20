@@ -235,3 +235,13 @@ def test_parameter_vjp_panel_and_archive_guard(tmp_path, monkeypatch):
     monkeypatch.setattr(PUBLISHER, 'HERE', tmp_path)
     with pytest.raises(SystemExit, match='parameter VJP archived'):
         PUBLISHER._parameter_vjp_panel()
+
+
+def test_gn_response_panel_and_evidence_identity(tmp_path, monkeypatch):
+    assert '명시적 정상점 보정' in PUBLISHER._gn_response_panel()
+    data = json.loads((EVIDENCE/'gn_refined_response.json').read_text())
+    data['workflow']['after']['gradient_max'] = 1.
+    (tmp_path/'gn_refined_response.json').write_text(json.dumps(data))
+    monkeypatch.setattr(PUBLISHER,'HERE',tmp_path)
+    with pytest.raises(SystemExit,match='GN response archived'):
+        PUBLISHER._gn_response_panel()
