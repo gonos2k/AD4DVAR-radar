@@ -245,3 +245,13 @@ def test_gn_response_panel_and_evidence_identity(tmp_path, monkeypatch):
     monkeypatch.setattr(PUBLISHER,'HERE',tmp_path)
     with pytest.raises(SystemExit,match='GN response archived'):
         PUBLISHER._gn_response_panel()
+
+
+def test_current_gn_panel_and_identity(tmp_path, monkeypatch):
+    assert '현재 GN 실행' in PUBLISHER._current_gn_panel()
+    data = json.loads((EVIDENCE/'current_gn_response.json').read_text())
+    data['control_from_current_result'] = False
+    (tmp_path/'current_gn_response.json').write_text(json.dumps(data))
+    monkeypatch.setattr(PUBLISHER,'HERE',tmp_path)
+    with pytest.raises(SystemExit,match='current GN archived'):
+        PUBLISHER._current_gn_panel()

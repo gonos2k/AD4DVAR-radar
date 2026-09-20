@@ -71,6 +71,15 @@ def _snapshot(
     )
 
 
+def _validate_candidate(candidate: Tensor, control: Tensor) -> None:
+    if candidate.shape != control.shape:
+        raise ValueError("refine returned a control with the wrong shape")
+    if candidate.dtype is not control.dtype or candidate.device != control.device:
+        raise ValueError("refine returned a control with the wrong dtype or device")
+    if not bool(torch.isfinite(candidate).all()):
+        raise ValueError("refine returned a nonfinite control")
+
+
 def _result(
     *,
     status: str,
@@ -111,10 +120,12 @@ def prepare_response(
 
     A refusal always returns the original control and ``response=None``.
     ``refine`` is deliberately explicit: this wrapper does not select or
-    implement a physical optimizer.
+    implement a physical optimizer.  The callback receives detached working
+    copies; it must not mutate shared closure or global state.
     """
     started = time.monotonic()
     original_control = control.detach().clone()
+    original_parameters = p.detach().clone()
     empty_snapshot = {
         "objective": None,
         "gradient_max": None,
@@ -170,10 +181,16 @@ def prepare_response(
     else:
         refinement_used = True
         refine_started = time.monotonic()
+        refine_parameters = original_parameters.clone()
         try:
-            candidate = refine(original_control.clone(), p)
+            candidate = refine(original_control.clone(), refine_parameters)
             if not isinstance(candidate, Tensor):
                 raise ValueError("refine must return a tensor control")
+            if not torch.equal(p.detach(), original_parameters) or not torch.equal(
+                refine_parameters, original_parameters
+            ):
+                raise ValueError("refine mutated parameters")
+            _validate_candidate(candidate, control)
         except (ValueError, RuntimeError) as error:
             refinement_seconds += time.monotonic() - refine_started
             return refuse(f"refinement failed: {error}", refinement_used=True)
