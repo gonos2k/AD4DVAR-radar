@@ -291,7 +291,12 @@ changes the numerical refiner, not the objective, observation contract or gates.
   cross-time covariance and a newly qualified stationary whole response
   remain separate G5c work. An entirely missing observation frame is also
   outside the current bounded point profile.
-- [ ] Longer/irregular schedule and bound validation to point/direction/units
-  (G6/G7).
+- [x] Bounded regular 10-minute/18-lead forward schedule with 90 substeps per
+  interval, 3600 SSPRK stages, same-operator zero/nonzero-flow truth, explicit
+  verification times and observed refusal of strict response eligibility
+  (G6a, `FV_LONG_HORIZON_RESEARCH.md`).
+- [ ] Irregular observation times, evolving future flow/growth/boundaries and
+  long-horizon response remain G6 work. Bind response validation to
+  point/direction/units and check rescaling invariance (G7).
 - [ ] Broader support/refusal accounting, concurrent diagnostics and independent
   physical/finite-impact validation (G8/G9/G10).

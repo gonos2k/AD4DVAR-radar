@@ -9,6 +9,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, fields, is_dataclass, replace
 import hashlib
 import json
+import math
 from typing import Any
 
 import torch
@@ -52,6 +53,7 @@ class FVResearchProblem:
     expected_branch: Mapping[str, Any] | None = None
     observation_operator: str = 'collocated_dbz'
     leads: int = 1
+    verification_times_seconds: tuple[float, ...] | None = None
 
     def __post_init__(self) -> None:
         obs, frozen = self.observations, self.frozen
@@ -60,6 +62,14 @@ class FVResearchProblem:
         if (type(self.leads) is not int or self.leads <= 0
                 or self.leads != frozen.nowcast_config.forecast_steps):
             raise ValueError('research forecast leads must match the configured horizon')
+        if self.verification_times_seconds is not None:
+            interval=60.0*frozen.nowcast_config.interval_minutes
+            expected=tuple((2+lead)*interval for lead in range(1,self.leads+1))
+            if (not isinstance(self.verification_times_seconds,tuple)
+                    or any(type(time) not in (int,float) or not math.isfinite(time)
+                           for time in self.verification_times_seconds)
+                    or self.verification_times_seconds!=expected):
+                raise ValueError('research verification times must match each forecast lead')
         if (self.observation_operator != 'collocated_dbz' or spec is None
                 or spec.reconstruction != 'minmod'
                 or obs.dbz.dtype != torch.float64 or obs.dbz.device.type != 'cpu'
@@ -126,6 +136,9 @@ class FVResearchProblem:
                 'time_schedule':('three regular observations; one subsequent forecast interval'
                                  if self.leads == 1 else
                                  f'three regular observations; {self.leads} subsequent forecast intervals'),
+                'verification_time_contract':('implicit configured lead order'
+                                              if self.verification_times_seconds is None else
+                                              'explicit times equal configured forecast leads'),
                 'background_dependency':'first observation + theta * fixed pattern',
                 'branch_policy':'caller tracer; pointwise check required',
                 'response_validation':'not_performed',
@@ -137,6 +150,7 @@ class FVResearchProblem:
                     'observations':self.observations,'frozen':self.frozen,
                     'future_echo':self.future_boundary_echo,'future_support':self.future_boundary_support,
                     'pattern':self.pattern,'verification':self.verification,
+                    'verification_times_seconds':self.verification_times_seconds,
                     'layout':self.layout,'support':self.support}),
                 'scope':'fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse'}
 
