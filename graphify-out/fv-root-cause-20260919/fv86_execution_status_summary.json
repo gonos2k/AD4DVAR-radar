@@ -1,0 +1,103 @@
+{
+  "declared_case_count": 2,
+  "execution_completed_count": 2,
+  "numerical_eligible_count": 2,
+  "eligible_count": 2,
+  "independently_validated_response_fraction": null,
+  "nonlinear_reanalyses": 0,
+  "interpretation": "conditional discrete execution, not grid convergence or independent response accuracy",
+  "cases": [
+    {
+      "mode": "seed_a",
+      "status": "eligible",
+      "execution_status": "completed",
+      "numerical_status": "eligible",
+      "response_validation": "not_performed",
+      "exit_code": 0,
+      "phase": "finished",
+      "source_unchanged": true,
+      "failure_category": null,
+      "gn_reason": "maximum_outer_iterations",
+      "reference_zero_control_objective": 14.290674223991894,
+      "supplied_seed_objective": 6.316235045331503,
+      "gn_gradient_max": 0.0029375719631752222,
+      "final_gradient_max": 1.0108315885511859e-11,
+      "final_objective": 0.0591580038374185,
+      "adjoint_relative_residual": 8.243789280755456e-12,
+      "refinement_iterations": 2,
+      "refinement_hvp_count": 76,
+      "timings": {
+        "gn_seconds": 74.19734445901122,
+        "assessment_seconds": 0.5640082079917192,
+        "refinement_seconds": 123.83800262503792,
+        "response_seconds": 61.231818291998934,
+        "total_seconds": 185.63387679198058
+      },
+      "wall_seconds": 261.3098085829988,
+      "sampled_peak_rss_bytes": 346800128
+    },
+    {
+      "mode": "seed_b",
+      "status": "eligible",
+      "execution_status": "completed",
+      "numerical_status": "eligible",
+      "response_validation": "not_performed",
+      "exit_code": 0,
+      "phase": "finished",
+      "source_unchanged": true,
+      "failure_category": null,
+      "gn_reason": "maximum_outer_iterations",
+      "reference_zero_control_objective": 14.290674223991894,
+      "supplied_seed_objective": 9.894661066717132,
+      "gn_gradient_max": 0.0029416393158947026,
+      "final_gradient_max": 8.585585150808206e-12,
+      "final_objective": 0.059158003837418247,
+      "adjoint_relative_residual": 8.235806726292424e-12,
+      "refinement_iterations": 2,
+      "refinement_hvp_count": 76,
+      "timings": {
+        "gn_seconds": 70.10772841598373,
+        "assessment_seconds": 0.5660386250237934,
+        "refinement_seconds": 124.11288145801518,
+        "response_seconds": 62.72792104096152,
+        "total_seconds": 187.40688716602745
+      },
+      "wall_seconds": 259.04486974998144,
+      "sampled_peak_rss_bytes": 344653824
+    }
+  ],
+  "same_problem_and_source": true,
+  "gn_start_policy": "supplied seeds are preserved as inputs; product zero-reference fallback and initial candidate exploration remain active; internal first iterate not captured",
+  "postprocessing_objective_evaluation_count": 2,
+  "postprocessing": "2 objective-only FV evaluations at available completed-run seeds, no optimizer rerun",
+  "artifact_sha256": {
+    "fv86_preflight.json": "6f588df04d68ebcca3ec2cc913f998defbf9722a8fbaeb6d553cbfa99561a669",
+    "fv86_preflight.resource.json": "cffb0f55b06a9569b5fd8f5e0c4617610c2600f1eba06bf060d8ab5ab32f0868",
+    "fv86_preflight.log": "1c4aad1425908dcd126860fef633a16cf4b754bb3969e20f57979bfe52864aff",
+    "fv86_seed_a.json": "c8de13325e4d76a5e904a6ef457deed853aa762cc6d051afd7fb59cd6b9e3bd0",
+    "fv86_seed_a.resource.json": "1d8b4527141a7f33c8d89704ecd9880c0acb95613bd4708d83d7ceaa67515f1a",
+    "fv86_seed_a.log": "7181c3366a91c1ac4687de2aed825851ff16cd0a40f9c37b20818e1a2a8a7f45",
+    "fv86_seed_b.json": "994e8dfe12aff570d246589826417115ad6ca3e0573af4b4272c17d6b60b7e2b",
+    "fv86_seed_b.resource.json": "80fefd2b2e2b4ad5248cf3dd023129522fe40ba1b7c0cc85650afbe5fc0cb887",
+    "fv86_seed_b.log": "7181c3366a91c1ac4687de2aed825851ff16cd0a40f9c37b20818e1a2a8a7f45",
+    "fv86_measured_producer.py.txt": "6f84aaf0a66584a0bcd45fb3cde15fd44b05542b5c440ad53e50e1ad50b849c1",
+    "fv86_measured_case.py.txt": "4622da4e7cd9f3aaffd35e52ad0eacebcf6479fb3fda9d69d9f74a67123f83d5",
+    "fv86_preflight_runner.py.txt": "c8fd0ada44fd9d7ab4ab302111edd69b31097bc24d838f332f63650ed5749057"
+  },
+  "source_sha256": {
+    "examples/weather_scenarios/summarize_fv86_execution.py": "a490c31e809cbebe45fb9e3fc1c14d8f9718d72a569202a910eb197e094393d1",
+    "src/advar/fv_research_problem.py": "0530d1a724a39d60b34fbad0f3750cf37f3455b1556693730e6934261c00d009",
+    "examples/weather_scenarios/fv_scaled_research_case.py": "cf827cb08715bc684f3dff2afd7507ddb6c693c688b8684c655c2b82e179a6d8",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "src/advar/transport.py": "d81f409970046bd86b2838339948e01c4840b2be2b613f1e66551bc70a468264",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3"
+  },
+  "between_starts": {
+    "refined_control_l2": 4.3855767152919923e-14,
+    "total_gradient_relative_difference": 6.963404156273533e-12,
+    "score_absolute_difference": 3.5670251474773096e-17,
+    "same_selectors": true,
+    "same_face_signs": true
+  },
+  "postprocessing_seconds": 0.1924008330097422
+}

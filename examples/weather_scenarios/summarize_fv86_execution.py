@@ -15,55 +15,144 @@ ROOT=Path(__file__).resolve().parents[2]
 HERE=ROOT/'graphify-out/fv-root-cause-20260919'
 
 
-def run():
+def execution_status(data: dict[str, Any], resource: dict[str, Any]) -> str:
+    """Classify process completion separately from numerical outcome."""
+    termination=resource.get('resource_termination')
+    if resource.get('monitor_error') is not None:
+        return 'failed'
+    if termination in ('wall_time_limit','rss_limit'):
+        return 'resource_limited'
+    if termination is not None:
+        return 'failed'
+    exit_code=resource.get('exit_code')
+    if (type(exit_code) is int and exit_code==0 and data.get('phase')=='finished'
+            and data.get('source_unchanged') is True and data.get('status')!='execution_error'):
+        return 'completed'
+    return 'failed'
+
+
+def numerical_status(data: dict[str, Any]) -> str:
+    workflow=data.get('workflow')
+    raw=workflow.get('status') if isinstance(workflow,dict) and 'status' in workflow else data.get('status')
+    if raw in ('eligible','ineligible'):
+        return raw
+    return 'not_reached'
+
+
+def status_summary(entries: list[dict[str, Any]]) -> dict[str, int]:
+    completed=sum(entry['execution_status']=='completed' for entry in entries)
+    numerical_eligible=sum(entry['numerical_status']=='eligible' for entry in entries)
+    eligible=sum(entry['execution_status']=='completed' and entry['numerical_status']=='eligible'
+                 for entry in entries)
+    return {'declared_case_count':2,'execution_completed_count':completed,
+            'numerical_eligible_count':numerical_eligible,'eligible_count':eligible}
+
+
+def same_problem_and_source(raw: list[dict[str, Any]]) -> bool | None:
+    if len(raw)!=2:
+        return None
+    first_identity=raw[0].get('input_identity')
+    second_identity=raw[1].get('input_identity')
+    first_source=raw[0].get('source_sha256')
+    second_source=raw[1].get('source_sha256')
+    if isinstance(first_identity,dict) and isinstance(second_identity,dict):
+        common=first_identity.keys() & second_identity.keys()
+        if any(first_identity[key]!=second_identity[key] for key in common):
+            return False
+    if isinstance(first_source,dict) and isinstance(second_source,dict):
+        common=first_source.keys() & second_source.keys()
+        if any(first_source[key]!=second_source[key] for key in common):
+            return False
+    required_identity={'parameters','verification','problem'}
+    if (isinstance(first_identity,dict) and isinstance(second_identity,dict)
+            and required_identity.issubset(first_identity)
+            and required_identity.issubset(second_identity)
+            and isinstance(first_source,dict) and first_source
+            and isinstance(second_source,dict) and second_source):
+        return first_identity==second_identity and first_source==second_source
+    return None
+
+
+def run(output_path: Path | None = None):
     started=time.monotonic()
     fixture=load('fv_scaled_research_case')
     case=fixture.make_case()
-    objective,_,_=fixture.functions(case)
+    objective=None
+    objective_evaluation_count=0
     entries=[]
     raw=[]
     for mode in ('seed_a','seed_b'):
         data=json.loads((HERE/f'fv86_{mode}.json').read_text())
         resource=json.loads((HERE/f'fv86_{mode}.resource.json').read_text())
         raw.append(data)
-        if (digest(case.parameters)!=data['input_identity']['parameters']
-                or digest(case.verification)!=data['input_identity']['verification']
-                or digest(case.definition)!=data['input_identity']['problem']):
-            raise ValueError('postprocessing input differs from measured problem')
-        workflow=data.get('workflow',{})
+        workflow=data.get('workflow') or {}
+        if not isinstance(workflow,dict):
+            workflow={}
+        exec_status=execution_status(data,resource)
+        num_status=numerical_status(data)
+        identity=data.get('input_identity')
+        required_identity=('parameters','verification','problem')
+        if exec_status=='completed':
+            if not isinstance(identity,dict) or any(key not in identity for key in required_identity):
+                raise ValueError('completed run lacks measured problem identity')
+            if (digest(case.parameters)!=identity['parameters']
+                    or digest(case.verification)!=identity['verification']
+                    or digest(case.definition)!=identity['problem']):
+                raise ValueError('postprocessing input differs from measured problem')
+        supplied_seed_objective=None
+        seed_values=data.get('seed')
+        if exec_status=='completed' and seed_values is not None:
+            if objective is None:
+                objective,_,_=fixture.functions(case)
+            seed=torch.tensor(seed_values,dtype=case.parameters.dtype)
+            supplied_seed_objective=float(objective(seed,case.parameters))
+            objective_evaluation_count+=1
         response=workflow.get('response')
-        seed=torch.tensor(data['seed'],dtype=case.parameters.dtype)
-        status='resource_limited' if resource['resource_termination'] else data['status']
-        entries.append({'mode':mode,'status':status,
-            'failure_category':resource['resource_termination'] or data.get('failure_category'),
-            'gn_reason':data.get('gn',{}).get('reason'),
-            'reference_zero_control_objective':data.get('gn',{}).get('initial_objective'),
-            'supplied_seed_objective':float(objective(seed,case.parameters)),
-            'gn_gradient_max':data.get('gn',{}).get('gradient_max'),
+        legacy_status=('resource_limited' if exec_status=='resource_limited' else
+                       'failed' if exec_status=='failed' else
+                       'eligible' if num_status=='eligible' else 'ineligible')
+        gn=data.get('gn') or {}
+        refinement=data.get('refinement') or {}
+        timings=data.get('timings') or {}
+        entries.append({'mode':mode,'status':legacy_status,
+            'execution_status':exec_status,'numerical_status':num_status,
+            'response_validation':'not_performed',
+            'exit_code':resource.get('exit_code'),'phase':data.get('phase'),
+            'source_unchanged':data.get('source_unchanged'),
+            'failure_category':resource.get('resource_termination') or data.get('failure_category'),
+            'gn_reason':gn.get('reason'),
+            'reference_zero_control_objective':gn.get('initial_objective'),
+            'supplied_seed_objective':supplied_seed_objective,
+            'gn_gradient_max':gn.get('gradient_max'),
             'final_gradient_max':workflow.get('after',{}).get('gradient_max'),
             'final_objective':workflow.get('after',{}).get('objective'),
             'adjoint_relative_residual':None if response is None else response['true_adjoint_relative_residual'],
-            'refinement_iterations':data.get('refinement',{}).get('iterations'),
-            'refinement_hvp_count':data.get('refinement',{}).get('hvp_count'),
-            'timings':dict(gn_seconds=data['timings'].get('gn_seconds'),**workflow.get('timings',{})),
-            'wall_seconds':resource['elapsed_seconds'],
-            'sampled_peak_rss_bytes':resource['sampled_peak_rss_bytes']})
-    if raw[0]['input_identity']!=raw[1]['input_identity'] or raw[0]['source_sha256']!=raw[1]['source_sha256']:
-        raise ValueError('predeclared runs used different problems or sources')
-    summary: dict[str, Any] = {'declared_case_count':2,'eligible_count':sum(r['status']=='eligible' for r in entries),
+            'refinement_iterations':refinement.get('iterations'),
+            'refinement_hvp_count':refinement.get('hvp_count'),
+            'timings':dict(gn_seconds=timings.get('gn_seconds'),**(workflow.get('timings') or {})),
+            'wall_seconds':resource.get('elapsed_seconds'),
+            'sampled_peak_rss_bytes':resource.get('sampled_peak_rss_bytes')})
+    problem_source_match=same_problem_and_source(raw)
+    summary: dict[str, Any] = {**status_summary(entries),
         'independently_validated_response_fraction':None,'nonlinear_reanalyses':0,
         'interpretation':'conditional discrete execution, not grid convergence or independent response accuracy',
-        'cases':entries,'same_problem_and_source':True,
+        'cases':entries,'same_problem_and_source':problem_source_match,
         'gn_start_policy':'supplied seeds are preserved as inputs; product zero-reference fallback and initial candidate exploration remain active; internal first iterate not captured',
-        'postprocessing':'two objective-only FV evaluations at the supplied seeds, no optimizer rerun',
-        'artifact_sha256':{},'source_sha256':{str(Path(__file__).relative_to(ROOT)):hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}}
+        'postprocessing_objective_evaluation_count':objective_evaluation_count,
+        'postprocessing':f'{objective_evaluation_count} objective-only FV evaluations at available completed-run seeds, no optimizer rerun',
+        'artifact_sha256':{},'source_sha256':{
+            str(path.relative_to(ROOT)):hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in (Path(__file__), ROOT/'src/advar/fv_research_problem.py',
+                         ROOT/'examples/weather_scenarios/fv_scaled_research_case.py',
+                         ROOT/'src/advar/variational.py', ROOT/'src/advar/transport.py',
+                         ROOT/'src/advar/physics.py')}}
     for mode in ('preflight','seed_a','seed_b'):
         for suffix in ('.json','.resource.json','.log'):
             name=f'fv86_{mode}{suffix}'
             summary['artifact_sha256'][name]=hashlib.sha256((HERE/name).read_bytes()).hexdigest()
     for name in ('fv86_measured_producer.py.txt','fv86_measured_case.py.txt','fv86_preflight_runner.py.txt'):
         summary['artifact_sha256'][name]=hashlib.sha256((HERE/name).read_bytes()).hexdigest()
-    if summary['eligible_count']==2:
+    if summary['eligible_count']==2 and problem_source_match is True:
         a,b=raw
         ac=torch.tensor(a['workflow']['control'],dtype=torch.float64)
         bc=torch.tensor(b['workflow']['control'],dtype=torch.float64)
@@ -75,7 +164,8 @@ def run():
             'same_selectors':a['nominal_branch']['choices']==b['nominal_branch']['choices'],
             'same_face_signs':a['nominal_branch']['face_signs']==b['nominal_branch']['face_signs']}
     summary['postprocessing_seconds']=time.monotonic()-started
-    (HERE/'fv86_execution_summary.json').write_text(json.dumps(summary,indent=2,allow_nan=False)+'\n')
+    target=Path(output_path) if output_path is not None else HERE/'fv86_execution_status_summary.json'
+    target.write_text(json.dumps(summary,indent=2,allow_nan=False)+'\n')
     print(json.dumps(summary,indent=2))
 
 

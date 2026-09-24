@@ -288,3 +288,14 @@ def test_fv86_panel_rejects_changed_child_artifact(tmp_path, monkeypatch):
     monkeypatch.setattr(PUBLISHER,'HERE',tmp_path)
     with pytest.raises(SystemExit,match='FV86 archived artifact'):
         PUBLISHER._fv86_panel()
+
+
+def test_fv86_status_summary_is_displayed_and_mutation_rejected(tmp_path, monkeypatch):
+    html=PUBLISHER._fv86_panel()
+    assert 'completed' in html and '수치 적격성' in html and '재분석 대조' in html
+    data=json.loads((EVIDENCE/'fv86_execution_status_summary.json').read_text())
+    data['cases'][0]['execution_status']='failed'
+    (tmp_path/'fv86_execution_status_summary.json').write_text(json.dumps(data))
+    monkeypatch.setattr(PUBLISHER,'HERE',tmp_path)
+    with pytest.raises(SystemExit,match='FV86 archived summary'):
+        PUBLISHER._fv86_panel()

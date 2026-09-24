@@ -212,3 +212,18 @@ changes the numerical refiner, not the objective, observation contract or gates.
 - [ ] Separate milestones: same physical/statistical inverse-grid convergence,
   other state/observation/support cases, independent scaled response validation,
   full-spectrum/observational identifiability, typed learning and general D7.
+
+
+## PR174 follow-up — separate statuses and common problem
+
+- [x] Process exit/source/phase gates separated from saved numerical eligibility;
+  abnormal/limited/early runs never inflate completed-eligible counts.
+- [x] Preserve raw FV reports and original summary; write new status summary
+  with unperformed response validation kept separate from algebraic checks.
+- [x] Shared thin definition over existing observation/frozen/transport objects;
+  explicit collocated dBZ support, layouts and regular times; old profile guards.
+- [x] Immutable-reference J/E/gradient/HVP/signature parity at both saved points;
+  no new nonlinear solve, no physical or statistical model change.
+- [x] 158 affected tests/typecheck, source fixture tracking, KG and display.
+- [ ] Independently budgeted middle-time-bias 86-control reanalysis check
+  (FV86_REANALYSIS_PLAN.md); arbitrary observation/mask/time extensions follow.

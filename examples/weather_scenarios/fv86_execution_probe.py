@@ -78,7 +78,7 @@ def run(output: Path, *, mode: str):
              Path(__file__).with_name('fv_minmod_inverse_probe.py'),
              Path(__file__).with_name('fv_sensitivity_probe.py')]
     paths += [ROOT/'src/advar'/name for name in
-              ('local_refinement.py', 'local_response.py', 'matrix_free.py', 'variational.py',
+              ('local_refinement.py', 'local_response.py', 'fv_research_problem.py', 'matrix_free.py', 'variational.py',
                'transport.py', 'physics.py', 'nowcast.py')]
     sources = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
     report: dict[str, Any] = {'mode': mode, 'status': 'running', 'phase': 'prepare',
