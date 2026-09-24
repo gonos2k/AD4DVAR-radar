@@ -1,0 +1,430 @@
+{
+  "cross_profile_fraction": null,
+  "input_artifact_sha256": {
+    "fv86_execution_status_summary.json": "6ff47a3656ad968977532a762cf6a58f09fd0106bde28b62db47424e8bd44c98",
+    "fv_long_horizon_manifest.json": "306ac20a98a7e5d946d7b8a18ab98e478a67a37226c5404676fc29f06f9ddcf7",
+    "fv_partial_branch_gate_detail_run3_manifest.json": "6d859284dbb737910e2a94252e37cf87322924cae2fa9e88381f9e29dd18a5a3",
+    "fv_point_missing_manifest.json": "b673de1d2aaa54e12a0b4ee0bb7e755056fbfa5c61e8b550a929a35daa3988f3",
+    "partial_branch_gate_detail_attempt3/fv_partial_reanalysis.json": "fd90ceba89aff7f657f415b936e285b71311cafb25f3eea8c1fc4a5d4a648782",
+    "partial_branch_gate_detail_attempt3/fv_partial_reanalysis.preflight.json": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
+    "partial_branch_gate_detail_attempt3/fv_partial_reanalysis.resource.json": "94e1a62bef4dc39294cdd124f58e00a9884aaf503ab09c8a2fcd66aad7b47823"
+  },
+  "later_seed_a_reanalysis": "separate PR176 evidence, not retroactively included in the FV86 execution cohort",
+  "profile_count": 4,
+  "profiles": {
+    "fv86_full_support": {
+      "axes": {
+        "branch": {
+          "declared_case_count": 2,
+          "status_counts": {
+            "pointwise_passed": 2
+          }
+        },
+        "execution": {
+          "declared_case_count": 2,
+          "status_counts": {
+            "completed": 2
+          }
+        },
+        "forecast": {
+          "declared_case_count": 2,
+          "status_counts": {
+            "available": 2
+          }
+        },
+        "local_response_eligibility": {
+          "assessed_count": 2,
+          "declared_case_count": 2,
+          "eligible_count": 2,
+          "eligible_evidence_coverage_fraction_of_declared": 1.0,
+          "eligible_fraction_given_assessed": 1.0,
+          "status_counts": {
+            "eligible": 2
+          }
+        },
+        "physical_validation": {
+          "attempted_fraction_of_declared": 0.0,
+          "declared_case_count": 2,
+          "independent_validation_attempted_count": 0,
+          "pass_fraction_given_attempt": null,
+          "passed_count": 0,
+          "status_counts": {
+            "not_performed": 2
+          },
+          "validated_evidence_coverage_fraction_of_declared": 0.0
+        },
+        "resource": {
+          "declared_case_count": 2,
+          "status_counts": {
+            "not_limited": 2
+          }
+        },
+        "response": {
+          "computed_count": 2,
+          "computed_evidence_coverage_fraction_of_declared": 1.0,
+          "computed_fraction_given_attempt": 1.0,
+          "declared_case_count": 2,
+          "status_counts": {
+            "computed": 2
+          }
+        },
+        "response_validation": {
+          "attempted_fraction_of_declared": 0.0,
+          "declared_case_count": 2,
+          "independent_validation_attempted_count": 0,
+          "pass_fraction_given_attempt": null,
+          "passed_count": 0,
+          "status_counts": {
+            "not_performed": 2
+          },
+          "validated_evidence_coverage_fraction_of_declared": 0.0
+        },
+        "stationarity": {
+          "declared_case_count": 2,
+          "status_counts": {
+            "passed": 2
+          }
+        }
+      },
+      "declared_case_ids": [
+        "seed_a",
+        "seed_b"
+      ],
+      "rows": [
+        {
+          "branch": "pointwise_passed",
+          "case_id": "seed_a",
+          "evidence_sha256": "c8de13325e4d76a5e904a6ef457deed853aa762cc6d051afd7fb59cd6b9e3bd0",
+          "execution": "completed",
+          "failure_category": null,
+          "forecast": "available",
+          "local_response_eligibility": "eligible",
+          "physical_validation": "not_performed",
+          "proof_level": "archived_exit_source_and_raw_hashes",
+          "resource": "not_limited",
+          "response": "computed",
+          "response_validation": "not_performed",
+          "stationarity": "passed"
+        },
+        {
+          "branch": "pointwise_passed",
+          "case_id": "seed_b",
+          "evidence_sha256": "994e8dfe12aff570d246589826417115ad6ca3e0573af4b4272c17d6b60b7e2b",
+          "execution": "completed",
+          "failure_category": null,
+          "forecast": "available",
+          "local_response_eligibility": "eligible",
+          "physical_validation": "not_performed",
+          "proof_level": "archived_exit_source_and_raw_hashes",
+          "resource": "not_limited",
+          "response": "computed",
+          "response_validation": "not_performed",
+          "stationarity": "passed"
+        }
+      ]
+    },
+    "long_regular_forward": {
+      "axes": {
+        "branch": {
+          "declared_case_count": 2,
+          "status_counts": {
+            "refused": 2
+          }
+        },
+        "execution": {
+          "declared_case_count": 2,
+          "status_counts": {
+            "recorded_only": 2
+          }
+        },
+        "forecast": {
+          "declared_case_count": 2,
+          "status_counts": {
+            "available_same_operator_synthetic": 2
+          }
+        },
+        "local_response_eligibility": {
+          "assessed_count": 2,
+          "declared_case_count": 2,
+          "eligible_count": 0,
+          "eligible_evidence_coverage_fraction_of_declared": 0.0,
+          "eligible_fraction_given_assessed": 0.0,
+          "status_counts": {
+            "refused_branch_under_current_policy": 2
+          }
+        },
+        "physical_validation": {
+          "attempted_fraction_of_declared": 0.0,
+          "declared_case_count": 2,
+          "independent_validation_attempted_count": 0,
+          "pass_fraction_given_attempt": null,
+          "passed_count": 0,
+          "status_counts": {
+            "not_performed": 2
+          },
+          "validated_evidence_coverage_fraction_of_declared": 0.0
+        },
+        "resource": {
+          "declared_case_count": 2,
+          "status_counts": {
+            "local_alarm_only": 2
+          }
+        },
+        "response": {
+          "computed_count": 0,
+          "computed_evidence_coverage_fraction_of_declared": 0.0,
+          "computed_fraction_given_attempt": null,
+          "declared_case_count": 2,
+          "status_counts": {
+            "not_attempted": 2
+          }
+        },
+        "response_validation": {
+          "attempted_fraction_of_declared": 0.0,
+          "declared_case_count": 2,
+          "independent_validation_attempted_count": 0,
+          "pass_fraction_given_attempt": null,
+          "passed_count": 0,
+          "status_counts": {
+            "not_performed": 2
+          },
+          "validated_evidence_coverage_fraction_of_declared": 0.0
+        },
+        "stationarity": {
+          "declared_case_count": 2,
+          "status_counts": {
+            "not_assessed": 2
+          }
+        }
+      },
+      "declared_case_ids": [
+        "zero_flow",
+        "nonzero_flow"
+      ],
+      "rows": [
+        {
+          "branch": "refused",
+          "case_id": "zero_flow",
+          "evidence_sha256": "cd086d7f628b1b48a2dbfc0c3a0570041539a26624fd2de924e477bf395cf8cc",
+          "execution": "recorded_only",
+          "failure_category": "minmod joint oracle left its strict smooth branch",
+          "forecast": "available_same_operator_synthetic",
+          "local_response_eligibility": "refused_branch_under_current_policy",
+          "physical_validation": "not_performed",
+          "proof_level": "manifest_sources_current_no_child_exit_record",
+          "resource": "local_alarm_only",
+          "response": "not_attempted",
+          "response_validation": "not_performed",
+          "stationarity": "not_assessed"
+        },
+        {
+          "branch": "refused",
+          "case_id": "nonzero_flow",
+          "evidence_sha256": "cd086d7f628b1b48a2dbfc0c3a0570041539a26624fd2de924e477bf395cf8cc",
+          "execution": "recorded_only",
+          "failure_category": "minmod joint oracle left its strict smooth branch",
+          "forecast": "available_same_operator_synthetic",
+          "local_response_eligibility": "refused_branch_under_current_policy",
+          "physical_validation": "not_performed",
+          "proof_level": "manifest_sources_current_no_child_exit_record",
+          "resource": "local_alarm_only",
+          "response": "not_attempted",
+          "response_validation": "not_performed",
+          "stationarity": "not_assessed"
+        }
+      ]
+    },
+    "partial_two_hole": {
+      "axes": {
+        "branch": {
+          "declared_case_count": 1,
+          "status_counts": {
+            "search_policy_refused": 1
+          }
+        },
+        "execution": {
+          "declared_case_count": 1,
+          "status_counts": {
+            "failed": 1
+          }
+        },
+        "forecast": {
+          "declared_case_count": 1,
+          "status_counts": {
+            "not_certified": 1
+          }
+        },
+        "local_response_eligibility": {
+          "assessed_count": 1,
+          "declared_case_count": 1,
+          "eligible_count": 0,
+          "eligible_evidence_coverage_fraction_of_declared": 0.0,
+          "eligible_fraction_given_assessed": 0.0,
+          "status_counts": {
+            "refused_nominal_under_current_policy": 1
+          }
+        },
+        "physical_validation": {
+          "attempted_fraction_of_declared": 0.0,
+          "declared_case_count": 1,
+          "independent_validation_attempted_count": 0,
+          "pass_fraction_given_attempt": null,
+          "passed_count": 0,
+          "status_counts": {
+            "not_performed": 1
+          },
+          "validated_evidence_coverage_fraction_of_declared": 0.0
+        },
+        "resource": {
+          "declared_case_count": 1,
+          "status_counts": {
+            "not_limited_process_failed": 1
+          }
+        },
+        "response": {
+          "computed_count": 0,
+          "computed_evidence_coverage_fraction_of_declared": 0.0,
+          "computed_fraction_given_attempt": null,
+          "declared_case_count": 1,
+          "status_counts": {
+            "not_attempted": 1
+          }
+        },
+        "response_validation": {
+          "attempted_fraction_of_declared": 0.0,
+          "declared_case_count": 1,
+          "independent_validation_attempted_count": 0,
+          "pass_fraction_given_attempt": null,
+          "passed_count": 0,
+          "status_counts": {
+            "not_established": 1
+          },
+          "validated_evidence_coverage_fraction_of_declared": 0.0
+        },
+        "stationarity": {
+          "declared_case_count": 1,
+          "status_counts": {
+            "not_established_due_to_refinement_refusal": 1
+          }
+        }
+      },
+      "declared_case_ids": [
+        "masked_case"
+      ],
+      "rows": [
+        {
+          "branch": "search_policy_refused",
+          "case_id": "masked_case",
+          "evidence_sha256": "fd90ceba89aff7f657f415b936e285b71311cafb25f3eea8c1fc4a5d4a648782",
+          "execution": "failed",
+          "failure_category": "face_flux_margin_refusal",
+          "forecast": "not_certified",
+          "local_response_eligibility": "refused_nominal_under_current_policy",
+          "physical_validation": "not_performed",
+          "proof_level": "preflight_bound_nonzero_exit_no_final_source_check",
+          "resource": "not_limited_process_failed",
+          "resource_sha256": "94e1a62bef4dc39294cdd124f58e00a9884aaf503ab09c8a2fcd66aad7b47823",
+          "response": "not_attempted",
+          "response_validation": "not_established",
+          "stationarity": "not_established_due_to_refinement_refusal"
+        }
+      ]
+    },
+    "point_missing_fixed_control": {
+      "axes": {
+        "branch": {
+          "declared_case_count": 1,
+          "status_counts": {
+            "pointwise_passed": 1
+          }
+        },
+        "execution": {
+          "declared_case_count": 1,
+          "status_counts": {
+            "recorded_only": 1
+          }
+        },
+        "forecast": {
+          "declared_case_count": 1,
+          "status_counts": {
+            "available": 1
+          }
+        },
+        "local_response_eligibility": {
+          "assessed_count": 0,
+          "declared_case_count": 1,
+          "eligible_count": 0,
+          "eligible_evidence_coverage_fraction_of_declared": 0.0,
+          "eligible_fraction_given_assessed": null,
+          "status_counts": {
+            "not_assessed": 1
+          }
+        },
+        "physical_validation": {
+          "attempted_fraction_of_declared": 0.0,
+          "declared_case_count": 1,
+          "independent_validation_attempted_count": 0,
+          "pass_fraction_given_attempt": null,
+          "passed_count": 0,
+          "status_counts": {
+            "not_performed": 1
+          },
+          "validated_evidence_coverage_fraction_of_declared": 0.0
+        },
+        "resource": {
+          "declared_case_count": 1,
+          "status_counts": {
+            "not_measured": 1
+          }
+        },
+        "response": {
+          "computed_count": 0,
+          "computed_evidence_coverage_fraction_of_declared": 0.0,
+          "computed_fraction_given_attempt": null,
+          "declared_case_count": 1,
+          "status_counts": {
+            "not_attempted": 1
+          }
+        },
+        "response_validation": {
+          "attempted_fraction_of_declared": 0.0,
+          "declared_case_count": 1,
+          "independent_validation_attempted_count": 0,
+          "pass_fraction_given_attempt": null,
+          "passed_count": 0,
+          "status_counts": {
+            "not_performed": 1
+          },
+          "validated_evidence_coverage_fraction_of_declared": 0.0
+        },
+        "stationarity": {
+          "declared_case_count": 1,
+          "status_counts": {
+            "not_assessed": 1
+          }
+        }
+      },
+      "declared_case_ids": [
+        "three_time_missing"
+      ],
+      "rows": [
+        {
+          "branch": "pointwise_passed",
+          "case_id": "three_time_missing",
+          "evidence_sha256": "ea942eaabbbf34727f223c3e101a0d3647e9656afe07d2dd32b1e2ce13890952",
+          "execution": "recorded_only",
+          "failure_category": null,
+          "forecast": "available",
+          "local_response_eligibility": "not_assessed",
+          "physical_validation": "not_performed",
+          "proof_level": "manifest_sources_current_no_child_exit_record",
+          "resource": "not_measured",
+          "response": "not_attempted",
+          "response_validation": "not_performed",
+          "stationarity": "not_assessed"
+        }
+      ]
+    }
+  },
+  "scope": "retrospective stratified inventory of archived evidence; no cross-profile success rate or new numerical execution"
+}
