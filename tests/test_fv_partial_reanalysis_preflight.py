@@ -1,5 +1,7 @@
 """Cheap gates for a separately budgeted partial-FV numerical experiment."""
 import json
+from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 
@@ -53,6 +55,35 @@ def test_guarded_runner_preserves_existing_artifacts(tmp_path, monkeypatch):
         runner.run(tmp_path)
 
 
+def test_guarded_runner_rejects_invalid_wall_cap_before_launch(tmp_path, monkeypatch):
+    def unexpected_guard(*args, **kwargs):
+        pytest.fail("invalid wall cap launched a child")
+
+    monkeypatch.setattr(runner, "run_guarded", unexpected_guard)
+    for invalid in (0, 1201, 1.5, True):
+        with pytest.raises(ValueError, match="wall cap"):
+            runner.run(tmp_path, wall_seconds=cast(Any, invalid))
+
+
+def test_nominal_only_resource_run_cannot_start_signed_endpoints(tmp_path, monkeypatch):
+    commands = []
+    pinned = json.loads(runner.PINNED.read_text())
+
+    def fake_guard(command, *, wall_seconds, rss_bytes, report_path, log_path):
+        commands.append((command, wall_seconds, rss_bytes))
+        if len(commands) == 1:
+            runner._paths(tmp_path)["preflight"].write_text(json.dumps(pinned))
+        return {"exit_code": 0, "resource_termination": None}
+
+    monkeypatch.setattr(runner, "run_guarded", fake_guard)
+    runner.run(tmp_path, wall_seconds=240, nominal_only=True)
+    assert len(commands) == 2
+    assert commands[0][1] == 120
+    assert commands[1][1] == 240
+    assert commands[1][2] == 1024**3
+    assert "--stop-after-nominal" in commands[1][0]
+
+
 def test_numerical_driver_identity_and_directional_arithmetic_are_fail_closed():
     pinned = {"base_commit": "old", "tensor_sha256": {"parameters": "fixed"}}
     probe._require_close_identity(pinned, {**pinned, "base_commit": "new"})
@@ -71,3 +102,33 @@ def test_numerical_driver_identity_and_directional_arithmetic_are_fail_closed():
     assert relative_error < 1e-10
     with pytest.raises(ValueError, match="nonzero"):
         probe.central_response_error(0.1, 0.1, 1e-3, 0.0)
+
+
+def test_refused_nominal_refinement_is_recorded_as_attempted(tmp_path, monkeypatch):
+    pinned = tmp_path / "preflight.json"
+    pinned.write_text(json.dumps(preflight.run()))
+
+    def fake_gn(observations, frozen, *, control):
+        return SimpleNamespace(
+            control=control,
+            reason="synthetic warm start",
+            outer_iterations=0,
+            pcg_iterations=0,
+            initial_objective=0.0,
+            final_objective=0.0,
+        )
+
+    def refuse_refinement(*args, **kwargs):
+        raise RuntimeError("synthetic Armijo refusal")
+
+    monkeypatch.setattr(probe.variational, "solve_analysis", fake_gn)
+    monkeypatch.setattr(probe.local_refinement, "refine_stationary", refuse_refinement)
+    output = tmp_path / "result.json"
+    with pytest.raises(RuntimeError, match="synthetic Armijo refusal"):
+        probe.run(output, pinned)
+    result = json.loads(output.read_text())
+    assert result["phase"] == "partial_newton_refinement"
+    assert result["nominal_eligibility"] == "refused"
+    assert result["numerical_status"] == "refused"
+    assert result["response_validation"] == "not_established"
+    assert result["nonlinear_reanalyses"] == 0

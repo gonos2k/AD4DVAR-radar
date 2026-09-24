@@ -282,6 +282,12 @@ def refine_stationary(
                 accepted = True
                 break
         if not accepted:
+            trials = [record for record in history if record["iteration"] == iteration]
+            branch_rejections = sum(record.get("rejection") == "branch" for record in trials)
+            nonfinite_rejections = sum(
+                record.get("rejection") == "nonfinite_candidate" for record in trials
+            )
+            finite_armijo_rejections = len(trials) - branch_rejections - nonfinite_rejections
             trial_detail = (
                 f"last_trial_gradient_norm={last_trial_norm}"
                 if last_trial_norm is not None
@@ -289,7 +295,10 @@ def refine_stationary(
             )
             raise RuntimeError(
                 "stationarity refinement failed to find an Armijo step: "
-                f"iteration={iteration}; {trial_detail}"
+                f"iteration={iteration}; {trial_detail}; "
+                f"branch_rejections={branch_rejections}; "
+                f"nonfinite_candidate_rejections={nonfinite_rejections}; "
+                f"finite_armijo_rejections={finite_armijo_rejections}"
             )
         if gradient_max < _STATIONARITY_TOLERANCE:
             return RefinementResult(

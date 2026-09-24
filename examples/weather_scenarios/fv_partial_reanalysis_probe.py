@@ -226,7 +226,7 @@ def _monitor_pcg(
     return solve
 
 
-def run(output: Path, preflight_path: Path) -> dict[str, Any]:
+def run(output: Path, preflight_path: Path, *, stop_after_nominal: bool = False) -> dict[str, Any]:
     started = time.monotonic()
     output.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -272,6 +272,7 @@ def run(output: Path, preflight_path: Path) -> dict[str, Any]:
         "response_validation": "not_established",
         "phase": "preflight_identity",
         "scope": "one-lead 4x5 / 26-control fixed-mask partial-observation local response",
+        "stop_after_nominal": stop_after_nominal,
         "pinned_source_commit": pinned["base_commit"],
         "runtime_commit": runtime_commit,
         "environment": pinned["environment"],
@@ -326,6 +327,8 @@ def run(output: Path, preflight_path: Path) -> dict[str, Any]:
         report["execution_status"] = "error"
         report["numerical_status"] = "refused"
         report["response_validation"] = "not_established"
+        if report["nominal_eligibility"] == "refinement_attempted":
+            report["nominal_eligibility"] = "refused"
         report["error"] = f"{type(error).__name__}: {error}"
         report["failure_category"] = _failure_category(str(error), phase_name)
         checkpoint(phase_name)
@@ -371,6 +374,7 @@ def run(output: Path, preflight_path: Path) -> dict[str, Any]:
             )
             return branch, scope
 
+        report["nominal_eligibility"] = "refinement_attempted"
         checkpoint("partial_newton_refinement")
         refinement_started = time.monotonic()
         with patch.object(
@@ -415,6 +419,17 @@ def run(output: Path, preflight_path: Path) -> dict[str, Any]:
         }
         report["nominal_eligibility"] = "passed"
         report["numerical_status"] = "nominal_eligible"
+
+        if stop_after_nominal:
+            report["response_validation"] = "not_performed"
+            report["stopping_reason"] = "diagnostic stopped after nominal stationarity check"
+            require_unchanged()
+            _fresh_preflight(pinned)
+            report["preflight_rechecks"]["after"] = "passed"
+            report["execution_status"] = "completed"
+            report["timings"]["total_seconds"] = time.monotonic() - started
+            checkpoint("finished")
+            return report
         checkpoint("nominal_eligible")
 
         gradient = torch.func.grad(objective, argnums=0)
@@ -743,13 +758,14 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--stop-after-nominal", action="store_true")
     args = parser.parse_args()
     if not args.validate_only and not args.execute:
         parser.error("numerical execution requires --execute after budget approval")
     result = (
         validate_only(args.output, args.preflight)
         if args.validate_only
-        else run(args.output, args.preflight)
+        else run(args.output, args.preflight, stop_after_nominal=args.stop_after_nominal)
     )
     print(json.dumps({
         "execution_status": result["execution_status"],

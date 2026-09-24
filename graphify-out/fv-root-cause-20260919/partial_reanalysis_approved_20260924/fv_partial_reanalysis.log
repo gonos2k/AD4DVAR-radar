@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_reanalysis_probe.py", line 764, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_reanalysis_probe.py", line 752, in main
+    else run(args.output, args.preflight)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_reanalysis_probe.py", line 381, in run
+    refined = local_refinement.refine_stationary(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/local_refinement.py", line 290, in refine_stationary
+    raise RuntimeError(
+RuntimeError: stationarity refinement failed to find an Armijo step: iteration=4; no finite candidate evaluation

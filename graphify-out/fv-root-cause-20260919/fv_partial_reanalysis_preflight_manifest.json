@@ -1,29 +1,35 @@
 {
-  "base_commit": "f7b90cc09e87453b39b0bb0b586b7167ed9aaa7d",
+  "base_commit": "ab8aed41eb09eaf7ec5deb1007e0e166b154f6c9",
   "not_run": [
-    "partial GN",
-    "Newton refinement",
+    "diagnostic attempt 2 partial GN/Newton",
     "tangent/adjoint PCG",
     "signed nonlinear reanalysis"
   ],
   "numerical_solver_runs": 0,
   "preflight_command": ".venv/bin/python examples/weather_scenarios/fv_partial_reanalysis_preflight.py --output graphify-out/fv-root-cause-20260919/fv_partial_reanalysis_preflight.json",
-  "pytest_command": ".venv/bin/python -m pytest -q tests/test_fv_partial_reanalysis_preflight.py tests/test_fv_research_partial_observation.py tests/test_fv_research_problem.py",
-  "pytest_result": "24 passed, 18 existing warnings",
+  "preparation_status": "postrun diagnostic code prepared; separate numerical approval pending",
+  "pytest_command": ".venv/bin/python -m pytest -q tests/test_local_refinement.py tests/test_fv_partial_reanalysis_preflight.py tests/test_fv_research_partial_observation.py tests/test_fv_research_problem.py",
+  "pytest_result": "53 passed, 18 existing warnings",
   "python": "3.12.13",
   "sha256": {
     "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "b4769bdea872f6edf78a764f6758e446677eb4054fcd223d6cfa6df3602482dd",
-    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "d0e2c863742ad6d85cfc292bb40bb2b080fbc16c3b82bf705ee80fe73221240c",
-    "examples/weather_scenarios/fv_partial_reanalysis_runner.py": "5521ecba7bbbc88480f53ca2c6d93dad90fe04497d9b153c46cbe4ccc922c6fb",
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7f55ca410a40dffe14fe4cfe4660f4dfe5149964a784c48b06821896874552c0",
+    "examples/weather_scenarios/fv_partial_reanalysis_runner.py": "f27d453219b05547bb9a31951d27e928af90887f428d9fe18f36e1d867275773",
     "graphify-out/fv-root-cause-20260919/FV_PARTIAL_REANALYSIS_PLAN.md": "d1114ebfa6775ebecebaca0367e0ae89ba186a9b96a217e453a1d95ea8263395",
-    "graphify-out/fv-root-cause-20260919/fv_partial_reanalysis_preflight.json": "8616896d27b3ebd729ef2f58af1e300a9b46fe8ed0844c3d63921f518383fcff",
-    "graphify-out/fv-root-cause-20260919/fv_partial_reanalysis_preflight_tests.log": "e29f31c1d99f15fd13da9b705bda0b3c7a03e278952d24021e5cf5ea5383c9f3",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_REFINEMENT_DIAGNOSTIC_PLAN.md": "7fba5e803bc7cbb2422ce887b7723ce8e454723e1ad3ea9ef60d54d5d981447a",
+    "graphify-out/fv-root-cause-20260919/fv_partial_reanalysis_preflight.json": "c68e13db1bae23e85657a99190264b7a5f2801c4c1e836b871f872d790845222",
+    "graphify-out/fv-root-cause-20260919/fv_partial_reanalysis_preflight_tests.log": "0068c09ad88a54e2715963a4e8a91e90d3eda57dcefaeab8e0f0cb8067964382",
     "graphify-out/fv-root-cause-20260919/fv_partial_reanalysis_preflight_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
-    "graphify-out/fv-root-cause-20260919/fv_partial_reanalysis_validate_only.json": "83fb331e1f94ca871221b2b9f32044ef74a676eb2c015939ecc2237babeef187",
-    "tests/test_fv_partial_reanalysis_preflight.py": "96abe2f41b5053b04ffb6a55e1dcefab101ef4894fbbcd90e89cd2d0161e90b9"
+    "graphify-out/fv-root-cause-20260919/fv_partial_reanalysis_validate_only.json": "b98b2c328efd5a0ac7afb4acf58ed5b86e4a53cc188d09ce9e4e66e8c43766e1",
+    "graphify-out/fv-root-cause-20260919/fv_partial_refinement_diagnostic_identity.json": "918dc5dfe78ed4359703fdfddae39c2016dd4f4c22cc69cfb5728200ee7b38bd",
+    "graphify-out/fv-root-cause-20260919/fv_partial_refinement_diagnostic_tests.log": "14828e1061c6740be6bcd127fa5e546e101b71bcfe16638b18894cd4d245be39",
+    "graphify-out/fv-root-cause-20260919/fv_partial_refinement_diagnostic_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "src/advar/local_refinement.py": "0abb601e110eac8c6b0c9bef2b22d24c69da68ecb2f5c9ff4d770b2356d76f19",
+    "tests/test_fv_partial_reanalysis_preflight.py": "476c61a11cb0f4746823bd5069af9ef3b7883b36ccb83dd7595dbf21e68a763f",
+    "tests/test_local_refinement.py": "81ff28c4bd734d28b7a1bc9fb0e56c5ffcee9bbc6ccf9d62bce1243ff3742f2e"
   },
   "torch": "2.13.0",
-  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python examples/weather_scenarios/fv_partial_reanalysis_preflight.py examples/weather_scenarios/fv_partial_reanalysis_probe.py examples/weather_scenarios/fv_partial_reanalysis_runner.py tests/test_fv_partial_reanalysis_preflight.py",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python src/advar/local_refinement.py examples/weather_scenarios/fv_partial_reanalysis_preflight.py examples/weather_scenarios/fv_partial_reanalysis_probe.py examples/weather_scenarios/fv_partial_reanalysis_runner.py tests/test_local_refinement.py tests/test_fv_partial_reanalysis_preflight.py",
   "typecheck_result": "0 errors, 0 warnings, 0 notes",
   "validate_only_command": ".venv/bin/python examples/weather_scenarios/fv_partial_reanalysis_probe.py --validate-only --output graphify-out/fv-root-cause-20260919/fv_partial_reanalysis_validate_only.json"
 }

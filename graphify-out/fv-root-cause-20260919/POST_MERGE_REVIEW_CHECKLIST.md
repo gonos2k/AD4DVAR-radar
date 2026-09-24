@@ -254,8 +254,13 @@ changes the numerical refiner, not the objective, observation contract or gates.
   (G3, `FV_PARTIAL_OBSERVATION_RESULTS.md`).
 - [ ] Qualify a stationary point and independently check the partial-profile
   whole response with signed reanalysis (G3b); the one-lead problem, direction,
-  gates and proposed resource cap are in `FV_PARTIAL_REANALYSIS_PLAN.md`, not
-  yet approved or executed.
+  gates and resource cap are in `FV_PARTIAL_REANALYSIS_PLAN.md`. The approved
+  first guarded attempt stopped at nominal Newton correction before adjoint or
+  endpoints; see `FV_PARTIAL_REANALYSIS_RUN1_RESULTS.md`. It remains open.
+- [ ] Diagnose the final Newton candidate refusal categories in a separately
+  approved nominal-only run, capped at 240 s / sampled 1 GiB; plan:
+  `FV_PARTIAL_REFINEMENT_DIAGNOSTIC_PLAN.md`. Do not count this as G3b response
+  validation or reuse the first attempt's authorization.
 - [ ] Maintain/decay/flat/zero-face forward and response classification (G4).
 - [ ] Non-collocated observation operator/error contract (G5).
 - [ ] Longer/irregular schedule and bound validation to point/direction/units

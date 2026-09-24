@@ -33,7 +33,9 @@ def _paths(directory: Path) -> dict[str, Path]:
     }
 
 
-def run(directory: Path) -> dict[str, Any]:
+def run(directory: Path, *, wall_seconds: int = 1200, nominal_only: bool = False) -> dict[str, Any]:
+    if type(wall_seconds) is not int or not 1 <= wall_seconds <= 1200:
+        raise ValueError("numerical wall cap must be an integer in [1, 1200] seconds")
     paths = _paths(directory)
     if any(path.exists() for path in paths.values()):
         raise FileExistsError("preserve the existing partial reanalysis artifacts")
@@ -72,9 +74,11 @@ def run(directory: Path) -> dict[str, Any]:
         str(paths["result"]),
         "--execute",
     ]
+    if nominal_only:
+        command.append("--stop-after-nominal")
     resource = run_guarded(
         command,
-        wall_seconds=1200,
+        wall_seconds=wall_seconds,
         rss_bytes=1 * 1024**3,
         report_path=paths["resource"],
         log_path=paths["log"],
@@ -88,7 +92,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--wall-seconds", type=int, default=1200)
+    parser.add_argument("--nominal-only", action="store_true")
     args = parser.parse_args()
     if not args.execute:
         parser.error("numerical execution requires explicit --execute after budget approval")
-    print(json.dumps(run(args.directory), indent=2))
+    print(json.dumps(run(args.directory, wall_seconds=args.wall_seconds, nominal_only=args.nominal_only), indent=2))
