@@ -457,5 +457,14 @@
     "verification": "69 affected local tests passed,18 existing warnings; selected typecheck0; no numerical GN/refinement/adjoint/reanalysis rerun",
     "record": "FV_PARTIAL_GROWTH_INTEGRATION.md",
     "graphify": "code-only incremental update:6914 nodes,65540 edges,263 communities; no semantic LLM extraction"
+  },
+  "fv_zero_face_control_scope": {
+    "baseline": "main9894398 after G3b evidence and G4 growth integration",
+    "finding": "at zero flow all Qx/Qy values0, but full five-control Y/X JVPs affect every respective face in both 4x5 and8x10 profiles",
+    "restricted_counterexample": "one-mode Y basis gives Qy=0 and control JVP Qy=0, without opening exact response support",
+    "eligibility": "strict full-flow minmod zero-face refusal retained; only current two fixed profiles classified",
+    "validation": "3 focused tests passed,18 existing warnings; new test file typecheck0; no GN/adjoint/reanalysis",
+    "record": "FV_ZERO_FACE_CONTROL_SCOPE.md",
+    "graphify": "code-only incremental update:6920 nodes,65550 edges,264 communities; no semantic LLM extraction"
   }
 }
