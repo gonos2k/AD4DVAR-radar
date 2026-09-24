@@ -539,5 +539,14 @@
     "record": "FV_STAGE_OBSERVER_SCOPE.md",
     "graphify": "code-only incremental update:7071 nodes,65855 edges,219 communities; no semantic LLM extraction",
     "remaining": "PCG monitor alias patching remains process-global;async/service routing and concurrent solver diagnostics not yet certified"
+  },
+  "fv_pcg_observer": {
+    "baseline": "main 3b49aa8 after scoped minmod-stage observer isolation",
+    "issue": "three research producers temporarily patched imported pcg aliases globally, allowing concurrent solve counts/report state to cross or stale wrappers to remain",
+    "change": "ContextVar-scoped trusted PCG wrapper factory routes existing module aliases through unchanged _pcg_impl; three producers no longer patch aliases",
+    "validation": "270 affected tests and83 subtests passed,18 existing warnings;core/new-test typecheck0;non-dyadic SPD true residual,thread isolation,nesting,exception cleanup,imported alias and partial monitor HVP count",
+    "record": "FV_PCG_OBSERVER_SCOPE.md",
+    "graphify": "code-only incremental update:7086 nodes,65902 edges,228 communities; no semantic LLM extraction",
+    "remaining": "full concurrent FV optimization/response,async task ownership,observer-under-AD/replay and independent physical validity unverified"
   }
 }

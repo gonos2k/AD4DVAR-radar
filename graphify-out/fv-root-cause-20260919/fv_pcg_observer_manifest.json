@@ -1,0 +1,22 @@
+{
+  "base_head": "3b49aa85c4d1e085e081ca89be14570568dcdc24",
+  "checks": {
+    "affected_tests_passed": 270,
+    "core_and_new_test_type_errors": 0,
+    "existing_warnings": 18,
+    "new_fv_optimizer_runs": 0,
+    "subtests_passed": 83
+  },
+  "python": "3.12.13",
+  "scope": "trusted context-local PCG diagnostic routing; no new FV numerical run or async/service certification",
+  "sha256": {
+    "examples/weather_scenarios/fv86_execution_probe.py": "ab97be9ab5ffe4657451e4ce5aa9296fa49915a5fb2c85ef7f6af0a5aa1fe02e",
+    "examples/weather_scenarios/fv86_reanalysis_probe.py": "bfb55f494764f6114517c2c767c6b60293d3849e6430caecc03c0ca776b59b4e",
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7756da5561f67d47d1a813cc2cd720931b3ba29d132758e16e2628db6fe220c8",
+    "graphify-out/fv-root-cause-20260919/FV_PCG_OBSERVER_SCOPE.md": "b37c364a2d14276d8c9113c8e4126c7582cf26749dbf5092862a68a6c98b92fe",
+    "graphify-out/fv-root-cause-20260919/fv_pcg_observer_verification.json": "c63c06e4abd6eb9d08828fdd3d56fead3cf75c13639582046a5db332054672b1",
+    "src/advar/matrix_free.py": "553ac08552dfe03f2d57f8072718346770f9072e51f2c7ef08384ec4b99fc1de",
+    "tests/test_pcg_observer.py": "129119e83b31c17a9a7473e9763dbd65818843f9066846bf8afad3bbc8397a4c"
+  },
+  "torch": "2.13.0"
+}

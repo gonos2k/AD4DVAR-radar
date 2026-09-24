@@ -1,10 +1,12 @@
 """Small matrix-free automatic-differentiation and linear-solve helpers."""
 
 from collections.abc import Callable
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 import math
 from numbers import Integral, Real
-from typing import cast
+from typing import Iterator, cast
 
 import torch
 from torch import Tensor
@@ -289,6 +291,34 @@ class PCGResult:
     relative_residual: float
 
 
+_PCGCallable = Callable[..., PCGResult]
+_PCGObserverFactory = Callable[[_PCGCallable], _PCGCallable]
+_pcg_observer_factory: ContextVar[_PCGObserverFactory | None] = ContextVar(
+    "advar_pcg_observer_factory", default=None,
+)
+
+
+@contextmanager
+def observe_pcg_calls(factory: _PCGObserverFactory) -> Iterator[None]:
+    """Scope a trusted diagnostic PCG wrapper to the current call context.
+
+    The wrapper must call its supplied original solve without changing the
+    operator, inputs or result. Nested wrappers run innermost first.
+    """
+    if not callable(factory):
+        raise TypeError("PCG observer factory must be callable")
+    previous = _pcg_observer_factory.get()
+
+    def combined(original: _PCGCallable) -> _PCGCallable:
+        return factory(previous(original) if previous is not None else original)
+
+    token = _pcg_observer_factory.set(combined)
+    try:
+        yield
+    finally:
+        _pcg_observer_factory.reset(token)
+
+
 def pcg(
     operator: TensorFunction,
     rhs: Tensor,
@@ -305,8 +335,28 @@ def pcg(
     device of ``rhs``. The operator is expected to be symmetric positive
     definite and the preconditioner positive definite. Reported convergence
     and ``relative_residual`` use a freshly recomputed ``rhs - operator(x)``;
-    a drifted recursive residual restarts the Krylov recurrence.
+    a drifted recursive residual restarts the Krylov recurrence. An optional
+    call-context diagnostic wrapper leaves this numerical contract unchanged.
     """
+    factory = _pcg_observer_factory.get()
+    solve = _pcg_impl if factory is None else factory(_pcg_impl)
+    return solve(
+        operator, rhs, preconditioner=preconditioner, initial=initial,
+        rtol=rtol, atol=atol, max_iterations=max_iterations,
+    )
+
+
+def _pcg_impl(
+    operator: TensorFunction,
+    rhs: Tensor,
+    *,
+    preconditioner: TensorFunction | None = None,
+    initial: Tensor | None = None,
+    rtol: Real | float = 1.0e-6,
+    atol: Real | float = 0.0,
+    max_iterations: int | None = None,
+) -> PCGResult:
+    """Run the unchanged PCG recurrence after diagnostic routing."""
 
     _check_real_tensor("rhs", rhs)
     _check_finite_tensor("rhs", rhs)

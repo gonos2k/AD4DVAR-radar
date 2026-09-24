@@ -12,10 +12,9 @@ from pathlib import Path
 import sys
 import time
 from typing import Any
-from unittest.mock import patch
 
 import torch
-from advar import local_refinement, local_response, variational as v
+from advar import local_refinement, matrix_free, variational as v
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -224,8 +223,7 @@ def run(output: Path, *, mode: str):
                               'theta':torch.cat((p.new_zeros(observation_count),p.new_ones(1))),
                               'middle_time_bias':bias}
                 phase('response_eligibility')
-                with patch.object(local_refinement,'pcg',monitored_pcg(local_refinement.pcg)), \
-                     patch.object(local_response,'pcg',monitored_pcg(local_response.pcg)):
+                with matrix_free.observe_pcg_calls(monitored_pcg):
                     result = workflow.prepare_response(objective,score,c,p,directions,
                         branch_check=compact_check,input_identity=report['input_identity'],refine=refine)
                 report['workflow'] = serialize(result)
