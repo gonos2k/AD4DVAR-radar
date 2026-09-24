@@ -112,6 +112,7 @@ test('pin uses the calculated result and clear starts a new comparison', async (
   harness.element('#intensity-bias').value = '6';
   await harness.click('#pin-reference');
   assert.equal(harness.requests.at(-1).payload.reference.intensity_bias_dbz, 0);
+  assert.match(harness.element('#run-status').textContent, /설정이 변경됐습니다/);
   await harness.submit();
   await harness.click('#pin-reference');
   assert.equal(harness.requests.at(-1).payload.reference.intensity_bias_dbz, 6);
@@ -121,4 +122,26 @@ test('pin uses the calculated result and clear starts a new comparison', async (
   await harness.submit();
   assert.equal(harness.requests.at(-1).payload.reference, null);
   assert.equal(harness.element('#comparison-results').hidden, true);
+});
+
+test('changed settings are marked stale and a different A/B lead is refused in Korean', async () => {
+  const harness = createHarness();
+  await new Promise(setImmediate);
+  await harness.click('#pin-reference');
+  const requestCount = harness.requests.length;
+  const referenceDescription = harness.element('#reference-description').textContent;
+
+  harness.element('#lead-minutes').value = '60';
+  harness.element('#lead-minutes').handlers.input();
+  assert.match(harness.element('#run-status').textContent, /설정이 변경됐습니다/);
+  await harness.submit();
+  assert.equal(harness.requests.length, requestCount);
+  assert.match(harness.element('#run-status').textContent, /A\/B 비교는 A와 같은 \+30분/);
+  assert.equal(harness.element('#reference-description').textContent, referenceDescription);
+
+  harness.element('#lead-minutes').value = '30';
+  harness.element('#lead-minutes').handlers.input();
+  await harness.submit();
+  assert.equal(harness.requests.length, requestCount + 1);
+  assert.equal(harness.requests.at(-1).payload.lead_minutes, 30);
 });

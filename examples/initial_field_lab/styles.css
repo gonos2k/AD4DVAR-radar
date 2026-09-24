@@ -516,6 +516,15 @@ input:focus-visible {
     border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   }
 
+  .legend {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .missing-key {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
   .process-list {
     grid-template-columns: 1fr;
     overflow-x: visible;

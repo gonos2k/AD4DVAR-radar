@@ -6,6 +6,7 @@ const pinButton = document.querySelector("#pin-reference");
 const clearButton = document.querySelector("#clear-reference");
 let lastResult = null;
 let referenceSettings = null;
+let running = false;
 
 const controls = {
   use_background: document.querySelector("#use-background"),
@@ -29,13 +30,24 @@ const labels = [
 for (const [input, selector, format] of labels) {
   input.addEventListener("input", () => {
     document.querySelector(selector).textContent = format(input.value);
+    markSettingsChanged();
   });
 }
 
-controls.use_background.addEventListener("change", updateBackgroundControls);
+controls.use_background.addEventListener("change", () => {
+  updateBackgroundControls();
+  markSettingsChanged();
+});
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  await run("/api/run", { ...settings(), reference: referenceSettings });
+  if (running) return;
+  const requested = settings();
+  if (referenceSettings && requested.lead_minutes !== referenceSettings.lead_minutes) {
+    runStatus.textContent = `A/B 비교는 A와 같은 +${referenceSettings.lead_minutes}분 선행시간에서만 가능합니다. 다른 선행시간은 A를 해제한 뒤 계산하세요.`;
+    runStatus.classList.add("error");
+    return;
+  }
+  await run("/api/run", { ...requested, reference: referenceSettings });
 });
 
 pinButton.addEventListener("click", async () => {
@@ -60,7 +72,7 @@ function signedPixels(value) {
 }
 
 function updateBackgroundControls() {
-  const disabled = !controls.use_background.checked;
+  const disabled = running || !controls.use_background.checked;
   for (const name of [
     "background_age_minutes",
     "shift_y",
@@ -70,6 +82,18 @@ function updateBackgroundControls() {
   ]) {
     controls[name].disabled = disabled;
   }
+}
+
+function markSettingsChanged() {
+  if (!lastResult || running) return;
+  const current = settings();
+  const stale = Object.entries(lastResult.settings).some(
+    ([name, value]) => current[name] !== value,
+  );
+  runStatus.textContent = stale
+    ? "설정이 변경됐습니다. 계산 버튼을 눌러 새 결과를 확인하세요."
+    : "계산이 끝났습니다. 초기장 설정을 바꿔 다시 비교할 수 있습니다.";
+  runStatus.classList.remove("error");
 }
 
 function settings() {
@@ -86,6 +110,7 @@ function settings() {
 
 async function run(path, payload) {
   setRunning(true);
+  let succeeded = false;
   try {
     const options = payload
       ? {
@@ -104,21 +129,26 @@ async function run(path, payload) {
     referenceSettings = result.comparison?.settings ?? null;
     runStatus.textContent = "계산이 끝났습니다. 초기장 설정을 바꿔 다시 비교할 수 있습니다.";
     runStatus.classList.remove("error");
+    succeeded = true;
   } catch (error) {
     runStatus.textContent = `계산 실패: ${error.message}`;
     runStatus.classList.add("error");
   } finally {
     setRunning(false);
+    if (succeeded) markSettingsChanged();
   }
 }
 
-function setRunning(running) {
-  deck.classList.toggle("running", running);
-  deck.setAttribute("aria-busy", String(running));
-  runButton.disabled = running;
-  pinButton.disabled = running || !lastResult;
-  clearButton.disabled = running || !referenceSettings;
-  if (running) {
+function setRunning(active) {
+  running = active;
+  for (const input of Object.values(controls)) input.disabled = active;
+  if (!active) updateBackgroundControls();
+  deck.classList.toggle("running", active);
+  deck.setAttribute("aria-busy", String(active));
+  runButton.disabled = active;
+  pinButton.disabled = active || !lastResult;
+  clearButton.disabled = active || !referenceSettings;
+  if (active) {
     runStatus.textContent = "ADVAR가 고정 사례를 다시 계산하고 있습니다.";
   }
 }

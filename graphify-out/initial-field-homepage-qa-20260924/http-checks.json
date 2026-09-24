@@ -1,0 +1,118 @@
+{
+  "base": "http://127.0.0.1:8766",
+  "checks": [
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 8734
+    },
+    {
+      "method": "GET",
+      "path": "/app.js",
+      "status": 200,
+      "content_type": "text/javascript; charset=utf-8",
+      "bytes": 10950
+    },
+    {
+      "method": "GET",
+      "path": "/styles.css",
+      "status": 200,
+      "content_type": "text/css; charset=utf-8",
+      "bytes": 9408
+    },
+    {
+      "method": "GET",
+      "path": "/api/default",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 61872,
+      "error": null,
+      "lead_minutes": 30,
+      "scored_pixels": 1980
+    },
+    {
+      "method": "POST",
+      "path": "/api/run",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 61872,
+      "error": null,
+      "lead_minutes": 30,
+      "scored_pixels": 1980
+    },
+    {
+      "method": "POST",
+      "path": "/api/run",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 57408,
+      "error": null,
+      "lead_minutes": 180,
+      "scored_pixels": 2064
+    },
+    {
+      "method": "POST",
+      "path": "/api/run",
+      "status": 400,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 66,
+      "error": "lead_minutes must be between 10 and 180 in steps of 10"
+    },
+    {
+      "method": "POST",
+      "path": "/api/run",
+      "status": 400,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 57,
+      "error": "A/B comparison requires the same lead_minutes"
+    },
+    {
+      "method": "POST",
+      "path": "/api/run",
+      "status": 400,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 87,
+      "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"
+    },
+    {
+      "method": "POST",
+      "path": "/api/run",
+      "status": 400,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 41,
+      "error": "request must be a JSON object"
+    },
+    {
+      "method": "POST",
+      "path": "/api/run",
+      "status": 400,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 40,
+      "error": "request body size is invalid"
+    },
+    {
+      "method": "POST",
+      "path": "/api/run",
+      "status": 400,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 42,
+      "error": "use_background must be boolean"
+    },
+    {
+      "method": "GET",
+      "path": "/missing",
+      "status": 404,
+      "content_type": "text/html;charset=utf-8",
+      "bytes": 330
+    },
+    {
+      "method": "POST",
+      "path": "/missing",
+      "status": 404,
+      "content_type": "text/html;charset=utf-8",
+      "bytes": 330
+    }
+  ]
+}

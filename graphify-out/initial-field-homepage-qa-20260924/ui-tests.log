@@ -1,0 +1,11 @@
+✔ failed repin keeps the displayed A and sends it in the next comparison (3.880125ms)
+✔ pin uses the calculated result and clear starts a new comparison (1.383417ms)
+✔ changed settings are marked stale and a different A/B lead is refused in Korean (1.724541ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 47.994125
