@@ -264,8 +264,11 @@ changes the numerical refiner, not the objective, observation contract or gates.
   validation remains open.
 - [ ] Identify which branch gate refused the candidates, then justify any
   nominal-search policy change separately from final-point response eligibility.
-  A third nominal-only run with unchanged gates and reason-count logging is
-  defined in `FV_PARTIAL_BRANCH_GATE_DETAIL_PLAN.md`.
+  Run 3 quantified 3 first-failing signature checks and 13 first-failing
+  face-flux-margin checks (possible overlap); the first-failure gate identity
+  is closed for this nominal correction, while any solver
+  policy change remains open and requires mathematical justification. See
+  `FV_PARTIAL_BRANCH_GATE_DETAIL_RUN3_RESULTS.md`.
 - [ ] Maintain/decay/flat/zero-face forward and response classification (G4).
 - [ ] Non-collocated observation operator/error contract (G5).
 - [ ] Longer/irregular schedule and bound validation to point/direction/units

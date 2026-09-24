@@ -428,5 +428,15 @@
     "raw_manifest": "fv_partial_refinement_diagnostic_run2_manifest.json",
     "next_plan": "FV_PARTIAL_BRANCH_GATE_DETAIL_PLAN.md; same strict policy, raw branch reason counts, nominal-only 240s/1GiB; not yet executed",
     "graphify": "code-only incremental update:6912 nodes,65537 edges,259 communities; no semantic LLM extraction"
+  },
+  "partial_branch_gate_detail_run3": {
+    "authorization": "user autonomous checklist instruction 2026-09-24 19:02 JST; one nominal-only 240s/1GiB guarded attempt",
+    "measured_source_commit": "d7fab34; 14 source SHA256 match measured tree",
+    "resources": "preflight exit0 2.061s RSS315883520bytes; numerical exit1 136.746s RSS344702976bytes; no resource termination",
+    "first_failure_counts": "final Newton iteration4:3 signature mismatches after margins pass,13 face-flux margin<=1e-4 before signature comparison,0 nonfinite,0 finite Armijo",
+    "response_validation": "not_established; no nominal stationary point/tangent/adjoint/endpoints; G3b open",
+    "record": "FV_PARTIAL_BRANCH_GATE_DETAIL_RUN3_RESULTS.md",
+    "raw_manifest": "fv_partial_branch_gate_detail_run3_manifest.json",
+    "policy": "unchanged strict final qualification; no branch/margin relaxation or claim of root nonexistence"
   }
 }

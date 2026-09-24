@@ -1,0 +1,320 @@
+{
+  "execution_status": "error",
+  "numerical_status": "refused",
+  "response_validation": "not_established",
+  "phase": "partial_newton_refinement",
+  "scope": "one-lead 4x5 / 26-control fixed-mask partial-observation local response",
+  "stop_after_nominal": true,
+  "pinned_source_commit": "d7fab34402c578a3c6431918bbda0dc5e98a3349",
+  "runtime_commit": "d7fab34402c578a3c6431918bbda0dc5e98a3349",
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.13.0",
+    "device": "CPU FP64"
+  },
+  "preflight_path": "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/fv_partial_reanalysis_preflight.json",
+  "preflight_report_sha256": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
+  "preflight_identity": {
+    "status": "preflight_only",
+    "numerical_solver_runs": 0,
+    "command": ".venv/bin/python examples/weather_scenarios/fv_partial_reanalysis_preflight.py --output graphify-out/fv-root-cause-20260919/fv_partial_reanalysis_preflight.json",
+    "base_commit": "d7fab34402c578a3c6431918bbda0dc5e98a3349",
+    "environment": {
+      "python": "3.12.13",
+      "torch": "2.13.0",
+      "device": "CPU FP64"
+    },
+    "plan_sha256": "d1114ebfa6775ebecebaca0367e0ae89ba186a9b96a217e453a1d95ea8263395",
+    "warm_start_report_sha256": "a0f9568b59bce283b39d1527d3ab64f7034d41c3d41eb3e843ca0ffd7b8fce88",
+    "problem_identity": {
+      "fixed_problem_sha256": "ffc5a82cb9e4cda7667378b1932c6703e61a6a0c2d16d37ca1c6268b2f860e48",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    },
+    "observation_counts": {
+      "valid": 58,
+      "missing": 2,
+      "censored": 0,
+      "qc_rejected": 0
+    },
+    "missing_indices": [
+      [
+        1,
+        1,
+        2
+      ],
+      [
+        2,
+        2,
+        3
+      ]
+    ],
+    "common_bias_std_dbz": 0.25,
+    "verification_constructor": "tests.test_fv_research_partial_observation._problem: warm-start partial forecast dBZ + 0.1 * fixed pattern, then detach",
+    "tensor_sha256": {
+      "observation_dbz": "fc89685ee7bb07f7c3dcd5eb45fc6a6bb90bf73dae5500a6453c563e33c08a12",
+      "valid_mask": "6d2c1c3e23427974a855012eb8885dbb00c357f53dc4e4ab38bc58864fe20aec",
+      "missing_mask": "21257c511085d4ac7cf048aa8d526556286321fad5f9d4235c7d239ad785199a",
+      "whitener_mode": "2b9b699f1aa5d630bac602ec23f2889b53b79c539aef63018b440a310ae1fb72",
+      "parameters": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+      "warm_start_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+      "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+      "direction": "f75710a114ba2fb0ad1013ccaa15729e7d69b05031ea1b3537a519be77611a38"
+    },
+    "warm_start_gradient_max": 1.083842990538571,
+    "warm_start_objective": 0.02127260121736458,
+    "warm_start_branch": {
+      "euler_stages": 54,
+      "minimum_scaled_slope_margin": 0.0007615693500034068,
+      "minimum_scaled_face_flux_margin": 0.007752734889703382,
+      "signature_sha256": "3c5e5433d3d74a8f840bdd28834b2a73c98edf3b3fc4b46c5ab89567b1e4c70d"
+    },
+    "source_sha256": {
+      "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "b4769bdea872f6edf78a764f6758e446677eb4054fcd223d6cfa6df3602482dd",
+      "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d",
+      "examples/weather_scenarios/fv_minmod_inverse_probe.py": "0e924bf6450285f2f1784ffe4d2e1b33819d9cf09191dd720ed62bbcdc908ad2",
+      "examples/weather_scenarios/fv86_resource_runner.py": "a1cad6a1a9605edb7e51da04d788f9badbd2c6bbfb098dbffa4a93c6816d3611",
+      "examples/weather_scenarios/fv_partial_reanalysis_runner.py": "f27d453219b05547bb9a31951d27e928af90887f428d9fe18f36e1d867275773",
+      "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7f55ca410a40dffe14fe4cfe4660f4dfe5149964a784c48b06821896874552c0",
+      "src/advar/fv_research_problem.py": "07ffd332e7006dfa55994a0dbdde669d6620cda48ded1f9e66d4c22bacc6d11a",
+      "src/advar/local_refinement.py": "dd6ab93bd6bcfc96fe4864b3f09ca926da0cc6b4d9afe2943f1dbb1f4ee02d07",
+      "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+      "src/advar/matrix_free.py": "88c55bc4acb4e5e08a927bc98ded12caecaffed35b0dff32e64e63ab920c6b6f",
+      "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+      "src/advar/transport.py": "d81f409970046bd86b2838339948e01c4840b2be2b613f1e66551bc70a468264",
+      "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+      "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b"
+    }
+  },
+  "source_sha256": {
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "b4769bdea872f6edf78a764f6758e446677eb4054fcd223d6cfa6df3602482dd",
+    "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "0e924bf6450285f2f1784ffe4d2e1b33819d9cf09191dd720ed62bbcdc908ad2",
+    "examples/weather_scenarios/fv86_resource_runner.py": "a1cad6a1a9605edb7e51da04d788f9badbd2c6bbfb098dbffa4a93c6816d3611",
+    "examples/weather_scenarios/fv_partial_reanalysis_runner.py": "f27d453219b05547bb9a31951d27e928af90887f428d9fe18f36e1d867275773",
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7f55ca410a40dffe14fe4cfe4660f4dfe5149964a784c48b06821896874552c0",
+    "src/advar/fv_research_problem.py": "07ffd332e7006dfa55994a0dbdde669d6620cda48ded1f9e66d4c22bacc6d11a",
+    "src/advar/local_refinement.py": "dd6ab93bd6bcfc96fe4864b3f09ca926da0cc6b4d9afe2943f1dbb1f4ee02d07",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "88c55bc4acb4e5e08a927bc98ded12caecaffed35b0dff32e64e63ab920c6b6f",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "src/advar/transport.py": "d81f409970046bd86b2838339948e01c4840b2be2b613f1e66551bc70a468264",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b"
+  },
+  "input_identity": {
+    "fixed_problem_sha256": "ffc5a82cb9e4cda7667378b1932c6703e61a6a0c2d16d37ca1c6268b2f860e48",
+    "preflight_tensor_sha256": {
+      "observation_dbz": "fc89685ee7bb07f7c3dcd5eb45fc6a6bb90bf73dae5500a6453c563e33c08a12",
+      "valid_mask": "6d2c1c3e23427974a855012eb8885dbb00c357f53dc4e4ab38bc58864fe20aec",
+      "missing_mask": "21257c511085d4ac7cf048aa8d526556286321fad5f9d4235c7d239ad785199a",
+      "whitener_mode": "2b9b699f1aa5d630bac602ec23f2889b53b79c539aef63018b440a310ae1fb72",
+      "parameters": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+      "warm_start_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+      "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+      "direction": "f75710a114ba2fb0ad1013ccaa15729e7d69b05031ea1b3537a519be77611a38"
+    },
+    "warm_start_sha256": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+    "direction_sha256": "f75710a114ba2fb0ad1013ccaa15729e7d69b05031ea1b3537a519be77611a38",
+    "step_sizes": [
+      0.001,
+      0.0005,
+      0.00025,
+      0.000125,
+      6.25e-05,
+      3.125e-05
+    ]
+  },
+  "direction": {
+    "name": "middle_time_valid_bias",
+    "units": "dBZ per unit step",
+    "values": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      0.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "step_sizes": [
+    0.001,
+    0.0005,
+    0.00025,
+    0.000125,
+    6.25e-05,
+    3.125e-05
+  ],
+  "gates": {
+    "stationarity_max_gradient": 1e-10,
+    "tangent_actual_relative_residual": 1e-10,
+    "adjoint_actual_relative_residual": 1e-10,
+    "minimum_scaled_slope_margin": 0.0001,
+    "minimum_scaled_face_flux_margin": 0.0001,
+    "score_signal_epsilon_multiplier": 1024.0,
+    "central_response_relative_error": 0.0001,
+    "consecutive_valid_pairs": 2
+  },
+  "timings": {
+    "partial_gauss_newton_seconds": 29.779870083963033
+  },
+  "linear_solves": [
+    {
+      "phase": "partial_gauss_newton",
+      "rtol": 1e-05,
+      "max_iterations": 40,
+      "hvp_calls": 22,
+      "converged": true,
+      "iterations": 21,
+      "pcg_relative_residual": 9.114862152595846e-07,
+      "seconds": 6.90392991603585
+    },
+    {
+      "phase": "partial_gauss_newton",
+      "rtol": 1e-05,
+      "max_iterations": 40,
+      "hvp_calls": 22,
+      "converged": true,
+      "iterations": 21,
+      "pcg_relative_residual": 2.4088295031121587e-07,
+      "seconds": 6.86598420800874
+    },
+    {
+      "phase": "partial_gauss_newton",
+      "rtol": 1e-05,
+      "max_iterations": 40,
+      "hvp_calls": 22,
+      "converged": true,
+      "iterations": 21,
+      "pcg_relative_residual": 4.298263302665726e-06,
+      "seconds": 6.893307291029487
+    },
+    {
+      "phase": "partial_gauss_newton",
+      "rtol": 1e-05,
+      "max_iterations": 40,
+      "hvp_calls": 21,
+      "converged": true,
+      "iterations": 20,
+      "pcg_relative_residual": 5.050424286798501e-06,
+      "seconds": 6.640736833040137
+    },
+    {
+      "phase": "partial_newton_refinement",
+      "rtol": 1e-10,
+      "max_iterations": 104,
+      "hvp_calls": 30,
+      "converged": true,
+      "iterations": 29,
+      "pcg_relative_residual": 3.682583699121687e-14,
+      "seconds": 25.01341199997114
+    },
+    {
+      "phase": "partial_newton_refinement",
+      "rtol": 1e-10,
+      "max_iterations": 104,
+      "hvp_calls": 30,
+      "converged": true,
+      "iterations": 29,
+      "pcg_relative_residual": 5.377883723188066e-14,
+      "seconds": 25.177716707985383
+    },
+    {
+      "phase": "partial_newton_refinement",
+      "rtol": 1e-10,
+      "max_iterations": 104,
+      "hvp_calls": 30,
+      "converged": true,
+      "iterations": 29,
+      "pcg_relative_residual": 5.722765190586103e-14,
+      "seconds": 24.75906108302297
+    },
+    {
+      "phase": "partial_newton_refinement",
+      "rtol": 1e-10,
+      "max_iterations": 104,
+      "hvp_calls": 30,
+      "converged": true,
+      "iterations": 29,
+      "pcg_relative_residual": 1.4496515283537632e-14,
+      "seconds": 25.201539249974303
+    }
+  ],
+  "endpoints": [],
+  "pairs": [],
+  "nonlinear_reanalyses": 0,
+  "nominal_branch_policy": "pin the fresh GN seed's strict branch through nominal Newton refinement; refuse if it changes",
+  "nominal_eligibility": "refused",
+  "endpoint_eligibility": "not_attempted",
+  "finite_path_certified": false,
+  "general_minmod_response_eligible": false,
+  "elapsed_seconds": 135.494254041987,
+  "preflight_rechecks": {
+    "before": "passed",
+    "after": "pending"
+  },
+  "partial_gauss_newton": {
+    "reason": "maximum_outer_iterations",
+    "outer_iterations": 4,
+    "pcg_iterations": 83,
+    "initial_objective": 0.1712418172180851,
+    "final_objective": 0.02076475483611489,
+    "control_sha256": "dec2e1279c2ace4d1339da0771144ad3125727b4c1e9d5e9303e2492d92bd550"
+  },
+  "error": "RuntimeError: stationarity refinement failed to find an Armijo step: iteration=4; no finite candidate evaluation; branch_rejections=16; branch_reason_counts={'partial branch signature changed': 3, 'minimum face flux margin is at or below 1e-4': 13}; nonfinite_candidate_rejections=0; finite_armijo_rejections=0",
+  "failure_category": "face_flux_margin_refusal"
+}

@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_reanalysis_probe.py", line 780, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_reanalysis_probe.py", line 768, in main
+    else run(args.output, args.preflight, stop_after_nominal=args.stop_after_nominal)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_reanalysis_probe.py", line 385, in run
+    refined = local_refinement.refine_stationary(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/local_refinement.py", line 302, in refine_stationary
+    raise RuntimeError(
+RuntimeError: stationarity refinement failed to find an Armijo step: iteration=4; no finite candidate evaluation; branch_rejections=16; branch_reason_counts={'partial branch signature changed': 3, 'minimum face flux margin is at or below 1e-4': 13}; nonfinite_candidate_rejections=0; finite_armijo_rejections=0

@@ -102,6 +102,10 @@ def test_numerical_driver_identity_and_directional_arithmetic_are_fail_closed():
     assert relative_error < 1e-10
     with pytest.raises(ValueError, match="nonzero"):
         probe.central_response_error(0.1, 0.1, 1e-3, 0.0)
+    assert probe._failure_category(
+        "branch_rejections=16; branch_reason_counts={'signature changed': 3, 'face margin': 13}",
+        "partial_newton_refinement",
+    ) == "branch_gate_refusal"
 
 
 def test_refused_nominal_refinement_is_recorded_as_attempted(tmp_path, monkeypatch):

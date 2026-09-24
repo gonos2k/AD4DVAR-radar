@@ -85,6 +85,8 @@ def _branch_summary(branch: dict[str, Any], face_margin: float) -> dict[str, Any
 
 def _failure_category(message: str, phase: str) -> str:
     lowered = message.lower()
+    if "branch_rejections=" in lowered:
+        return "branch_gate_refusal"
     if "face" in lowered and "margin" in lowered:
         return "face_flux_margin_refusal"
     if "slope margin" in lowered or "branch margin" in lowered:
