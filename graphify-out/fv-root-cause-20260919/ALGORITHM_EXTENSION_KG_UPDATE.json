@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6688,
-    "edges": 65079,
-    "communities": 247,
+    "nodes": 6725,
+    "edges": 65149,
+    "communities": 251,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -294,5 +294,25 @@
     "focused_tests": 83,
     "evidence": "CURRENT_GN_RESPONSE_REVIEW.md",
     "general_minmod_response_eligible": false
+  },
+  "pr172_followup": {
+    "baseline": "main cee7a387; PR172 milestone closed",
+    "scope": "conditional exact-HVP Newton-PCG stationarity refinement; existing wrapper callback",
+    "tests": "99 affected tests passed,18 existing warnings; module typecheck0 errors0 warnings0 notes; no full CI",
+    "analytic_scope": "three predefined starts,64-control stationary reference,explicit refusal and backtracking tests; not largerFV",
+    "fv_result": "saved actualGN26 -> 2 Newton /54HVP -> fullresponse; gradient6.9620415e-12,controldistance3.54e-18,totalgradient+3directionsrelative0",
+    "cost": "refinement46.4578s,response22.4458s,producer70.1127s,child71.1324s,maxRSS354369536bytes; no controlled speedup claim",
+    "record": "MATRIX_FREE_REFINEMENT_REVIEW.md",
+    "remaining": "largerFV/differentobservations/preconditioning/generalFSOI/typedlearning/finiteimpacts/D7",
+    "reviews": "GREEN/RED final no blockers; source identity, conditional math/gates and references checked",
+    "html": "original animation preserved; Aside desktop DOM/screenshot verified, no new mobile check"
+  },
+  "pr173_review_followup": {
+    "baseline": "open PR173 b38fdb7; original FV run retained",
+    "change": "only detected nonfinite trial evaluation backtracks; initial/structural/arbitrary objective callback errors propagate",
+    "validation": "113 affected tests;26 refiner included;typecheck0;GREEN/RED clear",
+    "analytic": "exp -7/-8 now7/6Newton withunchangedgates;64 nearest-neighbor coupled cases at3starts",
+    "record": "NONFINITE_CANDIDATE_REVIEW.md",
+    "next": "FV_86_CONTROL_EXECUTION_PLAN.md; costed butnotexecuted; approvalpending"
   }
 }

@@ -412,6 +412,36 @@ def _current_gn_panel():
     )
 
 
+def _matrix_free_refinement_panel():
+    path = HERE / "matrix_free_refined_response.json"
+    if not path.exists():
+        return ""
+    data = json.loads(path.read_text())
+    digest = hashlib.sha256(json.dumps(data, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if digest != "e1ffc789fc5bbe12dd5edd117dd2b06755f049e6605c01dce2f3a4ee046832d9":
+        raise SystemExit("matrix-free refinement archived identity mismatch")
+    w = data["workflow"]
+    if w["status"] != "eligible":
+        raise SystemExit("matrix-free refinement did not qualify for response")
+    r = data["refinement_diagnostics"]
+    return (
+        '<section id="fvMatrixFreeRefinement"><h3>행렬 없는 정상점 보정 · 기존 조밀 기준 대조</h3>'
+        f'<p>저장 GN의 최대 gradient {w["before"]["gradient_max"]:.3e} → '
+        f'{w["after"]["gradient_max"]:.3e}. Newton {r["iterations"]}회, '
+        f'보정 HVP {r["hvp_count"]}회; 전체 민감도 기준 상대차이 '
+        f'{data["full_gradient_reference_relative_difference"]:.3e}.</p>'
+        f'<p>보정 {w["timings"]["refinement_seconds"]:.2f}초, '
+        f'응답 {w["timings"]["response_seconds"]:.2f}초. '
+        'Hessian 행렬을 만들지 않고 실제 HVP와 PCG로 정상점을 보정합니다.</p>'
+        '<p>동일한 26제어 FV 사례의 구현 대조입니다. 64제어 해석 시험은 별도이며, '
+        '큰 FV 격자의 수렴·속도 향상·일반 FSOI·전체 Hessian의 양의 정부호 인증은 아닙니다.</p>'
+        '<p>후속 보강: 비유한 Newton 후보는 스텝을 줄여 다시 평가하며, 초기점 오류와 목적함수 callback 예외는 실패로 전달합니다. '
+        '위 FV 측정값은 기존 실행을 보존한 것입니다. '
+        '<a href="../../graphify-out/fv-root-cause-20260919/NONFINITE_CANDIDATE_REVIEW.md">후보 오버플로 회귀시험</a></p>'
+        '<p><a href="../../graphify-out/fv-root-cause-20260919/MATRIX_FREE_REFINEMENT_REVIEW.md">수학적 조건·실행 비용·적용 한계</a></p></section>'
+    )
+
+
 def _colour(value, scale):
     """Symmetric blue-paper-red colour for a normalized sensitivity value."""
     t = max(-1.0, min(1.0, float(value) / scale))
@@ -619,6 +649,7 @@ def _panel(report, scale, central):
       {_parameter_vjp_panel()}
       {_gn_response_panel()}
       {_current_gn_panel()}
+      {_matrix_free_refinement_panel()}
       <p><a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.json">최종 응답 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.pt">응답 tensor</a>{central_link} · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg">민감도 −20분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg">−10분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg">0분</a></p>
     </div>
   </details>

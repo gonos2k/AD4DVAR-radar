@@ -1,4 +1,4 @@
-"""Explicit small-oracle refinement of saved or current GN output into a response.
+"""Explicit refinement of saved or current GN output into a response.
 
 Serial research workflow; --fresh-gn runs the current solver on the fixed case.
 """
@@ -43,7 +43,7 @@ def serializable(value):
     return value
 
 
-def run(output, *, fresh_gn=False):
+def run(output, *, fresh_gn=False, matrix_free_refine=False):
     started = time.monotonic()
     bridge = load('fv_minmod_matrix_free_probe')
     workflow = load('fv_analysis_response')
@@ -52,6 +52,8 @@ def run(output, *, fresh_gn=False):
     source_paths = (Path(__file__), Path(workflow.__file__), Path(bridge.__file__),
                     Path(oracle.__file__), Path(fixture.__file__), ROOT/'src/advar/local_response.py',
                     ROOT/'src/advar/variational.py', ROOT/'src/advar/transport.py', ROOT/'src/advar/matrix_free.py')
+    if matrix_free_refine:
+        source_paths += (ROOT/'src/advar/local_refinement.py',)
     source_hashes = {str(path.relative_to(ROOT)):hashlib.sha256(path.read_bytes()).hexdigest()
                      for path in source_paths}
     obs, frozen, boundary, support = fixture.make_spatial_case()
@@ -76,8 +78,22 @@ def run(output, *, fresh_gn=False):
     directions = {name: torch.tensor(item['parameter_direction'],dtype=torch.float64)
                   for name,item in saved['tangents'].items()}
     candidates = []
+    refinement_report = None
 
     def refine(control, parameters):
+        nonlocal refinement_report
+        if matrix_free_refine:
+            from advar.local_refinement import refine_stationary
+
+            def checked(trial, fixed_parameters):
+                branch, scope = check(trial,fixed_parameters)
+                candidates.append({'control':trial.detach().tolist(),'branch':branch})
+                return branch, scope
+
+            refinement_report = refine_stationary(
+                objective,control,parameters,branch_check=checked)
+            return refinement_report.control
+
         def check_step(previous, trial):
             branch, _ = check(trial,parameters)
             candidates.append({'control':trial.detach().tolist(),'branch':branch})
@@ -103,7 +119,10 @@ def run(output, *, fresh_gn=False):
                 'analysis_control_sha256':bridge._digest(c),'analysis_origin':'current solve_analysis result' if fresh_gn else 'archived product GN'}
     result = workflow.prepare_response(objective,score,c,p,directions,
         branch_check=check,input_identity=identity,refine=refine)
-    report = {'scope':('current' if fresh_gn else 'saved')+' GN -> explicit dense small oracle -> matrix-free local response',
+    refinement_method = 'matrix-free Newton-PCG' if matrix_free_refine else 'dense small oracle'
+    report = {'scope':('current' if fresh_gn else 'saved')+' GN -> explicit '+refinement_method+' -> matrix-free local response',
+              'refinement_method':refinement_method,
+              'refinement_diagnostics':serializable(refinement_report),
               'fresh_gn_runs':int(fresh_gn),'nonlinear_reanalyses':0,
               'gn_seconds':gn_seconds,'gn_result':gn,
               'control_from_current_result':current_gn is not None,
@@ -134,5 +153,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--fresh-gn',action='store_true')
+    parser.add_argument('--matrix-free-refine',action='store_true')
     args = parser.parse_args()
-    print(run(args.output,fresh_gn=args.fresh_gn)['workflow']['status'])
+    print(run(args.output,fresh_gn=args.fresh_gn,matrix_free_refine=args.matrix_free_refine)['workflow']['status'])

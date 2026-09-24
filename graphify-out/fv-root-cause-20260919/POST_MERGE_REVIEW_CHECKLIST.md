@@ -161,3 +161,36 @@ General minmod API eligibility and all previously listed learning/D7 limits rema
 - [x] Freeze sources before one bounded current GN -> explicit refinement -> full response execution. Keep independent fixed verification and the same numerical gates.
 - [x] Record actual returned GN control, stage costs, before/after branch/gradient, full response and source stability; preserve archived evidence.
 - [x] Focused tests, GREEN/RED review, KG/checklist and original demo. General new-case convergence/FSOI/learning/D7 remain open.
+
+## After PR172 — matrix-free stationarity refinement (new milestone)
+
+PR172 input isolation and current GN integration are closed. This milestone
+changes the numerical refiner, not the objective, observation contract or gates.
+
+- [x] Exact gradient-JVP Newton-PCG root refinement, fixed max-gradient <1e-10;
+  independent linear residual <=1e-10, negative-curvature/nonconvergence refusal,
+  branch-checked Armijo decrease of half the squared gradient norm.
+- [x] Small analytic nonlinear tests with predetermined starts, including 64
+  controls (above the dense oracle cap), and explicit refusal cases. No global
+  SPD, minimum, convergence or finite-path certification from PCG diagnostics.
+- [x] One bounded 26-control saved-GN -> new refiner -> full response execution;
+  reuse existing dense results. Control distance <=1e-8, full-gradient and three
+  directional relative differences <=1e-6; unchanged response residual <=1e-10.
+  Record inner/outer iterations, HVPs, actual residuals, accepted scales, branch
+  records and separate costs. No fresh GN or perturbed reanalysis rerun required.
+- [x] GREEN/RED review, affected tests/typecheck, KG and original demo evidence.
+- [ ] Larger FV grids and different observation cases: estimate costs and define
+  convergence/refusal cases before execution; not covered by the small bridge.
+
+## PR173 review follow-up — recoverable candidate domain failures
+
+- [x] Reproduce original exp(x)-x behavior at x=-2,-7,-8 directly from b38fdb7.
+- [x] Distinguish explicitly detected nonfinite candidate evaluations from
+  initial-point failures and arbitrary callback exceptions; backtrack only the
+  former, preserving budgets, derivative equations and gates.
+- [x] Regress overflow recovery, nonfinite derivative/norm candidates, exhausted
+  search, malformed outputs and exception propagation; retain 64-control coupled
+  analytic evidence separately from actual FV execution.
+- [x] GREEN/RED final review, affected tests/typecheck, Graphify/KG and PR update.
+- [ ] Costed 8x10/86-control FV contract and execution plan; obtain the previously
+  required larger-experiment budget approval before numerical scaling runs.
