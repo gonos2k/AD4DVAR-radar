@@ -63,9 +63,14 @@ class FVResearchProblem:
         if (self.observation_operator != 'collocated_dbz' or spec is None
                 or spec.reconstruction != 'minmod'
                 or obs.dbz.dtype != torch.float64 or obs.dbz.device.type != 'cpu'
+                or not bool(torch.isfinite(obs.dbz).all())
                 or obs.dbz.ndim != 3 or obs.dbz.shape[0] != 3
                 or tuple(obs.dbz.shape[1:]) != shape or len(shape) != 2 or min(shape) < 3
-                or not bool(obs.detected_mask.all()) or not bool(obs.valid_mask.all())
+                or not bool(obs.valid_mask[0].all())
+                or not torch.equal(obs.valid_mask,obs.detected_mask)
+                or not torch.equal(obs.missing_mask,~obs.valid_mask)
+                or bool(obs.censored_mask.any()) or bool(obs.qc_rejected_mask.any())
+                or not torch.equal(frozen.detected_masks,obs.detected_mask)
                 or not bool(frozen.initial_support_mask.all())
                 or frozen.neural_prior_dependency is not None or frozen.grid_time_contract is not None):
             raise ValueError('research minmod requires the CPU FP64 collocated full-support contract')
@@ -115,7 +120,8 @@ class FVResearchProblem:
     def support(self) -> dict[str, Any]:
         return {'observation_operator':self.observation_operator,
                 'observation_errors':'existing FrozenObservationWhitener',
-                'observation_masks':'all valid and detected',
+                'observation_masks':('all valid and detected' if bool(self.observations.valid_mask.all())
+                                     else 'first frame detected; later cells detected or missing'),
                 'state_and_boundary_support':'fully known',
                 'time_schedule':('three regular observations; one subsequent forecast interval'
                                  if self.leads == 1 else
@@ -134,12 +140,19 @@ class FVResearchProblem:
                     'layout':self.layout,'support':self.support}),
                 'scope':'fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse'}
 
-    def contract(self, parameters: Tensor) -> v.FrozenOuterState:
+    def _observation_values(self, parameters: Tensor) -> Tensor:
         observed=parameters[:-1].reshape_as(self.observations.dbz)
+        if bool(self.observations.valid_mask.all()):
+            return observed
+        # Missing values are not clear-sky observations or active parameters.
+        return torch.where(self.observations.valid_mask,observed,self.observations.dbz)
+
+    def contract(self, parameters: Tensor) -> v.FrozenOuterState:
+        observed=self._observation_values(parameters)
         return replace(self.frozen,initial_background_dbz=observed[0]+parameters[-1]*self.pattern)
 
     def objective(self, control: Tensor, parameters: Tensor) -> Tensor:
-        observations=replace(self.observations,dbz=parameters[:-1].reshape_as(self.observations.dbz))
+        observations=replace(self.observations,dbz=self._observation_values(parameters))
         return v.robust_objective(control,observations,self.contract(parameters))
 
     def forecast(self, control: Tensor, parameters: Tensor) -> Tensor:
@@ -164,7 +177,10 @@ class FVResearchProblem:
         margin=64*torch.finfo(background.dtype).eps*((background.abs()+abs(cfg.min_dbz))/ac.echo_transform_scale_dbz+ac.transform_epsilon)
         if not bool(((offset-ac.transform_epsilon>margin)&(background<cfg.max_dbz)).all()):
             raise ValueError('research minmod background is outside its smooth branch')
-        if not bool(((parameters[:-1]>ac.detection_limit_dbz)&(parameters[:-1]<cfg.max_dbz)).all()):
+        if not bool(torch.isfinite(parameters).all()):
+            raise ValueError('research minmod parameters must be finite')
+        active=self._observation_values(parameters)[self.observations.valid_mask]
+        if not bool(((active>ac.detection_limit_dbz)&(active<cfg.max_dbz)).all()):
             raise ValueError('research minmod requires fixed detected observations')
         branch=self.trace_branches(lambda:self.forecast(control,parameters))
         if branch['euler_stages']!=layout['euler_stages']:

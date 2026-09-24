@@ -389,5 +389,16 @@
     "score_control_central_slopes": [0.00762482276147136, 0.007624814042039797],
     "graphify": "code-only incremental update:6850 nodes,65412 edges,257 communities; no semantic LLM extraction",
     "remaining": "G3-G10: missing observations, maintain/decay/flat/zero-face classification, noncollocated operator, irregular/long horizon, scoped validation and refusal accounting, independent physical validation and concurrent diagnostics"
+  },
+  "partial_observation_followup": {
+    "baseline": "main159bb82; next bounded research-profile change",
+    "checklist": "PR175_176_REVIEW_RESOLUTION.md G3/G3b",
+    "scope": "4x5,26 controls,61 parameter slots; first frame fully detected, two genuine missing middle/last cells; fully known state/boundaries; no censor or QC-rejected support",
+    "fixed_mask_result": "masked parameter changes leave J/E/forecast and strict branch unchanged; masked Ep and score p-gradients0; J_cp d_missing0; common-bias mode0 at missing cells",
+    "verification": "63 affected tests,18 existing warnings; pinned typecheck0; exact commands and hashes in partial_observation_run_manifest.json",
+    "refusals": "first-frame missing rejected by FV initial-support contract; QC-rejected, censored, zero-quality invalid rejected by research binding",
+    "not_measured": "new partial-profile stationary solve, adjoint whole response or signed nonlinear reanalysis; arbitrary masks, physical skill and long horizon remain unverified",
+    "record": "FV_PARTIAL_OBSERVATION_RESULTS.md",
+    "graphify": "code-only incremental update:6858 nodes,65431 edges,261 communities; no semantic LLM extraction"
   }
 }
