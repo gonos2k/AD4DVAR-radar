@@ -181,3 +181,16 @@ changes the numerical refiner, not the objective, observation contract or gates.
 - [x] GREEN/RED review, affected tests/typecheck, KG and original demo evidence.
 - [ ] Larger FV grids and different observation cases: estimate costs and define
   convergence/refusal cases before execution; not covered by the small bridge.
+
+## PR173 review follow-up — recoverable candidate domain failures
+
+- [x] Reproduce original exp(x)-x behavior at x=-2,-7,-8 directly from b38fdb7.
+- [x] Distinguish explicitly detected nonfinite candidate evaluations from
+  initial-point failures and arbitrary callback exceptions; backtrack only the
+  former, preserving budgets, derivative equations and gates.
+- [x] Regress overflow recovery, nonfinite derivative/norm candidates, exhausted
+  search, malformed outputs and exception propagation; retain 64-control coupled
+  analytic evidence separately from actual FV execution.
+- [x] GREEN/RED final review, affected tests/typecheck, Graphify/KG and PR update.
+- [ ] Costed 8x10/86-control FV contract and execution plan; obtain the previously
+  required larger-experiment budget approval before numerical scaling runs.

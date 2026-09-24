@@ -1,6 +1,8 @@
 """Analytic checks for the conditional matrix-free stationarity refiner."""
 from __future__ import annotations
 
+import math
+
 import pytest
 import torch
 
@@ -8,7 +10,7 @@ from advar import local_refinement as module
 from advar.matrix_free import PCGResult
 
 
-def _case(size: int = 3, *, initial: float = 0.0):
+def _case(size: int = 3, *, initial: float = 0.0, coupling: float = 0.0):
     dtype = torch.float64
     diagonal = torch.linspace(1.5, 3.0, size, dtype=dtype)
     target = torch.linspace(-0.3, 0.4, size, dtype=dtype)
@@ -18,7 +20,12 @@ def _case(size: int = 3, *, initial: float = 0.0):
     def objective(c, q):
         shift = target + 0.1 * q[0]
         delta = c - shift
-        return 0.5 * (diagonal * delta.square()).sum() + 0.01 * delta.pow(4).sum()
+        coupling_cost = 0.5 * coupling * (delta[1:] - delta[:-1]).square().sum()
+        return (
+            0.5 * (diagonal * delta.square()).sum()
+            + 0.01 * delta.pow(4).sum()
+            + coupling_cost
+        )
 
     def branch_check(c, q):
         return "analytic", "fixed analytic branch"
@@ -45,8 +52,12 @@ def test_nonlinear_spd_refinement_matches_known_stationary_point_without_dense_s
     torch.testing.assert_close(p, original_p)
 
 
-def test_sixty_four_control_case_agrees_with_analytic_reference():
-    objective, control, p, stationary, branch_check = _case(64)
+@pytest.mark.parametrize("coupling", [0.0, 4.0])
+@pytest.mark.parametrize("initial", [0.0, 0.5, -0.5])
+def test_sixty_four_control_case_agrees_with_analytic_reference(coupling, initial):
+    objective, control, p, stationary, branch_check = _case(
+        64, initial=initial, coupling=coupling
+    )
     result = module.refine_stationary(objective, control, p, branch_check=branch_check)
     torch.testing.assert_close(result.control, stationary, rtol=1e-10, atol=1e-10)
     assert result.gradient_max < 1e-10
@@ -102,6 +113,109 @@ def test_normalized_armijo_rejects_overshoot_before_accepting_backtrack():
     )
     first_rejection = next(record for record in result.history if not record["accepted"])
     assert first_rejection["norm_ratio"] > first_rejection["armijo_limit"]
+
+
+@pytest.mark.parametrize("initial", [-7.0, -8.0])
+def test_nonfinite_exponential_trials_are_rejected_until_a_finite_step(initial):
+    dtype = torch.float64
+    control = torch.tensor([initial], dtype=dtype)
+    p = torch.zeros(1, dtype=dtype)
+
+    def objective(c, q):
+        return torch.exp(c[0]) - c[0]
+
+    result = module.refine_stationary(
+        objective, control, p,
+        branch_check=lambda c, q: ("exp", "fixed"),
+    )
+
+    assert result.gradient_max < 1e-10
+    assert any(record.get("rejection") == "nonfinite_candidate" for record in result.history)
+    assert any(record["accepted"] for record in result.history)
+    assert all(
+        all(not isinstance(value, float) or math.isfinite(value)
+            for value in record.values())
+        for record in result.history
+    )
+
+
+@pytest.mark.parametrize(
+    ("gradient", "message"),
+    [
+        (torch.tensor([float("inf"), 1.0], dtype=torch.float64), "gradient must be finite"),
+        (torch.tensor([1.0e308, 1.0e308], dtype=torch.float64), "gradient norm must be finite"),
+    ],
+)
+def test_nonfinite_candidate_gradient_is_rejected_as_a_candidate(gradient, message):
+    finite_objective = torch.tensor(0.0, dtype=torch.float64)
+
+    with pytest.raises(module._NonFiniteEvaluation, match=message):
+        module._evaluate(
+            lambda c, q: finite_objective,
+            lambda c, q: gradient,
+            torch.zeros(2, dtype=torch.float64),
+            torch.zeros(1, dtype=torch.float64),
+        )
+
+
+def test_all_nonfinite_candidate_trials_end_with_a_finite_budget_refusal():
+    dtype = torch.float64
+    control = torch.zeros(1, dtype=dtype)
+    p = torch.zeros(1, dtype=dtype)
+
+    def objective(c, q):
+        finite = 0.5 * c.square().sum() + c.sum()
+        return torch.where(c[0] == 0.0, finite, c.new_tensor(float("inf")))
+
+    with pytest.raises(RuntimeError, match="no finite candidate evaluation"):
+        module.refine_stationary(
+            objective, control, p,
+            branch_check=lambda c, q: ("fixed", "fixed"),
+            max_backtracks=3,
+        )
+
+
+@pytest.mark.parametrize("error", [ValueError, RuntimeError, TypeError])
+def test_candidate_objective_callback_errors_propagate(error):
+    objective, control, p, _, branch_check = _case()
+    candidate_seen = False
+
+    def broken_objective(c, q):
+        if candidate_seen:
+            raise error("callback failure")
+        return objective(c, q)
+
+    def identify_candidate(c, q):
+        nonlocal candidate_seen
+        candidate_seen = not torch.equal(c, control)
+        return branch_check(c, q)
+
+    with pytest.raises(error, match="callback failure"):
+        module.refine_stationary(
+            broken_objective, control, p, branch_check=identify_candidate
+        )
+    assert candidate_seen
+
+
+def test_malformed_candidate_objective_output_propagates():
+    objective, control, p, _, branch_check = _case()
+    candidate_seen = False
+
+    def malformed_objective(c, q):
+        if candidate_seen:
+            return torch.stack((c.sum(), c.sum()))
+        return objective(c, q)
+
+    def identify_candidate(c, q):
+        nonlocal candidate_seen
+        candidate_seen = not torch.equal(c, control)
+        return branch_check(c, q)
+
+    with pytest.raises(ValueError, match="objective must return a scalar"):
+        module.refine_stationary(
+            malformed_objective, control, p, branch_check=identify_candidate
+        )
+    assert candidate_seen
 
 
 def test_successful_pcg_flag_with_wrong_solution_is_rejected(monkeypatch):

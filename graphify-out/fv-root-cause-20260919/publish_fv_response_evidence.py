@@ -435,6 +435,9 @@ def _matrix_free_refinement_panel():
         'Hessian 행렬을 만들지 않고 실제 HVP와 PCG로 정상점을 보정합니다.</p>'
         '<p>동일한 26제어 FV 사례의 구현 대조입니다. 64제어 해석 시험은 별도이며, '
         '큰 FV 격자의 수렴·속도 향상·일반 FSOI·전체 Hessian의 양의 정부호 인증은 아닙니다.</p>'
+        '<p>후속 보강: 비유한 Newton 후보는 스텝을 줄여 다시 평가하며, 초기점 오류와 목적함수 callback 예외는 실패로 전달합니다. '
+        '위 FV 측정값은 기존 실행을 보존한 것입니다. '
+        '<a href="../../graphify-out/fv-root-cause-20260919/NONFINITE_CANDIDATE_REVIEW.md">후보 오버플로 회귀시험</a></p>'
         '<p><a href="../../graphify-out/fv-root-cause-20260919/MATRIX_FREE_REFINEMENT_REVIEW.md">수학적 조건·실행 비용·적용 한계</a></p></section>'
     )
 

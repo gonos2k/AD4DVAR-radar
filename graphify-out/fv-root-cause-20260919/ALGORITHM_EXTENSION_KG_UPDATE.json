@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6718,
-    "edges": 65132,
-    "communities": 210,
+    "nodes": 6725,
+    "edges": 65149,
+    "communities": 251,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -306,5 +306,13 @@
     "remaining": "largerFV/differentobservations/preconditioning/generalFSOI/typedlearning/finiteimpacts/D7",
     "reviews": "GREEN/RED final no blockers; source identity, conditional math/gates and references checked",
     "html": "original animation preserved; Aside desktop DOM/screenshot verified, no new mobile check"
+  },
+  "pr173_review_followup": {
+    "baseline": "open PR173 b38fdb7; original FV run retained",
+    "change": "only detected nonfinite trial evaluation backtracks; initial/structural/arbitrary objective callback errors propagate",
+    "validation": "113 affected tests;26 refiner included;typecheck0;GREEN/RED clear",
+    "analytic": "exp -7/-8 now7/6Newton withunchangedgates;64 nearest-neighbor coupled cases at3starts",
+    "record": "NONFINITE_CANDIDATE_REVIEW.md",
+    "next": "FV_86_CONTROL_EXECUTION_PLAN.md; costed butnotexecuted; approvalpending"
   }
 }

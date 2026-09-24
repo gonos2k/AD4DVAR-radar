@@ -23,6 +23,10 @@ _PCG_RELATIVE_TOLERANCE = 1.0e-10
 _ARMIJO_CONSTANT = 1.0e-4
 
 
+class _NonFiniteEvaluation(ValueError):
+    """A numerically invalid objective evaluation at a candidate control."""
+
+
 @dataclass(frozen=True)
 class RefinementResult:
     """Result of a conditional local stationarity refinement."""
@@ -34,14 +38,20 @@ class RefinementResult:
     history: list[dict[str, Any]]
 
 
-def _require_vector(name: str, value: Tensor, *, dtype: torch.dtype | None = None) -> None:
+def _require_vector(
+    name: str,
+    value: Tensor,
+    *,
+    dtype: torch.dtype | None = None,
+    require_finite: bool = True,
+) -> None:
     if not isinstance(value, Tensor) or value.ndim != 1:
         raise TypeError(f"{name} must be a one-dimensional tensor")
     if dtype is not None and value.dtype is not dtype:
         raise TypeError(f"{name} must have dtype {dtype}")
     if value.numel() == 0:
         raise ValueError(f"{name} must be nonempty")
-    if not bool(torch.isfinite(value).all()):
+    if require_finite and not bool(torch.isfinite(value).all()):
         raise ValueError(f"{name} must be finite")
 
 
@@ -49,7 +59,7 @@ def _finite_scalar(name: str, value: Tensor) -> float:
     if not isinstance(value, Tensor) or value.ndim != 0:
         raise ValueError(f"{name} must return a scalar tensor")
     if not bool(torch.isfinite(value)):
-        raise ValueError(f"{name} must be finite")
+        raise _NonFiniteEvaluation(f"{name} must be finite")
     return float(value)
 
 
@@ -86,13 +96,17 @@ def _evaluate(
 ) -> tuple[float, Tensor, float, float]:
     objective_value = _finite_scalar("objective", objective(control, parameters))
     current_gradient = gradient(control, parameters)
-    _require_vector("objective gradient", current_gradient, dtype=control.dtype)
+    _require_vector(
+        "objective gradient", current_gradient, dtype=control.dtype, require_finite=False
+    )
     if current_gradient.shape != control.shape:
         raise ValueError("objective gradient shape must match control")
+    if not bool(torch.isfinite(current_gradient).all()):
+        raise _NonFiniteEvaluation("objective gradient must be finite")
     gradient_norm = float(torch.linalg.vector_norm(current_gradient))
     gradient_max = float(current_gradient.abs().max())
     if not math.isfinite(gradient_norm) or not math.isfinite(gradient_max):
-        raise ValueError("objective gradient norm must be finite")
+        raise _NonFiniteEvaluation("objective gradient norm must be finite")
     return objective_value, current_gradient, gradient_norm, gradient_max
 
 
@@ -115,7 +129,9 @@ def refine_stationary(
     their tensor arguments; the copied parameters protect the caller tensor,
     but cannot isolate shared callback state.  A
     ``ValueError`` from the branch checker rejects one trial; a ``RuntimeError``
-    from it propagates to the caller.
+    from it propagates to the caller.  Detected nonfinite candidate controls,
+    objectives, gradients, and gradient norms reject that trial and continue
+    backtracking; malformed outputs and callback exceptions propagate.
     """
     if not callable(objective):
         raise TypeError("objective must be callable")
@@ -187,10 +203,20 @@ def refine_stationary(
             raise RuntimeError("Newton step is not a descent direction for gradient merit")
 
         accepted = False
-        last_trial_norm = math.inf
+        last_trial_norm: float | None = None
         for backtrack in range(max_backtracks_value):
             scale = 0.5**backtrack
             candidate = current + scale * step
+            if not bool(torch.isfinite(candidate).all()):
+                history.append({
+                    "iteration": iteration,
+                    "backtrack": backtrack,
+                    "step_scale": scale,
+                    "accepted": False,
+                    "rejection": "nonfinite_candidate",
+                    "hvp_count": hvp_count,
+                })
+                continue
             try:
                 branch_signature, _ = _branch(branch_check, candidate, parameters)
             except ValueError:
@@ -203,9 +229,20 @@ def refine_stationary(
                     "hvp_count": hvp_count,
                 })
                 continue
-            candidate_objective, candidate_gradient, candidate_norm, candidate_max = _evaluate(
-                objective, gradient, candidate, parameters
-            )
+            try:
+                candidate_objective, candidate_gradient, candidate_norm, candidate_max = _evaluate(
+                    objective, gradient, candidate, parameters
+                )
+            except _NonFiniteEvaluation:
+                history.append({
+                    "iteration": iteration,
+                    "backtrack": backtrack,
+                    "step_scale": scale,
+                    "accepted": False,
+                    "rejection": "nonfinite_candidate",
+                    "hvp_count": hvp_count,
+                })
+                continue
             last_trial_norm = candidate_norm
             norm_ratio = candidate_norm / gradient_norm
             armijo_limit_squared = 1.0 + 2.0 * _ARMIJO_CONSTANT * scale * normalized_slope
@@ -245,9 +282,14 @@ def refine_stationary(
                 accepted = True
                 break
         if not accepted:
+            trial_detail = (
+                f"last_trial_gradient_norm={last_trial_norm}"
+                if last_trial_norm is not None
+                else "no finite candidate evaluation"
+            )
             raise RuntimeError(
                 "stationarity refinement failed to find an Armijo step: "
-                f"iteration={iteration}; last_trial_gradient_norm={last_trial_norm}"
+                f"iteration={iteration}; {trial_detail}"
             )
         if gradient_max < _STATIONARITY_TOLERANCE:
             return RefinementResult(
