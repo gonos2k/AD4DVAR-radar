@@ -376,5 +376,18 @@
     "closed": "R3,R6 in declaredlocaldirection scope",
     "remaining": "R10-R16 and broader scope remain per checklist",
     "verification": "167 affectedtests,18existingwarnings,typecheck0,GREEN/REDscopedsignoff"
+  },
+  "pr175_176_followup": {
+    "baseline": "PR176 head03149e73 integrated into main by PR177 e829a17",
+    "checklist": "PR175_176_REVIEW_RESOLUTION.md",
+    "closed": "main integration G1; bounded regular two-lead research binding G2",
+    "multilead_scope": "4x5,26 controls,61 parameters, three observations0/60/120s, forecasts180/240s, full known minmod support",
+    "time_contract": "18 future boundary pairs, nine substeps per interval,72 total SSPRK Euler stages; growth subdivided once per interval",
+    "validation": "57 focused affected tests passed,18 existing warnings; pinned typecheck0; score JVP versus two central steps, no new GN/refinement/adjoint/reanalysis",
+    "score_control_jvp": 0.007624811135571487,
+    "score_control_central_steps": [0.001, 0.0005],
+    "score_control_central_slopes": [0.00762482276147136, 0.007624814042039797],
+    "graphify": "code-only incremental update:6850 nodes,65412 edges,257 communities; no semantic LLM extraction",
+    "remaining": "G3-G10: missing observations, maintain/decay/flat/zero-face classification, noncollocated operator, irregular/long horizon, scoped validation and refusal accounting, independent physical validation and concurrent diagnostics"
   }
 }

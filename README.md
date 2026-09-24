@@ -83,7 +83,9 @@ FFT는 phase-correlation 이동량 추정에만 사용하며, 분석·예측 전
 별도 연구용 FV 경로는 공간적으로 변하는 면유량과 비음수 유한체적 수송을
 분석·예측에 사용한다. [합성 데모 재현](examples/weather_scenarios/README.md)과
 [국소 정상성·학습 검증 범위](graphify-out/fv-root-cause-20260919/LOCAL_VERIFICATION_RESULTS.md)를
-참조한다. 이 경로의 국소 수치 검증은 일반 FSO/FSOI·운영 학습 적격성을 뜻하지 않는다.
+참조한다. 최근 공통 연구 사례의 지원 범위와 남은 검증은
+[PR #175·#176 후속 체크리스트](graphify-out/fv-root-cause-20260919/PR175_176_REVIEW_RESOLUTION.md)에
+구분해 기록한다. 이 경로의 국소 수치 검증은 일반 FSO/FSOI·운영 학습 적격성을 뜻하지 않는다.
 
 내부 에코량은 다음처럼 양수 선형 공간에서 계산한다.
 

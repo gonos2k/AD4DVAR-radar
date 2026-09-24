@@ -239,3 +239,19 @@ changes the numerical refiner, not the objective, observation contract or gates.
 - [x] Keep scope to one nominal point/direction; leave general and finite-path flags false.
 - [x] Preserve source/input/resource records; R3/R6 closed only in that scope.
 - [ ] Other review axes remain as listed in PR174_REVIEW_RESOLUTION.md.
+
+## PR175/176 follow-up — integration and regular forecast leads
+
+- [x] Integrate PR176's unchanged tree into `main` via PR177 (`e829a17`);
+  distinguish the prior development-branch merge from this integration.
+- [x] Preserve existing one-lead numerical behavior while adding an explicit
+  two-lead fixed-support research profile at 180/240 seconds. Check full
+  future-boundary schedule, growth subdivision, all 72 branch stages and
+  local score JVP; see `PR175_176_REVIEW_RESOLUTION.md` (G2).
+- [ ] Partial-observation profile with fully known state and boundaries (G3).
+- [ ] Maintain/decay/flat/zero-face forward and response classification (G4).
+- [ ] Non-collocated observation operator/error contract (G5).
+- [ ] Longer/irregular schedule and bound validation to point/direction/units
+  (G6/G7).
+- [ ] Broader support/refusal accounting, concurrent diagnostics and independent
+  physical/finite-impact validation (G8/G9/G10).
