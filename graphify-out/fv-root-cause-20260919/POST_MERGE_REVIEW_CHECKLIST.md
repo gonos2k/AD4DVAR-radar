@@ -225,5 +225,17 @@ changes the numerical refiner, not the objective, observation contract or gates.
 - [x] Immutable-reference J/E/gradient/HVP/signature parity at both saved points;
   no new nonlinear solve, no physical or statistical model change.
 - [x] 158 affected tests/typecheck, source fixture tracking, KG and display.
-- [ ] Independently budgeted middle-time-bias 86-control reanalysis check
-  (FV86_REANALYSIS_PLAN.md); arbitrary observation/mask/time extensions follow.
+- [x] Independently budgeted middle-time-bias 86-control reanalysis check
+  (FV86_REANALYSIS_RESULTS.md): seed A, two local sizes pass.
+- [ ] Arbitrary observation/mask/time extensions remain separate milestones.
+
+
+## Approved 86-control local reanalysis and review checklist
+
+- [x] Create PR174_REVIEW_RESOLUTION.md with per-item scope, evidence and state.
+- [x] Freshly bind cached nominal derivatives/adjoint and form matrix-free tangent.
+- [x] Execute predeclared signed parameter perturbations; retain predictor refusals.
+- [x] Two consecutive local sizes pass normality/branch/central-slope criteria.
+- [x] Keep scope to one nominal point/direction; leave general and finite-path flags false.
+- [x] Preserve source/input/resource records; R3/R6 closed only in that scope.
+- [ ] Other review axes remain as listed in PR174_REVIEW_RESOLUTION.md.

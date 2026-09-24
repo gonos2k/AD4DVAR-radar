@@ -1,4 +1,4 @@
-# Proposed local 86-control reanalysis check — not executed
+# Approved local 86-control reanalysis check
 
 Use the recorded seed-A refined point and fixed problem/verification from
 PR174. Do not rerun GN or repeat the second essentially identical baseline.
@@ -27,5 +27,5 @@ poorly conditioned points can cost more; this is not a convergence guarantee.
 Proposed overall cap: **20 minutes CPU wall time, sampled RSS 2 GiB**, serial,
 including tangent and all attempted pairs; terminate with preserved checkpoint
 at the cap. These are new computations outside the previous two-start execution
-approval. They have not started and need the previously required resource-budget
-approval. No other grid or observation direction is included.
+approval. The user approved this separate resource budget with “go” on 2026-09-24
+15:30 JST. Execution outcomes are recorded separately from this plan. No other grid or observation direction is included.
