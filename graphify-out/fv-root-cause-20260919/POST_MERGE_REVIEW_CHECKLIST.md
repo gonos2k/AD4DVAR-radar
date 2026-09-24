@@ -248,7 +248,13 @@ changes the numerical refiner, not the objective, observation contract or gates.
   two-lead fixed-support research profile at 180/240 seconds. Check full
   future-boundary schedule, growth subdivision, all 72 branch stages and
   local score JVP; see `PR175_176_REVIEW_RESOLUTION.md` (G2).
-- [ ] Partial-observation profile with fully known state and boundaries (G3).
+- [x] Bounded 4x5 partial-observation profile with fully known first frame and
+  boundaries: two genuine later-frame missing cells, fixed-mask J/E and mixed
+  derivative invariance, correlated-whitener masking, and explicit refusals
+  (G3, `FV_PARTIAL_OBSERVATION_RESULTS.md`).
+- [ ] Qualify a stationary point and independently check the partial-profile
+  whole response with signed reanalysis (G3b); this requires a separate capped
+  numerical run and does not follow from fixed-control derivative checks.
 - [ ] Maintain/decay/flat/zero-face forward and response classification (G4).
 - [ ] Non-collocated observation operator/error contract (G5).
 - [ ] Longer/irregular schedule and bound validation to point/direction/units

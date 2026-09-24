@@ -1,0 +1,20 @@
+{
+  "base_commit": "159bb823c59ec66914f5538b905d42031b55bced",
+  "not_run": [
+    "partial-case stationary refinement or adjoint response",
+    "signed nonlinear reanalysis",
+    "full CPU/package CI"
+  ],
+  "pytest_command": ".venv/bin/python -m pytest -q tests/test_fv_research_partial_observation.py tests/test_fv_research_multilead.py tests/test_fv_research_problem.py tests/test_fv86_reanalysis.py tests/test_fv_analysis_forecast.py tests/test_fv_trajectory_contract.py tests/test_fv_minmod_matrix_free_probe.py tests/test_fv_scaled_research_case.py",
+  "pytest_result": "63 passed, 18 existing warnings",
+  "python": "3.12.13",
+  "sha256": {
+    "graphify-out/fv-root-cause-20260919/partial_observation_tests.log": "de90625b3acdfac9f50d3b47b0d89aee52f4fca4e1f5bd7ba67fc218e53ae190",
+    "graphify-out/fv-root-cause-20260919/partial_observation_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "src/advar/fv_research_problem.py": "07ffd332e7006dfa55994a0dbdde669d6620cda48ded1f9e66d4c22bacc6d11a",
+    "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d"
+  },
+  "torch": "2.13.0",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python src/advar/fv_research_problem.py tests/test_fv_research_partial_observation.py",
+  "typecheck_result": "0 errors, 0 warnings, 0 notes"
+}
