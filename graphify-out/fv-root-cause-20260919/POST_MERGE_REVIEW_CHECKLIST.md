@@ -313,5 +313,9 @@ changes the numerical refiner, not the objective, observation contract or gates.
 - [x] G9 minmod-stage observer context replaces global branch/face-margin
   function patching; nested, concurrent and ordinary zero-face stage paths
   are verified (`FV_STAGE_OBSERVER_SCOPE.md`).
-- [ ] G9 PCG instrumentation still patches module aliases in research
-  producers; replace with per-call reporting before concurrent solver use.
+- [x] G9 PCG instrumentation in the FV86 execution/signed reanalysis and
+  partial-observation producers now uses a per-call context instead of
+  module-alias patches; direct, nested, threaded and imported-alias tests
+  verify routing (`FV_PCG_OBSERVER_SCOPE.md`).
+- [ ] G9 full concurrent FV optimization/response and async/service context
+  ownership remain separate unverified integration scope.

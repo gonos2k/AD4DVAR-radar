@@ -15,7 +15,6 @@ import subprocess
 import sys
 import time
 from typing import Any, Callable
-from unittest.mock import patch
 
 import torch
 
@@ -345,10 +344,8 @@ def run(output: Path, preflight_path: Path, *, stop_after_nominal: bool = False)
         checkpoint("partial_gauss_newton")
         contract = problem.contract(parameters)
         gn_started = time.monotonic()
-        with patch.object(
-            variational,
-            "pcg",
-            _monitor_pcg(variational.pcg, report, "partial_gauss_newton"),
+        with matrix_free.observe_pcg_calls(
+            lambda original: _monitor_pcg(original, report, "partial_gauss_newton")
         ):
             gn = variational.solve_analysis(
                 problem.observations, contract, control=warm_start
@@ -379,10 +376,8 @@ def run(output: Path, preflight_path: Path, *, stop_after_nominal: bool = False)
         report["nominal_eligibility"] = "refinement_attempted"
         checkpoint("partial_newton_refinement")
         refinement_started = time.monotonic()
-        with patch.object(
-            local_refinement,
-            "pcg",
-            _monitor_pcg(local_refinement.pcg, report, "partial_newton_refinement"),
+        with matrix_free.observe_pcg_calls(
+            lambda original: _monitor_pcg(original, report, "partial_newton_refinement")
         ):
             refined = local_refinement.refine_stationary(
                 objective,
@@ -450,8 +445,8 @@ def run(output: Path, preflight_path: Path, *, stop_after_nominal: bool = False)
             raise ValueError("partial tangent right-hand side is zero or nonfinite")
         checkpoint("tangent_solve")
         tangent_started = time.monotonic()
-        with patch.object(
-            matrix_free, "pcg", _monitor_pcg(matrix_free.pcg, report, "tangent_solve")
+        with matrix_free.observe_pcg_calls(
+            lambda original: _monitor_pcg(original, report, "tangent_solve")
         ):
             tangent_result = matrix_free.pcg(
                 hessian_vector,
@@ -487,10 +482,8 @@ def run(output: Path, preflight_path: Path, *, stop_after_nominal: bool = False)
         }
         checkpoint("adjoint_response")
         response_started = time.monotonic()
-        with patch.object(
-            local_response,
-            "pcg",
-            _monitor_pcg(local_response.pcg, report, "adjoint_response"),
+        with matrix_free.observe_pcg_calls(
+            lambda original: _monitor_pcg(original, report, "adjoint_response")
         ):
             response = local_response.compute_local_response(
                 objective,
@@ -575,14 +568,10 @@ def run(output: Path, preflight_path: Path, *, stop_after_nominal: bool = False)
                     )
                     report["nonlinear_reanalyses"] += 1
                     checkpoint(f"step_{step_index}_{sign_name}_refinement")
-                    with patch.object(
-                        local_refinement,
-                        "pcg",
-                        _monitor_pcg(
-                            local_refinement.pcg,
-                            report,
-                            f"step_{step_index}_{sign_name}_refinement",
-                        ),
+                    with matrix_free.observe_pcg_calls(
+                        lambda original: _monitor_pcg(
+                            original, report, f"step_{step_index}_{sign_name}_refinement"
+                        )
                     ):
                         endpoint_refined = local_refinement.refine_stationary(
                             objective,

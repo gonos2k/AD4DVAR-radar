@@ -13,7 +13,6 @@ from pathlib import Path
 import sys
 import time
 from typing import Any, cast
-from unittest.mock import patch
 
 import torch
 
@@ -24,8 +23,7 @@ EXAMPLES = ROOT / "examples/weather_scenarios"
 if str(EXAMPLES) not in sys.path:
     sys.path.insert(0, str(EXAMPLES))
 
-from advar import local_refinement
-from advar.matrix_free import pcg
+from advar import local_refinement, matrix_free
 from examples.weather_scenarios.fv86_execution_probe import branch_summary, digest, load, failure_category
 
 EVIDENCE = ROOT / "graphify-out/fv-root-cause-20260919"
@@ -357,7 +355,7 @@ def run(output: Path) -> dict[str, Any]:
 
         tangent_rhs = -fresh_cross
         tangent_tick = time.monotonic()
-        with patch.object(local_refinement, "pcg", monitored_pcg(pcg)):
+        with matrix_free.observe_pcg_calls(monitored_pcg):
             tangent_solve = local_refinement.pcg(
                 hessian_vector,
                 tangent_rhs,
@@ -435,7 +433,7 @@ def run(output: Path) -> dict[str, Any]:
                 try:
                     checked_branch(start_control, endpoint_parameters)
                     report["nonlinear_reanalyses"] += 1
-                    with patch.object(local_refinement, "pcg", monitored_pcg(local_refinement.pcg)):
+                    with matrix_free.observe_pcg_calls(monitored_pcg):
                         refined = local_refinement.refine_stationary(
                             objective,
                             start_control,
