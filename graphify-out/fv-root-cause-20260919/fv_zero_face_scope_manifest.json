@@ -1,0 +1,20 @@
+{
+  "base_commit": "989439859308adca26953b64317bfc8631ddb4b2",
+  "log_sha256": {
+    "fv_zero_face_scope_tests.log": "cb19aaefcca33b37eb5fe0e2d7742cda3b90f37aa3e00fb5c0c68a9be71d149c",
+    "fv_zero_face_scope_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c"
+  },
+  "pytest_command": ".venv/bin/python -m pytest -q tests/test_fv_zero_face_scope.py",
+  "pytest_result": "3 passed,18 existing warnings in1.54s",
+  "python": "3.12.13",
+  "scope": "zero-control face sensitivity for 4x5/8x10 full five-mode bases, plus one-mode structural counterexample; no response eligibility change",
+  "sha256": {
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "51747747ec6b1fef2d0e2291261be8a65114558448a90284b6d5fc788e1c66e5",
+    "examples/weather_scenarios/fv_scaled_research_case.py": "cf827cb08715bc684f3dff2afd7507ddb6c693c688b8684c655c2b82e179a6d8",
+    "src/advar/transport.py": "d81f409970046bd86b2838339948e01c4840b2be2b613f1e66551bc70a468264",
+    "tests/test_fv_zero_face_scope.py": "77a5a260e23d3b03302044dd2e6e3899baa48700d01d7bd2e2bc0abe4eb16000"
+  },
+  "torch": "2.13.0",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python tests/test_fv_zero_face_scope.py",
+  "typecheck_result": "0 errors,0 warnings,0 notes"
+}

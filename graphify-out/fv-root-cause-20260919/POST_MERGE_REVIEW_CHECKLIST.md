@@ -271,9 +271,11 @@ changes the numerical refiner, not the objective, observation contract or gates.
   `FV_PARTIAL_BRANCH_GATE_DETAIL_RUN3_RESULTS.md`.
 - [x] Bounded maintain/decay/growth fixed-branch classification and zero-face/
   flat forward-versus-response refusal (G4). See `FV_GROWTH_BRANCH_SCOPE.md`.
-- [ ] Structural-zero-face and broader flat/sensitive-zero response eligibility
-  require a separately defined requested-control-space proof and case matrix
-  (G4b); do not remove strict full-flow-control guards.
+- [x] At zero-flow control, prove every face of the supported 4×5/8×10
+  five-mode profiles is control-sensitive; distinguish a restricted one-mode
+  structural-zero counterexample, retaining the strict full-flow refusal
+  (G4b, `FV_ZERO_FACE_CONTROL_SCOPE.md`). A future restricted-control response
+  profile needs its own contract and verification.
 - [ ] Non-collocated observation operator/error contract (G5).
 - [ ] Longer/irregular schedule and bound validation to point/direction/units
   (G6/G7).
