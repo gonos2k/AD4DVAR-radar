@@ -9,10 +9,10 @@ The current no-solver preflight and `--validate-only` records were rebound to
 the integrated source at merge commit `aae82ed`. Relative to the guarded
 attempt-3 preflight, the fixed-problem identity, all observation/mask and
 whitener input hashes, warm-start objective/gradient, and 54-stage branch
-signature/margins are unchanged (nine compared fields). Only the expected
-source hashes changed because the growth tracer now permits representable
-signed/zero log growth; this particular partial case still has positive
-nominal growth. Its strict limiter/face checks remain intact.
+signature/margins are unchanged (nine compared fields). The expected source
+hashes changed for the signed-growth tracer and a diagnostic-only
+branch-refusal category adjustment; this particular partial case still has
+positive nominal growth. Its strict limiter/face checks remain intact.
 
 After the merge, 69 affected tests passed with 18 existing TorchScript
 warnings and the selected changed modules/tests typechecked with 0 issues.
