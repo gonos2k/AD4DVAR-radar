@@ -1,0 +1,29 @@
+{
+  "artifact_sha256": {
+    "fv_point_research_metrics.json": "a5f7cf3a224212088cf47b4e4cc0c5cc050a78b44dd417691ac96af32638ed5d",
+    "fv_point_research_tests.log": "0a963ce8af667cb2769b3d67954f00efcb25c7fb898f17497fe886d0287cecbf",
+    "fv_point_research_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c"
+  },
+  "base_commit": "c2cdfd1a39c2f41e251da74af9eb11d8269d5acf",
+  "not_run": [
+    "GN/refinement",
+    "whole adjoint response",
+    "signed reanalysis",
+    "correlated point errors",
+    "real radar geometry",
+    "full CPU/package CI"
+  ],
+  "pytest_command": ".venv/bin/python -m pytest -q tests/test_fv_point_sampler.py tests/test_fv_point_research_problem.py",
+  "pytest_result": "37 passed,18 existing warnings in4.39s",
+  "python": "3.12.13",
+  "source_sha256": {
+    "examples/weather_scenarios/fv_point_research_case.py": "358dd1bb46f7cf2ebb0fcf7bb33d4735b66419412d97d0b7847e7eab236f5f2e",
+    "src/advar/fv_point_research_problem.py": "b9a3b64075f24ee0abb959bce88fd0433e1dacea210bac6551005f6285cb787a",
+    "src/advar/fv_point_sampler.py": "e3116a9250a5890521d66502aacd69c6ea32cc348fb961e6ffb88cf97750d3af",
+    "tests/test_fv_point_research_problem.py": "f638bd04bfbc87d5ec2bc81eac58173145ba994058c400ac4ddaddfc62528bd0",
+    "tests/test_fv_point_sampler.py": "b94a1fe8f7a500a7a534834d6ea59cde6b165563d87842cdb1ff5157645534b7"
+  },
+  "torch": "2.13.0",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python src/advar/fv_point_sampler.py src/advar/fv_point_research_problem.py examples/weather_scenarios/fv_point_research_case.py tests/test_fv_point_sampler.py tests/test_fv_point_research_problem.py",
+  "typecheck_result": "0 errors,0 warnings,0 notes"
+}
