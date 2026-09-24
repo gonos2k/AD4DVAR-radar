@@ -1,0 +1,42 @@
+{
+  "after_run_identity_recheck": "pending",
+  "endpoints": 0,
+  "first_failure_counts": {
+    "face_margin_before_signature": 13,
+    "finite_armijo": 0,
+    "nonfinite": 0,
+    "signature_after_margins": 3
+  },
+  "measured_source_hashes_match_commit": {
+    "examples/weather_scenarios/fv86_resource_runner.py": true,
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": true,
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": true,
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": true,
+    "examples/weather_scenarios/fv_partial_reanalysis_runner.py": true,
+    "src/advar/fv_research_problem.py": true,
+    "src/advar/local_refinement.py": true,
+    "src/advar/local_response.py": true,
+    "src/advar/matrix_free.py": true,
+    "src/advar/nowcast.py": true,
+    "src/advar/physics.py": true,
+    "src/advar/transport.py": true,
+    "src/advar/variational.py": true,
+    "tests/test_fv_research_partial_observation.py": true
+  },
+  "measured_source_tree": "d7fab34",
+  "nominal_eligibility": "refused",
+  "numerical_process_completed_successfully": false,
+  "numerical_wall_within_cap": true,
+  "output_sha256": {
+    "partial_branch_gate_detail_attempt3/fv_partial_reanalysis.json": "fd90ceba89aff7f657f415b936e285b71311cafb25f3eea8c1fc4a5d4a648782",
+    "partial_branch_gate_detail_attempt3/fv_partial_reanalysis.log": "198b732c78c4d78367f1f2e31df90bddf53cae10240f1cd66050eddc84edf4c8",
+    "partial_branch_gate_detail_attempt3/fv_partial_reanalysis.preflight.json": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
+    "partial_branch_gate_detail_attempt3/fv_partial_reanalysis.preflight.log": "ac7f31ba3b4f52217acaeae7fe7e4cc9dfcc6e694f29b95825c9b066d09b9e3b",
+    "partial_branch_gate_detail_attempt3/fv_partial_reanalysis.preflight.resource.json": "fd4cc8daa126b3321b7ba98307a61bcd1d48876f5d2b4d7b93678ade6a05b61f",
+    "partial_branch_gate_detail_attempt3/fv_partial_reanalysis.resource.json": "94e1a62bef4dc39294cdd124f58e00a9884aaf503ab09c8a2fcd66aad7b47823"
+  },
+  "pairs": 0,
+  "raw_aggregate_failure_category": "face_flux_margin_refusal",
+  "response_validation": "not_established",
+  "sampled_rss_within_cap": true
+}

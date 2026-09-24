@@ -1,0 +1,19 @@
+{
+  "authorization": "pending; no attempt 2 was executed",
+  "current_preflight_sha256": "6da27835e8c66e1af2c451ee0958e82213156ca5a852cceac755ed039a8a470b",
+  "diagnostic_plan_sha256": "7fba5e803bc7cbb2422ce887b7723ce8e454723e1ad3ea9ef60d54d5d981447a",
+  "numerical_solver_runs_in_preparation": 0,
+  "run1_preflight_sha256": "8616896d27b3ebd729ef2f58af1e300a9b46fe8ed0844c3d63921f518383fcff",
+  "same_fixed_problem_and_inputs": {
+    "common_bias_std_dbz": true,
+    "missing_indices": true,
+    "observation_counts": true,
+    "problem_identity": true,
+    "tensor_sha256": true,
+    "verification_constructor": true,
+    "warm_start_branch": true,
+    "warm_start_gradient_max": true,
+    "warm_start_objective": true
+  },
+  "source_hashes_changed_for_diagnostic": true
+}

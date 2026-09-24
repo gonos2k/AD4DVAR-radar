@@ -167,12 +167,14 @@ def test_all_nonfinite_candidate_trials_end_with_a_finite_budget_refusal():
         finite = 0.5 * c.square().sum() + c.sum()
         return torch.where(c[0] == 0.0, finite, c.new_tensor(float("inf")))
 
-    with pytest.raises(RuntimeError, match="no finite candidate evaluation"):
+    with pytest.raises(RuntimeError, match="no finite candidate evaluation") as refusal:
         module.refine_stationary(
             objective, control, p,
             branch_check=lambda c, q: ("fixed", "fixed"),
             max_backtracks=3,
         )
+    assert "nonfinite_candidate_rejections=3" in str(refusal.value)
+    assert "branch_rejections=0" in str(refusal.value)
 
 
 @pytest.mark.parametrize("error", [ValueError, RuntimeError, TypeError])
@@ -260,11 +262,14 @@ def test_branch_value_error_rejects_trials_and_reports_no_convergence():
             raise ValueError("candidate crossed branch")
         return "initial", "fixed initial branch"
 
-    with pytest.raises(RuntimeError, match="Armijo"):
+    with pytest.raises(RuntimeError, match="Armijo") as refusal:
         module.refine_stationary(
             objective, control, p, branch_check=branch_check, max_backtracks=3
         )
     assert calls == 4
+    assert "branch_rejections=3" in str(refusal.value)
+    assert "'candidate crossed branch': 3" in str(refusal.value)
+    assert "nonfinite_candidate_rejections=0" in str(refusal.value)
 
 
 def test_iteration_budget_reports_no_convergence():

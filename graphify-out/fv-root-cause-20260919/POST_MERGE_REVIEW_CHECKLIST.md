@@ -253,8 +253,22 @@ changes the numerical refiner, not the objective, observation contract or gates.
   derivative invariance, correlated-whitener masking, and explicit refusals
   (G3, `FV_PARTIAL_OBSERVATION_RESULTS.md`).
 - [ ] Qualify a stationary point and independently check the partial-profile
-  whole response with signed reanalysis (G3b); this requires a separate capped
-  numerical run and does not follow from fixed-control derivative checks.
+  whole response with signed reanalysis (G3b); the one-lead problem, direction,
+  gates and resource cap are in `FV_PARTIAL_REANALYSIS_PLAN.md`. The approved
+  first guarded attempt stopped at nominal Newton correction before adjoint or
+  endpoints; see `FV_PARTIAL_REANALYSIS_RUN1_RESULTS.md`. It remains open.
+- [x] Diagnose the final Newton candidate refusal categories in a separately
+  approved nominal-only run, capped at 240 s / sampled 1 GiB: all 16 final
+  backtracks were branch-policy refusals, with zero nonfinite/finite-Armijo
+  refusals. See `FV_PARTIAL_REFINEMENT_DIAGNOSTIC_RUN2_RESULTS.md`. G3b response
+  validation remains open.
+- [ ] Identify which branch gate refused the candidates, then justify any
+  nominal-search policy change separately from final-point response eligibility.
+  Run 3 quantified 3 first-failing signature checks and 13 first-failing
+  face-flux-margin checks (possible overlap); the first-failure gate identity
+  is closed for this nominal correction, while any solver
+  policy change remains open and requires mathematical justification. See
+  `FV_PARTIAL_BRANCH_GATE_DETAIL_RUN3_RESULTS.md`.
 - [x] Bounded maintain/decay/growth fixed-branch classification and zero-face/
   flat forward-versus-response refusal (G4). See `FV_GROWTH_BRANCH_SCOPE.md`.
 - [ ] Structural-zero-face and broader flat/sensitive-zero response eligibility

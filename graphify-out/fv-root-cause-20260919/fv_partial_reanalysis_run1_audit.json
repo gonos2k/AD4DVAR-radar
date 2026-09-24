@@ -1,0 +1,40 @@
+{
+  "endpoints": 0,
+  "guarded_preflight_completed": true,
+  "measured_source_hashes_match_commit": {
+    "examples/weather_scenarios/fv86_resource_runner.py": true,
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": true,
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": true,
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": true,
+    "examples/weather_scenarios/fv_partial_reanalysis_runner.py": true,
+    "src/advar/fv_research_problem.py": true,
+    "src/advar/local_refinement.py": true,
+    "src/advar/local_response.py": true,
+    "src/advar/matrix_free.py": true,
+    "src/advar/nowcast.py": true,
+    "src/advar/physics.py": true,
+    "src/advar/transport.py": true,
+    "src/advar/variational.py": true,
+    "tests/test_fv_research_partial_observation.py": true
+  },
+  "measured_source_tree": "ab8aed4",
+  "nominal_refinement_attempted": true,
+  "nominal_refinement_pcg_solves": 4,
+  "nonlinear_reanalyses": 0,
+  "numerical_process_completed_successfully": false,
+  "numerical_status": "refused",
+  "numerical_wall_within_cap": true,
+  "output_sha256": {
+    "partial_reanalysis_approved_20260924/fv_partial_reanalysis.json": "c292d18d000a9e8e0b4726067ea9094962001e7388d2fefbe1a0ffdc67030ebb",
+    "partial_reanalysis_approved_20260924/fv_partial_reanalysis.log": "52e8e065b30bb465fda4d331b2796699de81990307cbcd99a01755c134c2d58b",
+    "partial_reanalysis_approved_20260924/fv_partial_reanalysis.preflight.json": "8616896d27b3ebd729ef2f58af1e300a9b46fe8ed0844c3d63921f518383fcff",
+    "partial_reanalysis_approved_20260924/fv_partial_reanalysis.preflight.log": "fc1ce7c7ee733ff15e9af6d459c2b5ac5e49e4e460b290128aed63c0b32671d3",
+    "partial_reanalysis_approved_20260924/fv_partial_reanalysis.preflight.resource.json": "dea7c274c36f355f4bbb815866067beed8666d719ab85ca5f762e41f58f792ae",
+    "partial_reanalysis_approved_20260924/fv_partial_reanalysis.resource.json": "8505e9fdd7817f4fa84bcb196838b226d5b29635402318f45732fb97b8c3c4a2"
+  },
+  "pairs": 0,
+  "phase": "partial_newton_refinement",
+  "raw_nominal_eligibility_status": "not_attempted",
+  "response_validation": "not_established",
+  "sampled_rss_within_cap": true
+}

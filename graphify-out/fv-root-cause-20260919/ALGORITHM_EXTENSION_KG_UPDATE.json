@@ -399,7 +399,45 @@
     "refusals": "first-frame missing rejected by FV initial-support contract; QC-rejected, censored, zero-quality invalid rejected by research binding",
     "not_measured": "new partial-profile stationary solve, adjoint whole response or signed nonlinear reanalysis; arbitrary masks, physical skill and long horizon remain unverified",
     "record": "FV_PARTIAL_OBSERVATION_RESULTS.md",
+    "next_plan": "FV_PARTIAL_REANALYSIS_PLAN.md; one-lead, two missing cells, valid-only middle bias; approved guarded run1 refused during nominal Newton; see partial_reanalysis_run1",
+    "preflight": "fv_partial_reanalysis_preflight.json and fv_partial_reanalysis_validate_only.json: warm gradient1.083842990538571,54-stage slope margin0.0007615693500034068,face margin0.007752734889703382,58 valid/2 missing; numerical solver runs0; source-bound",
+    "preflight_validation": "53 local tests passed,18 existing warnings including postrun nominal-refusal status regression and refusal-count categories; pinned typecheck0; exact commands+hashes in fv_partial_reanalysis_preflight_manifest.json",
+    "plan_graphify": "code-only incremental update:6911 nodes,65536 edges,270 communities; no semantic LLM extraction",
     "graphify": "code-only incremental update:6858 nodes,65431 edges,261 communities; no semantic LLM extraction"
+  },
+  "partial_reanalysis_run1": {
+    "approval": "user go 2026-09-24 18:32 JST for one guarded 1200s/1GiB numerical attempt",
+    "measured_source_commit": "ab8aed4; all 14 guarded preflight source hashes match that committed tree",
+    "guarded_preflight": "exit0;1.813s;sampledRSS315899904bytes",
+    "numerical_child": "exit1;133.185s;sampledRSS343343104bytes;no resource termination",
+    "gn": "4 outer iterations,83 PCG iterations, objective0.1712418172180851 to0.02076475483611489; maximum_outer_iterations",
+    "nominal_refinement": "four 29-iteration PCG solves; fourth Newton line search refused with no finite candidate evaluation; exact candidate reason not retained",
+    "response_validation": "not_established; no adjoint, tangent or signed endpoint reached; G3b open",
+    "record": "FV_PARTIAL_REANALYSIS_RUN1_RESULTS.md",
+    "raw_manifest": "fv_partial_reanalysis_run1_manifest.json",
+    "postrun_fix": "future producer reports attempted nominal refinement as refused and exact final-backtrack refusal counts; raw run1 checkpoint preserved",
+    "next_diagnostic": "FV_PARTIAL_REFINEMENT_DIAGNOSTIC_PLAN.md; same 9 input/problem identity fields as run1; separately approved nominal-only run2 completed/refused"
+  },
+  "partial_refinement_diagnostic_run2": {
+    "approval": "user go 2026-09-24 19:01 JST for nominal-only 240s/1GiB diagnostic; autonomous checklist instruction 19:02 JST",
+    "measured_source_commit": "a82785d; all 14 guarded preflight source hashes match that committed tree",
+    "resource": "preflight exit0 2.073s RSS316391424bytes; numerical exit1 136.317s RSS347701248bytes; no resource termination",
+    "result": "GN 4 outer/83 PCG; Newton iteration4 refused:16 branch rejections,0 nonfinite,0 finite Armijo; no tangent/adjoint/endpoints",
+    "response_validation": "not_established; G3b open",
+    "record": "FV_PARTIAL_REFINEMENT_DIAGNOSTIC_RUN2_RESULTS.md",
+    "raw_manifest": "fv_partial_refinement_diagnostic_run2_manifest.json",
+    "next_plan": "FV_PARTIAL_BRANCH_GATE_DETAIL_PLAN.md; same strict policy, raw branch reason counts, nominal-only run3 completed/refused",
+    "graphify": "code-only incremental update:6912 nodes,65537 edges,259 communities; no semantic LLM extraction"
+  },
+  "partial_branch_gate_detail_run3": {
+    "authorization": "user autonomous checklist instruction 2026-09-24 19:02 JST; one nominal-only 240s/1GiB guarded attempt",
+    "measured_source_commit": "d7fab34; 14 source SHA256 match measured tree",
+    "resources": "preflight exit0 2.061s RSS315883520bytes; numerical exit1 136.746s RSS344702976bytes; no resource termination",
+    "first_failure_counts": "final Newton iteration4:3 signature mismatches after margins pass,13 face-flux margin<=1e-4 before signature comparison,0 nonfinite,0 finite Armijo",
+    "response_validation": "not_established; no nominal stationary point/tangent/adjoint/endpoints; G3b open",
+    "record": "FV_PARTIAL_BRANCH_GATE_DETAIL_RUN3_RESULTS.md",
+    "raw_manifest": "fv_partial_branch_gate_detail_run3_manifest.json",
+    "policy": "unchanged strict final qualification; no branch/margin relaxation or claim of root nonexistence"
   },
   "fv_growth_branch_scope": {
     "baseline": "main f7b90cc; separate G4 branch from the open G3b draft",
@@ -411,5 +449,13 @@
     "record": "FV_GROWTH_BRANCH_SCOPE.md",
     "graphify": "code-only incremental update:6863 nodes,65437 edges,277 communities; no semantic LLM extraction",
     "remaining": "G4b structural-zero-face requested-control proof and broader state matrix; no new stationary adjoint/reanalysis or physical skill claim"
+  },
+  "partial_growth_integration": {
+    "baseline": "PR181 merged main781bc33; G3b draft merged that tree as aae82ed",
+    "source": "signed-growth tracer integrated; current no-solver preflight and validate-only rebound",
+    "fixed_input_comparison": "nine problem/input/warm-start/branch fields equal measured run3 preflight; historical raw reports unchanged",
+    "verification": "69 affected local tests passed,18 existing warnings; selected typecheck0; no numerical GN/refinement/adjoint/reanalysis rerun",
+    "record": "FV_PARTIAL_GROWTH_INTEGRATION.md",
+    "graphify": "code-only incremental update:6914 nodes,65540 edges,263 communities; no semantic LLM extraction"
   }
 }
