@@ -399,6 +399,10 @@
     "refusals": "first-frame missing rejected by FV initial-support contract; QC-rejected, censored, zero-quality invalid rejected by research binding",
     "not_measured": "new partial-profile stationary solve, adjoint whole response or signed nonlinear reanalysis; arbitrary masks, physical skill and long horizon remain unverified",
     "record": "FV_PARTIAL_OBSERVATION_RESULTS.md",
+    "next_plan": "FV_PARTIAL_REANALYSIS_PLAN.md; one-lead, two missing cells, valid-only middle bias, read-only preflight completed; proposed 1200s/1GiB serial numerical cap not approved or executed",
+    "preflight": "fv_partial_reanalysis_preflight.json and fv_partial_reanalysis_validate_only.json: warm gradient1.083842990538571,54-stage slope margin0.0007615693500034068,face margin0.007752734889703382,58 valid/2 missing; numerical solver runs0; source-bound",
+    "preflight_validation": "24 local tests passed,18 existing warnings; pinned typecheck0; exact commands+hashes in fv_partial_reanalysis_preflight_manifest.json",
+    "plan_graphify": "code-only incremental update:6907 nodes,65532 edges; no semantic LLM extraction",
     "graphify": "code-only incremental update:6858 nodes,65431 edges,261 communities; no semantic LLM extraction"
   }
 }
