@@ -1,0 +1,25 @@
+{
+  "base_commit": "f7b90cc09e87453b39b0bb0b586b7167ed9aaa7d",
+  "existing_transport_command": ".venv/bin/python -m pytest -q tests/test_fv_stationary_sensitivity.py tests/test_finite_volume_transport.py tests/test_fv_numerical_range.py",
+  "existing_transport_result": "91 passed, 18 existing warnings in 108.98s; observed tool output, no saved raw log",
+  "focused_command": ".venv/bin/python -m pytest -q tests/test_fv_minmod_inverse_probe.py tests/test_fv_research_multilead.py tests/test_fv_research_problem.py tests/test_fv_scaled_research_case.py tests/test_fv_minmod_joint_derivatives.py tests/test_fv_minmod_derivative_branches.py",
+  "focused_result": "42 passed, 18 existing warnings in 18.05s; observed tool output, no saved raw log",
+  "measured_metrics_sha256": "dcdbc2d765cc5be71a84d1fb3bb44ddd731949db7c7e928b3b22e2219b095897",
+  "not_run": [
+    "new GN/refinement/adjoint",
+    "signed nonlinear reanalysis",
+    "3-hour forecast",
+    "full CPU/package CI"
+  ],
+  "python": "3.12.13",
+  "source_sha256": {
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "51747747ec6b1fef2d0e2291261be8a65114558448a90284b6d5fc788e1c66e5",
+    "src/advar/transport.py": "d81f409970046bd86b2838339948e01c4840b2be2b613f1e66551bc70a468264",
+    "tests/test_fv_minmod_inverse_probe.py": "8e223d99054552e598e3e57d915b30506c83d42efada465e64cdf4d5ea4a455b",
+    "tests/test_fv_research_multilead.py": "75ff4ea3d6cbf231453a7a1a1b3f9f968a835e527b352833c52a78e710861db6",
+    "tests/test_fv_scaled_research_case.py": "8264bf2d154406f543de8a3293d1fd9d38380273136cbbda3b8336b5d665a909"
+  },
+  "torch": "2.13.0",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python tests/test_fv_minmod_inverse_probe.py tests/test_fv_research_multilead.py tests/test_fv_scaled_research_case.py",
+  "typecheck_result": "0 errors, 0 warnings, 0 notes"
+}

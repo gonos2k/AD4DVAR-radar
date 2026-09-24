@@ -1,0 +1,39 @@
+{
+  "scope": "fixed-control, smooth 4x5/26-control research case; no new stationary response or reanalysis",
+  "signed_growth_rows": [
+    {
+      "growth_control": -0.023187493904503132,
+      "relative_difference": 8.898231767704405e-09,
+      "rk_stages": 54,
+      "same_signed_endpoint_selectors_and_faces": true,
+      "score_central_difference": -1.4269485435432563,
+      "score_jvp": -1.4269485562405753
+    },
+    {
+      "growth_control": 0.0,
+      "relative_difference": 4.680782134456437e-09,
+      "rk_stages": 54,
+      "same_signed_endpoint_selectors_and_faces": true,
+      "score_central_difference": -0.7325559227482678,
+      "score_jvp": -0.7325559261772024
+    },
+    {
+      "growth_control": 0.023187493904503132,
+      "relative_difference": 1.5821772381270566e-07,
+      "rk_stages": 54,
+      "same_signed_endpoint_selectors_and_faces": true,
+      "score_central_difference": -0.037058060361099876,
+      "score_jvp": -0.037058054497858844
+    }
+  ],
+  "source_sha256": {
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "51747747ec6b1fef2d0e2291261be8a65114558448a90284b6d5fc788e1c66e5",
+    "src/advar/transport.py": "d81f409970046bd86b2838339948e01c4840b2be2b613f1e66551bc70a468264",
+    "tests/test_fv_minmod_inverse_probe.py": "8e223d99054552e598e3e57d915b30506c83d42efada465e64cdf4d5ea4a455b",
+    "tests/test_fv_research_multilead.py": "75ff4ea3d6cbf231453a7a1a1b3f9f968a835e527b352833c52a78e710861db6"
+  },
+  "zero_growth_objective_hvp_relative_errors": {
+    "0.0001": 3.9969074756219775e-07,
+    "5e-05": 9.992161290762649e-08
+  }
+}

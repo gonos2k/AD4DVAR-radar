@@ -400,5 +400,16 @@
     "not_measured": "new partial-profile stationary solve, adjoint whole response or signed nonlinear reanalysis; arbitrary masks, physical skill and long horizon remain unverified",
     "record": "FV_PARTIAL_OBSERVATION_RESULTS.md",
     "graphify": "code-only incremental update:6858 nodes,65431 edges,261 communities; no semantic LLM extraction"
+  },
+  "fv_growth_branch_scope": {
+    "baseline": "main f7b90cc; separate G4 branch from the open G3b draft",
+    "change": "research minmod tracer delegates signed/zero log-growth representability to unchanged FV core; strict slope and nonzero face checks remain",
+    "fixed_control": "4x5/26-control signed and zero growth: all 54 stages branch-stable at +/-1e-4 control step; score JVP relative errors8.90e-9,4.68e-9,1.58e-7",
+    "zero_growth_hvp": "relative central-gradient errors3.997e-7 then9.992e-8 on half step",
+    "forward_response_split": "uniform field/zero-flow signed interval growth is forward finite/nonnegative; flat stencil and sensitive zero face remain strict-response refusals",
+    "validation": "42 focused +91 distinct existing transport/numerical-range tests passed in separate local runs;18 existing warnings per group; three edited test files typecheck0",
+    "record": "FV_GROWTH_BRANCH_SCOPE.md",
+    "graphify": "code-only incremental update:6863 nodes,65437 edges,277 communities; no semantic LLM extraction",
+    "remaining": "G4b structural-zero-face requested-control proof and broader state matrix; no new stationary adjoint/reanalysis or physical skill claim"
   }
 }
