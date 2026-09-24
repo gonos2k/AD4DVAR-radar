@@ -478,5 +478,17 @@
     "record": "FV_POINT_OBSERVATION_RESEARCH.md",
     "validation": "37 focused tests passed,18 existing warnings; pinned typecheck0; GREEN/RED no remaining blocker; no GN/adjoint/reanalysis",
     "graphify": "code-only incremental update:6970 nodes,65653 edges,260 communities; no semantic LLM extraction"
+  },
+  "fv_point_correlation_research": {
+    "baseline": "main3c53c59 after G5 point operator",
+    "scope": "optional fixed CPU FP64 NxN point-space correlation, shared independently across three times, N<=64 and all observations valid/detected",
+    "objective": "symmetric principal C^-1/2 after sqrt(quality)/std standardized residual; componentwise pseudo-Huber robust loss",
+    "numerics": "C symmetric/unitdiag within64eps, canonical 0.5(C+C.T), min eigen>sqrt(eps)*max; no jitter/clipping/pseudoinverse; cached W/raw C mutation guards",
+    "tests": "two-point rho0.4 analytic objective+data gradient, default/identity exact parity, simultaneous point/covariance permutation, invalid/near-singular matrices, tolerated 16eps asymmetry",
+    "fixed_example": "diagonal objective0.07720456720208163; rho0.4 objective0.06945751490746542 at same warm nonstationary control",
+    "record": "FV_POINT_CORRELATION_RESEARCH.md",
+    "validation": "51 affected tests passed,18 existing warnings; selected typecheck0; GREEN/RED final no blockers; no GN/adjoint/reanalysis",
+    "graphify": "code-only incremental update:6988 nodes,65691 edges,266 communities; no semantic LLM extraction",
+    "remaining": "regridded/footprint covariance, missing/censored point rows, cross-time errors, stationary adjoint/finite impact, physical validation"
   }
 }

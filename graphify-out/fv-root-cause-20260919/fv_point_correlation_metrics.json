@@ -1,0 +1,24 @@
+{
+  "correlated_fixed_identity": {
+    "fixed_problem_sha256": "51cbf6fc06cd369930d2e1fbd53082b1d937fdfab3184c859751522b5b00bb05",
+    "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+  },
+  "correlated_objective": 0.06945751490746542,
+  "data_gradient_difference_norm": 0.5949113061709992,
+  "diagonal_objective": 0.07720456720208163,
+  "eigenvalues": [
+    0.6,
+    1.0,
+    1.0,
+    1.4
+  ],
+  "objective_difference": -0.007747052294616211,
+  "rho": 0.4,
+  "scope": "fixed 4x5/4point x3 time synthetic point-dBZ problem; per-time 4x4 correlation; no optimized response",
+  "score_equal": true,
+  "source_sha256": {
+    "examples/weather_scenarios/fv_point_research_case.py": "358dd1bb46f7cf2ebb0fcf7bb33d4735b66419412d97d0b7847e7eab236f5f2e",
+    "src/advar/fv_point_research_problem.py": "8927c35c04e0ed3894eff63d19995c7d39cb1528b43377baf229a3657e32ec2d",
+    "tests/test_fv_point_research_correlation.py": "9212fa364e98ebd98d4b44b77b88b8b0bf82e0e44c1943c3ba37ea90627815ca"
+  }
+}
