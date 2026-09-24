@@ -279,8 +279,12 @@ changes the numerical refiner, not the objective, observation contract or gates.
 - [x] Bounded off-grid interior point-dBZ operator with independent
   observation-space diagonal errors, exogenous full state-grid background and
   fixed-mask/geometry identity (G5, `FV_POINT_OBSERVATION_RESEARCH.md`).
-- [ ] Correlated/regridded radar products, missing/censored point rows and a
-  newly qualified stationary whole response remain separate G5b work.
+- [x] Fixed same-time point-observation correlation with symmetric principal
+  whitening, exact diagonal limit, analytic two-point gradient, permutation
+  and singularity checks (G5b, `FV_POINT_CORRELATION_RESEARCH.md`).
+- [ ] Regridded/footprint radar products, missing/censored point rows,
+  cross-time covariance and a newly qualified stationary whole response
+  remain separate G5c work.
 - [ ] Longer/irregular schedule and bound validation to point/direction/units
   (G6/G7).
 - [ ] Broader support/refusal accounting, concurrent diagnostics and independent

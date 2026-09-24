@@ -7,7 +7,8 @@ radar-footprint average, general covariance model, or operational interface.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
+import math
 from typing import Any
 
 import torch
@@ -22,7 +23,7 @@ from .transport import BoundarySchedule
 
 @dataclass(frozen=True)
 class FVPointResearchProblem:
-    """One-lead, all-detected, independent-error off-grid FV research binding.
+    """One-lead, all-detected off-grid FV research binding.
 
     ``parameters`` are the three observation vectors followed by one
     background-pattern coefficient. Point observations never define the
@@ -41,7 +42,11 @@ class FVPointResearchProblem:
     future_boundary_support: BoundarySchedule
     trace_branches: Callable[[Callable[[], Tensor]], dict[str, Any]]
     source_sha256: str
+    observation_correlation: Tensor | None = None
     expected_branch: Mapping[str, Any] | None = None
+    _correlation_whitener: Tensor | None = field(init=False, repr=False, compare=False)
+    _correlation_reference: Tensor | None = field(init=False, repr=False, compare=False)
+    _whitener_reference: Tensor | None = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         frozen = self.frozen
@@ -81,6 +86,40 @@ class FVPointResearchProblem:
         if (not bool((self.observation_std_dbz >= frozen.analysis_config.minimum_observation_std_dbz).all())
                 or not bool(((self.quality_weight > 0) & (self.quality_weight <= 1)).all())):
             raise ValueError("point observation std/quality are outside their fixed domain")
+        whitener = None
+        correlation = self.observation_correlation
+        if correlation is not None:
+            if (not isinstance(correlation, Tensor)
+                    or count > 64 or correlation.shape != (count, count)
+                    or correlation.dtype != torch.float64
+                    or correlation.device.type != "cpu"
+                    or correlation.requires_grad
+                    or not bool(torch.isfinite(correlation).all())):
+                raise ValueError("point correlation must be a fixed finite CPU FP64 [N,N] matrix with N<=64")
+            tolerance = 64 * torch.finfo(correlation.dtype).eps
+            if (not torch.allclose(correlation, correlation.T, rtol=0, atol=tolerance)
+                    or not torch.allclose(
+                        correlation.diagonal(), torch.ones(count, dtype=correlation.dtype),
+                        rtol=0, atol=tolerance,
+                    )):
+                raise ValueError("point correlation must be symmetric with unit diagonal")
+            with torch.no_grad():
+                # Tiny accepted antisymmetry is rounding noise, not a choice
+                # of which input triangle defines the physical correlation.
+                symmetric_correlation = 0.5 * (correlation + correlation.T)
+                eigenvalues, eigenvectors = torch.linalg.eigh(symmetric_correlation)
+                largest = eigenvalues[-1]
+                if not bool(eigenvalues[0] > math.sqrt(torch.finfo(correlation.dtype).eps) * largest):
+                    raise ValueError("point correlation must be well-conditioned positive definite")
+                if not torch.equal(symmetric_correlation, torch.eye(count, dtype=correlation.dtype)):
+                    whitener = (eigenvectors * eigenvalues.rsqrt().unsqueeze(0)) @ eigenvectors.T
+            if whitener is not None and not bool(torch.isfinite(whitener).all()):
+                raise ValueError("point correlation inverse square root must be finite")
+        object.__setattr__(self, "_correlation_whitener", whitener)
+        object.__setattr__(self, "_correlation_reference",
+                           None if correlation is None else correlation.clone())
+        object.__setattr__(self, "_whitener_reference",
+                           None if whitener is None else whitener.clone())
         for name, value in (("background", self.background_dbz),
                             ("pattern", self.background_pattern),
                             ("verification", self.verification_dbz)):
@@ -135,7 +174,11 @@ class FVPointResearchProblem:
             "observation_operator": "point_dbz_bilinear",
             "observation_units": "dBZ point value; interpolate dBZ after state echo-to-dBZ conversion",
             "coordinate_convention": "fixed (row, column) cell-center indices; strict interior 2x2 stencils",
-            "observation_errors": "independent diagonal std/quality in point-observation space",
+            "observation_errors": (
+                "independent diagonal std/quality in point-observation space"
+                if self.observation_correlation is None else
+                "per-time fixed point correlation; symmetric inverse sqrt after sqrt(quality)/std"
+            ),
             "observation_masks": "all valid and detected; missing/censored/QC unsupported",
             "initial_background": "fixed exogenous state-grid field + theta * fixed pattern",
             "state_and_boundary_support": "fully known",
@@ -146,6 +189,7 @@ class FVPointResearchProblem:
 
     @property
     def identity(self) -> dict[str, str]:
+        self._require_fixed_correlation()
         return {
             "fixed_problem_sha256": _fingerprint({
                 "frozen": self.frozen,
@@ -154,6 +198,8 @@ class FVPointResearchProblem:
                 "observation_dbz": self.observation_dbz,
                 "observation_std_dbz": self.observation_std_dbz,
                 "quality_weight": self.quality_weight,
+                "observation_correlation": self.observation_correlation,
+                "whitening_convention": "per_time_symmetric_standardized_correlation_v1",
                 "background_dbz": self.background_dbz,
                 "background_pattern": self.background_pattern,
                 "verification_dbz": self.verification_dbz,
@@ -165,6 +211,16 @@ class FVPointResearchProblem:
             }),
             "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch",
         }
+
+    def _require_fixed_correlation(self) -> None:
+        if self.observation_correlation is not None:
+            reference = self._correlation_reference
+            if reference is None or not torch.equal(self.observation_correlation, reference):
+                raise ValueError("point correlation changed after problem construction")
+        if self._correlation_whitener is not None:
+            reference = self._whitener_reference
+            if reference is None or not torch.equal(self._correlation_whitener, reference):
+                raise ValueError("point correlation whitener changed after problem construction")
 
     def contract(self, parameters: Tensor) -> v.FrozenOuterState:
         if (not isinstance(parameters, Tensor)
@@ -181,12 +237,15 @@ class FVPointResearchProblem:
                        initial_background_dbz=self.background_dbz + parameters[-1] * self.background_pattern)
 
     def objective(self, control: Tensor, parameters: Tensor) -> Tensor:
+        self._require_fixed_correlation()
         contract = self.contract(parameters)
         observed = parameters[:-1].reshape_as(self.observation_dbz)
         predicted_echo = v.analysis_trajectory(control, contract).frames_linear
         predicted_dbz = echo_to_dbz(predicted_echo, min_dbz=contract.nowcast_config.min_dbz)
         sampled_dbz = point_dbz_bilinear(predicted_dbz, self.observation_coordinates)
         residual = self.quality_weight.sqrt() * (sampled_dbz - observed) / self.observation_std_dbz
+        if self._correlation_whitener is not None:
+            residual = residual @ self._correlation_whitener.T
         prior = v._control_prior_residual(control, contract)
         return (v._pseudo_huber_cost(residual, contract.analysis_config.pseudo_huber_delta).sum()
                 + 0.5 * torch.dot(prior, prior)
