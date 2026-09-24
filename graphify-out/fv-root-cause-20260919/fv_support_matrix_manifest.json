@@ -1,0 +1,24 @@
+{
+  "base_head": "b70133b352c0de009a926758573aa84c1c0e527e",
+  "checks": {
+    "declared_cases": 6,
+    "new_fv_runs": 0,
+    "profiles": 4,
+    "tests_passed": 18,
+    "type_errors": 0
+  },
+  "probe_command": ".venv/bin/python -m examples.weather_scenarios.fv_support_matrix > graphify-out/fv-root-cause-20260919/fv_support_matrix.json",
+  "python": "3.12.13",
+  "scope": "read-only retrospective stratified accounting; no cross-profile rate or new FV solver",
+  "sha256": {
+    "examples/weather_scenarios/fv_support_matrix.py": "d288bd329348df1c368bd7f2fae94d8dcfa491ad8e5d87ca4bdeec23d8d94556",
+    "graphify-out/fv-root-cause-20260919/FV_SUPPORT_MATRIX_PLAN.md": "3e9a8235036ca0364b92c6f8e80aca3043aa27c1593ce449708fac321754ee7b",
+    "graphify-out/fv-root-cause-20260919/FV_SUPPORT_MATRIX_RESULTS.md": "4ff3c5fb0236f0dc75b82c13d28ddbfdbda04ed393559976dd8c69a6bbbf975b",
+    "graphify-out/fv-root-cause-20260919/fv_support_matrix.json": "fbf322f9664438bcda341339ea4d4a023bb3a20f7a63a21cb02b49289c5a7292",
+    "graphify-out/fv-root-cause-20260919/fv_support_matrix_tests.log": "038e25cf049e1bc86dc4aafd373555d4b9530a592a475af805d676dacbc067ea",
+    "graphify-out/fv-root-cause-20260919/fv_support_matrix_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "tests/test_fv_support_matrix.py": "1e8c33a4393b01da9c4e1c5b0477d492399246de051d53a2f89bf0836281833f"
+  },
+  "test_command": ".venv/bin/python -m pytest -q tests/test_fv_support_matrix.py tests/test_fv86_execution_status.py",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python examples/weather_scenarios/fv_support_matrix.py tests/test_fv_support_matrix.py"
+}

@@ -303,5 +303,10 @@ changes the numerical refiner, not the objective, observation contract or gates.
 - [ ] G7 new FV profiles still need a qualified stationary response and
   signed endpoints; cross-profile units/conditioning and a versioned general
   tensor identity are separate unfinished contracts.
-- [ ] Broader support/refusal accounting, concurrent diagnostics and independent
-  physical/finite-impact validation (G8/G9/G10).
+- [x] Retrospective G8 four-stratum/six-case accounting keeps execution,
+  forecast, stationarity, branch, local-response eligibility, response
+  computation, independent validation and
+  resource states separate; no cross-profile percentage or success-only
+  denominator (`FV_SUPPORT_MATRIX_RESULTS.md`).
+- [ ] Prospective radar-condition case matrix and rates (G8), concurrent
+  diagnostics (G9), and independent physical/finite-impact validation (G10).

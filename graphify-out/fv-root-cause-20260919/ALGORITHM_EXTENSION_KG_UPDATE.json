@@ -520,5 +520,15 @@
     "record": "FV_RESPONSE_UNITS_SCOPE.md",
     "graphify": "code-only incremental update:7039 nodes,65795 edges,267 communities; no semantic LLM extraction",
     "remaining": "new FV profiles need qualified stationary response and signed endpoints;absolute gradient gate depends on units/objective scale;future generic tensor identities need versioned shape/dtype/units"
+  },
+  "fv_support_matrix_inventory": {
+    "baseline": "main b70133b after G7 analytic response-unit checks",
+    "scope": "retrospective four-stratum six-case inventory of FV86 full-support, point-missing fixed-control, long regular forward, and partial two-hole refusal evidence; no new solver",
+    "statuses": "execution,forecast,stationarity,pointwise/search branch,local-response eligibility,response computation,response validation,physical validation,resource and provenance separated per row",
+    "denominator": "profile-specific declared case IDs only;three partial attempts are one case;no cross-profile success fraction;unattempted validation fraction null",
+    "record": "FV_SUPPORT_MATRIX_PLAN.md and FV_SUPPORT_MATRIX_RESULTS.md",
+    "validation": "18 affected accounting tests passed,pinned typecheck0;historical manifests/raw FV86 hashes checked before classification",
+    "graphify": "code-only incremental update:7057 nodes,65836 edges,222 communities; no semantic LLM extraction",
+    "remaining": "prospective radar-condition matrix with frozen inputs and caps,all child exits/identities,independent response and physical validation"
   }
 }
