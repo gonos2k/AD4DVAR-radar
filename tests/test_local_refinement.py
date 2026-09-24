@@ -268,6 +268,7 @@ def test_branch_value_error_rejects_trials_and_reports_no_convergence():
         )
     assert calls == 4
     assert "branch_rejections=3" in str(refusal.value)
+    assert "'candidate crossed branch': 3" in str(refusal.value)
     assert "nonfinite_candidate_rejections=0" in str(refusal.value)
 
 

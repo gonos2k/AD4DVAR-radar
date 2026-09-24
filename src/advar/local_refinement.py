@@ -219,13 +219,14 @@ def refine_stationary(
                 continue
             try:
                 branch_signature, _ = _branch(branch_check, candidate, parameters)
-            except ValueError:
+            except ValueError as error:
                 history.append({
                     "iteration": iteration,
                     "backtrack": backtrack,
                     "step_scale": scale,
                     "accepted": False,
                     "rejection": "branch",
+                    "branch_reason": str(error),
                     "hvp_count": hvp_count,
                 })
                 continue
@@ -288,6 +289,11 @@ def refine_stationary(
                 record.get("rejection") == "nonfinite_candidate" for record in trials
             )
             finite_armijo_rejections = len(trials) - branch_rejections - nonfinite_rejections
+            branch_reason_counts: dict[str, int] = {}
+            for record in trials:
+                if record.get("rejection") == "branch":
+                    reason = str(record["branch_reason"])
+                    branch_reason_counts[reason] = branch_reason_counts.get(reason, 0) + 1
             trial_detail = (
                 f"last_trial_gradient_norm={last_trial_norm}"
                 if last_trial_norm is not None
@@ -297,6 +303,7 @@ def refine_stationary(
                 "stationarity refinement failed to find an Armijo step: "
                 f"iteration={iteration}; {trial_detail}; "
                 f"branch_rejections={branch_rejections}; "
+                f"branch_reason_counts={branch_reason_counts}; "
                 f"nonfinite_candidate_rejections={nonfinite_rejections}; "
                 f"finite_armijo_rejections={finite_armijo_rejections}"
             )

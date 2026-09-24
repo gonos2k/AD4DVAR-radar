@@ -417,5 +417,16 @@
     "raw_manifest": "fv_partial_reanalysis_run1_manifest.json",
     "postrun_fix": "future producer reports attempted nominal refinement as refused and exact final-backtrack refusal counts; raw run1 checkpoint preserved",
     "next_diagnostic": "FV_PARTIAL_REFINEMENT_DIAGNOSTIC_PLAN.md; same 9 input/problem identity fields as run1; nominal-only 240s/1GiB proposed, not approved or executed"
+  },
+  "partial_refinement_diagnostic_run2": {
+    "approval": "user go 2026-09-24 19:01 JST for nominal-only 240s/1GiB diagnostic; autonomous checklist instruction 19:02 JST",
+    "measured_source_commit": "a82785d; all 14 guarded preflight source hashes match that committed tree",
+    "resource": "preflight exit0 2.073s RSS316391424bytes; numerical exit1 136.317s RSS347701248bytes; no resource termination",
+    "result": "GN 4 outer/83 PCG; Newton iteration4 refused:16 branch rejections,0 nonfinite,0 finite Armijo; no tangent/adjoint/endpoints",
+    "response_validation": "not_established; G3b open",
+    "record": "FV_PARTIAL_REFINEMENT_DIAGNOSTIC_RUN2_RESULTS.md",
+    "raw_manifest": "fv_partial_refinement_diagnostic_run2_manifest.json",
+    "next_plan": "FV_PARTIAL_BRANCH_GATE_DETAIL_PLAN.md; same strict policy, raw branch reason counts, nominal-only 240s/1GiB; not yet executed",
+    "graphify": "code-only incremental update:6912 nodes,65537 edges,259 communities; no semantic LLM extraction"
   }
 }

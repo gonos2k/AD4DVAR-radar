@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_reanalysis_preflight.py",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/partial_refinement_diagnostic_attempt2/fv_partial_reanalysis.preflight.json"
+  ],
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 2.0728493330534548,
+  "sampled_peak_rss_bytes": 316391424,
+  "rss_samples": 8,
+  "wall_limit_seconds": 120,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

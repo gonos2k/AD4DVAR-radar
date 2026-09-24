@@ -257,10 +257,15 @@ changes the numerical refiner, not the objective, observation contract or gates.
   gates and resource cap are in `FV_PARTIAL_REANALYSIS_PLAN.md`. The approved
   first guarded attempt stopped at nominal Newton correction before adjoint or
   endpoints; see `FV_PARTIAL_REANALYSIS_RUN1_RESULTS.md`. It remains open.
-- [ ] Diagnose the final Newton candidate refusal categories in a separately
-  approved nominal-only run, capped at 240 s / sampled 1 GiB; plan:
-  `FV_PARTIAL_REFINEMENT_DIAGNOSTIC_PLAN.md`. Do not count this as G3b response
-  validation or reuse the first attempt's authorization.
+- [x] Diagnose the final Newton candidate refusal categories in a separately
+  approved nominal-only run, capped at 240 s / sampled 1 GiB: all 16 final
+  backtracks were branch-policy refusals, with zero nonfinite/finite-Armijo
+  refusals. See `FV_PARTIAL_REFINEMENT_DIAGNOSTIC_RUN2_RESULTS.md`. G3b response
+  validation remains open.
+- [ ] Identify which branch gate refused the candidates, then justify any
+  nominal-search policy change separately from final-point response eligibility.
+  A third nominal-only run with unchanged gates and reason-count logging is
+  defined in `FV_PARTIAL_BRANCH_GATE_DETAIL_PLAN.md`.
 - [ ] Maintain/decay/flat/zero-face forward and response classification (G4).
 - [ ] Non-collocated observation operator/error contract (G5).
 - [ ] Longer/irregular schedule and bound validation to point/direction/units

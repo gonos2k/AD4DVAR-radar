@@ -1,0 +1,37 @@
+{
+  "endpoints": 0,
+  "last_iteration_branch_rejections": 16,
+  "last_iteration_finite_armijo_rejections": 0,
+  "last_iteration_nonfinite_rejections": 0,
+  "measured_source_hashes_match_commit": {
+    "examples/weather_scenarios/fv86_resource_runner.py": true,
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": true,
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": true,
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": true,
+    "examples/weather_scenarios/fv_partial_reanalysis_runner.py": true,
+    "src/advar/fv_research_problem.py": true,
+    "src/advar/local_refinement.py": true,
+    "src/advar/local_response.py": true,
+    "src/advar/matrix_free.py": true,
+    "src/advar/nowcast.py": true,
+    "src/advar/physics.py": true,
+    "src/advar/transport.py": true,
+    "src/advar/variational.py": true,
+    "tests/test_fv_research_partial_observation.py": true
+  },
+  "measured_source_tree": "a82785d",
+  "nominal_eligibility": "refused",
+  "numerical_process_completed_successfully": false,
+  "numerical_wall_within_cap": true,
+  "output_sha256": {
+    "partial_refinement_diagnostic_attempt2/fv_partial_reanalysis.json": "846a748897c7778d1d2f95f4c2b319b48e904dd1eac6e15124ca9ed11bf68d69",
+    "partial_refinement_diagnostic_attempt2/fv_partial_reanalysis.log": "8dcd2953db10808fd1a4a775f442796e98aa3a4dc46d2e85c36fbc1d6cdb4801",
+    "partial_refinement_diagnostic_attempt2/fv_partial_reanalysis.preflight.json": "d5e9b00558c9289a6bfa226900452ac056cbc02ff1a1c8b1711b1c665f3c2a7d",
+    "partial_refinement_diagnostic_attempt2/fv_partial_reanalysis.preflight.log": "04f84f8cb1661ad5f63f0ffc83e60739c5ff96d4fbdd5fc3424f0c5338a1974f",
+    "partial_refinement_diagnostic_attempt2/fv_partial_reanalysis.preflight.resource.json": "8bd55638d2898b3418205cb9dc5f813d572ea7931767ba3c9bf0a5cceca778e3",
+    "partial_refinement_diagnostic_attempt2/fv_partial_reanalysis.resource.json": "77df31497ef52af7c705cd82e9b87a68e0010ec84904d9d7383ec88e5ff4cbc6"
+  },
+  "pairs": 0,
+  "response_validation": "not_established",
+  "sampled_rss_within_cap": true
+}
