@@ -276,7 +276,11 @@ changes the numerical refiner, not the objective, observation contract or gates.
   structural-zero counterexample, retaining the strict full-flow refusal
   (G4b, `FV_ZERO_FACE_CONTROL_SCOPE.md`). A future restricted-control response
   profile needs its own contract and verification.
-- [ ] Non-collocated observation operator/error contract (G5).
+- [x] Bounded off-grid interior point-dBZ operator with independent
+  observation-space diagonal errors, exogenous full state-grid background and
+  fixed-mask/geometry identity (G5, `FV_POINT_OBSERVATION_RESEARCH.md`).
+- [ ] Correlated/regridded radar products, missing/censored point rows and a
+  newly qualified stationary whole response remain separate G5b work.
 - [ ] Longer/irregular schedule and bound validation to point/direction/units
   (G6/G7).
 - [ ] Broader support/refusal accounting, concurrent diagnostics and independent

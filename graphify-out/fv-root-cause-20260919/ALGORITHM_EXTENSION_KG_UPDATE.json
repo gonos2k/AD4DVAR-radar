@@ -466,5 +466,17 @@
     "validation": "3 focused tests passed,18 existing warnings; new test file typecheck0; no GN/adjoint/reanalysis",
     "record": "FV_ZERO_FACE_CONTROL_SCOPE.md",
     "graphify": "code-only incremental update:6920 nodes,65550 edges,264 communities; no semantic LLM extraction"
+  },
+  "fv_point_observation_research": {
+    "baseline": "main c2cdfd1 after bounded G4b",
+    "scope": "4x5 FV state,4 fixed interior dBZ points x3 regular times,26 controls,13 parameters,one forecast lead,full state/boundary support",
+    "operator": "bilinear interpolation of model dBZ at fixed row/column cell-center coordinates; not linear-Z footprint averaging or observation regridding",
+    "background": "fixed exogenous state-grid field+theta pattern; point y0 never defines initial state",
+    "errors": "independent diagonal observation-space std/quality and pseudo-Huber; missing/censored/QC and common-bias covariance refused",
+    "derivatives": "analytic data gradient max error2.22e-16 with quality0.5..1.0; score direct y gradient0; mixed JVP/VJP transpose; HVP central error5.163e-7 to1.291e-7 on half step",
+    "status": "fixed-control operator/objective/branch integration only; warm gradient max about14.33, no stationary adjoint/reanalysis",
+    "record": "FV_POINT_OBSERVATION_RESEARCH.md",
+    "validation": "37 focused tests passed,18 existing warnings; pinned typecheck0; GREEN/RED no remaining blocker; no GN/adjoint/reanalysis",
+    "graphify": "code-only incremental update:6970 nodes,65653 edges,260 communities; no semantic LLM extraction"
   }
 }

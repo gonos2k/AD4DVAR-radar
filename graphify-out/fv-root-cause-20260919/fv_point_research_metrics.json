@@ -1,0 +1,59 @@
+{
+  "analytic_point_data_gradient_max_absolute_difference": 2.220446049250313e-16,
+  "control_gradient_max": 14.32704306017129,
+  "fixed_control_score_data_gradient_max": 0.0,
+  "hvp_relative_errors": {
+    "0.0001": 5.16253478016368e-07,
+    "5e-05": 1.2906960686111416e-07
+  },
+  "identity": {
+    "fixed_problem_sha256": "a32ab42b75b563266ede469ade1a072e81dbbca309c2b5f91fa5281d9c6251a3",
+    "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+  },
+  "layout": {
+    "controls": 26,
+    "euler_stages": 54,
+    "forecast_time_seconds": 180.0,
+    "observation_shape": [
+      3,
+      4
+    ],
+    "observation_times_seconds": [
+      0.0,
+      60.0,
+      120.0
+    ],
+    "parameters": 13,
+    "state_shape": [
+      4,
+      5
+    ],
+    "theta_index": 12
+  },
+  "objective_at_warm_control": 0.07720456720208163,
+  "quality_weight_range": [
+    0.5,
+    1.0
+  ],
+  "scope": "fixed 4x5 state, four interior dBZ points per three times, diagonal std/quality, exogenous grid background; no optimized response",
+  "score_at_warm_control": 0.00025526315789473595,
+  "source_sha256": {
+    "examples/weather_scenarios/fv_point_research_case.py": "358dd1bb46f7cf2ebb0fcf7bb33d4735b66419412d97d0b7847e7eab236f5f2e",
+    "src/advar/fv_point_research_problem.py": "b9a3b64075f24ee0abb959bce88fd0433e1dacea210bac6551005f6285cb787a",
+    "src/advar/fv_point_sampler.py": "e3116a9250a5890521d66502aacd69c6ea32cc348fb961e6ffb88cf97750d3af",
+    "tests/test_fv_point_research_problem.py": "f638bd04bfbc87d5ec2bc81eac58173145ba994058c400ac4ddaddfc62528bd0",
+    "tests/test_fv_point_sampler.py": "b94a1fe8f7a500a7a534834d6ea59cde6b165563d87842cdb1ff5157645534b7"
+  },
+  "support": {
+    "branch_policy": "pointwise strict minmod; caller pins expected_branch for endpoint comparison",
+    "coordinate_convention": "fixed (row, column) cell-center indices; strict interior 2x2 stencils",
+    "general_minmod_response_eligible": false,
+    "initial_background": "fixed exogenous state-grid field + theta * fixed pattern",
+    "observation_errors": "independent diagonal std/quality in point-observation space",
+    "observation_masks": "all valid and detected; missing/censored/QC unsupported",
+    "observation_operator": "point_dbz_bilinear",
+    "observation_units": "dBZ point value; interpolate dBZ after state echo-to-dBZ conversion",
+    "response_validation": "not_performed",
+    "state_and_boundary_support": "fully known"
+  }
+}
