@@ -80,7 +80,7 @@ def test_scaled_functions_preserve_parameter_control_layout_and_strict_branch(ca
         guarded(seed, case.parameters)
 
 
-def test_scaled_functions_refuse_wrong_layout_and_zero_growth(case):
+def test_scaled_functions_refuse_wrong_layout_but_trace_zero_growth(case):
     _, _, branch_check = scaled.functions(case)
     seed = prescribed_seed(case)
     with pytest.raises(ValueError, match="layout mismatch"):
@@ -90,5 +90,5 @@ def test_scaled_functions_refuse_wrong_layout_and_zero_growth(case):
 
     zero_growth = seed.clone()
     zero_growth[-1] = 0.0
-    with pytest.raises(ValueError, match="strict positive growth"):
-        branch_check(zero_growth, case.parameters)
+    branch, _ = branch_check(zero_growth, case.parameters)
+    assert branch["euler_stages"] == 108

@@ -142,17 +142,12 @@ def inspect_branches(call):
     This bounded oracle requires all face fluxes nonzero and all interior
     input slopes nonzero and same-sign ties absent. Opposite-sign slopes give
     a locally constant zero limiter; nominal zero face flow is still rejected.
+    Signed and zero log growth use the core's representability checks; growth
+    sign is not a minmod or upwind branch switch.
     """
     stages = []
     face_signatures = []
     original = t._euler_minmod
-    original_step = t.finite_volume_step
-
-    def inspect_growth(*args, **kwargs):
-        growth = kwargs["log_growth"]
-        if not bool(growth > 128*torch.finfo(growth.dtype).eps):
-            raise ValueError("minmod joint oracle requires strict positive growth")
-        return original_step(*args, **kwargs)
 
     def inspect(q, qx, qy, *args):
         pairs = ((q[1:-1, 1:-1]-q[1:-1, :-2],
@@ -198,7 +193,7 @@ def inspect_branches(call):
         })
         return original(q, qx, qy, *args)
 
-    with patch.object(t, "_euler_minmod", inspect), patch.object(t, "finite_volume_step", inspect_growth):
+    with patch.object(t, "_euler_minmod", inspect):
         call()
     if not stages:
         raise RuntimeError("no RK stages inspected")
