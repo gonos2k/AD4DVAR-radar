@@ -299,3 +299,15 @@ def test_fv86_status_summary_is_displayed_and_mutation_rejected(tmp_path, monkey
     monkeypatch.setattr(PUBLISHER,'HERE',tmp_path)
     with pytest.raises(SystemExit,match='FV86 archived summary'):
         PUBLISHER._fv86_panel()
+
+
+def test_fv86_reanalysis_panel_rejects_modified_resource(tmp_path,monkeypatch):
+    assert '중간 시각 편향' in PUBLISHER._fv86_reanalysis_panel()
+    import shutil
+    shutil.copyfile(EVIDENCE/'fv86_reanalysis.json',tmp_path/'fv86_reanalysis.json')
+    data=json.loads((EVIDENCE/'fv86_reanalysis.resource.json').read_text())
+    data['exit_code']=1
+    (tmp_path/'fv86_reanalysis.resource.json').write_text(json.dumps(data))
+    monkeypatch.setattr(PUBLISHER,'HERE',tmp_path)
+    with pytest.raises(SystemExit,match='FV86 reanalysis archive'):
+        PUBLISHER._fv86_reanalysis_panel()
