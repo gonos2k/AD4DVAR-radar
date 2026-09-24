@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv86_execution_probe.py",
+    "--mode",
+    "preflight",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/fv86_preflight.json"
+  ],
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 5.237479750008788,
+  "sampled_peak_rss_bytes": 337199104,
+  "rss_samples": 20,
+  "wall_limit_seconds": 120,
+  "rss_limit_bytes": 2147483648,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

@@ -265,3 +265,26 @@ def test_matrix_free_refinement_panel_and_identity(tmp_path, monkeypatch):
     monkeypatch.setattr(PUBLISHER, 'HERE', tmp_path)
     with pytest.raises(SystemExit, match='matrix-free refinement archived'):
         PUBLISHER._matrix_free_refinement_panel()
+
+
+def test_fv86_panel_rejects_changed_summary(tmp_path, monkeypatch):
+    assert '적격 응답 2/2' in PUBLISHER._fv86_panel()
+    data = json.loads((EVIDENCE/'fv86_execution_summary.json').read_text())
+    data['eligible_count'] = 1
+    (tmp_path/'fv86_execution_summary.json').write_text(json.dumps(data))
+    monkeypatch.setattr(PUBLISHER,'HERE',tmp_path)
+    with pytest.raises(SystemExit,match='FV86 archived summary'):
+        PUBLISHER._fv86_panel()
+
+
+def test_fv86_panel_rejects_changed_child_artifact(tmp_path, monkeypatch):
+    import shutil
+    summary=EVIDENCE/'fv86_execution_summary.json'
+    data=json.loads(summary.read_text())
+    shutil.copyfile(summary,tmp_path/summary.name)
+    for name in data['artifact_sha256']:
+        shutil.copyfile(EVIDENCE/name,tmp_path/name)
+    (tmp_path/'fv86_seed_a.resource.json').write_text('{}')
+    monkeypatch.setattr(PUBLISHER,'HERE',tmp_path)
+    with pytest.raises(SystemExit,match='FV86 archived artifact'):
+        PUBLISHER._fv86_panel()

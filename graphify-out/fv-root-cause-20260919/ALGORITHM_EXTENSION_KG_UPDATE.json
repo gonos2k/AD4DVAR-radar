@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6725,
-    "edges": 65149,
-    "communities": 251,
+    "nodes": 6769,
+    "edges": 65213,
+    "communities": 209,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -314,5 +314,32 @@
     "analytic": "exp -7/-8 now7/6Newton withunchangedgates;64 nearest-neighbor coupled cases at3starts",
     "record": "NONFINITE_CANDIDATE_REVIEW.md",
     "next": "FV_86_CONTROL_EXECUTION_PLAN.md; costed butnotexecuted; approvalpending"
+  },
+  "fv86_execution": {
+    "baseline": "PR173 merged d5dcf94",
+    "approval": "user go2026-09-24 12:37JST; preflight120s,seeds1800s each,2GiBsampledRSS",
+    "problem": "8x10,86controls,241parameters,18substeps,108RKstages; samephysicaldomain; differentdiscrete/statisticalproblem",
+    "outcomes": "2/2eligible afterexplicitrefinement; GNalone maximum_outer_iterations",
+    "gradient_max": [
+      1.0108315885511859e-11,
+      8.585585150808206e-12
+    ],
+    "true_adjoint_relative_residual": [
+      8.243789280755456e-12,
+      8.235806726292424e-12
+    ],
+    "wall_seconds": [
+      261.3098085829988,
+      259.04486974998144
+    ],
+    "sampled_peak_rss_bytes": [
+      346800128,
+      344653824
+    ],
+    "validation": "128affectedtests,18existingwarnings;4researchscripts typecheck0;GREEN/REDclear",
+    "independent_response_validation": null,
+    "record": "FV_86_CONTROL_RESULTS.md",
+    "source_provenance": "measuredproducer+casearchivedbeforepostruntypingonlycleanup; rawrunbegin/endstable; preflightoldrunnerarchive",
+    "remaining": "independent86responseFD, commoninversegridconvergence, conditioning/identifiability, widerstates/masks, generalFSOI/typedlearning/D7"
   }
 }

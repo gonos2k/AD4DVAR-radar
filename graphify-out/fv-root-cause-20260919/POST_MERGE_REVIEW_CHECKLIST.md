@@ -192,5 +192,23 @@ changes the numerical refiner, not the objective, observation contract or gates.
   search, malformed outputs and exception propagation; retain 64-control coupled
   analytic evidence separately from actual FV execution.
 - [x] GREEN/RED final review, affected tests/typecheck, Graphify/KG and PR update.
-- [ ] Costed 8x10/86-control FV contract and execution plan; obtain the previously
+- [x] Costed 8x10/86-control FV contract and execution plan; obtain the previously
   required larger-experiment budget approval before numerical scaling runs.
+
+
+## Approved 86-control discrete execution (after PR173)
+
+- [x] Explicit physical-coordinate geometry, CFL, growth/time and boundary
+  schedules; sum objective preserved; dimension/stage counts derived.
+- [x] 120-second cost gate and two predeclared starts, each with 1800-second /
+  2-GiB sampled resource guard; all outcomes and termination records preserved.
+- [x] Current GN -> fixed local branch -> matrix-free correction -> whole
+  parameter response. Both starts eligible; not independent FD certification.
+- [x] Same problem/source identities, whole-VJP projections, between-start
+  comparison, separate times and measured peak RSS; GN reference cost correctly
+  distinguished from supplied-seed costs and internal candidate policy.
+- [x] 128 affected tests, clean four-script typecheck, GREEN/RED final review,
+  KG and original demo evidence; measured sources preserved before typing edits.
+- [ ] Separate milestones: same physical/statistical inverse-grid convergence,
+  other state/observation/support cases, independent scaled response validation,
+  full-spectrum/observational identifiability, typed learning and general D7.
