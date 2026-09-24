@@ -1,0 +1,41 @@
+{
+  "detected_direction_absolute_difference": 6.172788391545225e-08,
+  "detected_direction_central_difference": -0.9975092743797278,
+  "detected_direction_gradient": -0.9975093361076117,
+  "detected_per_time": [
+    3,
+    3,
+    3
+  ],
+  "euler_stages": 54,
+  "layout": {
+    "controls": 26,
+    "euler_stages": 54,
+    "forecast_time_seconds": 180.0,
+    "observation_shape": [
+      3,
+      4
+    ],
+    "observation_times_seconds": [
+      0.0,
+      60.0,
+      120.0
+    ],
+    "parameters": 13,
+    "state_shape": [
+      4,
+      5
+    ],
+    "theta_index": 12
+  },
+  "missing_forecast_jvp_max_abs": 0.0,
+  "missing_mixed_jvp_max_abs": 0.0,
+  "missing_parameter_gradient_max_abs": 0.0,
+  "objective": 0.053296916308930596,
+  "problem_identity": {
+    "fixed_problem_sha256": "e0d96bb1f74a9004521f37dc074eb17cb9e7e5ec075d4cd2c4c948e49138cd8c",
+    "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+  },
+  "scope": "fixed-control 4x5 FV point-observation contract; no GN, refinement or adjoint",
+  "score": 0.00025526315789473595
+}

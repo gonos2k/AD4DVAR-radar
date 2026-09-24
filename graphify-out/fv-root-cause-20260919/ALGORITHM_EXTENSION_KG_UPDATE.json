@@ -490,5 +490,15 @@
     "validation": "51 affected tests passed,18 existing warnings; selected typecheck0; GREEN/RED final no blockers; no GN/adjoint/reanalysis",
     "graphify": "code-only incremental update:6988 nodes,65691 edges,266 communities; no semantic LLM extraction",
     "remaining": "regridded/footprint covariance, missing/censored point rows, cross-time errors, stationary adjoint/finite impact, physical validation"
+  },
+  "fv_point_missing_research": {
+    "baseline": "main64f4a2e after G5b fixed point correlation",
+    "scope": "fixed CPU uint8 status0 detected/status1 genuinely missing on three four-point times; at least one detection per time; 26-control 4x5 FV fixed-control probe",
+    "objective": "valid rows selected before per-time symmetric whitening of principal C[V,V]; missing parameter slots finite but inactive, retained in the dense layout",
+    "derivatives": "missing-slot objective parameter gradient, mixed control-parameter JVP and forecast JVP all exactly0 in the recorded probe; active direction AD versus h1e-4 central difference absolute gap6.17e-8",
+    "validation": "64 affected tests passed,18 existing warnings; selected typecheck0; GREEN/RED no actionable blocker; no GN/refinement/adjoint/reanalysis",
+    "record": "FV_POINT_MISSING_RESEARCH.md",
+    "graphify": "code-only incremental update:7012 nodes,65744 edges,267 communities; no semantic LLM extraction",
+    "remaining": "censored/QC and all-missing frames, regridded/footprint products, cross-time covariance, stationary point response and physical validation"
   }
 }

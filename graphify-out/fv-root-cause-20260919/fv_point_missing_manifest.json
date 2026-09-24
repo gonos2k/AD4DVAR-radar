@@ -1,0 +1,25 @@
+{
+  "base_head": "64f4a2ed719007077333ac0bcc8bef2e40ad770c",
+  "checks": {
+    "existing_warnings": 18,
+    "green_review": "no blocker",
+    "point_tests_passed": 64,
+    "red_review": "no P0/P1/P2",
+    "type_errors": 0
+  },
+  "probe_command": ".venv/bin/python -m examples.weather_scenarios.fv_point_missing_probe",
+  "python": "3.12.13",
+  "scope": "bounded fixed-control 4x5 FV point-missing observation contract; no analysis or stationary response",
+  "sha256": {
+    "examples/weather_scenarios/fv_point_missing_probe.py": "64e40694e25651c0a89d11c4afa86dae5e7c780aa62b165fe68d7a6f9636171c",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_MISSING_RESEARCH.md": "ed7aa72f7e6654a7b508bad7d9c50180985a927cea3f9f55a76183f54f2f7974",
+    "graphify-out/fv-root-cause-20260919/fv_point_missing_metrics.json": "ea942eaabbbf34727f223c3e101a0d3647e9656afe07d2dd32b1e2ce13890952",
+    "graphify-out/fv-root-cause-20260919/fv_point_missing_tests.log": "e1f81b3fa949a2b2a30a39303ff69f4103ec9f520088d0c74b46dbd59712c20b",
+    "graphify-out/fv-root-cause-20260919/fv_point_missing_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "src/advar/fv_point_research_problem.py": "1a2a726280396189cb2dff753b689f9975fd704f6c42651da7300128615ecb18",
+    "tests/test_fv_point_missing.py": "29f1c59b2e461bb370f8a40078429119487654fd69f448072e06dcd6669b50a4"
+  },
+  "test_command": ".venv/bin/python -m pytest -q tests/test_fv_point_sampler.py tests/test_fv_point_research_problem.py tests/test_fv_point_research_correlation.py tests/test_fv_point_missing.py",
+  "torch": "2.13.0",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python src/advar/fv_point_research_problem.py examples/weather_scenarios/fv_point_missing_probe.py tests/test_fv_point_missing.py"
+}
