@@ -1,4 +1,4 @@
-# Proposed 86-control FV milestone — not executed
+# 86-control FV milestone — approved execution contract
 
 This is a separate costed scope after the PR173 refiner implementation.
 The candidate-domain correction does not require repeating the old FV run.
@@ -72,9 +72,10 @@ bound and actual CFL, GN reason, J and max gradient before/after correction,
 Newton/PCG/HVP counts and actual residuals, branch signatures, whole sensitivity
 when eligible, phase times, sampled peak RSS and final termination reason.
 
-The previous user policy requires approval before larger experiments. None of
-this scaled FV numerical work has been started. Approval covers these explicit
-resource caps; no unbounded grid sweep is proposed.
+The user approved these explicit resource caps with “go” on 2026-09-24 at
+12:37 JST. See FV_86_CONTROL_RESULTS.md and the separate child/resource records
+for execution status; this plan itself is not a success result. No unbounded
+grid sweep is authorized.
 
 Sources: `fv_minmod_inverse_probe.py::make_spatial_case`,
 `fv_minmod_matrix_free_probe.py::make_research_functions`,

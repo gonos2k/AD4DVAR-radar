@@ -442,6 +442,35 @@ def _matrix_free_refinement_panel():
     )
 
 
+def _fv86_panel():
+    path = HERE / "fv86_execution_summary.json"
+    if not path.exists():
+        return ""
+    data = json.loads(path.read_text())
+    digest = hashlib.sha256(json.dumps(data, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if digest != "c22b92addf28a30d42f57f5238362a51e3b67900816488f1ad505f3e3b4eba6a":
+        raise SystemExit("FV86 archived summary identity mismatch")
+    for name, fingerprint in data["artifact_sha256"].items():
+        if hashlib.sha256((HERE / name).read_bytes()).hexdigest() != fingerprint:
+            raise SystemExit("FV86 archived artifact identity mismatch")
+    rows = []
+    for row in data["cases"]:
+        gradient = "—" if row["final_gradient_max"] is None else f'{row["final_gradient_max"]:.3e}'
+        residual = "—" if row["adjoint_relative_residual"] is None else f'{row["adjoint_relative_residual"]:.3e}'
+        rows.append(f'<tr><td>{row["mode"]}</td><td>{row["status"]}</td><td>{gradient}</td>'
+                    f'<td>{residual}</td><td>{row["wall_seconds"]:.1f}초</td></tr>')
+    return (
+        '<section id="fv86Execution"><h3>8×10 · 86제어 이산 실행</h3>'
+        '<p>같은 물리영역의 더 큰 이산 문제에서 두 초기값을 사전에 정해 GN→보정→전체 민감도를 실행했습니다. '
+        '241개 파라미터와 108개 RK 단계, 고정된 합성 검증장을 사용합니다.</p>'
+        '<table style="border-spacing:12px 6px"><tr><th>초기값</th><th>결과</th><th>최종 최대 gradient</th><th>실제 수반 상대잔차</th><th>프로세스 시간</th></tr>'
+        f'{"".join(rows)}</table>'
+        f'<p>적격 응답 {data["eligible_count"]}/{data["declared_case_count"]}. '
+        '재분석 차분 검증률은 미측정입니다. 동일 물리·통계 역문제의 격자 수렴, 일반 FSOI, 예측 skill 인증은 아닙니다.</p>'
+        '<p><a href="../../graphify-out/fv-root-cause-20260919/FV_86_CONTROL_RESULTS.md">전체 결과·거부 분류·자원 기록</a></p></section>'
+    )
+
+
 def _colour(value, scale):
     """Symmetric blue-paper-red colour for a normalized sensitivity value."""
     t = max(-1.0, min(1.0, float(value) / scale))
@@ -650,6 +679,7 @@ def _panel(report, scale, central):
       {_gn_response_panel()}
       {_current_gn_panel()}
       {_matrix_free_refinement_panel()}
+      {_fv86_panel()}
       <p><a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.json">최종 응답 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.pt">응답 tensor</a>{central_link} · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg">민감도 −20분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg">−10분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg">0분</a></p>
     </div>
   </details>

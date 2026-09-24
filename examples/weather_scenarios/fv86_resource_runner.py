@@ -1,0 +1,76 @@
+"""Wall/RSS guard for the three explicitly approved serial FV86 child runs."""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import time
+
+
+def run_guarded(command, *, wall_seconds, rss_bytes, report_path, log_path):
+    started = time.monotonic()
+    peak = 0
+    limit = None
+    samples = 0
+    monitor_error = None
+    with log_path.open('w') as log:
+        child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+        try:
+            while child.poll() is None:
+                if time.monotonic()-started >= wall_seconds:
+                    limit = 'wall_time_limit'
+                    break
+                sample = subprocess.run(['ps','-o','rss=','-p',str(child.pid)],capture_output=True,text=True)
+                if sample.stdout.strip():
+                    resident = int(sample.stdout.strip())*1024
+                    samples += 1
+                    peak = max(peak,resident)
+                    if resident > rss_bytes:
+                        limit = 'rss_limit'
+                        break
+                elif child.poll() is None:
+                    limit = 'rss_monitor_unavailable'
+                    break
+                time.sleep(.25)
+        except Exception as error:
+            limit = 'resource_monitor_error'
+            monitor_error = str(error)
+        finally:
+            if child.poll() is None:
+                try:
+                    os.killpg(child.pid,signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+                try:
+                    child.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    try:
+                        os.killpg(child.pid,signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+            exit_code = child.wait()
+    report = {'command':command,'exit_code':exit_code,'resource_termination':limit,'monitor_error':monitor_error,
+              'elapsed_seconds':time.monotonic()-started,'sampled_peak_rss_bytes':peak,
+              'rss_samples':samples,'wall_limit_seconds':wall_seconds,'rss_limit_bytes':rss_bytes,
+              'sampling':'child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit'}
+    report_path.write_text(json.dumps(report,indent=2)+'\n')
+    return report
+
+
+if __name__ == '__main__':
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--mode',choices=('preflight','seed_a','seed_b'),required=True)
+    parser.add_argument('--directory',type=Path,required=True)
+    args=parser.parse_args()
+    args.directory.mkdir(parents=True,exist_ok=True)
+    stem=args.directory/f'fv86_{args.mode}'
+    command=[sys.executable,str(Path(__file__).with_name('fv86_execution_probe.py')),
+             '--mode',args.mode,'--output',str(stem.with_suffix('.json'))]
+    result=run_guarded(command,wall_seconds=120 if args.mode=='preflight' else 1800,
+                       rss_bytes=2*1024**3,report_path=stem.with_suffix('.resource.json'),
+                       log_path=stem.with_suffix('.log'))
+    print(json.dumps(result))
