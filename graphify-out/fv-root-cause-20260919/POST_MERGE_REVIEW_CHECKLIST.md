@@ -308,8 +308,9 @@ changes the numerical refiner, not the objective, observation contract or gates.
   computation, independent validation and
   resource states separate; no cross-profile percentage or success-only
   denominator (`FV_SUPPORT_MATRIX_RESULTS.md`).
-- [ ] Prospective radar-condition case matrix and rates (G8), concurrent
-  diagnostics (G9), and independent physical/finite-impact validation (G10).
+- [ ] Prospective radar-condition case matrix and rates (G8), broader
+  concurrent integration (G9), and independent physical/finite-impact
+  validation (G10).
 - [x] G9 minmod-stage observer context replaces global branch/face-margin
   function patching; nested, concurrent and ordinary zero-face stage paths
   are verified (`FV_STAGE_OBSERVER_SCOPE.md`).
@@ -317,5 +318,15 @@ changes the numerical refiner, not the objective, observation contract or gates.
   partial-observation producers now uses a per-call context instead of
   module-alias patches; direct, nested, threaded and imported-alias tests
   verify routing (`FV_PCG_OBSERVER_SCOPE.md`).
-- [ ] G9 full concurrent FV optimization/response and async/service context
-  ownership remain separate unverified integration scope.
+- [x] A bounded in-process two-thread 4×5/8×10 response run refused during
+  simultaneous forward AD; preserve its raw failure and the independent tiny
+  two-thread reproduction (`FV_CONCURRENT_RESPONSE_RUN1_RESULTS.md`).
+- [x] The same fixed local responses completed in separate guarded Python
+  processes with distinct monitored PIDs, overlapping actual HVP calls,
+  unchanged input/source/archive identities, strict branch and residual gates,
+  and archived-value parity (`FV_PROCESS_ISOLATED_RESPONSE_RESULTS.md`).
+- [ ] Full concurrent GN/refinement, in-process simultaneous forward-AD
+  response, async/service context ownership and general input coverage remain
+  separate unverified G9 integration scope. The process result is limited to
+  two archived synthetic cases and is not an independent reanalysis or
+  physical-accuracy check.

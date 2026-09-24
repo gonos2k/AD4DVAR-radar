@@ -548,5 +548,16 @@
     "record": "FV_PCG_OBSERVER_SCOPE.md",
     "graphify": "code-only incremental update:7086 nodes,65902 edges,228 communities; no semantic LLM extraction",
     "remaining": "full concurrent FV optimization/response,async task ownership,observer-under-AD/replay and independent physical validity unverified"
+  },
+  "fv_concurrent_response_boundary": {
+    "baseline": "main f5aa755 after scoped minmod-stage and PCG observers",
+    "thread_attempt": "bounded two-thread 4x5/8x10 local response exited1 after6.211s inside PCG HVP with invalid forward-AD level; no response published; independent tiny dual_level two-thread probe refused",
+    "serial_control": "fresh 4x5 serial current-source response completed with archived total -0.003038272528696361 and true adjoint relative residual9.88816e-11",
+    "process_attempt": "same fixed 4x5/8x10 responses completed in distinct guarded OS child processes; both exits0, strict branches54/108, actual HVP interval overlap0.8755s, totals exactly match archived values",
+    "resources": "each child300s wall and sampled768MiB RSS cap; child peak RSS345276416 and345686016B; parent and between-sample spikes excluded",
+    "status": "bounded process-level concurrent local response qualified for two archived synthetic cases; in-process simultaneous forward AD refused",
+    "record": "FV_CONCURRENT_RESPONSE_RUN1_RESULTS.md and FV_PROCESS_ISOLATED_RESPONSE_RESULTS.md",
+    "graphify": "code-only incremental update:7137 nodes,65990 edges,266 communities; no semantic LLM extraction",
+    "remaining": "full concurrent GN/refinement,async/service context ownership,general inputs,independent nonlinear response validation and physical forecast skill"
   }
 }

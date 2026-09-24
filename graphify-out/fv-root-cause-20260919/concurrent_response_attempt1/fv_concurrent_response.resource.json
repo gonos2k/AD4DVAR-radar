@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_concurrent_response_probe",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/concurrent_response_attempt1/fv_concurrent_response.json"
+  ],
+  "exit_code": 1,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 6.2113452079938725,
+  "sampled_peak_rss_bytes": 348700672,
+  "rss_samples": 24,
+  "wall_limit_seconds": 300,
+  "rss_limit_bytes": 1610612736,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}
