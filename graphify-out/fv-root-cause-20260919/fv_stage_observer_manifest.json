@@ -1,0 +1,23 @@
+{
+  "base_head": "dff5f435e5ca8a523c58a5ccf59e76fea418d4e7",
+  "checks": {
+    "affected_tests_passed": 110,
+    "existing_warnings": 18,
+    "new_fv_optimizer_runs": 0,
+    "type_errors": 0
+  },
+  "python": "3.12.13",
+  "scope": "minmod-stage diagnostic context isolation in threads, not PCG or async/service certification",
+  "sha256": {
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "758397e502b1f7821cc62fe9f1cf47b440cabdc4933596a3076ef762ad282f0e",
+    "graphify-out/fv-root-cause-20260919/FV_STAGE_OBSERVER_SCOPE.md": "8dd83dbd8d709eb7dbdf7967764364c23e320a92b354bd90dcaa93fda2317857",
+    "graphify-out/fv-root-cause-20260919/fv_stage_observer_tests.log": "23c96f8b653a9215beefa4a83f69cb632d1d46e5232eb6221a950c1505941f6e",
+    "graphify-out/fv-root-cause-20260919/fv_stage_observer_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "src/advar/transport.py": "b7f3ed55f397279839dfcbee6f8e647e2e68599f10a858cca9316d90e644d02f",
+    "tests/test_fv_stage_observer.py": "852ba2c90245f6c4435846d68d34c56f60e0402c041ada9f0d0e95a057b00500"
+  },
+  "test_command": ".venv/bin/python -m pytest -q tests/test_fv_stage_observer.py tests/test_fv_minmod_inverse_probe.py tests/test_fv_partial_reanalysis_preflight.py tests/test_fv_research_problem.py tests/test_fv_research_multilead.py tests/test_fv_minmod_joint_derivatives.py tests/test_fv_research_partial_observation.py tests/test_fv_trajectory_contract.py tests/test_finite_volume_transport.py",
+  "torch": "2.13.0",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python src/advar/transport.py tests/test_fv_stage_observer.py"
+}

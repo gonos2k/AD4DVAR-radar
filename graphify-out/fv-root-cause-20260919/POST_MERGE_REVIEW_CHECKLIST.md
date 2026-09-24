@@ -310,3 +310,8 @@ changes the numerical refiner, not the objective, observation contract or gates.
   denominator (`FV_SUPPORT_MATRIX_RESULTS.md`).
 - [ ] Prospective radar-condition case matrix and rates (G8), concurrent
   diagnostics (G9), and independent physical/finite-impact validation (G10).
+- [x] G9 minmod-stage observer context replaces global branch/face-margin
+  function patching; nested, concurrent and ordinary zero-face stage paths
+  are verified (`FV_STAGE_OBSERVER_SCOPE.md`).
+- [ ] G9 PCG instrumentation still patches module aliases in research
+  producers; replace with per-call reporting before concurrent solver use.

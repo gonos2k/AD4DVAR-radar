@@ -13,7 +13,6 @@ from pathlib import Path
 import subprocess
 import sys
 from typing import Any
-from unittest.mock import patch
 
 import torch
 from torch import Tensor
@@ -37,17 +36,15 @@ def branch_with_face_margin(
     problem: FVResearchProblem, control: Tensor, parameters: Tensor,
 ) -> tuple[dict[str, Any], str, float]:
     """Measure the smallest relative face flux during the caller's strict trace."""
-    original = t._euler_minmod
     margins: list[float] = []
 
-    def record(echo: Tensor, qx: Tensor, qy: Tensor, *args: Any) -> Tensor:
+    def record(echo: Tensor, qx: Tensor, qy: Tensor) -> None:
         flux = torch.cat((qx.flatten(), qy.flatten())).abs()
         margins.append(float(flux.min() / flux.max()))
-        return original(echo, qx, qy, *args)
 
     # The supplied tracer wraps this observer and still owns minmod branch
-    # eligibility. This serial probe only adds a quantitative flux margin.
-    with patch.object(t, "_euler_minmod", record):
+    # eligibility. The outer observer adds a quantitative flux margin.
+    with t.observe_minmod_stages(record):
         branch, scope = problem.branch_check(control, parameters)
     if len(margins) != branch["euler_stages"] or not all(map(math.isfinite, margins)):
         raise ValueError("face-flux margin trace is incomplete or nonfinite")
