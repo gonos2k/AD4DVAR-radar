@@ -512,5 +512,13 @@
     "validation": "33 affected tests passed,18 existing warnings; selected typecheck0; GREEN/RED no actionable numerical blocker",
     "graphify": "code-only incremental update:7036 nodes,65787 edges,219 communities; no semantic LLM extraction",
     "remaining": "irregular times,evolving flow/growth/uncertain boundaries,long-horizon local response and independent weather truth"
+  },
+  "fv_response_units_scope": {
+    "baseline": "main c5da50a after bounded G6 regular three-hour forward horizon and homepage QA",
+    "equation": "c=S z,p=L eta,Jnew=a J => g_eta=L^T g_p and d_eta=L^-1 d; physical direct,indirect,total directional responses invariant at exact stationary point",
+    "validation": "analytic three-control/two-parameter rescaling regression and 86/241 toy reanalysis identity/branch/direction/step assertions;16 affected tests passed,18 existing warnings;no FV rerun",
+    "record": "FV_RESPONSE_UNITS_SCOPE.md",
+    "graphify": "code-only incremental update:7039 nodes,65795 edges,267 communities; no semantic LLM extraction",
+    "remaining": "new FV profiles need qualified stationary response and signed endpoints;absolute gradient gate depends on units/objective scale;future generic tensor identities need versioned shape/dtype/units"
   }
 }

@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 import torch
@@ -24,7 +25,7 @@ def toy(monkeypatch,tmp_path,mutation=None):
     fixture=SimpleNamespace(__file__=str(probe.EXAMPLES/'fv_scaled_research_case.py'),make_case=lambda:case,
         functions=lambda case,expected_branch=None:(objective,score,lambda c,p:(branch,'analytic')),
         actual_cfl=lambda case,c:0.)
-    cached={'adjoint':c.tolist(),'score_control_gradient':c.tolist(),'direct_gradient':(.1*p).tolist(),
+    cached: dict[str, Any]={'adjoint':c.tolist(),'score_control_gradient':c.tolist(),'direct_gradient':(.1*p).tolist(),
         'mixed_gradients':{'middle_time_bias':(-direction[:86]).tolist()},
         'direct':{'middle_time_bias':8.},'indirect':{'middle_time_bias':6.},'total':{'middle_time_bias':14.}}
     if mutation=='direct':cached['direct_gradient'][0]=.2
@@ -61,6 +62,43 @@ def test_full_probe_varies_parameters_at_both_endpoints(monkeypatch,tmp_path):
         torch.testing.assert_close(cc,pp[:86],rtol=0,atol=0)
     torch.testing.assert_close(p,torch.ones_like(p),rtol=0,atol=0)
     assert result['inputs_unchanged'] is True
+    assert result['source_unchanged'] is True
+    case=probe.load('fixture').make_case()
+    assert result['input_identity']['problem']=={
+        'parameters':probe.digest(p),
+        'verification':probe.digest(case.verification),
+        'initial_echo':probe.digest(case.truth_initial_echo),
+        'basis':probe.digest(case.frozen.fv_transport.psi_basis),
+        'problem':probe.digest(case.definition),
+    }
+    assert result['input_identity']['control']==probe.digest(c)
+    assert all(probe.sha256_file(probe.ROOT/name)==digest
+               for name,digest in result['source_sha256'].items())
+    expected_direction=torch.zeros_like(p);expected_direction[80:160]=1
+    assert result['direction']['sha256']==probe.digest(expected_direction)
+    assert result['direction']['units']=='dBZ offset at middle observation time'
+    assert result['nominal']['branch']['euler_stages']==108
+    assert result['nominal']['branch']['selectors_sha256']==probe.digest([1])
+    assert result['nominal']['branch']['face_signs_sha256']==probe.digest([1])
+    assert [pair['h'] for pair in result['pairs']]==[.001,.0005]
+    tangent=torch.tensor(result['tangent']['solution'],dtype=c.dtype)
+    for pair in result['pairs']:
+        for sign_name,sign in (('plus',1.0),('minus',-1.0)):
+            endpoint=pair['endpoints'][sign_name]
+            assert endpoint['sign']==sign_name
+            torch.testing.assert_close(
+                torch.tensor(endpoint['parameters'],dtype=p.dtype),
+                p+(sign*pair['h'])*expected_direction,rtol=0,atol=0,
+            )
+            torch.testing.assert_close(
+                torch.tensor(endpoint['start_control'],dtype=c.dtype),
+                c+(sign*pair['h'])*tangent,rtol=0,atol=0,
+            )
+    for endpoint in result['endpoints']:
+        assert endpoint['parameters_sha256']==probe.digest(torch.tensor(endpoint['parameters'],dtype=p.dtype))
+        assert endpoint['control_sha256']==probe.digest(torch.tensor(endpoint['control'],dtype=c.dtype))
+        assert endpoint['branch']['selectors_sha256']==result['nominal']['branch']['selectors_sha256']
+        assert endpoint['branch']['face_signs_sha256']==result['nominal']['branch']['face_signs_sha256']
 
 
 @pytest.mark.parametrize('mutation',['direct','adjoint','rhs','mixed'])

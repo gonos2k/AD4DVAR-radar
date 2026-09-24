@@ -1,0 +1,20 @@
+{
+  "base_head": "c5da50a0ce7d1a941edfd546012bb650d96e1bb4",
+  "checks": {
+    "existing_warnings": 18,
+    "tests_passed": 16,
+    "type_errors": 0
+  },
+  "python": "3.12.13",
+  "scope": "analytic physical-direction unit invariance plus toy report-binding regression; no FV solver/reanalysis",
+  "sha256": {
+    "graphify-out/fv-root-cause-20260919/FV_RESPONSE_UNITS_SCOPE.md": "47cd0c2bd3ddd695ba895796e19d12608a206eb97c69255a013ff1f1cf9fd8bf",
+    "graphify-out/fv-root-cause-20260919/fv_response_units_tests.log": "0f3c498378d4d4902937fd880820e00e54691f8a8e1b3ce544ef542827257e66",
+    "graphify-out/fv-root-cause-20260919/fv_response_units_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "tests/test_fv86_reanalysis.py": "e20d205f767d82419658fddf697436c0d5f5a6713ae28c2490d8482dcf368e0d",
+    "tests/test_local_response.py": "7d22fb342f2e3a5add43db54e42bff5e4cff892d95d450b7382d68ea9097fecc"
+  },
+  "test_command": ".venv/bin/python -m pytest -q tests/test_fv86_reanalysis.py tests/test_local_response.py",
+  "torch": "2.13.0",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python tests/test_fv86_reanalysis.py tests/test_local_response.py"
+}

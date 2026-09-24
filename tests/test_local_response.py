@@ -1,6 +1,8 @@
 """Small analytic checks for the conditional matrix-free local response."""
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 import torch
 
@@ -76,9 +78,48 @@ def test_quadratic_response_has_direct_and_implicit_terms_without_dense_solver(m
     assert abs(float(result.total["cancellation"])) < 1e-12
 
 
+def test_physical_directional_response_is_invariant_to_control_parameter_and_objective_units():
+    _, _, _, control, p, objective, score, directions = _quadratic_case()
+    branch = lambda c, q: ("quadratic-branch", "fixed analytic branch")
+    original = compute_local_response(
+        objective, score, control, p, directions,
+        branch_check=branch, input_identity={"coordinates": "physical"},
+    )
+    control_scale = control.new_tensor([2.0, 0.5, 1.3])
+    parameter_scale = p.new_tensor([0.2, 3.0])
+    objective_scale = 1.7
+
+    def transformed_objective(z, eta):
+        return objective_scale * objective(control_scale * z, parameter_scale * eta)
+
+    def transformed_score(z, eta):
+        return score(control_scale * z, parameter_scale * eta)
+
+    transformed_directions = {
+        name: direction / parameter_scale for name, direction in directions.items()
+    }
+    transformed = compute_local_response(
+        transformed_objective, transformed_score,
+        control / control_scale, p / parameter_scale, transformed_directions,
+        branch_check=branch, input_identity={"coordinates": "rescaled"},
+    )
+    for name in directions:
+        for component in ("direct", "indirect", "total"):
+            torch.testing.assert_close(
+                getattr(transformed, component)[name],
+                getattr(original, component)[name], rtol=1e-10, atol=1e-12,
+            )
+    for component in ("direct_gradient", "indirect_gradient", "total_gradient"):
+        torch.testing.assert_close(
+            getattr(transformed, component),
+            parameter_scale * getattr(original, component),
+            rtol=1e-10, atol=1e-12,
+        )
+
+
 def test_requires_float64_stationarity_branch_and_input_identity():
     _, _, _, control, p, objective, score, directions = _quadratic_case()
-    kwargs = dict(
+    kwargs: dict[str, Any] = dict(
         branch_check=lambda c, q: ("branch", "scope"),
         input_identity={"case": "required"},
     )
