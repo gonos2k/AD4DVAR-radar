@@ -2,7 +2,7 @@
   "status": "preflight_only",
   "numerical_solver_runs": 0,
   "command": ".venv/bin/python examples/weather_scenarios/fv_partial_reanalysis_preflight.py --output graphify-out/fv-root-cause-20260919/fv_partial_reanalysis_preflight.json",
-  "base_commit": "ab8aed41eb09eaf7ec5deb1007e0e166b154f6c9",
+  "base_commit": "a82785d015d2f5d4170055e4d059354ab17449c9",
   "environment": {
     "python": "3.12.13",
     "torch": "2.13.0",
