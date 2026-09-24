@@ -1,7 +1,7 @@
 """Explicit 8x10 scaled minmod research fixture; not a general FV API."""
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 import importlib.util
 from typing import cast
@@ -195,88 +195,21 @@ def actual_cfl(case: FVScaledResearchCase, control: torch.Tensor) -> float:
     return float((60.0 / _SUBSTEPS) * (outward / cell_area).amax())
 
 
+def make_problem(case: FVScaledResearchCase, expected_branch=None):
+    """Bind the preserved 8x10 fixture to the common problem definition."""
+    from advar.fv_research_problem import FVResearchProblem
+    spec = case.frozen.fv_transport
+    if (case.observations.dbz.shape != (3, _HEIGHT, _WIDTH)
+            or spec is None or spec.substeps_per_interval != _SUBSTEPS
+            or case.parameters.shape != (_PARAMETER_SIZE,)):
+        raise ValueError('scaled minmod case is outside its fixed full-support contract')
+    problem = FVResearchProblem(case.observations, case.frozen, case.future_boundary_echo,
+                                case.future_boundary_support, case.pattern, case.verification,
+                                _load_inverse_probe().inspect_branches, expected_branch)
+    if problem.layout['controls'] != _CONTROL_SIZE:
+        raise ValueError('scaled minmod control layout mismatch')
+    return problem
+
+
 def functions(case: FVScaledResearchCase, expected_branch=None):
-    """Return summed objective, conditional score, and strict branch checker."""
-    probe = _load_inverse_probe()
-    obs, frozen = case.observations, case.frozen
-    if (
-        obs.dbz.shape != (3, _HEIGHT, _WIDTH)
-        or obs.dbz.dtype != torch.float64
-        or obs.dbz.device.type != 'cpu'
-        or frozen.fv_transport is None
-        or frozen.fv_transport.reconstruction != "minmod"
-        or frozen.fv_transport.substeps_per_interval != _SUBSTEPS
-        or case.parameters.shape != (_PARAMETER_SIZE,)
-        or case.pattern.shape != (_HEIGHT, _WIDTH)
-        or case.verification.shape != (_HEIGHT, _WIDTH)
-        or case.pattern.dtype != obs.dbz.dtype
-        or case.verification.dtype != obs.dbz.dtype
-        or not bool(torch.isfinite(case.pattern).all())
-        or not bool(torch.isfinite(case.verification).all())
-        or not bool(obs.detected_mask.all())
-        or not bool(obs.valid_mask.all())
-        or not bool(frozen.initial_support_mask.all())
-        or frozen.neural_prior_dependency is not None
-        or frozen.grid_time_contract is not None
-    ):
-        raise ValueError("scaled minmod case is outside its fixed full-support contract")
-    for schedule in (frozen.fv_transport.boundary_support, case.future_boundary_support):
-        for stages in schedule:
-            for edges in stages:
-                if not all(bool(torch.all(edge == 1)) for edge in edges):
-                    raise ValueError("scaled minmod requires fully known boundary support")
-
-    def contract(parameters):
-        observed = parameters[:-1].reshape_as(obs.dbz)
-        return replace(frozen, initial_background_dbz=observed[0] + parameters[-1] * case.pattern)
-
-    def forecast(control, parameters):
-        return echo_to_dbz(
-            v.forecast_fv_analysis(
-                control,
-                contract(parameters),
-                leads=1,
-                boundary_start_interval=2,
-                boundary_echo=case.future_boundary_echo,
-                boundary_support=case.future_boundary_support,
-            ).frames_linear[-1],
-            min_dbz=-10.0,
-        )
-
-    def objective(control, parameters):
-        observations = replace(obs, dbz=parameters[:-1].reshape_as(obs.dbz))
-        return v.robust_objective(control, observations, contract(parameters))
-
-    def score(control, parameters):
-        return (forecast(control, parameters) - case.verification).square().mean()
-
-    def branch_check(control, parameters):
-        if control.shape != (_CONTROL_SIZE,) or parameters.shape != (_PARAMETER_SIZE,):
-            raise ValueError("scaled minmod control/parameter layout mismatch")
-        background = contract(parameters).initial_background_dbz
-        analysis = frozen.analysis_config
-        nowcast = frozen.nowcast_config
-        offset = (background - nowcast.min_dbz) / analysis.echo_transform_scale_dbz
-        margin = 64 * torch.finfo(background.dtype).eps * (
-            (background.abs() + abs(nowcast.min_dbz)) / analysis.echo_transform_scale_dbz
-            + analysis.transform_epsilon
-        )
-        if not bool(
-            ((offset - analysis.transform_epsilon > margin) & (background < nowcast.max_dbz)).all()
-        ):
-            raise ValueError("scaled minmod background is outside its smooth transform branch")
-        if not bool(
-            ((parameters[:-1] > analysis.detection_limit_dbz) & (parameters[:-1] < nowcast.max_dbz)).all()
-        ):
-            raise ValueError("scaled minmod requires fixed detected observations")
-        branch = probe.inspect_branches(lambda: forecast(control, parameters))
-        if branch["euler_stages"] != _RK_STAGE_COUNT:
-            raise ValueError(f"scaled minmod expected {_RK_STAGE_COUNT} inspected RK stages")
-        if expected_branch is not None and (
-            branch["choices"] != expected_branch["choices"]
-            or branch["face_signs"] != expected_branch["face_signs"]
-        ):
-            raise ValueError("scaled minmod branch identity mismatch")
-        return branch, "strict full-support 8x10 minmod; fixed masks, precision, geometry, and boundaries"
-
-    return objective, score, branch_check
+    return make_problem(case, expected_branch).functions()

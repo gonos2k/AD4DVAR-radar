@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6769,
-    "edges": 65213,
-    "communities": 209,
+    "nodes": 6813,
+    "edges": 65346,
+    "communities": 242,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -341,5 +341,15 @@
     "record": "FV_86_CONTROL_RESULTS.md",
     "source_provenance": "measuredproducer+casearchivedbeforepostruntypingonlycleanup; rawrunbegin/endstable; preflightoldrunnerarchive",
     "remaining": "independent86responseFD, commoninversegridconvergence, conditioning/identifiability, widerstates/masks, generalFSOI/typedlearning/D7"
+  },
+  "pr174_followup": {
+    "baseline": "merged0956709",
+    "closed": "summary exit-status P2; commonfixed-supportproblem definition shared by4x5and8x10",
+    "status_axes": "execution_status/numerical_status/response_validation; completedrequireszeroexit+finished+sourcechecked",
+    "compatibility": "samearchivedinputs+verification;J/E,c/pgrads,oneHVP perprofile differences0;signaturespreserved;fixedprofilecountgatesmaintained",
+    "validation": "158affectedtests,18existingwarnings;typecheck0;noGN/refine/response/reanalysisrun",
+    "record": "COMMON_FV_PROBLEM_REVIEW.md",
+    "next": "FV86_REANALYSIS_PLAN.md;20min2GiBproposed,approvalpending",
+    "scope": "collocateddBZ,fullsupport,regular3observations+1forecast;notarbitraryH/masks/covariance/time"
   }
 }

@@ -50,7 +50,7 @@ def run(output, *, fresh_gn=False, matrix_free_refine=False):
     fixture = bridge._load('fv_minmod_inverse_probe')
     oracle = bridge._load('fv_sensitivity_probe')
     source_paths = (Path(__file__), Path(workflow.__file__), Path(bridge.__file__),
-                    Path(oracle.__file__), Path(fixture.__file__), ROOT/'src/advar/local_response.py',
+                    Path(oracle.__file__), Path(fixture.__file__), ROOT/'src/advar/local_response.py', ROOT/'src/advar/fv_research_problem.py',
                     ROOT/'src/advar/variational.py', ROOT/'src/advar/transport.py', ROOT/'src/advar/matrix_free.py')
     if matrix_free_refine:
         source_paths += (ROOT/'src/advar/local_refinement.py',)

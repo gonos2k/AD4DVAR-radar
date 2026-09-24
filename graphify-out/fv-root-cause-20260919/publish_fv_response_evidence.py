@@ -444,11 +444,16 @@ def _matrix_free_refinement_panel():
 
 def _fv86_panel():
     path = HERE / "fv86_execution_summary.json"
+    fingerprint = "c22b92addf28a30d42f57f5238362a51e3b67900816488f1ad505f3e3b4eba6a"
+    status_path = HERE / "fv86_execution_status_summary.json"
+    if status_path.exists():
+        path = status_path
+        fingerprint = "ab4849a96c4470b09ab88d3c024dea5a6fd9f4a8306a80e1b04fb09017feeaf9"
     if not path.exists():
         return ""
     data = json.loads(path.read_text())
     digest = hashlib.sha256(json.dumps(data, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    if digest != "c22b92addf28a30d42f57f5238362a51e3b67900816488f1ad505f3e3b4eba6a":
+    if digest != fingerprint:
         raise SystemExit("FV86 archived summary identity mismatch")
     for name, fingerprint in data["artifact_sha256"].items():
         if hashlib.sha256((HERE / name).read_bytes()).hexdigest() != fingerprint:
@@ -457,17 +462,21 @@ def _fv86_panel():
     for row in data["cases"]:
         gradient = "—" if row["final_gradient_max"] is None else f'{row["final_gradient_max"]:.3e}'
         residual = "—" if row["adjoint_relative_residual"] is None else f'{row["adjoint_relative_residual"]:.3e}'
-        rows.append(f'<tr><td>{row["mode"]}</td><td>{row["status"]}</td><td>{gradient}</td>'
+        validation = {"not_performed": "미실행", "passed": "통과", "failed": "실패"}[
+            row.get("response_validation", "not_performed")]
+        rows.append(f'<tr><td>{row["mode"]}</td><td>{row.get("execution_status", "보관 기록")}</td>'
+                    f'<td>{row.get("numerical_status", row["status"])}</td><td>{validation}</td><td>{gradient}</td>'
                     f'<td>{residual}</td><td>{row["wall_seconds"]:.1f}초</td></tr>')
     return (
         '<section id="fv86Execution"><h3>8×10 · 86제어 이산 실행</h3>'
         '<p>같은 물리영역의 더 큰 이산 문제에서 두 초기값을 사전에 정해 GN→보정→전체 민감도를 실행했습니다. '
         '241개 파라미터와 108개 RK 단계, 고정된 합성 검증장을 사용합니다.</p>'
-        '<table style="border-spacing:12px 6px"><tr><th>초기값</th><th>결과</th><th>최종 최대 gradient</th><th>실제 수반 상대잔차</th><th>프로세스 시간</th></tr>'
+        '<table style="border-spacing:12px 6px"><tr><th>초기값</th><th>실행</th><th>수치 적격성</th><th>재분석 대조</th><th>최종 최대 gradient</th><th>실제 수반 상대잔차</th><th>프로세스 시간</th></tr>'
         f'{"".join(rows)}</table>'
         f'<p>적격 응답 {data["eligible_count"]}/{data["declared_case_count"]}. '
         '재분석 차분 검증률은 미측정입니다. 동일 물리·통계 역문제의 격자 수렴, 일반 FSOI, 예측 skill 인증은 아닙니다.</p>'
-        '<p><a href="../../graphify-out/fv-root-cause-20260919/FV_86_CONTROL_RESULTS.md">전체 결과·거부 분류·자원 기록</a></p></section>'
+        '<p><a href="../../graphify-out/fv-root-cause-20260919/FV_86_CONTROL_RESULTS.md">전체 결과·거부 분류·자원 기록</a> · '
+        '<a href="../../graphify-out/fv-root-cause-20260919/COMMON_FV_PROBLEM_REVIEW.md">종료 상태 분리·공통 문제 정의</a></p></section>'
     )
 
 
