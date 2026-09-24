@@ -1,0 +1,37 @@
+"""Small independent check of overlapping PyTorch forward-AD levels."""
+from __future__ import annotations
+
+from concurrent.futures import ThreadPoolExecutor
+import json
+from threading import Barrier
+
+import torch
+from torch.autograd import forward_ad
+
+
+def run() -> dict[str, object]:
+    rendezvous = Barrier(2)
+
+    def worker(index: int) -> dict[str, object]:
+        try:
+            with forward_ad.dual_level():
+                rendezvous.wait(timeout=2)
+                value = torch.tensor([float(index + 1)], dtype=torch.float64)
+                dual = forward_ad.make_dual(value, torch.ones_like(value))
+                _, tangent = forward_ad.unpack_dual(dual.square())
+                assert tangent is not None
+                return {"status": "passed", "tangent": float(tangent[0])}
+        except Exception as error:
+            return {"status": "failed", "type": type(error).__name__,
+                    "message": str(error)}
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = [future.result(timeout=5) for future in (
+            pool.submit(worker, 0), pool.submit(worker, 1)
+        )]
+    return {"torch": torch.__version__, "outcomes": outcomes,
+            "scope": "overlapping dual_level contexts in two threads; no FV or observer"}
+
+
+if __name__ == "__main__":
+    print(json.dumps(run(), indent=2, sort_keys=True))

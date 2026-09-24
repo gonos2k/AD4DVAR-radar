@@ -1,0 +1,194 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_concurrent_response_probe.py", line 297, in <module>
+    run(args.output)
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_concurrent_response_probe.py", line 251, in run
+    report["workers"][name] = future.result(timeout=260)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_concurrent_response_probe.py", line 208, in worker
+    response = compute_local_response(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/local_response.py", line 135, in compute_local_response
+    solve = pcg(
+            ^^^^
+  File "/Users/yhlee/ADVAR/src/advar/matrix_free.py", line 343, in pcg
+    return solve(
+           ^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_concurrent_response_probe.py", line 194, in solve
+    result = original(measured, rhs, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/matrix_free.py", line 439, in _pcg_impl
+    operator_direction = apply(
+                         ^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/matrix_free.py", line 397, in apply
+    output = function(value)
+             ^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_concurrent_response_probe.py", line 188, in measured
+    result = operator(value)
+             ^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/local_response.py", line 131, in hessian_vector
+    result = torch.func.jvp(lambda c: gradient(c, p), (control,), (direction,))[1]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/eager_transforms.py", line 1152, in jvp
+    return _jvp_with_argnums(
+           ^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/eager_transforms.py", line 1211, in _jvp_with_argnums
+    result_duals = func(*duals)
+                   ^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/local_response.py", line 131, in <lambda>
+    result = torch.func.jvp(lambda c: gradient(c, p), (control,), (direction,))[1]
+                                      ^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/apis.py", line 459, in wrapper
+    return eager_transforms.grad_impl(func, argnums, has_aux, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/eager_transforms.py", line 1538, in grad_impl
+    results = grad_and_value_impl(func, argnums, has_aux, args, kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/vmap.py", line 56, in fn
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/eager_transforms.py", line 1515, in grad_and_value_impl
+    flat_grad_input = _autograd_grad(
+                      ^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/eager_transforms.py", line 177, in _autograd_grad
+    grad_inputs = torch.autograd.grad(
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 594, in grad
+    result = _engine_run_backward(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/autograd/graph.py", line 979, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/autograd/function.py", line 325, in apply
+    return user_fn(self, *args)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py", line 150, in backward
+    result = autograd_function.backward(ctx, *grads)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/matrix_free.py", line 64, in backward
+    return recompute(reverse, *ctx.saved_tensors, *cotangents)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/matrix_free.py", line 76, in recompute
+    result = Recomputed.apply(*inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/autograd/function.py", line 635, in apply
+    return custom_function_call(cls, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py", line 66, in __call__
+    return super().__call__(autograd_function, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_ops.py", line 543, in __call__
+    return self.dispatch(dispatch_key_set.highestPriorityTypeId(), *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_ops.py", line 411, in dispatch
+    return dispatch_functorch(self, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/pyfunctorch.py", line 338, in dispatch_functorch
+    return interpreter.process(op, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/pyfunctorch.py", line 202, in process
+    return kernel(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py", line 115, in custom_function_call_grad
+    flat_out = Generated.apply(*operands)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py", line 133, in forward
+    unwrapped_output = custom_function_call(
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py", line 66, in __call__
+    return super().__call__(autograd_function, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_ops.py", line 543, in __call__
+    return self.dispatch(dispatch_key_set.highestPriorityTypeId(), *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_ops.py", line 411, in dispatch
+    return dispatch_functorch(self, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/pyfunctorch.py", line 338, in dispatch_functorch
+    return interpreter.process(op, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/pyfunctorch.py", line 243, in process
+    return kernel(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py", line 115, in custom_function_call_grad
+    flat_out = Generated.apply(*operands)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/autograd/function.py", line 340, in apply_jvp
+    return self._forward_cls.jvp(self, *args)  # type: ignore[attr-defined]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py", line 155, in jvp
+    result = autograd_function.jvp(ctx, *tangents)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/matrix_free.py", line 74, in jvp
+    return recompute(tangent, *ctx.saved_tensors, *directions)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/matrix_free.py", line 76, in recompute
+    result = Recomputed.apply(*inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/autograd/function.py", line 635, in apply
+    return custom_function_call(cls, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py", line 66, in __call__
+    return super().__call__(autograd_function, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_ops.py", line 543, in __call__
+    return self.dispatch(dispatch_key_set.highestPriorityTypeId(), *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_ops.py", line 411, in dispatch
+    return dispatch_functorch(self, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/pyfunctorch.py", line 338, in dispatch_functorch
+    return interpreter.process(op, args, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/pyfunctorch.py", line 243, in process
+    return kernel(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py", line 115, in custom_function_call_grad
+    flat_out = Generated.apply(*operands)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py", line 133, in forward
+    unwrapped_output = custom_function_call(
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/autograd_function.py", line 67, in __call__
+    return autograd_function.apply(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/autograd/function.py", line 625, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/matrix_free.py", line 40, in forward
+    result = function(*args)
+             ^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/matrix_free.py", line 71, in tangent
+    return torch.func.jvp(function, args[:count], args[count:])[1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/eager_transforms.py", line 1152, in jvp
+    return _jvp_with_argnums(
+           ^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/eager_transforms.py", line 1211, in _jvp_with_argnums
+    result_duals = func(*duals)
+                   ^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/src/advar/matrix_free.py", line 61, in reverse
+    return pullback(seed)
+           ^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/eager_transforms.py", line 470, in wrapper
+    result = _autograd_grad(
+             ^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/_functorch/eager_transforms.py", line 177, in _autograd_grad
+    grad_inputs = torch.autograd.grad(
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 594, in grad
+    result = _engine_run_backward(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/autograd/graph.py", line 979, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Trying to access a forward AD level with an invalid index. This index was either not created or is already deleted.

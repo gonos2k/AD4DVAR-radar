@@ -1,0 +1,16 @@
+{
+  "outcomes": [
+    {
+      "message": "",
+      "status": "failed",
+      "type": "BrokenBarrierError"
+    },
+    {
+      "message": "Nested forward mode AD is not supported at the moment",
+      "status": "failed",
+      "type": "RuntimeError"
+    }
+  ],
+  "scope": "overlapping dual_level contexts in two threads; no FV or observer",
+  "torch": "2.13.0"
+}

@@ -53,7 +53,7 @@ def run_guarded(command, *, wall_seconds, rss_bytes, report_path, log_path):
                     except ProcessLookupError:
                         pass
             exit_code = child.wait()
-    report = {'command':command,'child_pid':child.pid,'exit_code':exit_code,'resource_termination':limit,'monitor_error':monitor_error,
+    report = {'command':command,'exit_code':exit_code,'resource_termination':limit,'monitor_error':monitor_error,
               'elapsed_seconds':time.monotonic()-started,'sampled_peak_rss_bytes':peak,
               'rss_samples':samples,'wall_limit_seconds':wall_seconds,'rss_limit_bytes':rss_bytes,
               'sampling':'child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit'}

@@ -1,0 +1,54 @@
+{
+  "child_read_error": null,
+  "child_report_sha256": "8d28ec1f3aa2f54a1c5a1fb203249a05cb6c10064f532b88d2178b93dd4fad36",
+  "child_status": "execution_error",
+  "execution_status": "failed",
+  "resource": {
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "-m",
+      "examples.weather_scenarios.fv_concurrent_response_probe",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/concurrent_response_attempt1/fv_concurrent_response.json"
+    ],
+    "elapsed_seconds": 6.2113452079938725,
+    "exit_code": 1,
+    "monitor_error": null,
+    "resource_termination": null,
+    "rss_limit_bytes": 1610612736,
+    "rss_samples": 24,
+    "sampled_peak_rss_bytes": 348700672,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300
+  },
+  "source_after": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "a1cad6a1a9605edb7e51da04d788f9badbd2c6bbfb098dbffa4a93c6816d3611",
+    "examples/weather_scenarios/fv_concurrent_response_probe.py": "a57d09441fc1e37ec28c60810685a618074725747b98da2fb5671a7c72507430",
+    "examples/weather_scenarios/fv_concurrent_response_runner.py": "f9a4e1f46451ce153468e7c2ffd33bcb3498e4c20b19c36fab41a9dfcf31d52a",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_scaled_research_case.py": "cf827cb08715bc684f3dff2afd7507ddb6c693c688b8684c655c2b82e179a6d8",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "553ac08552dfe03f2d57f8072718346770f9072e51f2c7ef08384ec4b99fc1de",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "b7f3ed55f397279839dfcbee6f8e647e2e68599f10a858cca9316d90e644d02f",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  },
+  "source_before": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "a1cad6a1a9605edb7e51da04d788f9badbd2c6bbfb098dbffa4a93c6816d3611",
+    "examples/weather_scenarios/fv_concurrent_response_probe.py": "a57d09441fc1e37ec28c60810685a618074725747b98da2fb5671a7c72507430",
+    "examples/weather_scenarios/fv_concurrent_response_runner.py": "f9a4e1f46451ce153468e7c2ffd33bcb3498e4c20b19c36fab41a9dfcf31d52a",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_scaled_research_case.py": "cf827cb08715bc684f3dff2afd7507ddb6c693c688b8684c655c2b82e179a6d8",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "553ac08552dfe03f2d57f8072718346770f9072e51f2c7ef08384ec4b99fc1de",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "b7f3ed55f397279839dfcbee6f8e647e2e68599f10a858cca9316d90e644d02f",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  }
+}

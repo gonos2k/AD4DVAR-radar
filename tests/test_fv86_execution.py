@@ -1,5 +1,6 @@
 """Cheap guard and accounting tests; no scaled inverse solve."""
 import importlib.util
+import os
 from pathlib import Path
 import sys
 
@@ -10,6 +11,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 def load(name):
     spec=importlib.util.spec_from_file_location(name,ROOT/'examples/weather_scenarios'/f'{name}.py')
+    assert spec is not None and spec.loader is not None
     module=importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -31,6 +33,7 @@ def test_resource_guard_records_normal_exit(tmp_path):
         rss_bytes=2*1024**3,report_path=tmp_path/'guard.json',log_path=tmp_path/'guard.log')
     assert result['resource_termination'] is None
     assert result['exit_code']==0
+    assert type(result['child_pid']) is int and result['child_pid']!=os.getpid()
     assert (tmp_path/'guard.log').read_text().strip()=='done'
 
 
