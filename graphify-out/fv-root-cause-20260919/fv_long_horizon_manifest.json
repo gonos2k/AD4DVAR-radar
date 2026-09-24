@@ -1,0 +1,26 @@
+{
+  "base_head": "b462368706e689790121b8050ac2cea5947ccb7d",
+  "checks": {
+    "affected_tests_passed": 33,
+    "existing_warnings": 18,
+    "green_review": "no actionable blocker",
+    "red_review": "no P0/P1/P2 numerical blocker",
+    "type_errors": 0
+  },
+  "probe_command": ".venv/bin/python -m examples.weather_scenarios.fv_long_horizon_probe",
+  "python": "3.12.13",
+  "scope": "bounded regular ten-minute eighteen-lead forward/time/CFL contract; no stationary or physical-response claim",
+  "sha256": {
+    "examples/weather_scenarios/fv_long_horizon_case.py": "22feb5c49495b26c78caa826e73f34a9abb21a4dbf71cfa5e34fbaae884cbc85",
+    "examples/weather_scenarios/fv_long_horizon_probe.py": "611b173fd4c39339cdf5fe304a3d9dd632f976324837a02ae0d2bc2c65089ce6",
+    "graphify-out/fv-root-cause-20260919/FV_LONG_HORIZON_RESEARCH.md": "690cf5eee6844cb9f3bc3acc277775a99985e9a47f8c582831f2b9cbd6d5b681",
+    "graphify-out/fv-root-cause-20260919/fv_long_horizon_metrics.json": "cd086d7f628b1b48a2dbfc0c3a0570041539a26624fd2de924e477bf395cf8cc",
+    "graphify-out/fv-root-cause-20260919/fv_long_horizon_tests.log": "3f3a9730df7c86b863ebecd35c5d491229a4157390de9ce2ec148131af80e354",
+    "graphify-out/fv-root-cause-20260919/fv_long_horizon_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "tests/test_fv_research_long_horizon.py": "aede35c0af1e59c97c4590c34873a8a3b196f3f58ff6657a64c84abb30cfad60"
+  },
+  "test_command": ".venv/bin/python -m pytest -q tests/test_fv_research_problem.py tests/test_fv_research_multilead.py tests/test_fv_research_long_horizon.py",
+  "torch": "2.13.0",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python src/advar/fv_research_problem.py examples/weather_scenarios/fv_long_horizon_case.py examples/weather_scenarios/fv_long_horizon_probe.py tests/test_fv_research_long_horizon.py"
+}

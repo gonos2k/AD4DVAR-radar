@@ -500,5 +500,17 @@
     "record": "FV_POINT_MISSING_RESEARCH.md",
     "graphify": "code-only incremental update:7012 nodes,65744 edges,267 communities; no semantic LLM extraction",
     "remaining": "censored/QC and all-missing frames, regridded/footprint products, cross-time covariance, stationary point response and physical validation"
+  },
+  "fv_long_horizon_research": {
+    "baseline": "main b462368 after G5c bounded point missing rows",
+    "scope": "4x5 three regular observations at0/10/20min,18 ten-minute forward leads ending180min after analysis,stationary flow/growth,fully known constant stage boundaries",
+    "numerics": "90 substeps per ten-minute interval retain 6.667-second CFL step;180 analysis+1620 future boundary entries;3600 SSPRK stages",
+    "synthetic_truth": "zero-flow analytic exp(0.08 per interval) and nonzero-flow same-operator generated truth;max forecast dBZ gaps1.73e-11 and1.28e-11 respectively",
+    "status": "bounded forward/time contract only;strict minmod branch probes refused;no GN/refinement/adjoint/reanalysis/physical validation",
+    "verification_times": "optional declared exact lead-time tuple validated and bound to identity; legacy implicit order preserved but identity changes",
+    "record": "FV_LONG_HORIZON_RESEARCH.md",
+    "validation": "33 affected tests passed,18 existing warnings; selected typecheck0; GREEN/RED no actionable numerical blocker",
+    "graphify": "code-only incremental update:7036 nodes,65787 edges,219 communities; no semantic LLM extraction",
+    "remaining": "irregular times,evolving flow/growth/uncertain boundaries,long-horizon local response and independent weather truth"
   }
 }
