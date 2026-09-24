@@ -282,9 +282,15 @@ changes the numerical refiner, not the objective, observation contract or gates.
 - [x] Fixed same-time point-observation correlation with symmetric principal
   whitening, exact diagonal limit, analytic two-point gradient, permutation
   and singularity checks (G5b, `FV_POINT_CORRELATION_RESEARCH.md`).
-- [ ] Regridded/footprint radar products, missing/censored point rows,
+- [x] Genuinely missing fixed point-observation rows under diagonal or
+  declared same-time correlation: select valid principal covariance before
+  whitening, retain inactive parameter slots with zero derivatives, preserve
+  the exogenous grid background, and reject censored/QC meanings. The bounded
+  fixed-control FV probe and regressions are in `FV_POINT_MISSING_RESEARCH.md`.
+- [ ] Regridded/footprint radar products, censored/QC point rows,
   cross-time covariance and a newly qualified stationary whole response
-  remain separate G5c work.
+  remain separate G5c work. An entirely missing observation frame is also
+  outside the current bounded point profile.
 - [ ] Longer/irregular schedule and bound validation to point/direction/units
   (G6/G7).
 - [ ] Broader support/refusal accounting, concurrent diagnostics and independent
