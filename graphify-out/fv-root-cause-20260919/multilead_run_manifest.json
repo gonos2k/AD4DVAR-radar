@@ -1,0 +1,21 @@
+{
+  "base_commit": "e829a17717497d7b48d42483fe3a9b26251ab7e4",
+  "not_run": [
+    "new GN/refinement/adjoint/reanalysis",
+    "long-horizon FV",
+    "full CPU/package CI"
+  ],
+  "pytest_command": ".venv/bin/python -m pytest -q tests/test_fv_research_multilead.py tests/test_fv_research_problem.py tests/test_fv86_reanalysis.py tests/test_fv_analysis_forecast.py tests/test_fv_trajectory_contract.py tests/test_fv_minmod_matrix_free_probe.py tests/test_fv_scaled_research_case.py",
+  "pytest_result": "57 passed, 18 existing warnings",
+  "python": "3.12.13",
+  "sha256": {
+    "examples/weather_scenarios/fv_multilead_research_case.py": "a7d6e81b00db03f713bfa5d1294d6aa4c85a1255c7695b42144c99c815221c7a",
+    "graphify-out/fv-root-cause-20260919/multilead_tests.log": "c153b7adfffe4d139bffe78a19e84c96eef45b456db360eee481e6e7e7c68e3b",
+    "graphify-out/fv-root-cause-20260919/multilead_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "src/advar/fv_research_problem.py": "37ba653a4af3fd544117f6a2da05a6d7c08d3c8cf3618c1b7f9dc03097a03687",
+    "tests/test_fv_research_multilead.py": "02609cb88d6cfdb4fdc0b4904fd627c5707b88ec9b1cb54c41bbaf8c1f0df7b2"
+  },
+  "torch": "2.13.0",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python src/advar/fv_research_problem.py examples/weather_scenarios/fv_multilead_research_case.py tests/test_fv_research_multilead.py",
+  "typecheck_result": "0 errors, 0 warnings, 0 notes"
+}
