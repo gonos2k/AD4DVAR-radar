@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6813,
-    "edges": 65346,
-    "communities": 242,
+    "nodes": 6835,
+    "edges": 65390,
+    "communities": 249,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -349,7 +349,32 @@
     "compatibility": "samearchivedinputs+verification;J/E,c/pgrads,oneHVP perprofile differences0;signaturespreserved;fixedprofilecountgatesmaintained",
     "validation": "158affectedtests,18existingwarnings;typecheck0;noGN/refine/response/reanalysisrun",
     "record": "COMMON_FV_PROBLEM_REVIEW.md",
-    "next": "FV86_REANALYSIS_PLAN.md;20min2GiBproposed,approvalpending",
+    "next": "FV86_REANALYSIS_PLAN.md executed with separate approval; scoped R3/R6 closed; see PR174_REVIEW_RESOLUTION.md for remaining axes",
     "scope": "collocateddBZ,fullsupport,regular3observations+1forecast;notarbitraryH/masks/covariance/time"
+  },
+  "fv86_reanalysis": {
+    "approval": "2026-09-24 15:30JST go;1200s2GiB",
+    "scope": "seedA,middle-timeuniformbias only; notallparameters/finitepath",
+    "direction": "80ones atp80:160,thetazero",
+    "passed_h": [
+      0.00025,
+      0.000125
+    ],
+    "relative_errors": [
+      3.266414026801453e-07,
+      8.164626490557197e-08
+    ],
+    "refused_predictor_h": [
+      0.001,
+      0.0005
+    ],
+    "wall_seconds": 309.2733410419896,
+    "sampled_peak_rss_bytes": 351141888,
+    "nonlinear_reanalyses": 4,
+    "record": "FV86_REANALYSIS_RESULTS.md",
+    "checklist": "PR174_REVIEW_RESOLUTION.md",
+    "closed": "R3,R6 in declaredlocaldirection scope",
+    "remaining": "R10-R16 and broader scope remain per checklist",
+    "verification": "167 affectedtests,18existingwarnings,typecheck0,GREEN/REDscopedsignoff"
   }
 }

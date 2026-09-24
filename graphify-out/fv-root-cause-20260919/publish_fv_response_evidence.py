@@ -471,12 +471,43 @@ def _fv86_panel():
         '<section id="fv86Execution"><h3>8×10 · 86제어 이산 실행</h3>'
         '<p>같은 물리영역의 더 큰 이산 문제에서 두 초기값을 사전에 정해 GN→보정→전체 민감도를 실행했습니다. '
         '241개 파라미터와 108개 RK 단계, 고정된 합성 검증장을 사용합니다.</p>'
-        '<table style="border-spacing:12px 6px"><tr><th>초기값</th><th>실행</th><th>수치 적격성</th><th>재분석 대조</th><th>최종 최대 gradient</th><th>실제 수반 상대잔차</th><th>프로세스 시간</th></tr>'
+        '<table style="border-spacing:12px 6px"><tr><th>초기값</th><th>실행</th><th>수치 적격성</th><th>당시 재분석 대조</th><th>최종 최대 gradient</th><th>실제 수반 상대잔차</th><th>프로세스 시간</th></tr>'
         f'{"".join(rows)}</table>'
         f'<p>적격 응답 {data["eligible_count"]}/{data["declared_case_count"]}. '
         '재분석 차분 검증률은 미측정입니다. 동일 물리·통계 역문제의 격자 수렴, 일반 FSOI, 예측 skill 인증은 아닙니다.</p>'
         '<p><a href="../../graphify-out/fv-root-cause-20260919/FV_86_CONTROL_RESULTS.md">전체 결과·거부 분류·자원 기록</a> · '
         '<a href="../../graphify-out/fv-root-cause-20260919/COMMON_FV_PROBLEM_REVIEW.md">종료 상태 분리·공통 문제 정의</a></p></section>'
+    )
+
+
+def _fv86_reanalysis_panel():
+    path = HERE / 'fv86_reanalysis.json'
+    resource_path = HERE / 'fv86_reanalysis.resource.json'
+    if not path.exists():
+        return ''
+    if (hashlib.sha256(path.read_bytes()).hexdigest() != 'c80282301138ccae67ce49b86c1d1f2dcc88bc8a144b571eecbe23904ed5a302'
+            or hashlib.sha256(resource_path.read_bytes()).hexdigest() != '6e2390059134e0a5a04889e72d14e98ea43042d38a154361281202aaf3af58c2'):
+        raise SystemExit('FV86 reanalysis archive mismatch')
+    data = json.loads(path.read_text())
+    resource = json.loads(resource_path.read_text())
+    if (resource['exit_code'] != 0 or resource['resource_termination'] is not None
+            or data['phase'] != 'finished' or not data['source_unchanged']
+            or data['response_validation'] != 'passed'):
+        raise SystemExit('FV86 reanalysis did not finish with validated local pairs')
+    rows = []
+    for pair in data['pairs']:
+        error = f'{pair["relative_error"]:.3e}' if pair['valid_pair'] else '예측점 분기 거부'
+        rows.append(f'<tr><td>{pair["h"]:.6g}</td><td>{error}</td></tr>')
+    return (
+        '<section id="fv86Reanalysis"><h3>86제어 · 중간 시각 편향의 국소 재분석 대조</h3>'
+        '<p>저장된 seed A 정상점에서 한 방향을 검사했습니다. 양·음 관측을 실제로 바꾸고 '
+        '각 정상점을 다시 보정한 결과입니다.</p>'
+        '<table style="border-spacing:12px 6px"><tr><th>h (dBZ)</th><th>수반 대비 상대차이 / 거부</th></tr>'
+        f'{"".join(rows)}</table>'
+        '<p>두 연속 크기가 상대오차 1e-4 기준을 통과했습니다. 큰 두 크기는 예측점에서 거부됐으며, '
+        '그 크기에서 정상점이 없다는 뜻은 아닙니다. 전체 241방향·유한 경로·실자료 예측 검증은 아닙니다.</p>'
+        '<p><a href="../../graphify-out/fv-root-cause-20260919/FV86_REANALYSIS_RESULTS.md">끝점·분기·자원 증거</a> · '
+        '<a href="../../graphify-out/fv-root-cause-20260919/PR174_REVIEW_RESOLUTION.md">지적사항 체크리스트</a></p></section>'
     )
 
 
@@ -689,6 +720,7 @@ def _panel(report, scale, central):
       {_current_gn_panel()}
       {_matrix_free_refinement_panel()}
       {_fv86_panel()}
+      {_fv86_reanalysis_panel()}
       <p><a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.json">최종 응답 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.pt">응답 tensor</a>{central_link} · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg">민감도 −20분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg">−10분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg">0분</a></p>
     </div>
   </details>

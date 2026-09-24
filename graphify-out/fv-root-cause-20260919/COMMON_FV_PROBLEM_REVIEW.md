@@ -121,3 +121,7 @@ LLM extraction was used. Full CPU/package regression remains unrun.
 Aside desktop DOM and screenshot (`common_problem_desktop.png`) confirm the
 separate execution/numerical/reanalysis columns and the review link. Original
 animation frame-data hashes are unchanged. No new mobile check was performed.
+
+Subsequent approved execution: the proposed local 86-control reanalysis was
+performed and passed two local sizes for the seed-A middle-time direction. See
+FV86_REANALYSIS_RESULTS.md and the scoped closures in PR174_REVIEW_RESOLUTION.md.
