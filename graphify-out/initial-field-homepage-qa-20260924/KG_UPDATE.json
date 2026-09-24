@@ -1,0 +1,10 @@
+{
+  "case": "initial_field_lab homepage local QA",
+  "source": "QA.md",
+  "baseline": "origin/main 53a36a5",
+  "browser": "Aside desktop 1440px, local Chrome mobile 390px",
+  "verified": "real local API/canvas/controls/A-B/error-retry; Python 10 and Node UI 3 tests passed",
+  "fixes": "same-lead A/B client guidance, stale-setting status and in-flight input freeze, narrow-screen missing-key layout, A/B label punctuation",
+  "limits": "synthetic P0 only; no independent radar forecast skill, touch or full accessibility/browser matrix",
+  "graphify": "code-only incremental update: 7038 nodes, 65792 edges, 258 communities; no semantic LLM extraction"
+}

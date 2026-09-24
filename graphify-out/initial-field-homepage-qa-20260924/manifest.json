@@ -1,0 +1,41 @@
+{
+  "aside_session": "IHPDpe3CJBA4FFe5",
+  "base_head": "53a36a558ebe16db46598e9b5e1cc0dfcc899d7f",
+  "checks": {
+    "aside_desktop": "initial load, controls, A/B, error/retry passed",
+    "green_review": "no actionable defect",
+    "http_routes": 14,
+    "mobile_chrome_390px": "legend wrapping fixed; before/after screenshots",
+    "node_tests_passed": 3,
+    "python_tests_passed": 10,
+    "red_review": "no P1/P2 regression"
+  },
+  "commands": [
+    ".venv/bin/python -m pytest -q tests/test_initial_field_lab.py",
+    "node --test tests/test_initial_field_lab_ui.cjs",
+    "node --check examples/initial_field_lab/app.js",
+    "npx --yes playwright screenshot --channel chrome --viewport-size \"390,844\" --full-page --wait-for-timeout 800 http://127.0.0.1:8766/ output/playwright/initial-field-mobile-after.png",
+    ".venv/bin/python graphify-out/initial-field-homepage-qa-20260924/http_checks.py > graphify-out/initial-field-homepage-qa-20260924/http-checks.json"
+  ],
+  "graphify": "code-only incremental update: 7038 nodes, 65792 edges, 258 communities; no semantic LLM extraction",
+  "python": "3.12.13",
+  "scope": "fixed synthetic initial-field P0 homepage, real local backend/browser; no independent physical validation",
+  "sha256": {
+    "examples/initial_field_lab/app.js": "27046bd1e6121bdb5f0ea272b4a55521c65619e75f84239cc6091a2cd376899a",
+    "examples/initial_field_lab/index.html": "f698b6bed77e3af4cc76b9c139cc0b5356350a8115b134ea122a36a51e804dad",
+    "examples/initial_field_lab/server.py": "dbdebeb08b2cdd3bac20051b217c093a36dee2bb939ec82338868454a512185f",
+    "examples/initial_field_lab/styles.css": "8c8a4dfb0f3b62ad6d53af0e16b44c139f9e86dd21ebbfbe50bae52ab50de7c6",
+    "graphify-out/initial-field-homepage-qa-20260924/CHECKLIST.md": "839f07720274629b64edfbc5e21fb6274ea8ef0fb0521c65ca7947c951764202",
+    "graphify-out/initial-field-homepage-qa-20260924/KG_UPDATE.json": "6b54cd07ece3bddc662f63d17a1e9cbda6cdb67c9be890d5eede287d0a77ce25",
+    "graphify-out/initial-field-homepage-qa-20260924/QA.md": "2bb9488a7619ee4c28cfe1b4d5ae93d3967ff31491be5bc846b8204efa98eded",
+    "graphify-out/initial-field-homepage-qa-20260924/backend-tests.log": "a0375c2667ab6e901a97b89c459ef8dea37c08fee5730cbe3090ea86d05a278e",
+    "graphify-out/initial-field-homepage-qa-20260924/http-checks.json": "30f56324595d3f99f30e9e7cfdc076136746948c827071629896a93a9f65edf9",
+    "graphify-out/initial-field-homepage-qa-20260924/http_checks.py": "27e1315571071fdf0835cf41bfd8c9ac24ecb693fc6db35540dca0fff1f2ace4",
+    "graphify-out/initial-field-homepage-qa-20260924/mobile-after.png": "08f41f1af0fff96f829a3d8fa0211878f718d7ae249caad97486abc6f730244c",
+    "graphify-out/initial-field-homepage-qa-20260924/mobile-before.png": "a7254d73f90745c2b036b9960511a98f515a64322a4bcbbcdd393420e7f88a2e",
+    "graphify-out/initial-field-homepage-qa-20260924/ui-tests.log": "9a69e9ee89ef1f228a7852309cad40bafa07bd863ae3b9a56c78312ee9f7282b",
+    "tests/test_initial_field_lab.py": "2532218cdcd6e5fbc83c37c2cf808dc3363156ab7ee08c68376227294d290195",
+    "tests/test_initial_field_lab_ui.cjs": "13e09bc10574a85991c568ed545ecd4f5c4a104ace760b5b9e7287c721537dff"
+  },
+  "url": "http://127.0.0.1:8766/"
+}
