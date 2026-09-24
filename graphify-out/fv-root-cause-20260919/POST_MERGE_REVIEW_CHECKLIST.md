@@ -296,7 +296,12 @@ changes the numerical refiner, not the objective, observation contract or gates.
   verification times and observed refusal of strict response eligibility
   (G6a, `FV_LONG_HORIZON_RESEARCH.md`).
 - [ ] Irregular observation times, evolving future flow/growth/boundaries and
-  long-horizon response remain G6 work. Bind response validation to
-  point/direction/units and check rescaling invariance (G7).
+  long-horizon response remain G6 work.
+- [x] G7 analytic coordinate/objective rescaling invariance and the existing
+  86/241 toy probe's identity/branch/direction/local-step recording contract
+  (`FV_RESPONSE_UNITS_SCOPE.md`).
+- [ ] G7 new FV profiles still need a qualified stationary response and
+  signed endpoints; cross-profile units/conditioning and a versioned general
+  tensor identity are separate unfinished contracts.
 - [ ] Broader support/refusal accounting, concurrent diagnostics and independent
   physical/finite-impact validation (G8/G9/G10).
