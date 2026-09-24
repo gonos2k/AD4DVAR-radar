@@ -530,5 +530,14 @@
     "validation": "18 affected accounting tests passed,pinned typecheck0;historical manifests/raw FV86 hashes checked before classification",
     "graphify": "code-only incremental update:7057 nodes,65836 edges,222 communities; no semantic LLM extraction",
     "remaining": "prospective radar-condition matrix with frozen inputs and caps,all child exits/identities,independent response and physical validation"
+  },
+  "fv_minmod_stage_observer": {
+    "baseline": "main dff5f43 after retrospective G8 status accounting",
+    "issue": "strict branch and face-margin tracers replaced transport._euler_minmod process-globally; concurrent ordinary forecasts could execute a diagnostic wrapper or mix stage records",
+    "change": "ContextVar-scoped minmod stage observer with separate detached callback snapshots before unchanged tensor arithmetic; nested inner-then-outer callbacks; two research tracers no longer patch the module function",
+    "validation": "110 affected tests passed,18 existing warnings;core/new-test typecheck0;concurrent exact choices/face_signs,ordinary zero-face isolation,nested/mutation/exception cleanup",
+    "record": "FV_STAGE_OBSERVER_SCOPE.md",
+    "graphify": "code-only incremental update:7071 nodes,65855 edges,219 communities; no semantic LLM extraction",
+    "remaining": "PCG monitor alias patching remains process-global;async/service routing and concurrent solver diagnostics not yet certified"
   }
 }

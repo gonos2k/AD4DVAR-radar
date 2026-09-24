@@ -4,10 +4,12 @@ The module intentionally contains only local Cartesian-grid operations.  The
 caller owns the gauge used to construct ``psi`` and any time-step schedule.
 """
 
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 import math
 from numbers import Integral, Real
-from typing import Optional, Sequence, Tuple, cast
+from typing import Callable, Iterator, Optional, Sequence, Tuple, cast
 
 import torch
 from torch import Tensor
@@ -35,6 +37,37 @@ BoundarySchedule = Tuple[BoundaryStages, ...]
 _Edges = BoundaryEdges
 _BoundaryStages = BoundaryStages
 _SMALL_LOG_GROWTH = 0.125
+_MinmodStageObserver = Callable[[Tensor, Tensor, Tensor], None]
+_minmod_stage_observer: ContextVar[_MinmodStageObserver | None] = ContextVar(
+    "advar_minmod_stage_observer", default=None,
+)
+
+
+@contextmanager
+def observe_minmod_stages(observer: _MinmodStageObserver) -> Iterator[None]:
+    """Observe this call context's minmod stages without replacing model code.
+
+    Diagnostics receive detached copies and should run outside automatic
+    differentiation and checkpoint replay.
+    Nested observers run from innermost to outermost, matching the old serial
+    wrapper order while keeping each thread/task's collector separate.
+    """
+    if not callable(observer):
+        raise TypeError("minmod stage observer must be callable")
+    previous = _minmod_stage_observer.get()
+
+    def notify(q: Tensor, qx: Tensor, qy: Tensor) -> None:
+        # Each observer gets its own diagnostic copy; neither model state nor
+        # an enclosing observer can be changed by an inner callback.
+        observer(q.detach().clone(), qx.detach().clone(), qy.detach().clone())
+        if previous is not None:
+            previous(q, qx, qy)
+
+    token = _minmod_stage_observer.set(notify)
+    try:
+        yield
+    finally:
+        _minmod_stage_observer.reset(token)
 
 
 def _check_tensor(name: str, value: object, *, dtype: Optional[torch.dtype] = None) -> Tensor:
@@ -218,6 +251,10 @@ def _euler_minmod(
     area: Tensor,
 ) -> Tensor:
     """Advance one minmod-MUSCL Euler stage with supplied exterior traces."""
+
+    observer = _minmod_stage_observer.get()
+    if observer is not None:
+        observer(q, qx, qy)
 
     sx, sy = _muscl_slopes(q)
     left_face = q - 0.5 * sx

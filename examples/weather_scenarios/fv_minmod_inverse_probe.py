@@ -14,7 +14,6 @@ import json
 from pathlib import Path
 import platform
 import time
-from unittest.mock import patch
 
 import torch
 from advar import transport as t, variational as v
@@ -147,9 +146,8 @@ def inspect_branches(call):
     """
     stages = []
     face_signatures = []
-    original = t._euler_minmod
 
-    def inspect(q, qx, qy, *args):
+    def inspect(q, qx, qy):
         pairs = ((q[1:-1, 1:-1]-q[1:-1, :-2],
                   q[1:-1, 2:]-q[1:-1, 1:-1]),
                  (q[1:-1, 1:-1]-q[:-2, 1:-1],
@@ -191,9 +189,8 @@ def inspect_branches(call):
             "qx": torch.sign(qx).to(torch.int8).tolist(),
             "qy": torch.sign(qy).to(torch.int8).tolist(),
         })
-        return original(q, qx, qy, *args)
 
-    with patch.object(t, "_euler_minmod", inspect):
+    with t.observe_minmod_stages(inspect):
         call()
     if not stages:
         raise RuntimeError("no RK stages inspected")
