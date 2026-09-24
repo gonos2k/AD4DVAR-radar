@@ -269,7 +269,11 @@ changes the numerical refiner, not the objective, observation contract or gates.
   is closed for this nominal correction, while any solver
   policy change remains open and requires mathematical justification. See
   `FV_PARTIAL_BRANCH_GATE_DETAIL_RUN3_RESULTS.md`.
-- [ ] Maintain/decay/flat/zero-face forward and response classification (G4).
+- [x] Bounded maintain/decay/growth fixed-branch classification and zero-face/
+  flat forward-versus-response refusal (G4). See `FV_GROWTH_BRANCH_SCOPE.md`.
+- [ ] Structural-zero-face and broader flat/sensitive-zero response eligibility
+  require a separately defined requested-control-space proof and case matrix
+  (G4b); do not remove strict full-flow-control guards.
 - [ ] Non-collocated observation operator/error contract (G5).
 - [ ] Longer/irregular schedule and bound validation to point/direction/units
   (G6/G7).

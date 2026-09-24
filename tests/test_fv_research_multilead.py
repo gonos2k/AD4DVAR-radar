@@ -89,7 +89,8 @@ def test_multilead_contract_rejects_horizon_shape_and_schedule_mismatches(
             replace(problem, future_boundary_echo=problem.future_boundary_echo[:-1])
 
 
-def test_uniform_zero_face_trajectory_applies_growth_once_per_interval():
+@pytest.mark.parametrize("interval_growth", [-0.008, 0.0, 0.008])
+def test_uniform_zero_face_trajectory_applies_signed_growth_once_per_interval(interval_growth):
     dtype = torch.float64
     initial = torch.full((4, 5), 3.0, dtype=dtype)
     basis = torch.arange(5, dtype=dtype)[:, None].expand(5, 6).unsqueeze(0)
@@ -105,7 +106,7 @@ def test_uniform_zero_face_trajectory_applies_growth_once_per_interval():
         initial,
         torch.ones_like(initial),
         initial.new_zeros(1),
-        initial.new_tensor(0.008),
+        initial.new_tensor(interval_growth),
         psi_basis=basis,
         leads=2,
         substeps_per_interval=9,
@@ -118,8 +119,8 @@ def test_uniform_zero_face_trajectory_applies_growth_once_per_interval():
 
     torch.testing.assert_close(frames[0], initial, rtol=0, atol=0)
     torch.testing.assert_close(
-        frames[1], initial * torch.exp(initial.new_tensor(0.008)), rtol=0, atol=1e-12
+        frames[1], initial * torch.exp(initial.new_tensor(interval_growth)), rtol=0, atol=1e-12
     )
     torch.testing.assert_close(
-        frames[2], initial * torch.exp(initial.new_tensor(0.016)), rtol=0, atol=1e-12
+        frames[2], initial * torch.exp(initial.new_tensor(2 * interval_growth)), rtol=0, atol=1e-12
     )

@@ -5,6 +5,8 @@ from pathlib import Path
 import pytest
 import torch
 from advar import variational as v
+from advar.transport import BoundaryEdges, BoundarySchedule
+from examples.weather_scenarios import fv_multilead_research_case as multilead
 
 _spec = importlib.util.spec_from_file_location(
     "minmod_inverse_probe", Path(__file__).parents[1]
@@ -35,12 +37,78 @@ def test_joint_inverse_rejects_nominal_zero_controlled_flux():
         probe.inspect_branches(lambda: v.analysis_trajectory(control, frozen))
 
 
-def test_joint_inverse_rejects_controlled_zero_growth():
-    _, frozen, _, _ = probe.make_case()
-    control = v.initial_control(frozen)
-    control[-3:-1] = .1
-    with pytest.raises(ValueError, match="strict positive growth"):
-        probe.inspect_branches(lambda: v.analysis_trajectory(control, frozen))
+@pytest.mark.parametrize("growth_control", [-0.023187493904503132, 0.0, 0.023187493904503132])
+def test_joint_inverse_traces_decay_maintain_and_growth_on_smooth_branches(growth_control):
+    problem, _, control, parameters = multilead.make_case()
+    control = control.clone()
+    control[-1] = growth_control
+    direction = torch.zeros_like(control)
+    direction[-1] = 1
+    nominal, _ = problem.branch_check(control, parameters)
+    step = 1e-4
+    for endpoint in (control - step * direction, control + step * direction):
+        branch, _ = problem.branch_check(endpoint, parameters)
+        assert branch["choices"] == nominal["choices"]
+        assert branch["face_signs"] == nominal["face_signs"]
+    derivative = torch.func.jvp(
+        lambda value: problem.score(value, parameters),
+        (control,), (direction,),
+    )[1]
+    central = (
+        problem.score(control + step * direction, parameters)
+        - problem.score(control - step * direction, parameters)
+    ) / (2 * step)
+    torch.testing.assert_close(derivative, central, rtol=2e-6, atol=1e-9)
+
+
+def test_zero_growth_objective_hvp_has_two_sided_second_order_convergence():
+    problem, _, control, parameters = multilead.make_case()
+    control = control.clone()
+    control[-1] = 0
+    direction = torch.zeros_like(control)
+    direction[-1] = 1
+    gradient = torch.func.grad(problem.objective, argnums=0)
+    hvp = torch.func.jvp(lambda value: gradient(value, parameters),
+                         (control,), (direction,))[1]
+    errors = []
+    for step in (1e-4, 5e-5):
+        central = (
+            gradient(control + step * direction, parameters)
+            - gradient(control - step * direction, parameters)
+        ) / (2 * step)
+        errors.append(float((central - hvp).norm() / hvp.norm()))
+    assert errors[1] < 0.3 * errors[0]
+    assert errors[1] < 2e-7
+
+
+def test_flat_echo_is_forward_available_but_strict_local_response_is_refused():
+    observations, frozen, _, _ = probe.make_spatial_case()
+    spec = frozen.fv_transport
+    assert spec is not None
+    initial = observations.dbz.new_full((4, 5), 30.0)
+    edges: BoundaryEdges = (initial[:, 0], initial[:, -1], initial[0], initial[-1])
+    known: BoundaryEdges = (
+        torch.ones_like(edges[0]), torch.ones_like(edges[1]),
+        torch.ones_like(edges[2]), torch.ones_like(edges[3]),
+    )
+    boundary: BoundarySchedule = ((edges, edges),) * 9
+    support: BoundarySchedule = ((known, known),) * 9
+    coefficients = spec.coefficient_limits * initial.new_tensor([.7, -.6, .5, .4, -.3])
+
+    def trajectory():
+        return probe.t.finite_volume_trajectory(
+            initial, torch.ones_like(initial), coefficients, initial.new_zeros(()),
+            psi_basis=spec.psi_basis, leads=1, substeps_per_interval=9,
+            interval_seconds=60.0, spacing_yx=spec.spacing_yx,
+            boundary_echo=boundary, boundary_support=support, reconstruction="minmod",
+        )
+
+    frames, _ = trajectory()
+    assert bool(torch.isfinite(frames).all())
+    assert bool((frames >= 0).all())
+    torch.testing.assert_close(frames[-1], initial, rtol=0, atol=1e-12)
+    with pytest.raises(ValueError, match="strict smooth branch"):
+        probe.inspect_branches(trajectory)
 
 
 def test_joint_inverse_rejects_active_limiter_tie():
