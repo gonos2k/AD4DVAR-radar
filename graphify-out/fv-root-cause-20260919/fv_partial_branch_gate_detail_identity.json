@@ -2,11 +2,11 @@
   "attempt2_preflight_sha256": "d5e9b00558c9289a6bfa226900452ac056cbc02ff1a1c8b1711b1c665f3c2a7d",
   "attempt3_measured_preflight_sha256": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
   "authorization": "user autonomous checklist instruction 2026-09-24 19:02 JST; capped nominal-only investigation",
-  "current_preflight_sha256": "941c6fe73643f1868ba8e6b9267ec6a2011855d57eff377dd8ecd445d636fc16",
+  "current_preflight_sha256": "cb6bd434f1b580a420d2faf715db89dc366841a1469a75940739028afe8c4884",
   "detail_plan_sha256": "423407c51b8abc0b31bcb9e3126809b6ce2087c9cd1e4299c47740c245a5e147",
   "new_source_commit": "d7fab34402c578a3c6431918bbda0dc5e98a3349",
   "numerical_solver_runs_in_preparation": 0,
-  "postrun_status": "attempt3 completed/refused; current preflight validates later bookkeeping-only source",
+  "postrun_status": "PR181 signed-growth tracer integrated; current preflight rebound; no new numerical solve",
   "same_problem_and_inputs": {
     "common_bias_std_dbz": true,
     "missing_indices": true,

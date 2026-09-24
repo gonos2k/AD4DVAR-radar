@@ -449,5 +449,13 @@
     "record": "FV_GROWTH_BRANCH_SCOPE.md",
     "graphify": "code-only incremental update:6863 nodes,65437 edges,277 communities; no semantic LLM extraction",
     "remaining": "G4b structural-zero-face requested-control proof and broader state matrix; no new stationary adjoint/reanalysis or physical skill claim"
+  },
+  "partial_growth_integration": {
+    "baseline": "PR181 merged main781bc33; G3b draft merged that tree as aae82ed",
+    "source": "signed-growth tracer integrated; current no-solver preflight and validate-only rebound",
+    "fixed_input_comparison": "nine problem/input/warm-start/branch fields equal measured run3 preflight; historical raw reports unchanged",
+    "verification": "69 affected local tests passed,18 existing warnings; selected typecheck0; no numerical GN/refinement/adjoint/reanalysis rerun",
+    "record": "FV_PARTIAL_GROWTH_INTEGRATION.md",
+    "graphify": "code-only incremental update:6914 nodes,65540 edges,263 communities; no semantic LLM extraction"
   }
 }
