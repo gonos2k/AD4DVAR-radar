@@ -1,0 +1,28 @@
+{
+  "archive_manifest_sha256": "6d859284dbb737910e2a94252e37cf87322924cae2fa9e88381f9e29dd18a5a3",
+  "archive_source_scope": "preflight/source hashes and output manifest; child after-run preflight recheck pending",
+  "archived_child_sha256": "fd90ceba89aff7f657f415b936e285b71311cafb25f3eea8c1fc4a5d4a648782",
+  "execution_status": "nonzero_exit_without_resource_termination",
+  "finite_armijo_evaluations": 0,
+  "first_failing_branch_reasons": {
+    "face_flux_margin": 13,
+    "signature_changed": 3
+  },
+  "future_method_scope": "branch-aware nominal search would be a new separately validated numerical method",
+  "historical_failure_category": "face_flux_margin_refusal",
+  "numerical_status": "refused_by_declared_nominal_policy",
+  "plan_sha256": "e9567c04c631d99b25f1281c94cae592ab09a02fafc1c88b6e693cce123d1001",
+  "preflight_status": "completed",
+  "proof_of_stationary_root_absence": false,
+  "reason_count_scope": "first failed predicate; 13 face-margin candidates were not signature-tested",
+  "resource": {
+    "elapsed_seconds": 136.74595075001707,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 528,
+    "sampled_peak_rss_bytes": 344702976,
+    "wall_limit_seconds": 240
+  },
+  "response_computed": false,
+  "response_validation": "not_established",
+  "support_status": "unsupported_by_declared_nominal_policy"
+}

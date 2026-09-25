@@ -262,13 +262,15 @@ changes the numerical refiner, not the objective, observation contract or gates.
   backtracks were branch-policy refusals, with zero nonfinite/finite-Armijo
   refusals. See `FV_PARTIAL_REFINEMENT_DIAGNOSTIC_RUN2_RESULTS.md`. G3b response
   validation remains open.
-- [ ] Identify which branch gate refused the candidates, then justify any
-  nominal-search policy change separately from final-point response eligibility.
-  Run 3 quantified 3 first-failing signature checks and 13 first-failing
-  face-flux-margin checks (possible overlap); the first-failure gate identity
-  is closed for this nominal correction, while any solver
-  policy change remains open and requires mathematical justification. See
-  `FV_PARTIAL_BRANCH_GATE_DETAIL_RUN3_RESULTS.md`.
+- [x] Separate the two-hole case's process exit, resource status and
+  numerical refusal; retain the 3 first-failing signature and 13
+  first-failing face-margin reasons (possible overlap). The exact input is
+  intentionally unsupported by the current fixed-branch correction policy,
+  with no sensitivity issued (`FV_PARTIAL_POLICY_DECISION_RESULTS.md`).
+- [ ] A new cross-sector nominal-search method and final stationary
+  response for the same two-hole input require separate mathematical
+  justification and signed endpoint validation. The current refusal
+  does not prove root absence.
 - [x] Bounded maintain/decay/growth fixed-branch classification and zero-face/
   flat forward-versus-response refusal (G4). See `FV_GROWTH_BRANCH_SCOPE.md`.
 - [x] At zero-flow control, prove every face of the supported 4×5/8×10
