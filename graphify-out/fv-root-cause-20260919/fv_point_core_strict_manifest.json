@@ -1,0 +1,27 @@
+{
+  "base_head": "05783e4649d78ae594ba68fd8a5aea3771e97eef",
+  "checks": {
+    "adjoint_runs": 0,
+    "focused_tests_passed": 17,
+    "nonlinear_endpoint_reanalyses": 0,
+    "stationary_roots": 0,
+    "typecheck_errors": 0
+  },
+  "scope": "one core-strict fixed-signature root-only refusal; no response",
+  "sha256": {
+    "examples/weather_scenarios/fv_point_core_strict_root_probe.py": "68ceaf5e78c5b58cb0449f60e9b6d41ba989f13df9d03ceaf20f7d2df0013ace",
+    "examples/weather_scenarios/fv_point_core_strict_root_runner.py": "537ca5f178e297644fc41b3e3e2d4b2341af7b4130bfb8d4ebfbcadbcb3ccd99",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "7bf65b22da1a3f02b89386c5c9380d1dbafa64c51c0f516f8baa9999d963a946",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_CORE_STRICT_ROOT_ATTEMPT1_RESULTS.md": "dbd7722fa74947ffd6c4a5fac17f972bd1df360e87140e2b74e1d2d90b932af6",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_CORE_STRICT_ROOT_PLAN.md": "e2e0c49e1f59e05432bd127c33211d2f8d95532cd9560088203a8255958678d7",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "599ead798d6b07f81f3a4fb3027133a07eea9e6ec05606f5b4d3243d859ca46c",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "5d8a22e2d99c6ea78f850b5bb6b493ac9d7486575912f3b5c3ac472f4e14aea4",
+    "graphify-out/fv-root-cause-20260919/fv_point_core_strict_graphify.log": "8d408427cb5f80e39b36cb924d84083cbb67a0d4ac3b3e59dba7a607e82508bd",
+    "graphify-out/fv-root-cause-20260919/fv_point_core_strict_tests.log": "580688cb1ffbcd40e0b9e1d5745009dd0f57eaaf2613d95a11ccacc5abdee76c",
+    "graphify-out/fv-root-cause-20260919/fv_point_core_strict_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/point_core_strict_root_attempt1/manifest.json": "8fa2d880b209ee9f7ef7da254f39948eda2c8a820b33933fbec533b4e7428817",
+    "tests/test_fv_point_core_strict_root.py": "89aea5f484c3e107786420820d8b40d34984eed0760548712188b18fcb9cc104"
+  },
+  "tests_command": ".venv/bin/python -m pytest -q tests/test_fv_point_core_strict_root.py",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python examples/weather_scenarios/fv_point_core_strict_root_probe.py examples/weather_scenarios/fv_point_core_strict_root_runner.py tests/test_fv_point_core_strict_root.py"
+}

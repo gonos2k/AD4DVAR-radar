@@ -351,7 +351,8 @@ changes the numerical refiner, not the objective, observation contract or gates.
   preflight (`PR177_195_REVIEW_RESOLUTION.md`, R2).
 - [x] Preserve separate numerical refusals: non-SPD warm Newton, strict
   search margin at attempt 1, 100-step exploration budget at attempt 2,
-  and iteration-4 fixed-branch Newton refusal from the locked last point.
+  iteration-4 fixed-margin Newton refusal and iteration-5 same-signature
+  core-strict Newton refusal from the locked last point.
   None is a stationary response or evidence that a root does not exist.
 - [ ] Qualify a point-observation stationary root and then the fresh
   adjoint/full VJP plus signed endpoint reanalysis under its final branch.
