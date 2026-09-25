@@ -662,5 +662,17 @@
     "record": "FV_POINT_MISSING_CENTERED_RESPONSE_PLAN.md,FV_POINT_MISSING_CENTERED_RESPONSE_RESULTS.md,point_missing_centered_attempt1/manifest.json",
     "graphify": "code-only incremental update:7455 nodes,66615 edges,250 communities;no semantic LLM extraction",
     "status": "R3-M constructed one-missing profile closed;R3-Q fixed QC,R3-E one empty time,original R2-O,3-hour point sensitivity and physical validation remain open"
+  },
+  "fv_point_one_qc_centered_response": {
+    "baseline": "main 2dbb302 after PR201 constructed one-missing-point response",
+    "scope": "one externally QC-rejected status2 middle-time point with canonical inactive fill;11 of12 point rows detected,3x3 valid principal same-time correlation subset,complete 4x5 FV state/boundaries,fixed centered dynamics prior;no QC algorithm",
+    "nominal": "26-control gradient0,J0,H lambda_min0.9999999999997804/lambda_max3979.3772547945487,symmetry3.56641e-16,54-stage slope margin8.04648e-4 and face margin7.75273e-3",
+    "response": "full 13-component VJP;QC parameter5 direct/indirect/total gradient0 and objective/score/control-gradient payload mutation differences0;three active middle-time points bias direct0,total0.0016589920915979217,true adjoint residual9.12798e-14,tangent residual1.70263e-11",
+    "nonlinear_validation": "four signed actual endpoints h0.001/0.0005;each one Newton correction,gmax<1.874e-11,same strict signature/margins;relative errors2.30120e-5/5.75297e-6,matching status1 numerical values under identical active mask but distinct input identity",
+    "execution": "parent completed,child exit0,139.529s,520 sampled RSS observations,peak345882624B under600s/sampled1GiB cap;parent independently recomputed H/adjoint/VJP/tangent/inactive-slot and endpoint scores,gradients,branches",
+    "verification": "64 focused tests passed with18 existing TorchScript warnings,error-level basedpyright0;read-only status1/status2 parity script passed with identities distinct;GREEN/RED prelaunch GO;full CPU/package CI not run",
+    "record": "FV_POINT_QC_CENTERED_RESPONSE_PLAN.md,FV_POINT_QC_CENTERED_RESPONSE_RESULTS.md,point_qc_centered_attempt1/manifest.json",
+    "graphify": "code-only incremental update:7472 nodes,66641 edges,255 communities;no semantic LLM extraction",
+    "status": "R3-Q constructed one-QC-excluded profile closed;R3-E one empty time,original R2-O,3-hour point sensitivity,finite QC-decision impact and physical validation remain open"
   }
 }

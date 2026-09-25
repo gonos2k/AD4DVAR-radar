@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_qc_centered_response_probe.py",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/point_qc_centered_attempt1/point_centered_response.json"
+  ],
+  "child_pid": 14275,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 139.52877083304338,
+  "sampled_peak_rss_bytes": 345882624,
+  "rss_samples": 520,
+  "wall_limit_seconds": 600,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}
