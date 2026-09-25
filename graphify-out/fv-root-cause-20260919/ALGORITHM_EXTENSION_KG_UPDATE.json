@@ -697,5 +697,16 @@
     "record": "FV_POINT_3H_FORWARD_PLAN.md,FV_POINT_3H_FORWARD_RESULTS.md,point_3h_forward_attempt1/manifest.json",
     "graphify": "code-only incremental update:7526 nodes,66730 edges,285 communities;no semantic LLM extraction",
     "status": "R5-F combined point/3-hour terminal forward closed for fixed same-operator case;R5-R strict branch/stationarity/adjoint/reanalysis and independent physical skill open"
+  },
+  "fv_partial_two_hole_policy_decision": {
+    "baseline": "main 44db339 after PR204 point/3-hour terminal forward",
+    "scope": "read-only classification of archived two-hole collocated partial FV attempt3 under unchanged fixed GN signature and face-margin nominal correction;no new FV solve",
+    "archived_process": "preflight exit0,numerical child exit1 without resource termination,136.74595075001707s,528 RSS samples,peak344702976B under240s/sampled1GiB cap;after-run preflight recheck remained pending",
+    "numerical_refusal": "Newton iteration4 all16 candidates rejected before finite Armijo evaluation;3 first-failing signature checks,13 first-failing face-margin <=1e-4 checks with possible overlap;no nominal root,tangent,adjoint or endpoints",
+    "support_decision": "exact input unsupported by current fixed-branch nominal correction,so response not issued;not a proof that stationary root does not exist or all partial observations are unsupported",
+    "verification": "seven read-only classification/mutation tests passed including output collision guard,error-level basedpyright0;archived six output hashes checked;no new FV test or full CPU/package CI",
+    "record": "FV_PARTIAL_POLICY_DECISION_PLAN.md,FV_PARTIAL_POLICY_DECISION_RESULTS.md,FV_PARTIAL_POLICY_DECISION.json; original run3 output manifest preserved",
+    "graphify": "code-only incremental update:7540 nodes,66748 edges,295 communities;no semantic LLM extraction",
+    "status": "R4-D support-policy choice closed;R4-R new cross-sector search/qualified response remains open"
   }
 }

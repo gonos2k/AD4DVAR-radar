@@ -13,7 +13,8 @@ reanalysis, and physical skill. Prior evidence remains in
 | R3-M | One missing point needs a stationary response | Under complete model state/boundaries, bind status 1 and a selected correlation submatrix to a qualified point root, full VJP, inactive-slot check and signed endpoints | **Closed for the constructed fixed-centered-prior profile with one middle-time point missing.** Full 13-vector and two signed pairs passed; see `FV_POINT_MISSING_CENTERED_RESPONSE_RESULTS.md` |
 | R3-Q | QC-excluded point profile needs a stationary response | Keep external QC status distinct from missing and clear sky; qualify a fixed-mask root, full VJP and signed endpoints | **Closed for the constructed status-2 external-QC profile.** Full VJP, zero inactive slot and two signed pairs passed; numerics match R3-M under the same active mask, while identity differs. See `FV_POINT_QC_CENTERED_RESPONSE_RESULTS.md` |
 | R3-E | One wholly empty observation time needs a stationary response | Preserve time integration and external background while qualifying root, VJP and signed endpoints | **Closed for the constructed exactly-one-empty-first-time profile.** Four inactive first-time slots, nonzero theta path, full VJP and two signed pairs passed; see `FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_RESULTS.md` |
-| R4 | Two-hole collocated partial problem refuses final Newton correction | Keep the three original refusals; choose and predeclare a branch-aware nominal search policy separately from final-point local eligibility, then validate any new root and signed response | Open; no claim that a stationary point is absent |
+| R4-D | Two-hole collocated partial refusal needs a support decision | Preserve three original attempts, separate process exit/resource/numerical status, and choose current refusal or a newly justified sector-aware search without relaxing final response gates | **Closed as explicit current-policy refusal for this exact input.** Archived attempt-3 first-failure counts 3 signature / 13 face-margin are source/output-hash bound; no sensitivity issued. See `FV_PARTIAL_POLICY_DECISION_RESULTS.md` |
+| R4-R | Qualified response for the original two-hole collocated case | Only a separately declared branch-aware numerical method and fresh final stationary branch/adjoint/signed endpoints could establish it | Open research target; current policy refusal does not prove root absence |
 | R5-F | Point observations and 3-hour leads need a combined forward path | Preserve the one-lead reference and use a regular 18-lead terminal score with matching point observation, boundary/time and resource contracts | **Closed for one fixed same-operator 4×5 forward case.** Point observations and 18-lead terminal FV field pass; strict branch refuses, so no long response. See `FV_POINT_3H_FORWARD_RESULTS.md` |
 | R5-R | Point-observation 3-hour stationary response | Obtain a qualified long-horizon branch and stationary analysis, then full adjoint/VJP and signed endpoints without changing the time/score contract | Open; R5-F proves forward execution only |
 | R6 | General observation products remain unsupported | Bind product-defined footprint/coordinate, censoring/QC provenance and covariance semantics separately; do not infer physical measurements from prepared synthetic masks | Open; needs a declared product contract |
@@ -119,3 +120,19 @@ historical numerical reports; new attempts must have distinct records.
 - [ ] Establish a strict long-horizon branch and eligible stationary
   response separately. This run's strict branch refused before an
   admitted stage, and no adjoint or nonlinear reanalysis was run.
+
+## R4 original two-hole collocated partial input
+
+- [x] Preserve the three earlier bounded attempts; the third raw report
+  and six output hashes show child exit 1 without resource termination,
+  16 branch-policy refusals before any finite Armijo trial, and no
+  nominal root or response. The 3 signature and 13 face-margin counts
+  are **first-failing** checks and may overlap.
+- [x] Declare this exact input unsupported by the current fixed
+  GN-signature/final-margin nominal correction policy and return no
+  local sensitivity. Record process exit, resource completion,
+  numerical eligibility and response issuance separately
+  (`FV_PARTIAL_POLICY_DECISION_RESULTS.md`).
+- [ ] A cross-sector nominal search and valid response for this input
+  require a separate numerical method and final-point proof; none of
+  the archived refusals proves the inverse problem has no root.

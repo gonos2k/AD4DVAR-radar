@@ -1,0 +1,29 @@
+{
+  "base_head": "44db339443a2175047cdbb43496460408c23849d",
+  "classification_command": ".venv/bin/python examples/weather_scenarios/fv_partial_policy_decision.py --output graphify-out/fv-root-cause-20260919/FV_PARTIAL_POLICY_DECISION.json",
+  "numerical_solver_runs": 0,
+  "scope": "read-only support classification for original two-hole collocated input; no root/response claim",
+  "sha256": {
+    "examples/weather_scenarios/fv_partial_policy_decision.py": "4c92f8b72529e00f660207941dd74c57bbde369e090332a983f3237d52e107f6",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "225f9b4c5d8446f93a621ec81c640f9bf9806382d052afdcab212e5d911cd6ee",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_POLICY_DECISION.json": "24cddcc3f15170dd4d389c9c73f4055d8131582c48d521ce2c931a283ebbed81",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_POLICY_DECISION_PLAN.md": "e9567c04c631d99b25f1281c94cae592ab09a02fafc1c88b6e693cce123d1001",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_POLICY_DECISION_RESULTS.md": "5bca170a64913db441f737cb569e95112bcf3261abc835f4cbfdf5d4eafee2d5",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "786950e6741e81693299ea7d7f793ec53649052686f37119e6d4271eb2cf9b3e",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "e14e17e71ab5e5daa37f852cb59841762d0c3963ed2cf57d8df37ef58578c836",
+    "graphify-out/fv-root-cause-20260919/fv_partial_branch_gate_detail_run3_manifest.json": "6d859284dbb737910e2a94252e37cf87322924cae2fa9e88381f9e29dd18a5a3",
+    "graphify-out/fv-root-cause-20260919/fv_partial_policy_decision.log": "24cddcc3f15170dd4d389c9c73f4055d8131582c48d521ce2c931a283ebbed81",
+    "graphify-out/fv-root-cause-20260919/fv_partial_policy_decision_graphify.log": "8226ae2025123a6cdb9eb8c0486827ab18dc5e76215cf96fccbde148e1187467",
+    "graphify-out/fv-root-cause-20260919/fv_partial_policy_decision_tests.log": "15be9e29acfb9af509f76be546e214ba2e874086568562b11118d8a499c56aad",
+    "graphify-out/fv-root-cause-20260919/fv_partial_policy_decision_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/partial_branch_gate_detail_attempt3/fv_partial_reanalysis.json": "fd90ceba89aff7f657f415b936e285b71311cafb25f3eea8c1fc4a5d4a648782",
+    "graphify-out/fv-root-cause-20260919/partial_branch_gate_detail_attempt3/fv_partial_reanalysis.log": "198b732c78c4d78367f1f2e31df90bddf53cae10240f1cd66050eddc84edf4c8",
+    "graphify-out/fv-root-cause-20260919/partial_branch_gate_detail_attempt3/fv_partial_reanalysis.preflight.json": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
+    "graphify-out/fv-root-cause-20260919/partial_branch_gate_detail_attempt3/fv_partial_reanalysis.preflight.log": "ac7f31ba3b4f52217acaeae7fe7e4cc9dfcc6e694f29b95825c9b066d09b9e3b",
+    "graphify-out/fv-root-cause-20260919/partial_branch_gate_detail_attempt3/fv_partial_reanalysis.preflight.resource.json": "fd4cc8daa126b3321b7ba98307a61bcd1d48876f5d2b4d7b93678ade6a05b61f",
+    "graphify-out/fv-root-cause-20260919/partial_branch_gate_detail_attempt3/fv_partial_reanalysis.resource.json": "94e1a62bef4dc39294cdd124f58e00a9884aaf503ab09c8a2fcd66aad7b47823",
+    "tests/test_fv_partial_policy_decision.py": "7f76f5329cee9eeacaf6653406ef621ef02db1d4b40cd46bf355ed444f389ee5"
+  },
+  "test_command": ".venv/bin/python -m pytest tests/test_fv_partial_policy_decision.py -q",
+  "typecheck_command": "uvx --from basedpyright basedpyright --level error examples/weather_scenarios/fv_partial_policy_decision.py tests/test_fv_partial_policy_decision.py"
+}
