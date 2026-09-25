@@ -1,0 +1,33 @@
+{
+  "affected_test_command": ".venv/bin/python -m pytest tests/test_local_refinement.py tests/test_local_response.py tests/test_matrix_free.py tests/test_fv_analysis_response.py tests/test_fv_point_basin_search.py tests/test_fv_point_terminal_newton.py tests/test_fv_point_core_strict_root.py tests/test_fv_point_sector_policy.py tests/test_fv_point_sector_root.py -q",
+  "base_head": "78005c2b815f373834621654a62df9f40b99eb25",
+  "focused_test_command": ".venv/bin/python -m pytest tests/test_local_refinement.py tests/test_fv_point_sector_policy.py tests/test_fv_point_sector_root.py -q",
+  "numerical_run_command": ".venv/bin/python examples/weather_scenarios/fv_point_sector_root_runner.py --directory graphify-out/fv-root-cause-20260919/point_sector_root_attempt1",
+  "scope": "bounded sector-root refusal evidence; no stationary response or nonlinear reanalysis",
+  "sha256": {
+    "examples/weather_scenarios/fv_point_sector_policy.py": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+    "examples/weather_scenarios/fv_point_sector_root_probe.py": "51223d8c07bb9b5d10ea42a5f7e0b639b5d01e057422c895b7fc5cf0f071d2fd",
+    "examples/weather_scenarios/fv_point_sector_root_runner.py": "28c02256e1588798d3d8c282c01e4ab43e4137fd50a71cd9f7b66c8c4ea949f7",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "4039a39bcff83877e7b0be366bcaa6188258a06a468c87c0e57917f19d715b62",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_SECTOR_ROOT_ATTEMPT1_RESULTS.md": "68158ea7b3276cce964d95c743d46d91592ab6c876a32eff541f22ce9e211c6f",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_SECTOR_ROOT_PLAN.md": "79495279024f2140a91885f615e718a77b9f372a03f3233d9ebabf7293679eac",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "03ca618fbe225f6a513383a05bf88f51a06311f936157d75d96d1307f512844c",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "e4f79a4c1af4d24e36b4e461094d9ddb1dda5e0cbb470730152c6f91642a7f1f",
+    "graphify-out/fv-root-cause-20260919/fv_point_sector_affected_tests.log": "65c45caf81c36171740956a6e484b830202ff43dcdd00c2206088e0067f0477e",
+    "graphify-out/fv-root-cause-20260919/fv_point_sector_final_tests.log": "f91ea140ab216ac888af8bfca1ac1771b6d12e4436a5674f47783b4953fe773e",
+    "graphify-out/fv-root-cause-20260919/fv_point_sector_final_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/fv_point_sector_graphify.log": "c9941883acb5136526ef7828b4e243ff3d8bf28048aa89efe881446d3723bf4c",
+    "graphify-out/fv-root-cause-20260919/point_sector_root_attempt1/manifest.json": "88926d99730f75f6d6a9341046f883391525b76cd0576b71faf0af0a64a3de34",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "tests/test_fv_analysis_response.py": "b8e67133c492923afcc27304dcec924e9417ec4b7af8b0aa53e29c5bea2880f5",
+    "tests/test_fv_point_basin_search.py": "e47d2625741b7705d3d564a8190769e1bfb1917c1e47f601fc221c009709bfc3",
+    "tests/test_fv_point_core_strict_root.py": "89aea5f484c3e107786420820d8b40d34984eed0760548712188b18fcb9cc104",
+    "tests/test_fv_point_sector_policy.py": "35fb269429f1f73e198892206ce62bbb827854dae704bbf294f97e92bcff44c7",
+    "tests/test_fv_point_sector_root.py": "49c2f35b24274072ef51930165e735d74b18f5c6425fad5c3f405c112860eaa2",
+    "tests/test_fv_point_terminal_newton.py": "1c58a9013477f92ebdeb20d3bdfeafe3dd7429be624d31c10fd65843a38baa8e",
+    "tests/test_local_refinement.py": "a99e8eebdb4e65c92d9fc281cd0564cf1b87bffc2b7c1923827d4311faf32bbb",
+    "tests/test_local_response.py": "7d22fb342f2e3a5add43db54e42bff5e4cff892d95d450b7382d68ea9097fecc",
+    "tests/test_matrix_free.py": "fa71ecc5af3e0496ca38b1b99a2373cda779300941e85bbe71eb21720e9ec013"
+  },
+  "typecheck_command": "uvx --from basedpyright basedpyright --level error src/advar/local_refinement.py examples/weather_scenarios/fv_point_sector_policy.py examples/weather_scenarios/fv_point_sector_root_probe.py examples/weather_scenarios/fv_point_sector_root_runner.py"
+}

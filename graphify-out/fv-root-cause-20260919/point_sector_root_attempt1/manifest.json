@@ -1,0 +1,17 @@
+{
+  "sha256": {
+    "FV_POINT_SECTOR_ROOT_ATTEMPT1_RESULTS.md.txt": "68158ea7b3276cce964d95c743d46d91592ab6c876a32eff541f22ce9e211c6f",
+    "FV_POINT_SECTOR_ROOT_PLAN.md.txt": "79495279024f2140a91885f615e718a77b9f372a03f3233d9ebabf7293679eac",
+    "fv_point_sector_affected_tests.log.txt": "65c45caf81c36171740956a6e484b830202ff43dcdd00c2206088e0067f0477e",
+    "fv_point_sector_final_tests.log.txt": "f91ea140ab216ac888af8bfca1ac1771b6d12e4436a5674f47783b4953fe773e",
+    "fv_point_sector_final_typecheck.log.txt": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "fv_point_sector_policy.py.txt": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+    "fv_point_sector_root_probe.py.txt": "51223d8c07bb9b5d10ea42a5f7e0b639b5d01e057422c895b7fc5cf0f071d2fd",
+    "fv_point_sector_root_runner.py.txt": "28c02256e1588798d3d8c282c01e4ab43e4137fd50a71cd9f7b66c8c4ea949f7",
+    "local_refinement.py.txt": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "point_sector_root.json": "c32d148cd08523661f4838ceebd518f57c26e6b92f0ebcf25d6493a4c1658aab",
+    "point_sector_root.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "point_sector_root.resource.json": "148e7bbc70507cc45938c5fe46b87a8246df9008ac44093d2bae67c676050fc1",
+    "point_sector_root.run.json": "e58d9b4b093fd82e6defb4e1e9ccd8cd3694e9b12361db03ccbd350b9c02a015"
+  }
+}

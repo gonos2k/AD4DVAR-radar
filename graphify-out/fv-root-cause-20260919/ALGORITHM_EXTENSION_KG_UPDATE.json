@@ -613,5 +613,17 @@
     "graphify": "code-only incremental update:7299 nodes,66264 edges,286 communities; no semantic LLM extraction",
     "status": "no stationary root found;no adjoint,signed endpoints or physical validation;response_validation not_performed",
     "remaining": "separately declared branch-adaptive search with actual objective/residual acceptance and relinearization,then final exact root/response/signed endpoints"
+  },
+  "fv_point_sector_root_refusal": {
+    "baseline": "main 78005c2 after PR197 core-strict fixed-signature root diagnostic",
+    "scope": "one pinned correlated 4x5 point root attempt; full-signature switches admitted only by actual J, half-squared-gradient norm and maximum-gradient decreases; fresh HVP/PCG after acceptance; no adjoint or reanalysis",
+    "numerics": "seed 26-column H SPD lambda_min0.694273/max4453.221; seven PCGs converged; two switched and four same-signature Newton steps accepted; J to0.0010782540255775742 and gmax .01080526397720594 to .006432750851827679",
+    "refusal": "Newton iteration7 all16 changed-signature candidates failed the declared triple-decrease policy; smallest scale3.0517578125e-5 lowered gradient merit but increased J by3.81511547613983e-11 and gmax by1.7041841533539659e-6; no stationary root established",
+    "execution": "parent completed with scientific sector_refused, child exit2,170.382s,641 RSS samples,peak362954752B under600s/sampled1GiB cap; no resource termination or monitor error",
+    "verification": "48 focused tests and 132 affected tests plus two subtests passed,18 existing warnings; error-level basedpyright0;13-entry raw/snapshot SHA256 manifest verified; GREEN/RED prelaunch GO",
+    "record": "FV_POINT_SECTOR_ROOT_PLAN.md,FV_POINT_SECTOR_ROOT_ATTEMPT1_RESULTS.md,point_sector_root_attempt1/manifest.json",
+    "graphify": "code-only incremental update:7346 nodes,66353 edges,314 communities; no semantic LLM extraction",
+    "status": "R2 remains open; response_validation not_performed; no adjoint,signed endpoints or physical validation",
+    "remaining": "a separately declared policy must find a fresh branch/margin/curvature-qualified root before adjoint/full VJP and two signed nonlinear reanalysis pairs"
   }
 }
