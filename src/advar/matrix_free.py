@@ -303,19 +303,30 @@ def observe_pcg_calls(factory: _PCGObserverFactory) -> Iterator[None]:
     """Scope a trusted diagnostic PCG wrapper to the current call context.
 
     The wrapper must call its supplied original solve without changing the
-    operator, inputs or result. Nested wrappers run innermost first.
+    operator, inputs or result. Nested wrappers run innermost first. An
+    inherited task cannot invoke this wrapper after the scope exits.
     """
     if not callable(factory):
         raise TypeError("PCG observer factory must be callable")
     previous = _pcg_observer_factory.get()
+    active = True
 
     def combined(original: _PCGCallable) -> _PCGCallable:
-        return factory(previous(original) if previous is not None else original)
+        solve = previous(original) if previous is not None else original
+        if not active:
+            return solve
+        observed = factory(solve)
+
+        def within_scope(*args, **kwargs) -> PCGResult:
+            return (observed if active else solve)(*args, **kwargs)
+
+        return within_scope
 
     token = _pcg_observer_factory.set(combined)
     try:
         yield
     finally:
+        active = False
         _pcg_observer_factory.reset(token)
 
 

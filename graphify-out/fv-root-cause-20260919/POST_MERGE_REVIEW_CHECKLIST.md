@@ -325,8 +325,13 @@ changes the numerical refiner, not the objective, observation contract or gates.
   processes with distinct monitored PIDs, overlapping actual HVP calls,
   unchanged input/source/archive identities, strict branch and residual gates,
   and archived-value parity (`FV_PROCESS_ISOLATED_RESPONSE_RESULTS.md`).
+- [x] G9 asyncio task-local diagnostic ownership: sibling tasks retain their
+  own stage/PCG records, and delayed inherited task/`to_thread` calls that
+  start after scope exit cannot append to that collector. In-flight callbacks
+  still require completion before report publication. See
+  `FV_ASYNC_OBSERVER_SCOPE.md`.
 - [ ] Full concurrent GN/refinement, in-process simultaneous forward-AD
-  response, async/service context ownership and general input coverage remain
-  separate unverified G9 integration scope. The process result is limited to
+  response, production async-service publication/lifecycle integration and
+  general input coverage remain separate unverified G9 scope. The process result is limited to
   two archived synthetic cases and is not an independent reanalysis or
   physical-accuracy check.

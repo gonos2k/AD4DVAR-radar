@@ -1,0 +1,18 @@
+{
+  "base_commit": "918e1c004182199617282cb14293d7bdcdd9955d",
+  "baseline_source_sha256": {
+    "matrix_free.py": "553ac08552dfe03f2d57f8072718346770f9072e51f2c7ef08384ec4b99fc1de",
+    "transport.py": "b7f3ed55f397279839dfcbee6f8e647e2e68599f10a858cca9316d90e644d02f"
+  },
+  "late_callback_observed": true,
+  "pcg_records": [
+    1.0,
+    2.0
+  ],
+  "python": "3.12.13",
+  "stage_records": [
+    1.0,
+    2.0
+  ],
+  "torch": "2.13.0"
+}
