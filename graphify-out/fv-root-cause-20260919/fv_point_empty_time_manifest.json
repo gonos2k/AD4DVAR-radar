@@ -1,0 +1,17 @@
+{
+  "base_head": "3309bf1",
+  "scope": "fixed-control prepared point-observation one-empty-time opt-in; no nonlinear analysis or response",
+  "sha256": {
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "20f1dbf5c7c8e8d5984ea89cf0c51cc0261f7ac54b68b1fa9b3e44758c221a1a",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_EMPTY_TIME_SCOPE.md": "de9fe462d50fcce329a0e702e8a763ca26c6821b1bbe759df5de4b32e8a71890",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "e02d427b6e3f31b8d872b650ce7e6d21f94e93a87d3af0c30c6ff7df1b84148a",
+    "graphify-out/fv-root-cause-20260919/PR175_176_REVIEW_RESOLUTION.md": "680a535e2b2e166b2b9c33381be8e3acf299c3bb34e7a4722d4e32e84cc4ff7f",
+    "graphify-out/fv-root-cause-20260919/fv_point_empty_time_graphify.log": "7f0dd5756f73b4bd90913e82eeb8e2ab3b5f4d17912eea18406633fbff7be71b",
+    "graphify-out/fv-root-cause-20260919/fv_point_empty_time_tests.log": "47bd7bb15d8818e7fac106e0311a6ac05c508cd54fa8865dc520ee5ae4658b37",
+    "graphify-out/fv-root-cause-20260919/fv_point_empty_time_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "src/advar/fv_point_research_problem.py": "aee6c4a33b82b49bc7ae7c328e00cfe207af5b07000a1bb7e19649185098231a",
+    "tests/test_fv_point_empty_time.py": "a806f70c39e146e808c530179cf734f2e94c528ba32b4c18fd731feb2c5c1f7b"
+  },
+  "test_command": ".venv/bin/python -m pytest -q tests/test_fv_point_sampler.py tests/test_fv_point_research_problem.py tests/test_fv_point_research_correlation.py tests/test_fv_point_missing.py tests/test_fv_point_qc_status.py tests/test_fv_point_empty_time.py",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python src/advar/fv_point_research_problem.py tests/test_fv_point_empty_time.py tests/test_fv_point_missing.py tests/test_fv_point_qc_status.py"
+}

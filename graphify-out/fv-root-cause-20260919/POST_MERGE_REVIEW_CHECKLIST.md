@@ -291,10 +291,14 @@ changes the numerical refiner, not the objective, observation contract or gates.
   and problem identity while remaining absent from the objective and valid
   correlation submatrix. Censoring and QC decision rules remain unsupported;
   see `FV_POINT_QC_STATUS_SCOPE.md`.
+- [x] One explicitly declared empty point-observation time is omitted from
+  the data likelihood while other times, prior and full model trajectory stay
+  active; default and two-empty-time inputs refuse. Fixed-control derivatives
+  and the legacy default identity are checked in `FV_POINT_EMPTY_TIME_SCOPE.md`.
 - [ ] Regridded/footprint radar products, censored point rows, product QC,
   cross-time covariance and a newly qualified stationary whole response
-  remain separate G5c work. An entirely missing observation frame is also
-  outside the current bounded point profile.
+  remain separate G5c work. More than one empty frame remains outside the
+  bounded point profile.
 - [x] Bounded regular 10-minute/18-lead forward schedule with 90 substeps per
   interval, 3600 SSPRK stages, same-operator zero/nonzero-flow truth, explicit
   verification times and observed refusal of strict response eligibility

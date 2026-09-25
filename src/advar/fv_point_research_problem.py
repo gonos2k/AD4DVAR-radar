@@ -47,6 +47,7 @@ class FVPointResearchProblem:
     observation_correlation: Tensor | None = None
     observation_status: Tensor | None = None  # uint8: 0 detected, 1 missing, 2 QC-rejected
     expected_branch: Mapping[str, Any] | None = None
+    empty_observation_time: int | None = None
     _correlation_whitener: Tensor | None = field(init=False, repr=False, compare=False)
     _correlation_reference: Tensor | None = field(init=False, repr=False, compare=False)
     _whitener_reference: Tensor | None = field(init=False, repr=False, compare=False)
@@ -76,8 +77,15 @@ class FVPointResearchProblem:
                     or not bool(((status == 0) | (status == 1) | (status == 2)).all())):
                 raise ValueError("point status must be fixed uint8 [3,N]: 0 detected, 1 missing, 2 QC-rejected")
             detected = status == 0
-            if not bool(detected.any(dim=1).all()):
+        empty_times = tuple(index for index, has_detection in enumerate(detected.any(dim=1))
+                            if not bool(has_detection))
+        if self.empty_observation_time is None:
+            if empty_times:
                 raise ValueError("point research requires at least one detected value per time")
+        elif (type(self.empty_observation_time) is not int
+              or self.empty_observation_time not in range(3)
+              or empty_times != (self.empty_observation_time,)):
+            raise ValueError("empty observation time must be the sole declared no-detection time")
         object.__setattr__(self, "_status_reference", None if status is None else status.clone())
         object.__setattr__(self, "_detected_mask", detected)
         object.__setattr__(self, "_detected_reference", detected.clone())
@@ -150,6 +158,8 @@ class FVPointResearchProblem:
                 symmetric_correlation = 0.5 * (correlation + correlation.T)
                 for time_index in range(3):
                     indices = detected[time_index].nonzero().flatten()
+                    if indices.numel() == 0:
+                        continue
                     subset = symmetric_correlation.index_select(0, indices).index_select(1, indices)
                     if torch.equal(subset, torch.eye(indices.numel(), dtype=subset.dtype)):
                         continue
@@ -224,6 +234,10 @@ class FVPointResearchProblem:
                 "per-time fixed point correlation; valid principal submatrix and symmetric inverse sqrt after sqrt(quality)/std"
             ),
             "observation_masks": (
+                f"status 0 detected, 1 genuinely missing, 2 externally QC-rejected; "
+                f"declared empty observation time {self.empty_observation_time}; "
+                "canonical inactive fill, other times have at least one detection; censored unsupported"
+                if self.empty_observation_time is not None else
                 "status 0 detected, 1 genuinely missing, 2 externally QC-rejected; "
                 "canonical inactive fill, at least one detected per time; censored unsupported"
                 if self.observation_status is not None
@@ -261,6 +275,8 @@ class FVPointResearchProblem:
                 "source_sha256": self.source_sha256,
                 "layout": self.layout,
                 "support": self.support,
+                **({"empty_observation_time": self.empty_observation_time}
+                   if self.empty_observation_time is not None else {}),
             }),
             "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch",
         }
@@ -315,6 +331,8 @@ class FVPointResearchProblem:
             data_cost = control.new_zeros(())
             for time_index in range(3):
                 indices = self._detected_mask[time_index].nonzero().flatten()
+                if indices.numel() == 0:
+                    continue
                 residual = (
                     self.quality_weight[time_index, indices].sqrt()
                     * (sampled_dbz[time_index, indices] - observed[time_index, indices])
