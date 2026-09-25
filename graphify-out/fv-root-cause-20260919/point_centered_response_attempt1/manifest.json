@@ -1,0 +1,18 @@
+{
+  "sha256": {
+    "FV_POINT_CENTERED_PRIOR_RESPONSE_PLAN.md.txt": "0e4469531dc050dc7c19933d035ad1063564260abac78b9c8e16d7d9395a72b3",
+    "FV_POINT_CENTERED_PRIOR_RESPONSE_RESULTS.md.txt": "7e2eb88b2657ce5ee0b4df36115cae371fdfe3f1f521a5d5ad0d17ff5ba98521",
+    "fv_point_centered_final_tests.log.txt": "f4960064918844eee88292a8f51cc0eee7202aa1c24142d63752ebe9148765fb",
+    "fv_point_centered_final_typecheck.log.txt": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "fv_point_centered_prelaunch_graphify.log.txt": "ea269f53b02cfe4ae428db9c3d6592bb156a9f2ce275fa2a87c2bcf8af93017b",
+    "fv_point_centered_prior_case.py.txt": "49d855faaf353ff01c83efbc0ca2e4f81051fe5ce54ada12fa3bd4d3c8eb2e0f",
+    "fv_point_centered_prior_response_probe.py.txt": "6a10297a850418241303db52a323b594a7d4ae62c567cea8fa1ff7fe385afa00",
+    "fv_point_centered_prior_response_runner.py.txt": "ad4978df9fa0602ff55d21c0d060bde070e425873c91bf712ea03f1da2c6c661",
+    "point_centered_response.json": "e0996a5081e20037d39f95049768d15d67e768b8aeda133a00fd638ff39e47aa",
+    "point_centered_response.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "point_centered_response.resource.json": "b4d6b7f0745708b535eab7286a4b11bb434b2634a31adafdc95f9ccb8dd32f06",
+    "point_centered_response.run.json": "34cf10a2c625f6bdc31c2b62205eb56e2974d761f81d3ed15157e1fb69331db0",
+    "test_fv_point_centered_prior_case.py.txt": "b2efdc605d9a2608b58f335f29cce0b21140c0e69fc7f8fa9c3e2674e21cfaee",
+    "test_fv_point_centered_prior_response.py.txt": "bb56f8f5e38203a5750382fca8c1d42c69edc4a48bf92bd123b83e7e00c46cff"
+  }
+}
