@@ -1,0 +1,107 @@
+{
+  "branch_calls": [
+    {
+      "control_sha256": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.007752734889703382,
+      "minimum_scaled_slope_margin": 0.0007615693500034068,
+      "signature_sha256": "3c5e5433d3d74a8f840bdd28834b2a73c98edf3b3fc4b46c5ab89567b1e4c70d",
+      "status": "accepted_branch"
+    }
+  ],
+  "elapsed_seconds": 6.379210332990624,
+  "input_after": {
+    "problem_identity": {
+      "fixed_problem_sha256": "3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5",
+      "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+    },
+    "tensor_sha256": {
+      "direction": "679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed",
+      "observation_coordinates": "7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02",
+      "observation_correlation": "7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef",
+      "parameters": "0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a",
+      "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+      "warm_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5"
+    }
+  },
+  "input_before": {
+    "problem_identity": {
+      "fixed_problem_sha256": "3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5",
+      "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+    },
+    "tensor_sha256": {
+      "direction": "679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed",
+      "observation_coordinates": "7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02",
+      "observation_correlation": "7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef",
+      "parameters": "0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a",
+      "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+      "warm_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5"
+    }
+  },
+  "input_unchanged": true,
+  "linear_solves": [
+    {
+      "error": "RuntimeError: operator must be symmetric positive definite",
+      "hvp_calls": 7,
+      "max_iterations": 104,
+      "rtol": 1e-10,
+      "seconds": 5.5132614999311045
+    }
+  ],
+  "nonlinear_reanalyses": 0,
+  "numerical_status": "refused",
+  "phase": "nominal_refinement",
+  "pid": 27201,
+  "plan_sha256": "8c3bfa78f5faa524f768b3b35b2174b209a729e5083f5b4e5584f1ae96c5532a",
+  "plan_unchanged": true,
+  "preflight_plan_sha256": "dbd13ba2edfb514d5029300688a8115f887ede0029281085d85e01e73733995f",
+  "preflight_plan_unchanged": true,
+  "preflight_sha256": "d8377046433ad8d63bf32f3f60b81085061d4be4d7ccf6591e5df69f9a3dfbd5",
+  "preflight_unchanged": true,
+  "refusal": "RuntimeError: operator must be symmetric positive definite",
+  "response_validation": "not_performed",
+  "source_after": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "821c385bfcd8f4e72b1308e4064eeb0f6fc218bbc8fb3c92189fd1061ccb1b1c",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_point_nominal_probe.py": "9763f22175409f0b04894218a3f952890953c394a6c7257a9e5153396efd77bb",
+    "examples/weather_scenarios/fv_point_nominal_runner.py": "d8e0d6c825a822717bda1f47b7bcc0d9cb8401c4cf429561e5785e4117cc0418",
+    "examples/weather_scenarios/fv_point_research_case.py": "358dd1bb46f7cf2ebb0fcf7bb33d4735b66419412d97d0b7847e7eab236f5f2e",
+    "examples/weather_scenarios/fv_point_response_preflight.py": "6929668a5d2c95a64499ab598a0f045d66e47a80cf7a997513f448fff8ba3ccf",
+    "examples/weather_scenarios/fv_point_response_preflight_runner.py": "7e25520af78418323a28dd3aec152040829bba597ab2902c4a80413c1088aab8",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_point_research_problem.py": "aee6c4a33b82b49bc7ae7c328e00cfe207af5b07000a1bb7e19649185098231a",
+    "src/advar/fv_point_sampler.py": "e3116a9250a5890521d66502aacd69c6ea32cc348fb961e6ffb88cf97750d3af",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "dd6ab93bd6bcfc96fe4864b3f09ca926da0cc6b4d9afe2943f1dbb1f4ee02d07",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  },
+  "source_before": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "821c385bfcd8f4e72b1308e4064eeb0f6fc218bbc8fb3c92189fd1061ccb1b1c",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_point_nominal_probe.py": "9763f22175409f0b04894218a3f952890953c394a6c7257a9e5153396efd77bb",
+    "examples/weather_scenarios/fv_point_nominal_runner.py": "d8e0d6c825a822717bda1f47b7bcc0d9cb8401c4cf429561e5785e4117cc0418",
+    "examples/weather_scenarios/fv_point_research_case.py": "358dd1bb46f7cf2ebb0fcf7bb33d4735b66419412d97d0b7847e7eab236f5f2e",
+    "examples/weather_scenarios/fv_point_response_preflight.py": "6929668a5d2c95a64499ab598a0f045d66e47a80cf7a997513f448fff8ba3ccf",
+    "examples/weather_scenarios/fv_point_response_preflight_runner.py": "7e25520af78418323a28dd3aec152040829bba597ab2902c4a80413c1088aab8",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_point_research_problem.py": "aee6c4a33b82b49bc7ae7c328e00cfe207af5b07000a1bb7e19649185098231a",
+    "src/advar/fv_point_sampler.py": "e3116a9250a5890521d66502aacd69c6ea32cc348fb961e6ffb88cf97750d3af",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "dd6ab93bd6bcfc96fe4864b3f09ca926da0cc6b4d9afe2943f1dbb1f4ee02d07",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  },
+  "source_unchanged": true,
+  "warm_branch_signature_sha256": "3c5e5433d3d74a8f840bdd28834b2a73c98edf3b3fc4b46c5ab89567b1e4c70d",
+  "warm_gradient_max": 15.150450664433208,
+  "warm_objective": 0.07993508078523576
+}

@@ -1,0 +1,13 @@
+{
+  "base_head": "7bbed0bad1027dcb6a2c4dde8d2278e60d12b0ce",
+  "scope": "point_nominal_attempt1 immutable raw numeric run and execution-time source snapshots",
+  "sha256": {
+    "graphify-out/fv-root-cause-20260919/point_nominal_attempt1/FV_POINT_NOMINAL_DIAGNOSTIC_PLAN.md.txt": "8c3bfa78f5faa524f768b3b35b2174b209a729e5083f5b4e5584f1ae96c5532a",
+    "graphify-out/fv-root-cause-20260919/point_nominal_attempt1/fv_point_nominal_probe.py.txt": "9763f22175409f0b04894218a3f952890953c394a6c7257a9e5153396efd77bb",
+    "graphify-out/fv-root-cause-20260919/point_nominal_attempt1/fv_point_nominal_runner.py.txt": "d8e0d6c825a822717bda1f47b7bcc0d9cb8401c4cf429561e5785e4117cc0418",
+    "graphify-out/fv-root-cause-20260919/point_nominal_attempt1/point_nominal.json": "4cc27f06b95272d25b4c08c18f6ed3a481d628d26ffa750f073101d011728a30",
+    "graphify-out/fv-root-cause-20260919/point_nominal_attempt1/point_nominal.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/point_nominal_attempt1/point_nominal.resource.json": "bbb71f5d78a28736bdec015ec32c858dceaec8b11c55da2787cfea78ae9ae001",
+    "graphify-out/fv-root-cause-20260919/point_nominal_attempt1/point_nominal.run.json": "d60a63ff6a4c7277f1d9f9058aa53e2b172b353e84127ce0acc27e685ec071b9"
+  }
+}

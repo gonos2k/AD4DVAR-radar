@@ -1,0 +1,165 @@
+"""Guard and classify one point-objective basin-search experiment."""
+from __future__ import annotations
+
+import argparse
+import json
+import math
+from pathlib import Path
+import sys
+from typing import Any, TypeGuard
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from examples.weather_scenarios.fv86_resource_runner import run_guarded
+
+
+WALL_SECONDS = 1200
+SAMPLED_RSS_BYTES = 1024**3
+REFUSALS = {"basin_incomplete", "basin_refused", "curvature_refused", "refinement_refused"}
+
+
+def _valid_curvature(value: object) -> bool:
+    if not isinstance(value, dict):
+        return False
+    required = ("symmetry_relative", "lambda_min", "lambda_max", "lambda_ratio")
+    if not all(type(value.get(key)) in (int, float) and math.isfinite(value[key])
+               for key in required):
+        return False
+    return (type(value.get("hvp_columns")) is int and value["hvp_columns"] == 26
+            and 0 <= value["symmetry_relative"] <= 1e-10
+            and value["lambda_max"] > 0
+            and value["lambda_min"] > 0
+            and value["lambda_ratio"] > math.sqrt(sys.float_info.epsilon))
+
+
+def _valid_digest(value: object) -> bool:
+    return (isinstance(value, str) and len(value) == 64
+            and all(character in "0123456789abcdef" for character in value))
+
+
+def _valid_branch(value: object) -> TypeGuard[dict[str, Any]]:
+    if not isinstance(value, dict):
+        return False
+    return (
+        type(value.get("euler_stages")) is int and value["euler_stages"] == 54
+        and all(type(value.get(key)) in (int, float) and math.isfinite(value[key])
+                and value[key] > 1e-4 for key in (
+                    "minimum_scaled_slope_margin", "minimum_scaled_face_flux_margin"
+                ))
+        and _valid_digest(value.get("signature_sha256"))
+    )
+
+
+def _valid_nominal_success(child: dict[str, Any]) -> bool:
+    control = child.get("control")
+    branch = child.get("basin_terminal_branch")
+    final_branch = child.get("final_branch")
+    return (
+        child.get("phase") == "finished"
+        and child.get("basin_status") == "candidate"
+        and isinstance(control, list) and len(control) == 26
+        and all(type(value) in (int, float) and math.isfinite(value) for value in control)
+        and type(child.get("gradient_max")) in (int, float)
+        and math.isfinite(child["gradient_max"])
+        and 0 <= child["gradient_max"] < 1e-10
+        and all(type(child.get(key)) in (int, float) and math.isfinite(child[key])
+                for key in ("objective", "score", "gradient_norm"))
+        and type(child.get("refinement_iterations")) is int
+        and 0 <= child["refinement_iterations"] <= 8
+        and _valid_branch(branch)
+        and _valid_branch(final_branch)
+        and child.get("final_branch_signature_sha256") == branch["signature_sha256"]
+        and final_branch["signature_sha256"] == branch["signature_sha256"]
+        and _valid_curvature(child.get("curvature"))
+        and _valid_curvature(child.get("final_curvature"))
+    )
+
+
+def _valid_refusal(child: dict[str, Any]) -> bool:
+    status = child.get("numerical_status")
+    if status == "basin_incomplete":
+        return (child.get("phase") == "basin_search"
+                and child.get("basin_status") in {
+                    "time_budget", "step_budget", "trial_budget",
+                    "line_search_refused", "no_descent_direction",
+                })
+    if status in ("curvature_refused", "refinement_refused"):
+        return (child.get("basin_status") == "candidate"
+                and child.get("phase") == (
+                    "curvature" if status == "curvature_refused" else "exact_refinement"
+                )
+                and isinstance(child.get("refusal"), str))
+    return status == "basin_refused" and isinstance(child.get("refusal"), str)
+
+
+def run(directory: Path) -> dict[str, object]:
+    if directory.exists() and any(directory.iterdir()):
+        raise ValueError("point basin output directory must be empty")
+    directory.mkdir(parents=True, exist_ok=True)
+    output = directory / "point_basin.json"
+    command = [sys.executable, "-m", "examples.weather_scenarios.fv_point_basin_probe",
+               "--output", str(output)]
+    resource = run_guarded(
+        command, wall_seconds=WALL_SECONDS, rss_bytes=SAMPLED_RSS_BYTES,
+        report_path=directory / "point_basin.resource.json",
+        log_path=directory / "point_basin.log",
+    )
+    child = None
+    read_error = None
+    try:
+        child = json.loads(output.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        read_error = f"{type(error).__name__}: {error}"
+    valid_resource = (
+        resource.get("exit_code") in (0, 2)
+        and resource.get("resource_termination") is None
+        and resource.get("monitor_error") is None
+        and resource.get("command") == command
+        and resource.get("wall_limit_seconds") == WALL_SECONDS
+        and type(resource.get("elapsed_seconds")) in (int, float)
+        and math.isfinite(resource["elapsed_seconds"])
+        and 0 <= resource["elapsed_seconds"] <= WALL_SECONDS
+        and resource.get("rss_limit_bytes") == SAMPLED_RSS_BYTES
+        and type(resource.get("rss_samples")) is int and resource["rss_samples"] > 0
+        and type(resource.get("sampled_peak_rss_bytes")) is int
+        and 0 < resource["sampled_peak_rss_bytes"] <= SAMPLED_RSS_BYTES
+    )
+    valid_child = (
+        isinstance(child, dict)
+        and child.get("numerical_status") in (REFUSALS | {"nominal_stationarity"})
+        and child.get("response_validation") == "not_performed"
+        and child.get("source_unchanged") is True
+        and child.get("input_unchanged") is True
+        and child.get("plan_unchanged") is True
+        and child.get("preflight_plan_unchanged") is True
+        and child.get("preflight_unchanged") is True
+        and type(child.get("pid")) is int
+        and child["pid"] == resource.get("child_pid")
+        and ((child["numerical_status"] == "nominal_stationarity"
+              and resource["exit_code"] == 0 and _valid_nominal_success(child))
+             or (child["numerical_status"] in REFUSALS and resource["exit_code"] == 2
+                 and _valid_refusal(child)))
+    )
+    result: dict[str, object] = {
+        "execution_status": "completed" if valid_resource and valid_child else "failed",
+        "numerical_status": child.get("numerical_status") if isinstance(child, dict) else "not_reached",
+        "response_validation": "not_performed",
+        "child_read_error": read_error,
+        "resource": resource,
+        "scope": "one fixed point-objective basin search and exact-root handoff; no adjoint/reanalysis",
+    }
+    (directory / "point_basin.run.json").write_text(
+        json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
+    return result
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--directory", type=Path, required=True)
+    arguments = parser.parse_args()
+    result = run(arguments.directory)
+    print(json.dumps(result, indent=2, sort_keys=True))
+    raise SystemExit(0 if result["execution_status"] == "completed" else 1)

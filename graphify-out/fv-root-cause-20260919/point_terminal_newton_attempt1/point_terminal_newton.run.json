@@ -1,0 +1,27 @@
+{
+  "child_read_error": null,
+  "execution_status": "completed",
+  "numerical_status": "newton_refused",
+  "provenance_error": null,
+  "resource": {
+    "child_pid": 93537,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "-m",
+      "examples.weather_scenarios.fv_point_terminal_newton_probe",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/point_terminal_newton_attempt1/point_terminal_newton.json"
+    ],
+    "elapsed_seconds": 98.44254979095422,
+    "exit_code": 2,
+    "monitor_error": null,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 375,
+    "sampled_peak_rss_bytes": 373161984,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 600
+  },
+  "response_validation": "not_performed",
+  "scope": "one locked point terminal curvature and exact Newton diagnostic; no adjoint/reanalysis"
+}

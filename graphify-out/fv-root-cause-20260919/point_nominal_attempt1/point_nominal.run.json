@@ -1,0 +1,28 @@
+{
+  "child_read_error": null,
+  "execution_status": "completed",
+  "numerical_status": "refused",
+  "resource": {
+    "child_pid": 27201,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "-m",
+      "examples.weather_scenarios.fv_point_nominal_probe",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/point_nominal_attempt1/point_nominal.json",
+      "--preflight",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/point_response_preflight_attempt1/point_response_preflight.json"
+    ],
+    "elapsed_seconds": 7.614411333925091,
+    "exit_code": 2,
+    "monitor_error": null,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 29,
+    "sampled_peak_rss_bytes": 333250560,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 240
+  },
+  "response_validation": "not_performed",
+  "scope": "one warm-start point-objective Newton attempt only; no adjoint/reanalysis"
+}
