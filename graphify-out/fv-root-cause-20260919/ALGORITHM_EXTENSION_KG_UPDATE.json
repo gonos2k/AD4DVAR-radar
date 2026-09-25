@@ -578,5 +578,16 @@
     "record": "FV_POINT_QC_STATUS_SCOPE.md and fv_point_qc_legacy_identity.json",
     "graphify": "code-only incremental update:7154 nodes,66014 edges,270 communities; no semantic LLM extraction",
     "remaining": "product-defined QC decisions, censored/all-invalid frames, cross-time covariance, footprint/regridded products, qualified stationary response and independent physical validation"
+  },
+  "fv_point_one_empty_time": {
+    "baseline": "main 3309bf1 after bounded fixed QC-rejected prepared point rows",
+    "scope": "explicit empty_observation_time=0/1/2 accepts exactly one all-invalid frame under full known state/boundary and at least one detected point at each other time; default unchanged",
+    "objective": "skip empty time before same-time principal correlation whitening and pseudo-Huber; retained frames and control prior/smoothness remain active",
+    "derivatives": "4x5 fixed-control regressions at each empty time: inactive observation gradient and mixed JVP exactly0, inactive payload leaves objective/forecast/score unchanged, theta objective gradient finite nonzero",
+    "identity": "opt-in time enters support and fixed fingerprint; default all-detected legacy identity dd8ec41e... remains unchanged",
+    "validation": "74 affected point tests passed with18 existing warnings; selected typecheck0; no GN/refinement/adjoint/reanalysis",
+    "record": "FV_POINT_EMPTY_TIME_SCOPE.md",
+    "graphify": "code-only incremental update:7164 nodes,66032 edges,220 communities; no semantic LLM extraction",
+    "remaining": "more than one empty time, censored/product QC, cross-time covariance, product footprints, qualified stationary response and physical validation"
   }
 }
