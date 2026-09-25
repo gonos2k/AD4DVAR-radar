@@ -1,0 +1,13 @@
+{
+  "base_head": "7bbed0bad1027dcb6a2c4dde8d2278e60d12b0ce",
+  "scope": "point_response_preflight_attempt1 immutable raw numeric run and execution-time source snapshots",
+  "sha256": {
+    "graphify-out/fv-root-cause-20260919/point_response_preflight_attempt1/FV_POINT_STATIONARY_RESPONSE_PLAN.md.txt": "dbd13ba2edfb514d5029300688a8115f887ede0029281085d85e01e73733995f",
+    "graphify-out/fv-root-cause-20260919/point_response_preflight_attempt1/fv_point_response_preflight.py.txt": "6929668a5d2c95a64499ab598a0f045d66e47a80cf7a997513f448fff8ba3ccf",
+    "graphify-out/fv-root-cause-20260919/point_response_preflight_attempt1/fv_point_response_preflight_runner.py.txt": "7e25520af78418323a28dd3aec152040829bba597ab2902c4a80413c1088aab8",
+    "graphify-out/fv-root-cause-20260919/point_response_preflight_attempt1/point_response_preflight.json": "d8377046433ad8d63bf32f3f60b81085061d4be4d7ccf6591e5df69f9a3dfbd5",
+    "graphify-out/fv-root-cause-20260919/point_response_preflight_attempt1/point_response_preflight.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/point_response_preflight_attempt1/point_response_preflight.resource.json": "0a0424a0cee53a65da0b70208ac6303fe4e41246128b0a26d633685370e7ac97",
+    "graphify-out/fv-root-cause-20260919/point_response_preflight_attempt1/point_response_preflight.run.json": "c86aeb02e2ccb24bf230acd1fbd24675fc902b4aad28f3ed989fa6ee1c69ea86"
+  }
+}

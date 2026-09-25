@@ -589,5 +589,18 @@
     "record": "FV_POINT_EMPTY_TIME_SCOPE.md",
     "graphify": "code-only incremental update:7164 nodes,66032 edges,220 communities; no semantic LLM extraction",
     "remaining": "more than one empty time, censored/product QC, cross-time covariance, product footprints, qualified stationary response and physical validation"
+  },
+  "fv_point_response_r2_diagnostics": {
+    "baseline": "main 7bbed0b after PR195 fixed one-empty-time point observations",
+    "fixed_problem": "4x5,26 controls,13 parameters,12 all-detected off-grid dBZ values, fixed symmetric four-point correlation and detached one-lead synthetic score",
+    "stage_a": "no-solver preflight completed:54 strict minmod stages,slope margin7.61569e-4,face ratio7.75273e-3,warm gradient max15.15045",
+    "direct_warm_newton": "refused non-SPD PCG after7 HVPs before any candidate step",
+    "basin_attempt1": "13 accepted L-BFGS steps,J .07993508 to .00644675,gmax .289; next16 candidates refused by combined branch/margin gate",
+    "basin_attempt2": "separate strict-tracer search:100 accepted steps,22 signature changes,J .001092566,gmax .0108053; step_budget,no Hessian/refiner",
+    "terminal_diagnostic": "locked attempt2 last control exact H SPD: lambda_min .694273,lambda_max4453.221,symmetry4.04e-16; four PCGs converged then Newton iteration4 all16 candidates branch refused,9 signature and7 combined margin",
+    "status": "execution completed under distinct sampled resource guards; no qualified point stationary root,adjoint,signed reanalysis or physical validation",
+    "records": "FV_POINT_NOMINAL_ATTEMPT1_RESULTS.md,FV_POINT_BASIN_ATTEMPT1_RESULTS.md,FV_POINT_BASIN_ATTEMPT2_RESULTS.md,FV_POINT_TERMINAL_NEWTON_ATTEMPT1_RESULTS.md",
+    "graphify": "code-only incremental update:7275 nodes,66227 edges,243 communities; no semantic LLM extraction",
+    "remaining": "separately declared local branch-aware root policy,then exact response and signed endpoints;do not infer root absence from strict-policy refusals"
   }
 }

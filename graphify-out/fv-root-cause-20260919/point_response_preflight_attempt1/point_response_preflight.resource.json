@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_point_response_preflight",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/point_response_preflight_attempt1/point_response_preflight.json"
+  ],
+  "child_pid": 4911,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 2.62530075001996,
+  "sampled_peak_rss_bytes": 313507840,
+  "rss_samples": 10,
+  "wall_limit_seconds": 120,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

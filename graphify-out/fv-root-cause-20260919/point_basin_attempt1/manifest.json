@@ -1,0 +1,14 @@
+{
+  "base_head": "7bbed0bad1027dcb6a2c4dde8d2278e60d12b0ce",
+  "scope": "point_basin_attempt1 immutable raw numeric run and execution-time source snapshots",
+  "sha256": {
+    "graphify-out/fv-root-cause-20260919/point_basin_attempt1/FV_POINT_BASIN_SEARCH_PLAN.md.txt": "925a2738da5ed56f60deacd918a397e23f5e201f649f3740a03fb49ff3ba28cd",
+    "graphify-out/fv-root-cause-20260919/point_basin_attempt1/fv_point_basin_probe.py.txt": "50f92b18cca2f260780607d636fc966733b3f6d45eb38a9c715f1157b2976184",
+    "graphify-out/fv-root-cause-20260919/point_basin_attempt1/fv_point_basin_runner.py.txt": "1c017bad72e7b3959073691d06c5e21bcf0f4cf94216a05f953cf778f8241003",
+    "graphify-out/fv-root-cause-20260919/point_basin_attempt1/fv_point_basin_search.py.txt": "9d7f62e6e44b353beb3c765ba3e5b28a8e29374f3f5bcf6ffdfa56194d1666ab",
+    "graphify-out/fv-root-cause-20260919/point_basin_attempt1/point_basin.json": "e0cfde720bd2002a7d8149eca3553c244a9f93f45d256e3324066c58e9a158dc",
+    "graphify-out/fv-root-cause-20260919/point_basin_attempt1/point_basin.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/point_basin_attempt1/point_basin.resource.json": "0ba02c1711b3669bfc31ae1a64bfcee696efeba85e7eb7fe8564e12079f4b85f",
+    "graphify-out/fv-root-cause-20260919/point_basin_attempt1/point_basin.run.json": "b5354810cc55877b929f624a6f9487f3b66a5d2e7ed26a0610d1e618ddfec783"
+  }
+}

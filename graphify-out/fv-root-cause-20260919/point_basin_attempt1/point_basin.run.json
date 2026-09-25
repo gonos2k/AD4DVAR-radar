@@ -1,0 +1,26 @@
+{
+  "child_read_error": null,
+  "execution_status": "completed",
+  "numerical_status": "basin_incomplete",
+  "resource": {
+    "child_pid": 93356,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "-m",
+      "examples.weather_scenarios.fv_point_basin_probe",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/point_basin_attempt1/point_basin.json"
+    ],
+    "elapsed_seconds": 6.465314792003483,
+    "exit_code": 2,
+    "monitor_error": null,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 25,
+    "sampled_peak_rss_bytes": 313622528,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 1200
+  },
+  "response_validation": "not_performed",
+  "scope": "one fixed point-objective basin search and exact-root handoff; no adjoint/reanalysis"
+}

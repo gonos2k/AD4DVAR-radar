@@ -1,0 +1,636 @@
+{
+  "attempt2_sha256": "fbafbab3736abac64421356b67ab0896ea31976e31b0c43f41eea933414e7a51",
+  "attempt2_unchanged": true,
+  "branch_calls": [
+    {
+      "control_sha256": "8f5110f2755217dece8ca9f6bbab23ceadb184b4f1a32b8e4654ddfde5f4b258",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.00035249320414798194,
+      "minimum_scaled_slope_margin": 0.00019559368949964172,
+      "signature_sha256": "0783f66a062d5144894513c65a4e221befca4d23a22d8fba0adc43ead5011327",
+      "status": "accepted_branch"
+    },
+    {
+      "control_sha256": "1b041a146632c5f159fcf8311ad6b94a3794aa5010ad4218bd79d0b1f7582285",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0038773391118429577,
+      "minimum_scaled_slope_margin": 0.0008235712432304914,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "a4022fe1ffa69ae49051b19d3e3eb351058e61bc3d1c371e662136aac9461060",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "c7efa5eef328c7581d52b872420dcb1e1e628960c771c7ffd73ffbac1f78a3a0",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0007215273729007914,
+      "minimum_scaled_slope_margin": 0.00030881567619346986,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "b489a6ab4f8951853f31540a7af22c8c1d94ac24f5a5da0263e243cdb8cc457e",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "2c33aa27642015814d23578a8d27e4bf6a4cb6fee5c71f236201d235c89fe2f2",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "08d88609820707d95e8ea4b1887453db76cfc101b820e4f3d1e775b83064d28f",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "27bb1dd4fa6e22111fa74adfcda75bd9245674b56970dc864a1466cb1242a96d",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.00876349750469409,
+      "minimum_scaled_slope_margin": 0.00012970491595455628,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "bec92868140f3ff2bdf9ee69d3e9615f454ec9b81eb60acef807101a269f6406",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.005950676369701452,
+      "minimum_scaled_slope_margin": 0.00016264903570732193,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "5da2ac759c8c64c58b0b459b728a1aaa68fdd9bfb3c1b3d9c662d9ec01d86119",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0028964930839045695,
+      "minimum_scaled_slope_margin": 0.0001791212958474141,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "f76166a684d6c932579229a5431b3f33a87f00eaf5569332349ab4c0ecbddbb1",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.001297496877674945,
+      "minimum_scaled_slope_margin": 0.00018735747598472535,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "f540afd1f6a96d9fa21544fc3112f0d4ca8b23aa647ed79b84a0fa47411530f8",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0004790273269134258,
+      "minimum_scaled_slope_margin": 0.00019147557857004745,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "d9e712bfd86817757ddff7d70be3942e8e7236cfcab492a868923ea43b88e374",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "8d9398892ea7e0f38c91da9dda7b0e11c89ad3c3ec700d9aa6de8e2048c1187d",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0001433725047506578,
+      "minimum_scaled_slope_margin": 0.000194564160983315,
+      "signature_sha256": "0783f66a062d5144894513c65a4e221befca4d23a22d8fba0adc43ead5011327",
+      "status": "accepted_branch"
+    },
+    {
+      "control_sha256": "9ce06da626399a21933a30b82a4816770cb0fb7c5045e650b96a48a4b0b94bf1",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0038752977233536996,
+      "minimum_scaled_slope_margin": 0.0008234947302483107,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "a4022fe1ffa69ae49051b19d3e3eb351058e61bc3d1c371e662136aac9461060",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "8efa923835da9f51c9df125be653d178ed8d9c8e160f192897bc0e99ca77d43d",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0007035709529013824,
+      "minimum_scaled_slope_margin": 0.0003092790088151741,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "b489a6ab4f8951853f31540a7af22c8c1d94ac24f5a5da0263e243cdb8cc457e",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "fd7cf11fcc89f0e4b7bec7b3eaa6a3bd5b3853813bfa11debb270d994ad46a83",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "aac2604ed800d354d15eb004c6e83f272416b7c714797a685c943ddfb3762446",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "db302b7644d0f2006ba055fc765ea425bf418b5269f509eca235e07303f71bef",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.008685966219233222,
+      "minimum_scaled_slope_margin": 0.00012874461690789697,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "47698cc0af47976ccbeeae0431207106ac771c77f4d51dedf92d39889d5d833c",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.006129270300834156,
+      "minimum_scaled_slope_margin": 0.0001616541224778689,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "bfbfe92b70a6266b144bff4e63cc474e81cdbabfb20695a9e0f7350c83ac1c79",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.00308959824094599,
+      "minimum_scaled_slope_margin": 0.00017810907511341925,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "68018aceae83f80e91e0002484a99dfb35a4ce4c21fbc05db788b4862bec729a",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0014984095692132636,
+      "minimum_scaled_slope_margin": 0.00018633660139435836,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "032078e3f67159fb6f81ca577a39d9e7ba49a49ac5fbad341c1dbc718ea5a6bd",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0006839923309022856,
+      "minimum_scaled_slope_margin": 0.00019045037702623694,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "70e103266e2b44d60a854b77865ea8f36eeafc9380a2c1adc4f90f6e2f993229",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.00027194758395122145,
+      "minimum_scaled_slope_margin": 0.0001925072679652189,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "827f6aecf4a732aae11288515618499dd4e10a7f8fb256448cacbb7f8b72ee94",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "552fdfee4fc7963cdba6d4a4f1a03ede9a425f54cdea341626c0011aa861f746",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "3ed4f895f92ccded520d11ade0b4c27be0fd55c8775eeb8af2bef6ec47632799",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "8285e633c679b1bb5a654280da5ca3d5b83235154df9038aee772abfe3a300bc",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.00011731830318369275,
+      "minimum_scaled_slope_margin": 0.0001944356051105042,
+      "signature_sha256": "0783f66a062d5144894513c65a4e221befca4d23a22d8fba0adc43ead5011327",
+      "status": "accepted_branch"
+    },
+    {
+      "control_sha256": "a69373c627e87f575b066c118aba5be490b38a9a560009f6d19c6d9428b1806b",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0038750429434067962,
+      "minimum_scaled_slope_margin": 0.0008234851811459965,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "a4022fe1ffa69ae49051b19d3e3eb351058e61bc3d1c371e662136aac9461060",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "c76b74ffa34e3929e122229d75ba33c946bc2540db57684670def8c65239befe",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0007013298693694926,
+      "minimum_scaled_slope_margin": 0.00030933686716195504,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "b489a6ab4f8951853f31540a7af22c8c1d94ac24f5a5da0263e243cdb8cc457e",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "210227555fa7b88bfc2933836ac6cb8d195dd8b077ed8ee05fde9d4366c0458f",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "7ab616dfb30075f0045a43f977a0e05fbf06b0dcfa275683579968b46e47367e",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "3221344cb05e84a3b54c8fe51930b2c2503e88aa4200e79984541905531b64c6",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.008676302642715437,
+      "minimum_scaled_slope_margin": 0.00012862470531034142,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "777e7ca71056d851a6d2802515676e5397ec1a60844d4c7cacece78ac4d3d919",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0061515256275457755,
+      "minimum_scaled_slope_margin": 0.00016152988880876253,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "806881857e85a883152395b5cc8e9582df65db6db251eb10ed1e3f634c1abb4f",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0031136595484004643,
+      "minimum_scaled_slope_margin": 0.0001779826803595619,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "ba8ffc30eeef693a24a8dcf799b2e6b625f5675513d861ba1eae329d15c8b0db",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0015234424465069174,
+      "minimum_scaled_slope_margin": 0.00018620912608415934,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "5b942ee41ae820a8f5cabb520b4a13c1ccd43e6718a900393154d80a455335f2",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0007095294485634833,
+      "minimum_scaled_slope_margin": 0.00019032236143460817,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "28bd29ef2333d8726d8938226fd89c0249055156066cbd4d7067a3ed3ff4bbd1",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0002977416119214186,
+      "minimum_scaled_slope_margin": 0.00019237898223213048,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "788f29b06051908769e25869d984ff3acc9418dd5ba125b3693c4ee0be0fc63d",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "0b539be2e29cabdd43b7367899a7e06be4a6575b31a0fa9f8efb81c5c9b9e1a1",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "3bb16b55040de1caf62083c4b7f210d0893cad58ea864e19f7a6b4bd34455a4f",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "49b079905489db7a2c936356c3c469022e3581c6a1e33ab1256a3373b61ea6f5",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "a59d5326a3631535b2b96b22861ab4b2a045d5f96629ef68c707ed7d0665c2c7",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.00010429776494679377,
+      "minimum_scaled_slope_margin": 0.00019437133561531723,
+      "signature_sha256": "0783f66a062d5144894513c65a4e221befca4d23a22d8fba0adc43ead5011327",
+      "status": "accepted_branch"
+    },
+    {
+      "control_sha256": "38cdf137ee6e3ddda7da4aa71255d2875f9baba340d3865e631636b1a760eb1b",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0038749155799276598,
+      "minimum_scaled_slope_margin": 0.0008234804076233307,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "a4022fe1ffa69ae49051b19d3e3eb351058e61bc3d1c371e662136aac9461060",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "d2e69660173f5233996bea0a4cf33fa0550f8e0a5a0cf820d3d1e46d90c86f19",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.000700209568133981,
+      "minimum_scaled_slope_margin": 0.00030936579274726104,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "b489a6ab4f8951853f31540a7af22c8c1d94ac24f5a5da0263e243cdb8cc457e",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "5a9e4cf4895c7c84412337813c1230c2c08575939db8378178b318dc10308f08",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "75e716b40aa632bd3707876ebce79ad19c5ab697549c47630d7e4f0a8ebfbeb6",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "62286b7dc9bcb82c16fa977024eb4d8392d1560967eb52d7526493d2a45c0822",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.008671472962329735,
+      "minimum_scaled_slope_margin": 0.00012856475735677455,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "4c1153b890525a94626ad4bed959e1d4dd8ad60cd78b9d85f476347258c4b0a3",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.00616264805493227,
+      "minimum_scaled_slope_margin": 0.00016146778011932758,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "78d884fda127604f08e832789a4700d4223130be769b7059eaeb2dfc4a9b7f3e",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0031256843475600906,
+      "minimum_scaled_slope_margin": 0.00017791949127417153,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "f86ac222939bcafd50563075a05f8b7ad4fb17a69e8fa10f5589321762fde8a0",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0015359526886972673,
+      "minimum_scaled_slope_margin": 0.00018614539679576365,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "f69201398bde924229f4a01cf196c7486a692ebea0ca2e5451347a664694e5bf",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.0007222916310436298,
+      "minimum_scaled_slope_margin": 0.00019025836204080018,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "060f53501bd8471c4a9acd501dffd9bac45b752fdb822283150805fca7c12e47",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.00031063215726206587,
+      "minimum_scaled_slope_margin": 0.0001923148477892931,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "050e5921cd544fff3334ad767506b3d71628fa3107f8bfab2cb07e9cf3c7f3d0",
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.00010357843322086295,
+      "minimum_scaled_slope_margin": 0.0001933430914404496,
+      "reason": "terminal Newton branch changed from locked endpoint",
+      "signature_sha256": "8e314c1910021bf026ad2084f5779bcd1bfcf3ae35ba4776d4b4c0db08d273f8",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "e820780eb78400e336c2c89b749dac9a6a9f0abca03e9ff6baa98548ee35a461",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "7826854964fd04bbf406b6d72c00640cdc527f188d22d036e4fef70b1fb506af",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "5094e276825f57c027b89a86c0a9be7cfb051526e063850376570da5d2891fb8",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "5f70a227b07689ed093adbdbeda82c27045a9b0cd72a68b58a754c4a8e2d0ebf",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    },
+    {
+      "control_sha256": "c8513653c2d621b51d5caa044fd05d6de9026aa99d814cb21fbe04437c15fcd7",
+      "reason": "basin stage, slope or face margin refused",
+      "status": "refused_branch"
+    }
+  ],
+  "elapsed_seconds": 96.47591012506746,
+  "environment": {
+    "device": "CPU FP64",
+    "python": "3.12.13",
+    "torch": "2.13.0"
+  },
+  "input_after": {
+    "problem_identity": {
+      "fixed_problem_sha256": "3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5",
+      "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+    },
+    "tensor_sha256": {
+      "direction": "679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed",
+      "observation_coordinates": "7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02",
+      "observation_correlation": "7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef",
+      "parameters": "0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a",
+      "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+      "warm_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5"
+    }
+  },
+  "input_before": {
+    "problem_identity": {
+      "fixed_problem_sha256": "3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5",
+      "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+    },
+    "tensor_sha256": {
+      "direction": "679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed",
+      "observation_coordinates": "7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02",
+      "observation_correlation": "7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef",
+      "parameters": "0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a",
+      "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+      "warm_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5"
+    }
+  },
+  "input_unchanged": true,
+  "linear_solves": [
+    {
+      "converged": true,
+      "hvp_calls": 21,
+      "iterations": 20,
+      "max_iterations": 104,
+      "relative_residual": 7.653340651666104e-11,
+      "rtol": 1e-10,
+      "seconds": 17.265826791059226
+    },
+    {
+      "converged": true,
+      "hvp_calls": 22,
+      "iterations": 21,
+      "max_iterations": 104,
+      "relative_residual": 3.867742437390901e-11,
+      "rtol": 1e-10,
+      "seconds": 17.596071708016098
+    },
+    {
+      "converged": true,
+      "hvp_calls": 22,
+      "iterations": 21,
+      "max_iterations": 104,
+      "relative_residual": 2.4996689903212265e-11,
+      "rtol": 1e-10,
+      "seconds": 17.477962792036124
+    },
+    {
+      "converged": true,
+      "hvp_calls": 23,
+      "iterations": 22,
+      "max_iterations": 104,
+      "relative_residual": 8.737336177452012e-12,
+      "rtol": 1e-10,
+      "seconds": 19.47552270896267
+    }
+  ],
+  "nonlinear_reanalyses": 0,
+  "numerical_status": "newton_refused",
+  "phase": "exact_refinement",
+  "pid": 93537,
+  "plan_sha256": "396de67a8fe177234ef2bf1eb69d57d20e7f2dbb90de522b33f840e789393ccd",
+  "plan_unchanged": true,
+  "preflight_plan_sha256": "dbd13ba2edfb514d5029300688a8115f887ede0029281085d85e01e73733995f",
+  "preflight_plan_unchanged": true,
+  "preflight_sha256": "d8377046433ad8d63bf32f3f60b81085061d4be4d7ccf6591e5df69f9a3dfbd5",
+  "preflight_unchanged": true,
+  "refusal": "RuntimeError: stationarity refinement failed to find an Armijo step: iteration=4; no finite candidate evaluation; branch_rejections=16; branch_reason_counts={'terminal Newton branch changed from locked endpoint': 9, 'basin stage, slope or face margin refused': 7}; nonfinite_candidate_rejections=0; finite_armijo_rejections=0",
+  "response_validation": "not_performed",
+  "seed_branch": {
+    "euler_stages": 54,
+    "minimum_scaled_face_flux_margin": 0.00035249320414798194,
+    "minimum_scaled_slope_margin": 0.00019559368949964172,
+    "signature_sha256": "0783f66a062d5144894513c65a4e221befca4d23a22d8fba0adc43ead5011327"
+  },
+  "seed_control": [
+    -0.0026435578355230816,
+    -0.005072578164217438,
+    -0.00015556800073400248,
+    -0.0003135762225071863,
+    4.24654160496459e-06,
+    -0.0012762146474716318,
+    -0.0033199128350475766,
+    -0.00600520955578961,
+    -0.0033913092456557084,
+    2.1784690762025948e-05,
+    0.0002375140535174299,
+    -0.001513058061474963,
+    -0.0032961053022269836,
+    -0.005985195612870329,
+    -0.0005126053532175595,
+    -4.363812693572294e-07,
+    -3.3082518961927933e-06,
+    8.755277373742967e-05,
+    -0.005246072799405509,
+    -0.0006201717483799499,
+    0.0005820882169935835,
+    -0.0002265049818540746,
+    0.0012780684646802006,
+    -0.002213423245131549,
+    -0.0015232654311015757,
+    0.03238758231385163
+  ],
+  "seed_control_sha256": "8f5110f2755217dece8ca9f6bbab23ceadb184b4f1a32b8e4654ddfde5f4b258",
+  "seed_control_unchanged": true,
+  "seed_curvature": {
+    "hvp_columns": 26,
+    "lambda_max": 4453.220758903886,
+    "lambda_min": 0.6942730154315004,
+    "lambda_ratio": 0.0001559035702515652,
+    "symmetry_relative": 4.038200716034779e-16
+  },
+  "seed_gradient": [
+    0.0002960877303091018,
+    0.00046921305776729833,
+    -0.00012441363252779642,
+    -0.00038827992299697133,
+    4.251202326784157e-06,
+    0.0002754200373237235,
+    0.000314084095513506,
+    0.003076025369029055,
+    0.0027012637272930628,
+    6.173715590114752e-05,
+    0.0002269154640205764,
+    -0.00023917473771145484,
+    0.0006943127573335291,
+    0.0016247028455009319,
+    0.00014672429613347548,
+    -4.368525339463598e-07,
+    -3.2937160187027326e-06,
+    0.0001529579632713259,
+    0.00011073660308246174,
+    -3.8496399312391155e-05,
+    -0.0011424692996229655,
+    0.0007645725535645907,
+    -0.0014537893564342947,
+    0.004299750659941769,
+    0.0028631404136428822,
+    0.01080526397720594
+  ],
+  "seed_gradient_max": 0.01080526397720594,
+  "seed_objective": 0.001092566268397464,
+  "source_after": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "821c385bfcd8f4e72b1308e4064eeb0f6fc218bbc8fb3c92189fd1061ccb1b1c",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+    "examples/weather_scenarios/fv_point_basin_runner.py": "2d46b13bdb2314fb877a07132439428ca03f961e4ddd02b2341061e2f8e01c89",
+    "examples/weather_scenarios/fv_point_basin_search.py": "b5084e5c226c53e45d70a10e4d33faa42429b955b3b5ae9ac27605f8c47ec378",
+    "examples/weather_scenarios/fv_point_research_case.py": "358dd1bb46f7cf2ebb0fcf7bb33d4735b66419412d97d0b7847e7eab236f5f2e",
+    "examples/weather_scenarios/fv_point_response_preflight.py": "6929668a5d2c95a64499ab598a0f045d66e47a80cf7a997513f448fff8ba3ccf",
+    "examples/weather_scenarios/fv_point_response_preflight_runner.py": "7e25520af78418323a28dd3aec152040829bba597ab2902c4a80413c1088aab8",
+    "examples/weather_scenarios/fv_point_terminal_newton_probe.py": "cbf6e6479a9da598df5c75f83ff2ca354db359d6843eb274743a0a37bc1da692",
+    "examples/weather_scenarios/fv_point_terminal_newton_runner.py": "fd50079287fc9abdb86bca339144ceeecd5cf5eb990fcf4217e84988f8633e73",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_point_research_problem.py": "aee6c4a33b82b49bc7ae7c328e00cfe207af5b07000a1bb7e19649185098231a",
+    "src/advar/fv_point_sampler.py": "e3116a9250a5890521d66502aacd69c6ea32cc348fb961e6ffb88cf97750d3af",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "dd6ab93bd6bcfc96fe4864b3f09ca926da0cc6b4d9afe2943f1dbb1f4ee02d07",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  },
+  "source_before": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "821c385bfcd8f4e72b1308e4064eeb0f6fc218bbc8fb3c92189fd1061ccb1b1c",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+    "examples/weather_scenarios/fv_point_basin_runner.py": "2d46b13bdb2314fb877a07132439428ca03f961e4ddd02b2341061e2f8e01c89",
+    "examples/weather_scenarios/fv_point_basin_search.py": "b5084e5c226c53e45d70a10e4d33faa42429b955b3b5ae9ac27605f8c47ec378",
+    "examples/weather_scenarios/fv_point_research_case.py": "358dd1bb46f7cf2ebb0fcf7bb33d4735b66419412d97d0b7847e7eab236f5f2e",
+    "examples/weather_scenarios/fv_point_response_preflight.py": "6929668a5d2c95a64499ab598a0f045d66e47a80cf7a997513f448fff8ba3ccf",
+    "examples/weather_scenarios/fv_point_response_preflight_runner.py": "7e25520af78418323a28dd3aec152040829bba597ab2902c4a80413c1088aab8",
+    "examples/weather_scenarios/fv_point_terminal_newton_probe.py": "cbf6e6479a9da598df5c75f83ff2ca354db359d6843eb274743a0a37bc1da692",
+    "examples/weather_scenarios/fv_point_terminal_newton_runner.py": "fd50079287fc9abdb86bca339144ceeecd5cf5eb990fcf4217e84988f8633e73",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_point_research_problem.py": "aee6c4a33b82b49bc7ae7c328e00cfe207af5b07000a1bb7e19649185098231a",
+    "src/advar/fv_point_sampler.py": "e3116a9250a5890521d66502aacd69c6ea32cc348fb961e6ffb88cf97750d3af",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "dd6ab93bd6bcfc96fe4864b3f09ca926da0cc6b4d9afe2943f1dbb1f4ee02d07",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  },
+  "source_unchanged": true
+}

@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_point_nominal_probe",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/point_nominal_attempt1/point_nominal.json",
+    "--preflight",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/point_response_preflight_attempt1/point_response_preflight.json"
+  ],
+  "child_pid": 27201,
+  "exit_code": 2,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 7.614411333925091,
+  "sampled_peak_rss_bytes": 333250560,
+  "rss_samples": 29,
+  "wall_limit_seconds": 240,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

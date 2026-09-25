@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_point_basin_probe",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/point_basin_attempt2/point_basin.json"
+  ],
+  "child_pid": 24322,
+  "exit_code": 2,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 58.47512445889879,
+  "sampled_peak_rss_bytes": 475561984,
+  "rss_samples": 222,
+  "wall_limit_seconds": 1200,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

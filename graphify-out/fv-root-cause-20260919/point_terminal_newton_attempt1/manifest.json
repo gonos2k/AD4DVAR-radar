@@ -1,0 +1,13 @@
+{
+  "base_head": "7bbed0bad1027dcb6a2c4dde8d2278e60d12b0ce",
+  "scope": "single locked terminal Hessian/unchanged Newton refusal; no response",
+  "sha256": {
+    "graphify-out/fv-root-cause-20260919/point_terminal_newton_attempt1/FV_POINT_TERMINAL_NEWTON_PLAN.md.txt": "396de67a8fe177234ef2bf1eb69d57d20e7f2dbb90de522b33f840e789393ccd",
+    "graphify-out/fv-root-cause-20260919/point_terminal_newton_attempt1/fv_point_terminal_newton_probe.py.txt": "cbf6e6479a9da598df5c75f83ff2ca354db359d6843eb274743a0a37bc1da692",
+    "graphify-out/fv-root-cause-20260919/point_terminal_newton_attempt1/fv_point_terminal_newton_runner.py.txt": "fd50079287fc9abdb86bca339144ceeecd5cf5eb990fcf4217e84988f8633e73",
+    "graphify-out/fv-root-cause-20260919/point_terminal_newton_attempt1/point_terminal_newton.json": "aff2a5e1374888b190c783f30bd7b8a468a0cc8bdb67a2cb562603308021d4f9",
+    "graphify-out/fv-root-cause-20260919/point_terminal_newton_attempt1/point_terminal_newton.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/point_terminal_newton_attempt1/point_terminal_newton.resource.json": "aafee2c724848c9c9c9e0657e64d79c0cd93f13e9e0cbea15024da3b65061372",
+    "graphify-out/fv-root-cause-20260919/point_terminal_newton_attempt1/point_terminal_newton.run.json": "37f71d8f4882c1e452a434fa0a9a49b0cb49f9a9272c95c2c8e97e6d4af14992"
+  }
+}

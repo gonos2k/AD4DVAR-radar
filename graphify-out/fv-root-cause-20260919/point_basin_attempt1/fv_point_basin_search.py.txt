@@ -1,0 +1,277 @@
+"""Bounded objective-descent basin search for one piecewise-smooth FV case.
+
+This only proposes a nearby candidate. Exact stationarity and response use
+the original objective/Hessian in separate gates after the search.
+"""
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass
+import json
+import math
+import time
+from typing import Any
+
+import torch
+from torch import Tensor
+
+
+@dataclass(frozen=True)
+class BasinSearchResult:
+    status: str
+    control: Tensor
+    objective: float
+    gradient_max: float
+    accepted_steps: int
+    trial_evaluations: int
+    branch_changes: int
+    history: list[dict[str, Any]]
+
+
+def _branch_key(signature: dict[str, Any]) -> str:
+    if "choices" not in signature or "face_signs" not in signature:
+        raise ValueError("basin branch requires choices and face_signs")
+    return json.dumps(
+        {name: signature[name] for name in ("choices", "face_signs")},
+        sort_keys=True, separators=(",", ":"), allow_nan=False,
+    )
+
+
+def _evaluate(
+    objective: Callable[[Tensor, Tensor], Tensor],
+    gradient: Callable[[Tensor, Tensor], Tensor],
+    control: Tensor,
+    parameters: Tensor,
+) -> tuple[float, Tensor, float]:
+    value = objective(control, parameters)
+    g = gradient(control, parameters)
+    if (not isinstance(value, Tensor) or value.ndim != 0
+            or not isinstance(g, Tensor) or g.shape != control.shape
+            or g.dtype != control.dtype or g.device != control.device
+            or not bool(torch.isfinite(value)) or not bool(torch.isfinite(g).all())):
+        raise ValueError("basin objective or control gradient is invalid")
+    gradient_norm = float(torch.linalg.vector_norm(g))
+    if not math.isfinite(gradient_norm):
+        raise ValueError("basin control gradient norm is nonfinite")
+    return float(value), g.detach(), float(g.abs().max())
+
+
+def _direction(
+    gradient: Tensor, pairs: list[tuple[Tensor, Tensor, float]],
+) -> tuple[Tensor, str | None]:
+    q = gradient.clone()
+    alphas: list[float] = []
+    fallback: str | None = None
+    for step, change, inverse_curvature in reversed(pairs):
+        alpha = inverse_curvature * float(torch.dot(step, q))
+        if not math.isfinite(alpha):
+            fallback = "nonfinite_two_loop_alpha"
+            break
+        alphas.append(alpha)
+        q = q - alpha * change
+        if not bool(torch.isfinite(q).all()):
+            fallback = "nonfinite_two_loop_vector"
+            break
+    gamma = 1.0
+    if pairs and fallback is None:
+        step, change, _ = pairs[-1]
+        numerator = float(torch.dot(step, change))
+        denominator = float(torch.dot(change, change))
+        if (not math.isfinite(numerator) or not math.isfinite(denominator)
+                or denominator <= 0):
+            fallback = "nonfinite_two_loop_scale"
+        else:
+            gamma = numerator / denominator
+        if fallback is None and not math.isfinite(gamma):
+            fallback = "nonfinite_two_loop_scale"
+        if fallback is None:
+            gamma = min(max(gamma, 1e-6), 1e6)
+    result = gamma * q if fallback is None else gradient
+    if fallback is None:
+        for (step, change, inverse_curvature), alpha in zip(pairs, reversed(alphas)):
+            beta = inverse_curvature * float(torch.dot(change, result))
+            if not math.isfinite(beta):
+                fallback = "nonfinite_two_loop_beta"
+                break
+            result = result + step * (alpha - beta)
+            if not bool(torch.isfinite(result).all()):
+                fallback = "nonfinite_two_loop_vector"
+                break
+    direction = -result if fallback is None else -gradient
+    gnorm = float(torch.linalg.vector_norm(gradient))
+    dnorm = float(torch.linalg.vector_norm(direction))
+    slope = float(torch.dot(gradient, direction))
+    if (fallback is not None or not math.isfinite(dnorm) or dnorm == 0.0
+            or not math.isfinite(slope)
+            or slope >= -1e-12 * gnorm * dnorm):
+        pairs.clear()
+        direction = -gradient
+        dnorm = gnorm
+        fallback = fallback or "non_descent_lbfgs"
+    if not math.isfinite(dnorm) or dnorm == 0.0:
+        raise ValueError("basin steepest descent norm is invalid")
+    if dnorm > 1.0:
+        direction = direction / dnorm
+    if not bool(torch.isfinite(direction).all()):
+        raise ValueError("basin search direction is nonfinite")
+    return direction, fallback
+
+
+def search_basin(
+    objective: Callable[[Tensor, Tensor], Tensor],
+    control: Tensor,
+    parameters: Tensor,
+    branch_check: Callable[[Tensor, Tensor], tuple[dict[str, Any], str]],
+    *,
+    checkpoint: Callable[[dict[str, Any]], None] | None = None,
+    max_steps: int = 100,
+    max_backtracks: int = 16,
+    max_trials: int = 1600,
+    memory: int = 10,
+    phase_seconds: float = 600.0,
+    handoff_gradient_max: float = 1e-4,
+) -> BasinSearchResult:
+    """Search on the unchanged objective; accepted controls must be strict points.
+
+    Actual objective decrease is checked even if a step crosses a minmod
+    selector surface. Such a crossing resets curvature history and is not a
+    branch-preserving-path certificate.
+    """
+    if (not isinstance(control, Tensor) or not isinstance(parameters, Tensor)
+            or control.ndim != 1 or parameters.ndim != 1
+            or control.dtype != torch.float64 or parameters.dtype != torch.float64
+            or control.device.type != "cpu" or parameters.device.type != "cpu"
+            or not bool(torch.isfinite(control).all())
+            or not bool(torch.isfinite(parameters).all())):
+        raise ValueError("basin search requires finite CPU FP64 vectors")
+    if (max_steps < 1 or max_backtracks < 1 or max_trials < 1 or memory < 1
+            or phase_seconds <= 0 or handoff_gradient_max <= 0):
+        raise ValueError("basin search limits must be positive")
+    started = time.monotonic()
+    current = control.detach().clone()
+    p = parameters.detach().clone()
+    gradient = torch.func.grad(objective, argnums=0)
+    signature, _ = branch_check(current, p)
+    current_branch = _branch_key(signature)
+    value, g, gmax = _evaluate(objective, gradient, current, p)
+    history: list[dict[str, Any]] = []
+    pairs: list[tuple[Tensor, Tensor, float]] = []
+    accepted = trials = changes = 0
+
+    def finish(status: str) -> BasinSearchResult:
+        return BasinSearchResult(status, current, value, gmax, accepted, trials, changes, history)
+
+    if time.monotonic() - started >= phase_seconds:
+        return finish("time_budget")
+    if gmax <= handoff_gradient_max:
+        return finish("candidate")
+    for iteration in range(1, max_steps + 1):
+        if time.monotonic() - started >= phase_seconds:
+            return finish("time_budget")
+        direction, fallback = _direction(g, pairs)
+        if time.monotonic() - started >= phase_seconds:
+            return finish("time_budget")
+        slope = float(torch.dot(g, direction))
+        if not math.isfinite(slope) or slope >= 0:
+            return finish("no_descent_direction")
+        accepted_trial = False
+        for backtrack in range(max_backtracks):
+            if time.monotonic() - started >= phase_seconds:
+                return finish("time_budget")
+            if trials >= max_trials:
+                return finish("trial_budget")
+            trials += 1
+            alpha = 0.5**backtrack
+            candidate = current + alpha * direction
+            record: dict[str, Any] = {
+                "iteration": iteration, "backtrack": backtrack, "alpha": alpha,
+                "slope": slope, "status": "trial", "direction_fallback": fallback,
+            }
+            if not bool(torch.isfinite(candidate).all()):
+                record["status"] = "nonfinite_control"
+            else:
+                try:
+                    candidate_signature, _ = branch_check(candidate, p)
+                    candidate_branch = _branch_key(candidate_signature)
+                    record.update(
+                        branch_key=candidate_branch,
+                        euler_stages=candidate_signature.get("euler_stages"),
+                        minimum_scaled_slope_margin=candidate_signature.get(
+                            "minimum_scaled_slope_margin"
+                        ),
+                        minimum_scaled_face_flux_margin=candidate_signature.get(
+                            "minimum_scaled_face_flux_margin"
+                        ),
+                    )
+                    new_value, new_g, new_gmax = _evaluate(
+                        objective, gradient, candidate, p
+                    )
+                    if time.monotonic() - started >= phase_seconds:
+                        record["status"] = "time_budget"
+                        history.append(record)
+                        if checkpoint is not None:
+                            checkpoint(record)
+                        return finish("time_budget")
+                    reduction = value - new_value
+                    floor = 64 * torch.finfo(torch.float64).eps * max(
+                        abs(value), torch.finfo(torch.float64).tiny
+                    )
+                    armijo_bound = value + 1e-4 * alpha * slope
+                    if not math.isfinite(reduction) or not math.isfinite(armijo_bound):
+                        record.update(status="nonfinite_reduction_arithmetic",
+                                      objective=new_value)
+                    elif (new_value <= armijo_bound
+                            and reduction > floor):
+                        step = (candidate - current).detach()
+                        change = (new_g - g).detach()
+                        switched = candidate_branch != current_branch
+                        if switched:
+                            pairs.clear()
+                            changes += 1
+                        else:
+                            curvature = float(torch.dot(step, change))
+                            scale = float(torch.linalg.vector_norm(step) *
+                                          torch.linalg.vector_norm(change))
+                            if (math.isfinite(curvature) and math.isfinite(scale)
+                                    and curvature > 1e-10 * scale):
+                                inverse_curvature = 1.0 / curvature
+                                if math.isfinite(inverse_curvature):
+                                    pairs.append((step, change, inverse_curvature))
+                                    if len(pairs) > memory:
+                                        pairs.pop(0)
+                                else:
+                                    pairs.clear()
+                            else:
+                                pairs.clear()
+                        current, g, value, gmax = candidate.detach(), new_g, new_value, new_gmax
+                        current_branch = candidate_branch
+                        accepted += 1
+                        record.update(status="accepted", objective=value,
+                                      gradient_max=gmax, branch_changed=switched,
+                                      branch_key=current_branch, reduction=reduction,
+                                      control=current.detach().tolist(),
+                                      gradient=g.detach().tolist())
+                        accepted_trial = True
+                    else:
+                        record.update(status="armijo_or_roundoff_refusal",
+                                      objective=new_value, reduction=reduction)
+                except ValueError as error:
+                    record.update(status="candidate_refused", reason=str(error))
+                except RuntimeError as error:
+                    record.update(status="candidate_runtime_error", reason=str(error))
+                    history.append(record)
+                    if checkpoint is not None:
+                        checkpoint(record)
+                    raise
+            history.append(record)
+            if checkpoint is not None:
+                checkpoint(record)
+            if accepted_trial:
+                break
+        if time.monotonic() - started >= phase_seconds:
+            return finish("time_budget")
+        if not accepted_trial:
+            return finish("line_search_refused")
+        if gmax <= handoff_gradient_max:
+            return finish("candidate")
+    return finish("step_budget")
