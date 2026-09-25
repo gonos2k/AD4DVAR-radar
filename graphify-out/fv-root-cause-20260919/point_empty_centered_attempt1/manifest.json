@@ -1,0 +1,19 @@
+{
+  "sha256": {
+    "FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_PLAN.md.txt": "b05aadabec9c40d110586767f7b923f1a3baeed507908ee276c63fcfdedb0fc1",
+    "FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_RESULTS.md.txt": "f8fd077c1a25c8282ed7963646285cc5678fc8d71a9eb7bd3108b53e28cb080f",
+    "fv_point_centered_prior_response_probe.py.txt": "af938331586cea0d62a48fa3ace6f5cf2ecf9a37b8b56ade4cb665c3b32c3b66",
+    "fv_point_centered_prior_response_runner.py.txt": "cf9c41ba5698bb316d738179c5ac8de6b4a096bfaf6a2e45983490311a9d847c",
+    "fv_point_empty_centered_case.py.txt": "59788c0c27d865ab177cee9785ebee45db6dab1b530681a75173eba28f75747b",
+    "fv_point_empty_centered_final_tests.log.txt": "414f8559f54e62859bb0e65ad9db7131b26e75ea1a51d75d5ddfe8a54c01f020",
+    "fv_point_empty_centered_final_typecheck.log.txt": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "fv_point_empty_centered_prelaunch_graphify.log.txt": "1d42fae6070f445f59fc02729f0500c485cc0e4e76589b1c5faacbd83ee68ffd",
+    "fv_point_empty_centered_response_probe.py.txt": "865d57cd5dbe560e31ec756e2d1d26fd49ef78353cb4558dd6cf5193c3754a77",
+    "fv_point_empty_centered_response_runner.py.txt": "fe1c68a691a3c5eec8e572390bb070d560d2be0845b2b90a8ed81931353f3b48",
+    "point_centered_response.json": "1cd7c0178a7ca2b0f0920823ef801501addabfb4fe90c542a405328cb3153b07",
+    "point_centered_response.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "point_centered_response.resource.json": "88ddf89c0ab5514322134fb17c9238f148597b912908908d06397f714dcec80e",
+    "point_centered_response.run.json": "625d7544d4993488ed420c5272db63c245b1314028499dbdaa54218b44d9559d",
+    "test_fv_point_empty_centered_response.py.txt": "4b8a8387e9a62b1e79a120eba289db2915835db6888b2de525af90d0d6a105d6"
+  }
+}

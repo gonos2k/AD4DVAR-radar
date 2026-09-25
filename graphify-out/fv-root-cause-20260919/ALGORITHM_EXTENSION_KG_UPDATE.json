@@ -674,5 +674,17 @@
     "record": "FV_POINT_QC_CENTERED_RESPONSE_PLAN.md,FV_POINT_QC_CENTERED_RESPONSE_RESULTS.md,point_qc_centered_attempt1/manifest.json",
     "graphify": "code-only incremental update:7472 nodes,66641 edges,255 communities;no semantic LLM extraction",
     "status": "R3-Q constructed one-QC-excluded profile closed;R3-E one empty time,original R2-O,3-hour point sensitivity,finite QC-decision impact and physical validation remain open"
+  },
+  "fv_point_one_empty_first_time_centered_response": {
+    "baseline": "main 7df04a0 after PR202 fixed external-QC point response",
+    "scope": "first point-observation time four status1 genuinely missing/canonical inactive fills,empty_observation_time0;middle/last8 detected with full4x4 whiteners;complete 4x5 FV state/boundaries,54 stages,external B+theta pattern,fixed centered dynamics prior",
+    "nominal": "26-control gradient0,J0,H lambda_min0.999999999999673/lambda_max4272.4195133621715,symmetry3.08621e-16,54-stage slope margin8.04648e-4 and face margin7.75273e-3",
+    "response": "full 13-component VJP;inactive first-time parameters0-3 each direct/indirect/total gradient0 and objective/score/control-gradient payload mutation differences0;theta direct-0.004954104945433104,indirect+0.0019543715132648506,total-0.0029997334321682535;middle-time four-point bias total0.024230937342476166,true adjoint residual5.18118e-14,tangent residual2.40399e-11",
+    "nonlinear_validation": "four signed actual endpoints h0.001/0.0005;each one Newton correction,gmax<1.77e-12,same strict signature/margins;central relative errors3.40272e-6/8.50685e-7,absolute-error ratio3.999978",
+    "execution": "parent completed,child exit0,117.533s,425 sampled RSS observations,peak342294528B under600s/sampled1GiB cap;parent recomputed H/adjoint/VJP/tangent/four inactive slots/theta and endpoint scores,gradients,branches",
+    "verification": "68 focused tests passed with18 existing TorchScript warnings,error-level basedpyright0;GREEN/RED prelaunch GO;full CPU/package CI not run",
+    "record": "FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_PLAN.md,FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_RESULTS.md,point_empty_centered_attempt1/manifest.json",
+    "graphify": "code-only incremental update:7491 nodes,66665 edges,262 communities;no semantic LLM extraction",
+    "status": "R3-E constructed exactly-one-empty-first-time profile closed;multiple empty times,original R2-O,3-hour point sensitivity,finite removal impact and physical validation remain open"
   }
 }

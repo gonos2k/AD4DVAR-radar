@@ -12,7 +12,7 @@ reanalysis, and physical skill. Prior evidence remains in
 | R2-O | Original zero-centered-prior correlated point input still refuses | Obtain a qualified root and signed response on that original input, or retain an explicit unsupported-status contract without claiming root absence | Stage A and seven bounded numerical attempts are recorded below; the latest merit-only attempt refused all 16 iteration-7 candidates. **Open** |
 | R3-M | One missing point needs a stationary response | Under complete model state/boundaries, bind status 1 and a selected correlation submatrix to a qualified point root, full VJP, inactive-slot check and signed endpoints | **Closed for the constructed fixed-centered-prior profile with one middle-time point missing.** Full 13-vector and two signed pairs passed; see `FV_POINT_MISSING_CENTERED_RESPONSE_RESULTS.md` |
 | R3-Q | QC-excluded point profile needs a stationary response | Keep external QC status distinct from missing and clear sky; qualify a fixed-mask root, full VJP and signed endpoints | **Closed for the constructed status-2 external-QC profile.** Full VJP, zero inactive slot and two signed pairs passed; numerics match R3-M under the same active mask, while identity differs. See `FV_POINT_QC_CENTERED_RESPONSE_RESULTS.md` |
-| R3-E | One wholly empty observation time needs a stationary response | Preserve time integration and external background while qualifying root, VJP and signed endpoints | Open; current evidence is fixed-control only |
+| R3-E | One wholly empty observation time needs a stationary response | Preserve time integration and external background while qualifying root, VJP and signed endpoints | **Closed for the constructed exactly-one-empty-first-time profile.** Four inactive first-time slots, nonzero theta path, full VJP and two signed pairs passed; see `FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_RESULTS.md` |
 | R4 | Two-hole collocated partial problem refuses final Newton correction | Keep the three original refusals; choose and predeclare a branch-aware nominal search policy separately from final-point local eligibility, then validate any new root and signed response | Open; no claim that a stationary point is absent |
 | R5 | Point observations and 3-hour leads are in separate profiles | Define common time/trajectory and score semantics while preserving old one-lead and long-forward references; check a bounded combined forward run before any long-horizon response claim | Open |
 | R6 | General observation products remain unsupported | Bind product-defined footprint/coordinate, censoring/QC provenance and covariance semantics separately; do not infer physical measurements from prepared synthetic masks | Open; needs a declared product contract |
@@ -97,5 +97,10 @@ historical numerical reports; new attempts must have distinct records.
   status-1 missing; because the active mask and values are the same,
   numerical response/endpoints match. The QC decision itself was fixed,
   not differentiated (`FV_POINT_QC_CENTERED_RESPONSE_RESULTS.md`).
-- [ ] Qualify one entirely empty observation time separately. Do not
-  identify it with the one-point exclusion or original R2-O.
+- [x] Qualify exactly one entirely empty **first** observation time in
+  the constructed centered-prior case: four status-1 inactive parameters,
+  no first-time whitener, full 54-stage model timeline, nonzero external
+  theta dependency, full VJP and two signed pairs
+  (`FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_RESULTS.md`).
+- [ ] More than one empty time and the original zero-centered R2-O input
+  remain outside this result; do not infer finite removal impact.
