@@ -568,5 +568,15 @@
     "record": "FV_ASYNC_OBSERVER_SCOPE.md",
     "graphify": "code-only incremental update:7148 nodes,66005 edges,217 communities; no semantic LLM extraction",
     "remaining": "in-flight tasks must complete before report publication;production async-service lifecycle,full concurrent GN/refinement,thread-level forward AD and physical validation remain unverified"
+  },
+  "fv_point_qc_prepared_status": {
+    "baseline": "main 695cc03 after G9 async observer lifetime fencing",
+    "scope": "fixed 4x5 three-time four-point synthetic prepared status0 detected/status1 genuine missing/status2 externally QC-rejected; full model state and inflow support",
+    "numerics": "only status0 rows enter likelihood and valid principal same-time correlation submatrix; status1/2 canonical min_dbz prepared fill and inactive finite parameter slots; at least one detection per time",
+    "identity": "QC versus missing statuses have distinct fixed problem hashes; immediate-base all-detected and three-missing example hashes unchanged",
+    "validation": "66 affected point tests passed with18 existing warnings; selected typecheck0; no new GN/refinement/adjoint/reanalysis or radar product QC validation",
+    "record": "FV_POINT_QC_STATUS_SCOPE.md and fv_point_qc_legacy_identity.json",
+    "graphify": "code-only incremental update:7154 nodes,66014 edges,270 communities; no semantic LLM extraction",
+    "remaining": "product-defined QC decisions, censored/all-invalid frames, cross-time covariance, footprint/regridded products, qualified stationary response and independent physical validation"
   }
 }

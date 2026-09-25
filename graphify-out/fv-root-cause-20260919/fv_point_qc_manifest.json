@@ -1,0 +1,20 @@
+{
+  "base_head": "695cc03",
+  "scope": "prepared fixed QC-rejected synthetic point rows; fixed-control tests only",
+  "sha256": {
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "9f6815a8448a510a1c197cf393c59f9d570aac0326e08389d7b3dc2585c257bd",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_MISSING_RESEARCH.md": "ed7aa72f7e6654a7b508bad7d9c50180985a927cea3f9f55a76183f54f2f7974",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_QC_STATUS_SCOPE.md": "dc0dc6db281e65af3f4fb3c3cb49b5fb2e5ee5830593d4843143e7a8a258be2e",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "9a198d48cb5a1a176722760cdbae3b7422cc6b6eb96403d1001a52cefa7de490",
+    "graphify-out/fv-root-cause-20260919/PR175_176_REVIEW_RESOLUTION.md": "9dde4a6be7c426c6e6421511213858e51460a513ac08ce85f398055ba509aa5c",
+    "graphify-out/fv-root-cause-20260919/fv_point_qc_graphify.log": "46d85c431435a5a3d0c764f3348c2f8cc0cdcf8d80ba6d15a9eec14bf7ebe374",
+    "graphify-out/fv-root-cause-20260919/fv_point_qc_legacy_identity.json": "37aaac79b30e591be719cefca93ec2e88c97288937ac3ecb172224c5ed0a9956",
+    "graphify-out/fv-root-cause-20260919/fv_point_qc_tests.log": "1fc02dcaeea60e2c805e395b71b256c905f23aaf55a28ff0ab5dd6122551eec3",
+    "graphify-out/fv-root-cause-20260919/fv_point_qc_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "src/advar/fv_point_research_problem.py": "00f82210f4f612b3e52fc02345e679e11f40a45fd6f4508ddf163dae6ef5a2aa",
+    "tests/test_fv_point_missing.py": "5807c82b21fbd7f330144aa09b1770f49dc562a3a3c12088383c2f4664df6ee8",
+    "tests/test_fv_point_qc_status.py": "4ab0276aeb124ae37df55899427a47da80434137a85f43b970691e447d9b9752"
+  },
+  "test_command": ".venv/bin/python -m pytest -q tests/test_fv_point_sampler.py tests/test_fv_point_research_problem.py tests/test_fv_point_research_correlation.py tests/test_fv_point_missing.py tests/test_fv_point_qc_status.py",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python src/advar/fv_point_research_problem.py tests/test_fv_point_missing.py tests/test_fv_point_qc_status.py"
+}

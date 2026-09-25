@@ -1,8 +1,9 @@
 """Fixed off-grid dBZ-point observations for a bounded FV research problem.
 
 The observation values live on fixed interior points, while the initial
-background, state and FV boundaries remain on the model grid. Missing rows
-are omitted before any same-time correlation whitening. This is not a
+background, state and FV boundaries remain on the model grid. Missing and
+explicitly QC-rejected prepared rows are omitted before any same-time
+correlation whitening. This is not a
 radar-footprint average, general covariance model, or operational interface.
 """
 from __future__ import annotations
@@ -24,7 +25,7 @@ from .transport import BoundarySchedule
 
 @dataclass(frozen=True)
 class FVPointResearchProblem:
-    """One-lead, detected-or-missing off-grid FV research binding.
+    """One-lead, detected-or-excluded off-grid FV research binding.
 
     ``parameters`` are the three observation vectors followed by one
     background-pattern coefficient. Point observations never define the
@@ -44,7 +45,7 @@ class FVPointResearchProblem:
     trace_branches: Callable[[Callable[[], Tensor]], dict[str, Any]]
     source_sha256: str
     observation_correlation: Tensor | None = None
-    observation_status: Tensor | None = None  # uint8: 0 detected, 1 genuinely missing
+    observation_status: Tensor | None = None  # uint8: 0 detected, 1 missing, 2 QC-rejected
     expected_branch: Mapping[str, Any] | None = None
     _correlation_whitener: Tensor | None = field(init=False, repr=False, compare=False)
     _correlation_reference: Tensor | None = field(init=False, repr=False, compare=False)
@@ -71,8 +72,9 @@ class FVPointResearchProblem:
         else:
             if (not isinstance(status, Tensor) or status.shape != (3, count)
                     or status.dtype != torch.uint8 or status.device.type != "cpu"
-                    or status.requires_grad or not bool(((status == 0) | (status == 1)).all())):
-                raise ValueError("point status must be fixed uint8 [3,N]: 0 detected, 1 missing")
+                    or status.requires_grad
+                    or not bool(((status == 0) | (status == 1) | (status == 2)).all())):
+                raise ValueError("point status must be fixed uint8 [3,N]: 0 detected, 1 missing, 2 QC-rejected")
             detected = status == 0
             if not bool(detected.any(dim=1).all()):
                 raise ValueError("point research requires at least one detected value per time")
@@ -97,7 +99,7 @@ class FVPointResearchProblem:
                 or not bool((self.observation_dbz[detected] > frozen.analysis_config.detection_limit_dbz).all())
                 or not bool((self.observation_dbz[detected] < frozen.nowcast_config.max_dbz).all())
                 or not bool((self.observation_dbz[~detected] == frozen.nowcast_config.min_dbz).all())):
-            raise ValueError("point observations must be detected FP64 values or canonical missing fill")
+            raise ValueError("point observations must be detected FP64 values or canonical inactive fill")
         for name, value in (("std", self.observation_std_dbz),
                             ("quality", self.quality_weight)):
             if (value.shape != self.observation_dbz.shape
@@ -222,6 +224,10 @@ class FVPointResearchProblem:
                 "per-time fixed point correlation; valid principal submatrix and symmetric inverse sqrt after sqrt(quality)/std"
             ),
             "observation_masks": (
+                "status 0 detected, 1 genuinely missing, 2 externally QC-rejected; "
+                "canonical inactive fill, at least one detected per time; censored unsupported"
+                if self.observation_status is not None
+                and bool((self.observation_status == 2).any()) else
                 "all valid and detected; censored/QC unsupported"
                 if bool(self._detected_mask.all()) else
                 "status 0 detected, 1 genuinely missing; at least one detected per time; censored/QC unsupported"

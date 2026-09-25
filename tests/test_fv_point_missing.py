@@ -180,7 +180,7 @@ def test_active_observation_range_is_checked_but_missing_payload_may_match(case)
 
 
 @pytest.mark.parametrize("status_mutation", [
-    "dtype", "shape", "quality_control", "censored",
+    "dtype", "shape", "unknown", "censored",
 ])
 def test_status_contract_rejects_invalid_layout_or_unsupported_codes(case, status_mutation):
     problem, _, _ = case
@@ -190,7 +190,7 @@ def test_status_contract_rejects_invalid_layout_or_unsupported_codes(case, statu
     elif status_mutation == "shape":
         status = status[:, :-1]
     else:
-        status[1, 0] = 2 if status_mutation == "quality_control" else 3
+        status[1, 0] = 4 if status_mutation == "unknown" else 3
     with pytest.raises(ValueError):
         replace(problem, observation_status=status)
 

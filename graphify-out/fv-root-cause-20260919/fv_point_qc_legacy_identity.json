@@ -1,0 +1,13 @@
+{
+  "all_detected_current_sha256": "dd8ec41e5c1a115fe58f4862462c39614234bf31b5065fc634711f864db06f0f",
+  "all_detected_fixed_problem_sha256": "dd8ec41e5c1a115fe58f4862462c39614234bf31b5065fc634711f864db06f0f",
+  "base_commit": "695cc03",
+  "baseline_module_sha256": "1a2a726280396189cb2dff753b689f9975fd704f6c42651da7300128615ecb18",
+  "comparison": "same fixture source, all-detected and three canonical missing rows, base main versus current code",
+  "identity_match": {
+    "all_detected": true,
+    "three_missing": true
+  },
+  "three_missing_base_sha256": "564dde1b89d3dfcf704d0aaea733656c968108b46dd5dc9d1f2121d73e98e91b",
+  "three_missing_current_sha256": "564dde1b89d3dfcf704d0aaea733656c968108b46dd5dc9d1f2121d73e98e91b"
+}
