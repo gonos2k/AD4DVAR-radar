@@ -637,5 +637,17 @@
     "graphify": "code-only incremental update:7372 nodes,66413 edges,293 communities; no semantic LLM extraction",
     "status": "R2 remains open; response_validation not_performed; no adjoint,signed endpoints or physical validation",
     "remaining": "new input profile or distinct nonsmooth/root policy must be declared and independently qualified; preserve original correlated point refusal as unresolved"
+  },
+  "fv_point_centered_prior_response": {
+    "baseline": "main b78e5b2 after PR199 merit-only original-input refusal",
+    "scope": "different constructed 4x5 point FV statistical problem: fixed nonzero six-component dynamics prior mean,12 generated detached off-grid observations,one theta,fixed within-time correlation and frozen verification; original zero-centered input remains unresolved",
+    "nominal": "26-control gradient exactly0,J0,exact H lambda_min0.9999999999997873/lambda_max4426.990015915346,symmetry2.93077e-16,54 stages,slope margin8.04648e-4,face margin7.75273e-3",
+    "response": "full 13-component direct/indirect/total VJP; middle-time four-point bias direct0,indirect=total0.0012340828462648612,true transposed-adjoint relative residual1.04876e-13,16 PCG iterations,full-vector projection difference2.51535e-17",
+    "nonlinear_validation": "four signed actual endpoint reanalyses at h0.001 and0.0005; all one Newton correction and gmax<1.85e-12,same strict signature/margins; central relative errors3.03776e-6 and7.59457e-7,absolute-error ratio3.99991",
+    "execution": "parent completed,child exit0,120.320s,457 RSS samples,peak343736320B under600s/sampled1GiB cap; parent independently recomputed H/adjoint/VJP/tangent/all endpoint objectives,scores,gradients and strict branches",
+    "verification": "55 focused tests passed with18 existing TorchScript warnings;error-level basedpyright0;GREEN/RED prelaunch GO after parent false-success gates were fixed;full CPU/package CI not run",
+    "record": "FV_POINT_CENTERED_PRIOR_RESPONSE_PLAN.md,FV_POINT_CENTERED_PRIOR_RESPONSE_RESULTS.md,point_centered_response_attempt1/manifest.json",
+    "graphify": "code-only incremental update:7432 nodes,66574 edges,290 communities; no semantic LLM extraction",
+    "status": "R2 constructed-profile integration closed; original-input R2-O,missing/QC/empty-time R3,3-hour point response R5 and physical validation remain open"
   }
 }

@@ -357,8 +357,12 @@ changes the numerical refiner, not the objective, observation contract or gates.
   (`FV_POINT_SECTOR_ROOT_ATTEMPT1_RESULTS.md`,
   `FV_POINT_MERIT_ROOT_ATTEMPT1_RESULTS.md`).
   None is a stationary response or evidence that a root does not exist.
-- [ ] Qualify a point-observation stationary root and then the fresh
-  adjoint/full VJP plus signed endpoint reanalysis under its final branch.
+- [x] Qualify a constructed, full-valid correlated point-observation
+  stationary root under a **fixed nonzero dynamics prior mean**; compute
+  the full 13-component adjoint/VJP and pass two signed reanalysis pairs
+  under its final branch (`FV_POINT_CENTERED_PRIOR_RESPONSE_RESULTS.md`).
+  The original zero-centered-prior input's seven refusals remain open
+  separately; this constructed case does not prove its convergence.
 - [ ] Combine the point likelihood with the separately verified 3-hour
   forward schedule only after the one-lead point response contract is
   established; independent physical accuracy remains a separate target.

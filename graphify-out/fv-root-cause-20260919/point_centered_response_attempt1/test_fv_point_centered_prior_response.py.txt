@@ -1,0 +1,226 @@
+"""Independent publication checks using a known stationary analytic case."""
+
+import copy
+import json
+from pathlib import Path
+from typing import Any
+
+import pytest
+import torch
+from torch import Tensor
+
+from examples.weather_scenarios import fv_point_centered_prior_response_probe as probe
+from examples.weather_scenarios import fv_point_centered_prior_response_runner as runner
+from examples.weather_scenarios.fv_point_centered_prior_case import tensor_sha
+
+
+class AnalyticCase:
+    """A 26-control/13-parameter stationary path with known cubic score error."""
+
+    def __init__(self, cubic: float = 0.001 / 64, score_scale: float = 1.0):
+        self.control = torch.zeros(26, dtype=torch.float64)
+        self.parameters = torch.zeros(13, dtype=torch.float64)
+        self.direction = torch.zeros(13, dtype=torch.float64)
+        self.direction[4:8] = 1.0
+        self.dynamics_prior_mean = torch.zeros(6, dtype=torch.float64)
+        self.nominal_branch = {
+            "choices": [1], "face_signs": [1], "euler_stages": 54,
+            "minimum_scaled_slope_margin": 2e-4,
+            "minimum_scaled_face_flux_margin": 3e-4,
+        }
+        self.identity = {"analytic_cubic": cubic, "score_scale": score_scale}
+        self.cubic = cubic
+        self.score_scale = score_scale
+
+    def target(self, p: Tensor) -> Tensor:
+        value = p[4:8].sum()
+        target = torch.zeros_like(self.control)
+        target[0] = 0.025 * value + self.cubic * value**3
+        return target
+
+    def objective(self, control: Tensor, p: Tensor) -> Tensor:
+        return 0.5 * (control - self.target(p)).square().sum()
+
+    def score(self, control: Tensor, _p: Tensor) -> Tensor:
+        return self.score_scale * control[0] + 0.5
+
+    def branch_check(self, _control: Tensor, _p: Tensor) -> tuple[dict[str, Any], str]:
+        return self.nominal_branch, "analytic fixed branch"
+
+
+def _child(case: AnalyticCase) -> dict[str, Any]:
+    c, p, d = case.control, case.parameters, case.direction
+    signature = probe._branch_summary(case.nominal_branch)
+    tangent = torch.zeros_like(c)
+    tangent[0] = 0.1
+    tangent_rhs = tangent.clone()
+    total = torch.zeros_like(p)
+    total[4:8] = 0.025 * case.score_scale
+    adjoint = torch.zeros_like(c)
+    adjoint[0] = case.score_scale
+    directional = 0.1 * case.score_scale
+    endpoints = []
+    pairs = []
+    pass_flags = []
+    errors = []
+    for h in probe.STEP_SIZES:
+        scores = {}
+        for name, sign in (("plus", 1.0), ("minus", -1.0)):
+            endpoint_p = p + sign * h * d
+            endpoint_c = case.target(endpoint_p)
+            score = float(case.score(endpoint_c, endpoint_p))
+            scores[name] = score
+            endpoints.append({
+                "h": h, "sign": name, "status": "eligible",
+                "parameters_sha256": tensor_sha(endpoint_p),
+                "predictor_sha256": tensor_sha(c + sign * h * tangent),
+                "control": endpoint_c.tolist(), "control_sha256": tensor_sha(endpoint_c),
+                "objective": float(case.objective(endpoint_c, endpoint_p)),
+                "score": score, "gradient_max": 0.0, "branch": signature,
+            })
+        central = (scores["plus"] - scores["minus"]) / (2 * h)
+        error = abs(central - directional)
+        limit = 1e-4 * abs(directional) if abs(directional) >= 1e-8 else 1e-10
+        passed = error < limit
+        pass_flags.append(passed)
+        errors.append(error)
+        pairs.append({"h": h, "central_difference": central,
+                      "absolute_error": error, "passed": passed})
+    validated = all(pass_flags) and errors[1] < errors[0]
+    return {
+        "pid": 123, "phase": "finished",
+        "numerical_status": "eligible" if validated else "validation_failed",
+        "response_validation": "passed" if validated else "failed",
+        "source_unchanged": True, "input_unchanged": True,
+        "plan_unchanged": True, "archive_unchanged": True,
+        "source_before": probe._sources(), "source_after": probe._sources(),
+        "input_before": case.identity, "input_after": case.identity,
+        "plan_sha256": probe.PLAN_SHA256,
+        "archive_sha256": probe._sha(probe.ARCHIVE),
+        "nominal": {
+            "control": c.tolist(), "control_sha256": tensor_sha(c),
+            "parameters": p.tolist(), "parameters_sha256": tensor_sha(p),
+            "direction": d.tolist(), "direction_sha256": tensor_sha(d),
+            "dynamics_prior_mean": case.dynamics_prior_mean.tolist(),
+            "dynamics_prior_mean_sha256": tensor_sha(case.dynamics_prior_mean),
+            "objective": 0.0, "score": 0.5,
+            "gradient_max": 0.0, "branch": signature,
+            "hessian_audit": {"hvp_columns": 26, "symmetry_relative": 0.0,
+                              "lambda_min": 1.0, "lambda_max": 1.0},
+        },
+        "response": {
+            "direct_gradient": torch.zeros_like(p).tolist(),
+            "indirect_gradient": total.tolist(),
+            "total_gradient": total.tolist(),
+            "direct": 0.0, "indirect": directional, "total": directional,
+            "total_projection": directional,
+            "projection_absolute_error": 0.0,
+            "projection_limit": max(1e-6 * abs(directional), 1e-12),
+            "adjoint": adjoint.tolist(),
+            "true_adjoint_relative_residual": 0.0,
+            "pcg_relative_residual": 0.0, "pcg_iterations": 1,
+        },
+        "tangent": {"control_direction": tangent.tolist(),
+                    "control_direction_sha256": tensor_sha(tangent),
+                    "rhs_sha256": tensor_sha(tangent_rhs),
+                    "true_relative_residual": 0.0, "iterations": 1},
+        "endpoints": endpoints, "pairs": pairs,
+    }
+
+
+@pytest.mark.parametrize("mutation", [
+    None, "bad_control_hash", "bad_parameter_hash", "bad_gradient",
+    "bad_branch", "bad_adjoint_residual", "bad_pair", "forged_projection_limit",
+    "forged_direct_scalar", "self_consistent_forged_scores",
+    "missing_adjoint", "forged_adjoint", "forged_indirect_vector",
+    "forged_tangent",
+])
+def test_independent_result_gate_rejects_false_success(mutation):
+    case = AnalyticCase()
+    child = _child(case)
+    if mutation == "bad_control_hash":
+        child["endpoints"][0]["control_sha256"] = "f" * 64
+    elif mutation == "bad_parameter_hash":
+        child["endpoints"][0]["parameters_sha256"] = "f" * 64
+    elif mutation == "bad_gradient":
+        child["endpoints"][0]["gradient_max"] = 1e-3
+    elif mutation == "bad_branch":
+        child["endpoints"][0]["branch"]["minimum_scaled_face_flux_margin"] = 1e-6
+    elif mutation == "bad_adjoint_residual":
+        child["response"]["true_adjoint_relative_residual"] = 1e-3
+    elif mutation == "bad_pair":
+        child["pairs"][0]["central_difference"] += 1e-2
+    elif mutation == "forged_projection_limit":
+        child["response"]["projection_limit"] = 1.0
+    elif mutation == "forged_direct_scalar":
+        child["response"]["direct"] = 0.1
+    elif mutation == "self_consistent_forged_scores":
+        child["endpoints"][0]["score"] += 0.01
+        child["endpoints"][1]["score"] += 0.01
+    elif mutation == "missing_adjoint":
+        del child["response"]["adjoint"]
+    elif mutation == "forged_adjoint":
+        child["response"]["adjoint"] = [0.0] * 26
+    elif mutation == "forged_indirect_vector":
+        child["response"]["indirect_gradient"][4] += 0.01
+    elif mutation == "forged_tangent":
+        child["tangent"]["control_direction"] = [0.0] * 26
+        child["tangent"]["control_direction_sha256"] = tensor_sha(torch.zeros(26, dtype=torch.float64))
+    assert runner._valid_result(child, case) is (mutation is None)
+
+
+def test_projection_limit_has_absolute_fallback_near_zero():
+    assert probe._projection_limit(0.0) == 1e-12
+    assert probe._projection_limit(1e-9) == 1e-12
+    assert probe._projection_limit(-0.1) == pytest.approx(1e-7)
+
+
+def test_small_score_offsets_cannot_flip_recomputed_pair_decision():
+    case = AnalyticCase(cubic=150.0, score_scale=1e-8)
+    child = _child(case)
+    assert child["numerical_status"] == "eligible"
+    assert runner._valid_result(child, case)
+    child["endpoints"][0]["score"] += 5e-13
+    child["endpoints"][1]["score"] -= 5e-13
+    h = probe.STEP_SIZES[0]
+    reported_central = (child["endpoints"][0]["score"] - child["endpoints"][1]["score"]) / (2 * h)
+    child["pairs"][0].update(
+        central_difference=reported_central,
+        absolute_error=abs(reported_central - child["response"]["total"]),
+        passed=False,
+    )
+    child["numerical_status"] = "validation_failed"
+    child["response_validation"] = "failed"
+    assert not runner._valid_result(child, case, require_pass=False)
+
+
+def test_parent_requires_clean_exit_and_source_identity(monkeypatch, tmp_path):
+    case = AnalyticCase()
+    child = _child(case)
+    def guarded(command, *, wall_seconds, rss_bytes, report_path, log_path):
+        assert wall_seconds == 600 and rss_bytes == 1024**3
+        resource = {"command": command, "child_pid": 123, "exit_code": 0,
+                    "resource_termination": None, "monitor_error": None,
+                    "wall_limit_seconds": 600, "elapsed_seconds": 10.0,
+                    "rss_limit_bytes": 1024**3, "rss_samples": 3,
+                    "sampled_peak_rss_bytes": 300_000_000}
+        Path(command[-1]).write_text(json.dumps(child))
+        Path(report_path).write_text(json.dumps(resource))
+        Path(log_path).write_text("")
+        return resource
+    monkeypatch.setattr(runner, "run_guarded", guarded)
+    monkeypatch.setattr(runner, "make_case", lambda: case)
+    assert runner.run(tmp_path / "good")["execution_status"] == "completed"
+    tampered = copy.deepcopy(child)
+    tampered["source_after"][next(iter(tampered["source_after"]))] = "f" * 64
+    child.clear()
+    child.update(tampered)
+    assert runner.run(tmp_path / "tampered")["execution_status"] == "failed"
+
+
+def test_validation_failure_is_distinct_from_execution_failure():
+    case = AnalyticCase(cubic=200.0)
+    child = _child(case)
+    assert child["numerical_status"] == "validation_failed"
+    assert runner._valid_result(child, case, require_pass=False)
+    assert not runner._valid_result(child, case)
