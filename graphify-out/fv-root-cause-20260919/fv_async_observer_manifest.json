@@ -1,0 +1,20 @@
+{
+  "base_head": "918e1c004182199617282cb14293d7bdcdd9955d",
+  "scope": "small asyncio task and to_thread diagnostic ownership; no FV nonlinear solve",
+  "sha256": {
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "833a99d61ca527a25f0443aee17224e76fe96b232649efee390a40817a72a6c5",
+    "graphify-out/fv-root-cause-20260919/FV_ASYNC_OBSERVER_SCOPE.md": "b1c4d2b8deed7ef9c490ea2c8c3986e470b3dd0aad00d17b99182f425fe4d8ca",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "832f68b322553eeae07a1b80251d5182255ecadaea482398950f469a0fed1e8b",
+    "graphify-out/fv-root-cause-20260919/PR175_176_REVIEW_RESOLUTION.md": "ee84d5ab3f1b5bffd65ebd2a7241a0ef5b786d3b580ef3b9b92ae77760c65ac5",
+    "graphify-out/fv-root-cause-20260919/async_observer_graphify.log": "c7cd9c37298f63d41d32ecdf3ae5aa770f6a0e09e5d12c22f7446d553e896b82",
+    "graphify-out/fv-root-cause-20260919/async_observer_pref_fix_repro.json": "9aacdf55f8181e3be35b8c2056b91c9df9a6ccf2d354cde87eeeffb76f271a5a",
+    "graphify-out/fv-root-cause-20260919/async_observer_pref_fix_repro.py": "d1179bdf4ed0027bdeac42c7fea59d659b838dcea9ae05ad1dcf9f5d28516410",
+    "graphify-out/fv-root-cause-20260919/async_observer_tests.log": "76dc03865b0f243723d878d4382a40f9662f6a57153542d53bf840c40f4b47ca",
+    "graphify-out/fv-root-cause-20260919/async_observer_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "tests/test_async_observer_context.py": "760fe0fea0f36e1c99220a6901bdcaaf05ae81a3d128cad4202cfcd8b68d21a9"
+  },
+  "tests_command": ".venv/bin/python -m pytest -q tests/test_async_observer_context.py tests/test_fv_stage_observer.py tests/test_pcg_observer.py tests/test_local_response.py tests/test_local_refinement.py",
+  "typecheck_command": "uv tool run --from basedpyright==1.39.9 basedpyright --level error --pythonpath /Users/yhlee/ADVAR/.venv/bin/python src/advar/transport.py src/advar/matrix_free.py tests/test_async_observer_context.py"
+}

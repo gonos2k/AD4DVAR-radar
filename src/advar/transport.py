@@ -49,17 +49,19 @@ def observe_minmod_stages(observer: _MinmodStageObserver) -> Iterator[None]:
 
     Diagnostics receive detached copies and should run outside automatic
     differentiation and checkpoint replay.
-    Nested observers run from innermost to outermost, matching the old serial
-    wrapper order while keeping each thread/task's collector separate.
+    Nested observers run from innermost to outermost. A task inheriting this
+    context cannot write to this observer after the lexical scope exits.
     """
     if not callable(observer):
         raise TypeError("minmod stage observer must be callable")
     previous = _minmod_stage_observer.get()
+    active = True
 
     def notify(q: Tensor, qx: Tensor, qy: Tensor) -> None:
         # Each observer gets its own diagnostic copy; neither model state nor
         # an enclosing observer can be changed by an inner callback.
-        observer(q.detach().clone(), qx.detach().clone(), qy.detach().clone())
+        if active:
+            observer(q.detach().clone(), qx.detach().clone(), qy.detach().clone())
         if previous is not None:
             previous(q, qx, qy)
 
@@ -67,6 +69,7 @@ def observe_minmod_stages(observer: _MinmodStageObserver) -> Iterator[None]:
     try:
         yield
     finally:
+        active = False
         _minmod_stage_observer.reset(token)
 
 

@@ -559,5 +559,14 @@
     "record": "FV_CONCURRENT_RESPONSE_RUN1_RESULTS.md and FV_PROCESS_ISOLATED_RESPONSE_RESULTS.md",
     "graphify": "code-only incremental update:7137 nodes,65990 edges,266 communities; no semantic LLM extraction",
     "remaining": "full concurrent GN/refinement,async/service context ownership,general inputs,independent nonlinear response validation and physical forecast skill"
+  },
+  "fv_async_observer_ownership": {
+    "baseline": "main 918e1c0 after two fixed process-isolated FV local responses",
+    "finding": "ContextVar task creation inherited diagnostic callbacks beyond the registering scope; delayed child could append to an expired parent collector",
+    "change": "minmod and PCG observer closures skip new late callbacks once their lexical scope exits; active sibling task scopes and nested outer dispatch remain intact",
+    "validation": "pre-fix main918e1c0 source reproduced late [1.0,2.0] stage and PCG records in async_observer_pref_fix_repro.json; after change 51 affected tests passed with18 existing warnings and selected typecheck0; no full FV solve rerun",
+    "record": "FV_ASYNC_OBSERVER_SCOPE.md",
+    "graphify": "code-only incremental update:7148 nodes,66005 edges,217 communities; no semantic LLM extraction",
+    "remaining": "in-flight tasks must complete before report publication;production async-service lifecycle,full concurrent GN/refinement,thread-level forward AD and physical validation remain unverified"
   }
 }
