@@ -1,0 +1,16 @@
+{
+  "sha256": {
+    "FV_POINT_MERIT_ROOT_ATTEMPT1_RESULTS.md.txt": "fd0e0d8edbe2fa878f580cf8e22fe83330894abce845d72210fd3a34d8ac6a32",
+    "FV_POINT_MERIT_ROOT_PLAN.md.txt": "c8a43e522cee2064b7ccf0144cdfab5d4bf52ff6f72d19dbd3ab6f9623769abf",
+    "fv_point_merit_affected_tests.log.txt": "f1d1b094a34aaaf5eecb328daba6dfebe9b32181aa3a3e50c985074b6a00cccb",
+    "fv_point_merit_final_typecheck.log.txt": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "fv_point_merit_prelaunch_tests.log.txt": "e45af4c6083e925133684e1028591e9abb749baea1dd6ae2f5d3a682079f3276",
+    "fv_point_merit_root_probe.py.txt": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+    "fv_point_merit_root_runner.py.txt": "b58fc5267ea9b0c439b84ee4664600c859b943e1d9450640da44e0c16cfbaae4",
+    "point_merit_root.json": "929219cadd5e96e3c66f01abb6497b976462c213874686a9d8c3da92023d9c44",
+    "point_merit_root.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "point_merit_root.resource.json": "d74c8b69d10c554557e0a6c17ad54ab18d846fc5983ba7a6a6d30286e6d1d912",
+    "point_merit_root.run.json": "6c25ac38f1d20bdcbf6e479a03f47595a85de9306ca5cc98f9b55377edee2393",
+    "test_fv_point_merit_root.py.txt": "43917955f2e0859c3a31f06e6677dc47d5378d4737bec101fc2e6612e4f5e62d"
+  }
+}

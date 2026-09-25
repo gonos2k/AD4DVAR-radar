@@ -625,5 +625,17 @@
     "graphify": "code-only incremental update:7346 nodes,66353 edges,314 communities; no semantic LLM extraction",
     "status": "R2 remains open; response_validation not_performed; no adjoint,signed endpoints or physical validation",
     "remaining": "a separately declared policy must find a fresh branch/margin/curvature-qualified root before adjoint/full VJP and two signed nonlinear reanalysis pairs"
+  },
+  "fv_point_merit_root_refusal": {
+    "baseline": "main 68b4783 after PR198 sector-adaptive triple-decrease refusal",
+    "scope": "one pinned sixth-accepted-control restart, same correlated point FV problem; changed-signature candidates require measured half-squared-gradient norm decrease only; same-signature Armijo and final root/margin gates preserved",
+    "numerics": "seven PCGs converged; one sector switch and five same-signature steps accepted; last J0.00107824897410049,g2 .010552233324871483,gmax .006602351499307973",
+    "refusal": "Newton iteration7 all16 changed-signature candidates failed merit-only rule; smallest candidate raised Phi5.567481407126414e-5 to7.19517485248372e-5; no stationary root established",
+    "execution": "parent completed with scientific merit_refused,child exit2,170.296s,638 RSS samples,peak354222080B under600s/sampled1GiB cap",
+    "verification": "51 focused and143 affected tests plus2 subtests passed with18 existing warnings; error-level basedpyright0;GREEN/RED prelaunch GO after narrow final numerical-gate exception handling",
+    "record": "FV_POINT_MERIT_ROOT_PLAN.md,FV_POINT_MERIT_ROOT_ATTEMPT1_RESULTS.md,point_merit_root_attempt1/manifest.json",
+    "graphify": "code-only incremental update:7372 nodes,66413 edges,293 communities; no semantic LLM extraction",
+    "status": "R2 remains open; response_validation not_performed; no adjoint,signed endpoints or physical validation",
+    "remaining": "new input profile or distinct nonsmooth/root policy must be declared and independently qualified; preserve original correlated point refusal as unresolved"
   }
 }

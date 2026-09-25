@@ -1,0 +1,32 @@
+{
+  "affected_test_command": ".venv/bin/python -m pytest tests/test_local_refinement.py tests/test_local_response.py tests/test_matrix_free.py tests/test_fv_analysis_response.py tests/test_fv_point_basin_search.py tests/test_fv_point_terminal_newton.py tests/test_fv_point_core_strict_root.py tests/test_fv_point_sector_policy.py tests/test_fv_point_sector_root.py tests/test_fv_point_merit_root.py -q",
+  "base_head": "68b47837688186c4c0e9c2dd941f86e4b0d03875",
+  "focused_test_command": ".venv/bin/python -m pytest tests/test_fv_point_merit_root.py tests/test_fv_point_sector_root.py tests/test_local_refinement.py -q",
+  "numerical_run_command": ".venv/bin/python examples/weather_scenarios/fv_point_merit_root_runner.py --directory graphify-out/fv-root-cause-20260919/point_merit_root_attempt1",
+  "scope": "one gradient-merit sector-root refusal; no stationary response or reanalysis",
+  "sha256": {
+    "examples/weather_scenarios/fv_point_merit_root_probe.py": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+    "examples/weather_scenarios/fv_point_merit_root_runner.py": "b58fc5267ea9b0c439b84ee4664600c859b943e1d9450640da44e0c16cfbaae4",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "ed522cf9ed01166fd3b82cfcee6e2f5d465cf7b131bda7749f231bb496267ae1",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_MERIT_ROOT_ATTEMPT1_RESULTS.md": "fd0e0d8edbe2fa878f580cf8e22fe83330894abce845d72210fd3a34d8ac6a32",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_MERIT_ROOT_PLAN.md": "c8a43e522cee2064b7ccf0144cdfab5d4bf52ff6f72d19dbd3ab6f9623769abf",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "8e4a2dea03a7228a09c859a0abd71db03c39a5316c4247eb5447e6e91cfa3308",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "e9e23b68feef18aee697fc972a1246507b55831f6ea13030ec8883ae0d2b0b79",
+    "graphify-out/fv-root-cause-20260919/fv_point_merit_affected_tests.log": "f1d1b094a34aaaf5eecb328daba6dfebe9b32181aa3a3e50c985074b6a00cccb",
+    "graphify-out/fv-root-cause-20260919/fv_point_merit_final_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/fv_point_merit_prelaunch_graphify.log": "328efd497b8711b4db9c19fd7641fe7b3837968b369e69069859ac9c862b85ff",
+    "graphify-out/fv-root-cause-20260919/fv_point_merit_prelaunch_tests.log": "e45af4c6083e925133684e1028591e9abb749baea1dd6ae2f5d3a682079f3276",
+    "graphify-out/fv-root-cause-20260919/point_merit_root_attempt1/manifest.json": "76aa289a628f37b8a4b7eba2e94ca408ef25f7bba24e69f72d2a37f67d44ef9e",
+    "tests/test_fv_analysis_response.py": "b8e67133c492923afcc27304dcec924e9417ec4b7af8b0aa53e29c5bea2880f5",
+    "tests/test_fv_point_basin_search.py": "e47d2625741b7705d3d564a8190769e1bfb1917c1e47f601fc221c009709bfc3",
+    "tests/test_fv_point_core_strict_root.py": "89aea5f484c3e107786420820d8b40d34984eed0760548712188b18fcb9cc104",
+    "tests/test_fv_point_merit_root.py": "43917955f2e0859c3a31f06e6677dc47d5378d4737bec101fc2e6612e4f5e62d",
+    "tests/test_fv_point_sector_policy.py": "35fb269429f1f73e198892206ce62bbb827854dae704bbf294f97e92bcff44c7",
+    "tests/test_fv_point_sector_root.py": "49c2f35b24274072ef51930165e735d74b18f5c6425fad5c3f405c112860eaa2",
+    "tests/test_fv_point_terminal_newton.py": "1c58a9013477f92ebdeb20d3bdfeafe3dd7429be624d31c10fd65843a38baa8e",
+    "tests/test_local_refinement.py": "a99e8eebdb4e65c92d9fc281cd0564cf1b87bffc2b7c1923827d4311faf32bbb",
+    "tests/test_local_response.py": "7d22fb342f2e3a5add43db54e42bff5e4cff892d95d450b7382d68ea9097fecc",
+    "tests/test_matrix_free.py": "fa71ecc5af3e0496ca38b1b99a2373cda779300941e85bbe71eb21720e9ec013"
+  },
+  "typecheck_command": "uvx --from basedpyright basedpyright --level error examples/weather_scenarios/fv_point_merit_root_probe.py examples/weather_scenarios/fv_point_merit_root_runner.py"
+}
