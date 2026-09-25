@@ -296,9 +296,9 @@ changes the numerical refiner, not the objective, observation contract or gates.
   active; default and two-empty-time inputs refuse. Fixed-control derivatives
   and the legacy default identity are checked in `FV_POINT_EMPTY_TIME_SCOPE.md`.
 - [ ] Regridded/footprint radar products, censored point rows, product QC,
-  cross-time covariance and a newly qualified stationary whole response
-  remain separate G5c work. More than one empty frame remains outside the
-  bounded point profile.
+  cross-time covariance and qualified stationary responses for those
+  broader inputs remain separate G5c work. More than one empty frame
+  remains outside the bounded point profile.
 - [x] Bounded regular 10-minute/18-lead forward schedule with 90 substeps per
   interval, 3600 SSPRK stages, same-operator zero/nonzero-flow truth, explicit
   verification times and observed refusal of strict response eligibility
@@ -374,8 +374,12 @@ changes the numerical refiner, not the objective, observation contract or gates.
   missing, but the identical active subset yields the same numerical
   sensitivity and signed endpoints. This does not differentiate a QC
   decision (`FV_POINT_QC_CENTERED_RESPONSE_RESULTS.md`).
-- [ ] Qualify one entire empty point-observation time separately; it does
-  not follow automatically from one excluded point.
+- [x] Qualify exactly one entire empty **first** point-observation time
+  in a separate constructed profile. Four first-time observation
+  gradients are zero; model time integration and nonzero external theta
+  dependence remain; full response and two signed reanalysis pairs pass
+  (`FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_RESULTS.md`). Multiple empty
+  times and finite whole-frame removal impact remain unverified.
 - [ ] Combine the point likelihood with the separately verified 3-hour
   forward schedule only after the one-lead point response contract is
   established; independent physical accuracy remains a separate target.
