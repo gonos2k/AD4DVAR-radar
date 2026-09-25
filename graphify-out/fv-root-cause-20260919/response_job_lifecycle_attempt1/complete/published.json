@@ -1,0 +1,46 @@
+{
+  "case_id": "fv4x5",
+  "child_completed_monotonic": 579713.970228208,
+  "input_identity": {
+    "control": {
+      "dtype": "torch.float64",
+      "sha256": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+      "shape": [
+        26
+      ]
+    },
+    "direction": {
+      "dtype": "torch.float64",
+      "sha256": "1f69a289a5972798203f33b9b84c65119621b0beb39dd8f3e3c2f5e25099a90f",
+      "shape": [
+        61
+      ]
+    },
+    "parameters": {
+      "dtype": "torch.float64",
+      "sha256": "64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07",
+      "shape": [
+        61
+      ]
+    },
+    "problem": "c2bb9beeddec0d8805f083ddfd335ac0e332335a3fa0823ff2b8b5c63b966ad2",
+    "verification": {
+      "dtype": "torch.float64",
+      "sha256": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+      "shape": [
+        4,
+        5
+      ]
+    }
+  },
+  "publication_decision_monotonic": 579714.078692,
+  "request_id": "complete",
+  "response_direct": 0.0,
+  "response_indirect": -0.003038272528696361,
+  "response_total": -0.003038272528696361,
+  "scope": "fixed archived fv4x5 conditional local response; no nonlinear reanalysis/physical skill",
+  "true_adjoint_relative_residual": 9.888163804832049e-11,
+  "worker_pid": 14273,
+  "worker_report_sha256": "ebc1e64069ecc92de0f9d7d1a7b814ecf4d202c4edd399d7a46cb08ff698e77f",
+  "worker_response_ended_monotonic": 579713.482664333
+}

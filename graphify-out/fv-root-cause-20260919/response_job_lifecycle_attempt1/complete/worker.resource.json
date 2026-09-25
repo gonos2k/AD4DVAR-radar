@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_process_response_worker.py",
+    "--case",
+    "fv4x5",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/response_job_lifecycle_attempt1/complete/worker.raw.json"
+  ],
+  "child_pid": 14273,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 22.3051692500012,
+  "sampled_peak_rss_bytes": 340033536,
+  "rss_samples": 84,
+  "wall_limit_seconds": 300,
+  "rss_limit_bytes": 805306368,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}
