@@ -1,0 +1,20 @@
+{
+  "sha256": {
+    "FV_POINT_QC_CENTERED_RESPONSE_PLAN.md.txt": "4d247b648abd0834cdeeb6df0fc9fd2ec30554dc5407c5fe3faa3a52d706a39d",
+    "FV_POINT_QC_CENTERED_RESPONSE_RESULTS.md.txt": "7765283c7d80d4a4a534320716ba3595e3cd997a76072f2f73a7cbc0dc5355a3",
+    "fv_point_missing_centered_case.py.txt": "b49cc38fd26ae5059f22029e3971d75cfa43bec6ddd4c08c114d9e3be9bbf0c8",
+    "fv_point_qc_centered_final_tests.log.txt": "2374502b8978ce7736067d90e0bbf0d03dbfb5180d1a939a45821d0145f60288",
+    "fv_point_qc_centered_final_typecheck.log.txt": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "fv_point_qc_centered_prelaunch_graphify.log.txt": "9bf3583bfdd9bd63d90eaedbdb5bcfd84d508a003c60629cd0f788fe85f31f3c",
+    "fv_point_qc_centered_response_probe.py.txt": "c7707b05fcdccb027263188925fe26bb226d3462a3db1a69263cdb22f5730bff",
+    "fv_point_qc_centered_response_runner.py.txt": "2894792b0ea742c0db47aafe2029a2e416bd4886e942c0123df34e02ae8251c5",
+    "fv_point_qc_missing_parity_check.log.txt": "d066c36722efe20ea47f2ed4c8c956897bebf9a5ba02291dec7925866422907f",
+    "fv_point_qc_missing_parity_check.py.txt": "89f541d2c999c5365691a41556553ebc74d6487fb7f3684ee097b5cf3b39af87",
+    "point_centered_response.json": "ae9b12a0711ebe7a0de8b05584d80d512e30422b364bbe1ea9fe67f09fda6fbe",
+    "point_centered_response.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "point_centered_response.resource.json": "d95b8bd115864f14f1d871c702ee591e802ca92bf9c17a4520d80f5869918fef",
+    "point_centered_response.run.json": "4407cd70b221dc8bda8c9ce2d32093a7013e580c77ae92b8951d9eb2034ef6de",
+    "test_fv_point_missing_centered_response.py.txt": "829e78604287a6cd5250edf522403530cc4a8a57bfaedcad93695db3912306d7",
+    "test_fv_point_qc_centered_response.py.txt": "e8f30cf628df65db9dd095ae687374b63345d0ef4fbf1f9b46585616267d39cf"
+  }
+}

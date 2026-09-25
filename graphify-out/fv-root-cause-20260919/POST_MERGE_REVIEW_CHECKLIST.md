@@ -369,9 +369,13 @@ changes the numerical refiner, not the objective, observation contract or gates.
   response plus two signed reanalysis pairs. The missing parameter's
   direct/indirect/total gradients are zero
   (`FV_POINT_MISSING_CENTERED_RESPONSE_RESULTS.md`).
-- [ ] Qualify fixed QC exclusion and one entire empty point-observation
-  time separately; neither follows automatically from the one-missing
-  result.
+- [x] Qualify fixed external QC exclusion (`status=2`) in its own
+  constructed point profile. Its input identity is distinct from status-1
+  missing, but the identical active subset yields the same numerical
+  sensitivity and signed endpoints. This does not differentiate a QC
+  decision (`FV_POINT_QC_CENTERED_RESPONSE_RESULTS.md`).
+- [ ] Qualify one entire empty point-observation time separately; it does
+  not follow automatically from one excluded point.
 - [ ] Combine the point likelihood with the separately verified 3-hour
   forward schedule only after the one-lead point response contract is
   established; independent physical accuracy remains a separate target.

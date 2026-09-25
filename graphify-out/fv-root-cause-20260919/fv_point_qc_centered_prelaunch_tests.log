@@ -1,0 +1,8 @@
+................................................................         [100%]
+=============================== warnings summary ===============================
+tests/test_fv_point_qc_centered_response.py: 18 warnings
+  /Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+64 passed, 18 warnings in 13.86s
