@@ -285,9 +285,13 @@ changes the numerical refiner, not the objective, observation contract or gates.
 - [x] Genuinely missing fixed point-observation rows under diagonal or
   declared same-time correlation: select valid principal covariance before
   whitening, retain inactive parameter slots with zero derivatives, preserve
-  the exogenous grid background, and reject censored/QC meanings. The bounded
+  the exogenous grid background, and reject censored/unknown meanings. The bounded
   fixed-control FV probe and regressions are in `FV_POINT_MISSING_RESEARCH.md`.
-- [ ] Regridded/footprint radar products, censored/QC point rows,
+- [x] Explicit fixed QC-rejected prepared point rows retain a distinct status
+  and problem identity while remaining absent from the objective and valid
+  correlation submatrix. Censoring and QC decision rules remain unsupported;
+  see `FV_POINT_QC_STATUS_SCOPE.md`.
+- [ ] Regridded/footprint radar products, censored point rows, product QC,
   cross-time covariance and a newly qualified stationary whole response
   remain separate G5c work. An entirely missing observation frame is also
   outside the current bounded point profile.
