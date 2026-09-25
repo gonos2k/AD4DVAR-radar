@@ -352,8 +352,10 @@ changes the numerical refiner, not the objective, observation contract or gates.
 - [x] Preserve separate numerical refusals: non-SPD warm Newton, strict
   search margin at attempt 1, 100-step exploration budget at attempt 2,
   iteration-4 fixed-margin Newton refusal, iteration-5 same-signature
-  core-strict Newton refusal, and iteration-7 sector-adaptive triple-decrease
-  refusal from the locked last point (`FV_POINT_SECTOR_ROOT_ATTEMPT1_RESULTS.md`).
+  core-strict Newton refusal, iteration-7 sector-adaptive triple-decrease
+  refusal, and the separate iteration-7 gradient-merit-only sector refusal
+  (`FV_POINT_SECTOR_ROOT_ATTEMPT1_RESULTS.md`,
+  `FV_POINT_MERIT_ROOT_ATTEMPT1_RESULTS.md`).
   None is a stationary response or evidence that a root does not exist.
 - [ ] Qualify a point-observation stationary root and then the fresh
   adjoint/full VJP plus signed endpoint reanalysis under its final branch.
