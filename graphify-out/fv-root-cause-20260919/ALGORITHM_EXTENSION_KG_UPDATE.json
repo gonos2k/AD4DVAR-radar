@@ -649,5 +649,18 @@
     "record": "FV_POINT_CENTERED_PRIOR_RESPONSE_PLAN.md,FV_POINT_CENTERED_PRIOR_RESPONSE_RESULTS.md,point_centered_response_attempt1/manifest.json",
     "graphify": "code-only incremental update:7432 nodes,66574 edges,290 communities; no semantic LLM extraction",
     "status": "R2 constructed-profile integration closed; original-input R2-O,missing/QC/empty-time R3,3-hour point response R5 and physical validation remain open"
+  },
+  "fv_point_one_missing_centered_response": {
+    "baseline": "main c2ecf7e after PR200 constructed full-valid centered-prior point response",
+    "scope": "one middle-time point status1 genuinely missing with canonical inactive fill;11 of12 point rows detected,3x3 valid principal same-time correlation subset,complete 4x5 FV state and boundaries,fixed centered dynamics prior",
+    "nominal": "26-control gradient0,J0,H lambda_min0.9999999999997804/lambda_max3979.3772547945487,symmetry3.56641e-16,54-stage slope margin8.04648e-4 and face margin7.75273e-3",
+    "response": "full 13-component VJP;inactive parameter5 direct/indirect/total gradient0 and objective/score/control-gradient payload mutation differences0;three active middle-time points bias direct0,total0.0016589920915979217,true adjoint residual9.12798e-14,tangent residual1.70263e-11",
+    "nonlinear_validation": "four signed actual endpoint reanalyses h0.001/0.0005;each one Newton correction,gmax<1.874e-11,same strict signature/margins;central relative errors2.30120e-5/5.75297e-6,absolute-error ratio4.00002",
+    "execution": "parent completed,child exit0,112.856s,425 sampled RSS observations,peak343998464B under600s/sampled1GiB cap;parent independently recomputed H/adjoint/VJP/tangent/inactive-slot and endpoint scores,gradients,branches",
+    "prelaunch_fix": "initial direct wrapper failed ModuleNotFoundError before child/FV;root import bootstrap and absolute child script path fixed;unrelated-CWD CLI regression passed",
+    "verification": "60 focused tests passed with18 existing TorchScript warnings,error-level basedpyright0;explicit 3x3 principal whitener regression and read-only archived PR200 _valid_result numerical-predicate replay pass;GREEN/RED prelaunch GO after scope/import fixes;full CPU/package CI not run",
+    "record": "FV_POINT_MISSING_CENTERED_RESPONSE_PLAN.md,FV_POINT_MISSING_CENTERED_RESPONSE_RESULTS.md,point_missing_centered_attempt1/manifest.json",
+    "graphify": "code-only incremental update:7455 nodes,66615 edges,250 communities;no semantic LLM extraction",
+    "status": "R3-M constructed one-missing profile closed;R3-Q fixed QC,R3-E one empty time,original R2-O,3-hour point sensitivity and physical validation remain open"
   }
 }

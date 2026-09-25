@@ -1,0 +1,25 @@
+{
+  "child_read_error": null,
+  "execution_status": "completed",
+  "numerical_status": "eligible",
+  "resource": {
+    "child_pid": 66898,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_missing_centered_response_probe.py",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/point_missing_centered_attempt1/point_centered_response.json"
+    ],
+    "elapsed_seconds": 112.85639741597697,
+    "exit_code": 0,
+    "monitor_error": null,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 425,
+    "sampled_peak_rss_bytes": 343998464,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 600
+  },
+  "response_validation": "passed",
+  "scope": "constructed centered-prior point FV: 11 detected of 12; middle-time point 1, parameter 5, status 1 missing with canonical inactive fill; no original-input convergence or physical-skill claim"
+}

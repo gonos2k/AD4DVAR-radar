@@ -1,0 +1,22 @@
+{
+  "sha256": {
+    "FV_POINT_MISSING_CENTERED_RESPONSE_PLAN.md.txt": "fab3e7c1175c5918992477cdae93fdbbc6c7960609603b5bfdc8e15cd88273f7",
+    "FV_POINT_MISSING_CENTERED_RESPONSE_RESULTS.md.txt": "a0d1a4f3bce1cfc906b48a17a9440a5100d9de58931888dea636bbac174ca851",
+    "fv_point_centered_prior_response_probe.py.txt": "eed420df95a4041690b7c53f5df5c9ed7efb4e0b75746c88fe09f739c1def44b",
+    "fv_point_centered_prior_response_runner.py.txt": "22d1c75afd42adc5139596a53dbcba005c9e11b8ecf6376405e2816fd2d2315d",
+    "fv_point_missing_centered_case.py.txt": "db70b199e852d6caa31e71222a0dde071b8f4da103fc59dbae2a72f483869113",
+    "fv_point_missing_centered_final_tests.log.txt": "c9024a1278b9969801879a5d1a995db34130a49b8983f23ede774dbb14a0a76b",
+    "fv_point_missing_centered_final_typecheck.log.txt": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "fv_point_missing_centered_prelaunch_graphify.log.txt": "6136c907e11bad362cb6317ff5df6bba658998e962c9f0efaae31a7c4a633070",
+    "fv_point_missing_centered_response_probe.py.txt": "57ee648c87425659b4f9f1923661e5b3f234bf73e6b5e8b6077e6ab519ea4b89",
+    "fv_point_missing_centered_response_runner.py.txt": "d585c316d5f6ca5fe1044d5465051c01b9a2ee1c48020ad8893b059446570d95",
+    "fv_point_missing_legacy_result_check.py.txt": "4d3de7af86234a3f72833eb76094c90b8b4e99ba303a7e44076e38a0681e054f",
+    "fv_point_missing_legacy_result_gate.log.txt": "09cc01ff23f57a23013c5b1e2ed9d61f0858e4cfe3d866df92b5d97852822c9e",
+    "point_centered_response.json": "c81cb8289f6c2ab96505dd54c41048d49124e337827380a7c56465f5f13a31b0",
+    "point_centered_response.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "point_centered_response.resource.json": "f8ec18b77deee1eaa4a5d83b96995a66f860f455abc42f42bbe11236c4e34a7e",
+    "point_centered_response.run.json": "fd4945e6fd41876854c37d49196c3808f5cb44a09594dbf576ad06c0d0f4dbbb",
+    "test_fv_point_centered_prior_response.py.txt": "2c1aaecf63159862448570e4dbe792b5a390647d5f71a7f14e907760676d94df",
+    "test_fv_point_missing_centered_response.py.txt": "829e78604287a6cd5250edf522403530cc4a8a57bfaedcad93695db3912306d7"
+  }
+}

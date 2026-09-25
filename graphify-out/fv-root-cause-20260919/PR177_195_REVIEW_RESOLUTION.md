@@ -10,7 +10,9 @@ reanalysis, and physical skill. Prior evidence remains in
 | R1 | Preserve completed scope | Verify PR #177–#195 main integration, regular 3-hour forward result, fixed-control point likelihood and derivative tests, and process-isolated local responses without adding them as one success rate | Done at their reported scopes; no new FV run implied |
 | R2 | A full-valid correlated point profile needs a stationary response | In one declared 4×5 synthetic point problem, verify a qualified stationary point, true adjoint residual and full parameter gradient, then signed nonlinear reanalysis at two local sizes | **Closed for the constructed fixed centered-prior profile only.** One 26-control/13-parameter root, full VJP and four signed endpoints passed; see `FV_POINT_CENTERED_PRIOR_RESPONSE_RESULTS.md`. This is a different statistical problem from R2-O |
 | R2-O | Original zero-centered-prior correlated point input still refuses | Obtain a qualified root and signed response on that original input, or retain an explicit unsupported-status contract without claiming root absence | Stage A and seven bounded numerical attempts are recorded below; the latest merit-only attempt refused all 16 iteration-7 candidates. **Open** |
-| R3 | Missing/QC/one-empty-time point profiles have no stationary response | After R2, bind one declared incomplete profile at a time to its own stationary point, branch and signed endpoint checks; retain exact fixed masks and covariance subsets | Open; fixed-control checks alone do not close it |
+| R3-M | One missing point needs a stationary response | Under complete model state/boundaries, bind status 1 and a selected correlation submatrix to a qualified point root, full VJP, inactive-slot check and signed endpoints | **Closed for the constructed fixed-centered-prior profile with one middle-time point missing.** Full 13-vector and two signed pairs passed; see `FV_POINT_MISSING_CENTERED_RESPONSE_RESULTS.md` |
+| R3-Q | QC-excluded point profile needs a stationary response | Keep external QC status distinct from missing and clear sky; qualify a fixed-mask root, full VJP and signed endpoints | Open; fixed-control QC derivative checks do not close it |
+| R3-E | One wholly empty observation time needs a stationary response | Preserve time integration and external background while qualifying root, VJP and signed endpoints | Open; current evidence is fixed-control only |
 | R4 | Two-hole collocated partial problem refuses final Newton correction | Keep the three original refusals; choose and predeclare a branch-aware nominal search policy separately from final-point local eligibility, then validate any new root and signed response | Open; no claim that a stationary point is absent |
 | R5 | Point observations and 3-hour leads are in separate profiles | Define common time/trajectory and score semantics while preserving old one-lead and long-forward references; check a bounded combined forward run before any long-horizon response claim | Open |
 | R6 | General observation products remain unsupported | Bind product-defined footprint/coordinate, censoring/QC provenance and covariance semantics separately; do not infer physical measurements from prepared synthetic masks | Open; needs a declared product contract |
@@ -78,3 +80,18 @@ historical numerical reports; new attempts must have distinct records.
   comparisons with decreasing error. The parent independently recomputed
   derivatives, endpoints and signed scores. This closes R2 only for this
   constructed profile; see `FV_POINT_CENTERED_PRIOR_RESPONSE_RESULTS.md`.
+
+## R3 incomplete point-observation profiles
+
+- [x] One middle-time status-1 missing point at parameter index 5, with
+  canonical inactive fill and a 3×3 principal correlation submatrix,
+  kept the complete model state/boundaries and a qualified centered-prior
+  stationary point. Its direct/indirect/total missing-slot gradients and
+  nominal objective/score/control-gradient dependence are zero.
+- [x] Three active middle-time points' common-bias direction passed full
+  13-component VJP, true adjoint/tangent residuals, fixed branch and
+  `h=0.001,0.0005` signed reanalysis. Parent-side derivative and
+  endpoint recomputation passed (`FV_POINT_MISSING_CENTERED_RESPONSE_RESULTS.md`).
+- [ ] Repeat the qualified response contract separately for fixed external
+  QC exclusion and one entirely empty observation time. Do not identify
+  either with the status-1 missing result or with original R2-O.
