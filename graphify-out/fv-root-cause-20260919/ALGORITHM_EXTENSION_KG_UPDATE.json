@@ -686,5 +686,16 @@
     "record": "FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_PLAN.md,FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_RESULTS.md,point_empty_centered_attempt1/manifest.json",
     "graphify": "code-only incremental update:7491 nodes,66665 edges,262 communities;no semantic LLM extraction",
     "status": "R3-E constructed exactly-one-empty-first-time profile closed;multiple empty times,original R2-O,3-hour point sensitivity,finite removal impact and physical validation remain open"
+  },
+  "fv_point_three_hour_forward_combination": {
+    "baseline": "main 9de4f54 after PR203 constructed one-empty-first-time response",
+    "scope": "4x5 off-grid four-point observations at0/10/20min with external full state-grid background,nonzero-flow same-operator truth,regular18x10min future leads,terminal only at200min absolute;forward-only",
+    "time_and_boundary": "90 substeps per interval,180 analysis boundary stage pairs,1620 future boundary stage pairs;separate analysis call observed360 SSPRK stages,terminal forecast call replayed360 analysis+3240 future=3600 stages",
+    "forward": "point samples reproduced within1.554312234475219e-11 dBZ,terminal field within1.1688428003253648e-12 dBZ of same-operator synthetic truth;score1.8176932978102554e-25,objective0.9421520472268183;strict branch refused before admitted stage",
+    "execution": "parent completed,child exit0,7.464563124929555s,28 sampled RSS observations,peak239239168B under180s/sampled1GiB cap;parent independently rebuilt point samples and terminal field,score/objective,layout/stages/source/input/resource",
+    "verification": "88 affected point/long-horizon tests and separate34 constructed-point compatibility tests passed (18 existing warnings per run);error-level basedpyright0;archived PR200 _valid_result numerical predicate read-only replay passed;full CPU/package CI not run",
+    "record": "FV_POINT_3H_FORWARD_PLAN.md,FV_POINT_3H_FORWARD_RESULTS.md,point_3h_forward_attempt1/manifest.json",
+    "graphify": "code-only incremental update:7526 nodes,66730 edges,285 communities;no semantic LLM extraction",
+    "status": "R5-F combined point/3-hour terminal forward closed for fixed same-operator case;R5-R strict branch/stationarity/adjoint/reanalysis and independent physical skill open"
   }
 }

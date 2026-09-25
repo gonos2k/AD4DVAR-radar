@@ -380,6 +380,10 @@ changes the numerical refiner, not the objective, observation contract or gates.
   dependence remain; full response and two signed reanalysis pairs pass
   (`FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_RESULTS.md`). Multiple empty
   times and finite whole-frame removal impact remain unverified.
-- [ ] Combine the point likelihood with the separately verified 3-hour
-  forward schedule only after the one-lead point response contract is
-  established; independent physical accuracy remains a separate target.
+- [x] Combine the point likelihood with the regular 10-minute/18-lead
+  3-hour FV **terminal forward** schedule, preserving the old one-lead
+  identity. A fixed off-grid point case passed same-operator point and
+  terminal-field parity (`FV_POINT_3H_FORWARD_RESULTS.md`).
+- [ ] A strict 3-hour point branch, stationary analysis and long-horizon
+  adjoint/reanalysis are still unverified; the combined forward run's
+  strict branch refused. Independent physical accuracy remains separate.

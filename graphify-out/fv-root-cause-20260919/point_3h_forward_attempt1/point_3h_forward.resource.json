@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_forward_probe.py",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/point_3h_forward_attempt1/point_3h_forward.json"
+  ],
+  "child_pid": 29292,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 7.464563124929555,
+  "sampled_peak_rss_bytes": 239239168,
+  "rss_samples": 28,
+  "wall_limit_seconds": 180,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}
