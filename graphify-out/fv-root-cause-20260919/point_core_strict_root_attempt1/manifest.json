@@ -1,0 +1,13 @@
+{
+  "base_head": "05783e4649d78ae594ba68fd8a5aea3771e97eef",
+  "scope": "single core-strict fixed-signature point root refusal; no response",
+  "sha256": {
+    "graphify-out/fv-root-cause-20260919/point_core_strict_root_attempt1/FV_POINT_CORE_STRICT_ROOT_PLAN.md.txt": "e2e0c49e1f59e05432bd127c33211d2f8d95532cd9560088203a8255958678d7",
+    "graphify-out/fv-root-cause-20260919/point_core_strict_root_attempt1/fv_point_core_strict_root_probe.py.txt": "68ceaf5e78c5b58cb0449f60e9b6d41ba989f13df9d03ceaf20f7d2df0013ace",
+    "graphify-out/fv-root-cause-20260919/point_core_strict_root_attempt1/fv_point_core_strict_root_runner.py.txt": "537ca5f178e297644fc41b3e3e2d4b2341af7b4130bfb8d4ebfbcadbcb3ccd99",
+    "graphify-out/fv-root-cause-20260919/point_core_strict_root_attempt1/point_core_strict_root.json": "95e14c120d37c816aceed4f7ed0b98bb406549b5e14e1fd967aff133b8814a76",
+    "graphify-out/fv-root-cause-20260919/point_core_strict_root_attempt1/point_core_strict_root.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/point_core_strict_root_attempt1/point_core_strict_root.resource.json": "346915a39a7721c8830a54046a73ffa426b70a18c99c0636230e5111d11a418c",
+    "graphify-out/fv-root-cause-20260919/point_core_strict_root_attempt1/point_core_strict_root.run.json": "9017111768b1039a6f96b8d9757e193ada99d366ef924c85d44d01c1e88a07ae"
+  }
+}

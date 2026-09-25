@@ -602,5 +602,16 @@
     "records": "FV_POINT_NOMINAL_ATTEMPT1_RESULTS.md,FV_POINT_BASIN_ATTEMPT1_RESULTS.md,FV_POINT_BASIN_ATTEMPT2_RESULTS.md,FV_POINT_TERMINAL_NEWTON_ATTEMPT1_RESULTS.md",
     "graphify": "code-only incremental update:7275 nodes,66227 edges,243 communities; no semantic LLM extraction",
     "remaining": "separately declared local branch-aware root policy,then exact response and signed endpoints;do not infer root absence from strict-policy refusals"
+  },
+  "fv_point_core_strict_root_refusal": {
+    "baseline": "main 05783e4 after PR196 bounded point-response stationarity diagnostics",
+    "scope": "one source-pinned fixed-signature root-only Newton diagnostic from attempt2 last control; core 128eps tracer for intermediate candidates, final response margins unchanged",
+    "numerics": "seed H SPD lambda_min0.694273/max4453.221;five PCGs converged, four corrections accepted, gmax .0108053 to .01078746, face margin3.52493e-4 to2.56550e-7",
+    "refusal": "Newton iteration5 all16 candidates passed core trace but changed full signature; diagnostic J and gmax improved for all16, Euclidean gradient norm improved for one; no candidate accepted in fixed-signature refiner",
+    "resource": "completed scientific refusal,132.666s,499 sampled RSS observations,peak347062272B under600s/sampled1GiB cap",
+    "record": "FV_POINT_CORE_STRICT_ROOT_ATTEMPT1_RESULTS.md and point_core_strict_root_attempt1/manifest.json",
+    "graphify": "code-only incremental update:7299 nodes,66264 edges,286 communities; no semantic LLM extraction",
+    "status": "no stationary root found;no adjoint,signed endpoints or physical validation;response_validation not_performed",
+    "remaining": "separately declared branch-adaptive search with actual objective/residual acceptance and relinearization,then final exact root/response/signed endpoints"
   }
 }

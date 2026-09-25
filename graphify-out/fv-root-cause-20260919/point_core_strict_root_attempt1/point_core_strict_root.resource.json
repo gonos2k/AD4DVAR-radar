@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_point_core_strict_root_probe",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/point_core_strict_root_attempt1/point_core_strict_root.json"
+  ],
+  "child_pid": 61902,
+  "exit_code": 2,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 132.66636075009592,
+  "sampled_peak_rss_bytes": 347062272,
+  "rss_samples": 499,
+  "wall_limit_seconds": 600,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}
