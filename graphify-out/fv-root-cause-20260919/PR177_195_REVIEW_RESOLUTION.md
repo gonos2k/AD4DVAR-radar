@@ -14,7 +14,8 @@ reanalysis, and physical skill. Prior evidence remains in
 | R3-Q | QC-excluded point profile needs a stationary response | Keep external QC status distinct from missing and clear sky; qualify a fixed-mask root, full VJP and signed endpoints | **Closed for the constructed status-2 external-QC profile.** Full VJP, zero inactive slot and two signed pairs passed; numerics match R3-M under the same active mask, while identity differs. See `FV_POINT_QC_CENTERED_RESPONSE_RESULTS.md` |
 | R3-E | One wholly empty observation time needs a stationary response | Preserve time integration and external background while qualifying root, VJP and signed endpoints | **Closed for the constructed exactly-one-empty-first-time profile.** Four inactive first-time slots, nonzero theta path, full VJP and two signed pairs passed; see `FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_RESULTS.md` |
 | R4 | Two-hole collocated partial problem refuses final Newton correction | Keep the three original refusals; choose and predeclare a branch-aware nominal search policy separately from final-point local eligibility, then validate any new root and signed response | Open; no claim that a stationary point is absent |
-| R5 | Point observations and 3-hour leads are in separate profiles | Define common time/trajectory and score semantics while preserving old one-lead and long-forward references; check a bounded combined forward run before any long-horizon response claim | Open |
+| R5-F | Point observations and 3-hour leads need a combined forward path | Preserve the one-lead reference and use a regular 18-lead terminal score with matching point observation, boundary/time and resource contracts | **Closed for one fixed same-operator 4×5 forward case.** Point observations and 18-lead terminal FV field pass; strict branch refuses, so no long response. See `FV_POINT_3H_FORWARD_RESULTS.md` |
+| R5-R | Point-observation 3-hour stationary response | Obtain a qualified long-horizon branch and stationary analysis, then full adjoint/VJP and signed endpoints without changing the time/score contract | Open; R5-F proves forward execution only |
 | R6 | General observation products remain unsupported | Bind product-defined footprint/coordinate, censoring/QC provenance and covariance semantics separately; do not infer physical measurements from prepared synthetic masks | Open; needs a declared product contract |
 | R7 | Service-level concurrency and result publication | Preserve process-level forward-AD isolation; verify cancellation, resource accounting, in-flight callback completion and publication ordering in a bounded service path | Open; current process result is two fixed local responses |
 | R8 | Independent physical performance, finite influence and learning | Use independent verification events and a predeclared finite-amplitude range; keep learned error/prior normalization and data splitting separate from local synthetic derivative checks | Open; current truth is same-operator synthetic |
@@ -104,3 +105,17 @@ historical numerical reports; new attempts must have distinct records.
   (`FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_RESULTS.md`).
 - [ ] More than one empty time and the original zero-centered R2-O input
   remain outside this result; do not infer finite removal impact.
+
+## R5 point observations and long forward horizon
+
+- [x] Extend only the point-problem lead-dependent boundary length,
+  terminal forecast call, forecast time and total stage layout; preserve
+  the original one-lead input identity.
+- [x] Execute a bounded 0/10/20-minute four-point observation case with
+  18 future ten-minute leads. The terminal same-operator synthetic field
+  and point analysis values match at FP64 tolerance; 360 analysis and
+  3,600 replayed terminal-call SSPRK stages were observed
+  (`FV_POINT_3H_FORWARD_RESULTS.md`).
+- [ ] Establish a strict long-horizon branch and eligible stationary
+  response separately. This run's strict branch refused before an
+  admitted stage, and no adjoint or nonlinear reanalysis was run.

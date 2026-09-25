@@ -1,0 +1,165 @@
+{
+  "analysis": {
+    "observed_minmod_stages": 360,
+    "point_observation_max_abs_difference_dbz": 1.554312234475219e-11,
+    "point_observation_sha256": "0991dd7741c13cf3bc33238eb6f13eb737ef717c50ce796e8e7be9a355f3c037",
+    "seconds": 0.17043549998197705
+  },
+  "analysis_boundary_stage_pairs": 180,
+  "archive_sha256": "a0f9568b59bce283b39d1527d3ab64f7034d41c3d41eb3e843ca0ffd7b8fce88",
+  "archive_unchanged": true,
+  "elapsed_seconds": 3.8269777089590207,
+  "environment": {
+    "device": "CPU FP64",
+    "python": "3.12.13",
+    "torch": "2.13.0"
+  },
+  "execution_phase": "finished",
+  "forecast_available": true,
+  "forecast_steps": 18,
+  "forward_validation": "passed",
+  "future_boundary_stage_pairs": 1620,
+  "input_after": {
+    "control_sha256": "adc5bfd01e98e32b09ccc963f096a6f6a3c7307d600a0ba20f8ddc8dcad3721e",
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "problem": {
+      "fixed_problem_sha256": "16fa95b534c3b61cf5d1506770cbfc77edb527c40d1f4c536f5130cba24e1fc3",
+      "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+    },
+    "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+  },
+  "input_before": {
+    "control_sha256": "adc5bfd01e98e32b09ccc963f096a6f6a3c7307d600a0ba20f8ddc8dcad3721e",
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "problem": {
+      "fixed_problem_sha256": "16fa95b534c3b61cf5d1506770cbfc77edb527c40d1f4c536f5130cba24e1fc3",
+      "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+    },
+    "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+  },
+  "input_unchanged": true,
+  "layout": {
+    "controls": 26,
+    "euler_stages": 3600,
+    "forecast_time_seconds": 12000.0,
+    "observation_shape": [
+      3,
+      4
+    ],
+    "observation_times_seconds": [
+      0.0,
+      600.0,
+      1200.0
+    ],
+    "parameters": 13,
+    "state_shape": [
+      4,
+      5
+    ],
+    "theta_index": 12
+  },
+  "phase": "finished",
+  "physical_validation": "not_performed",
+  "pid": 29292,
+  "plan_sha256": "bd0898de43c5c3eba0001c50d89e223af1fc6145b897c42ff68b1f49243060fc",
+  "plan_unchanged": true,
+  "response_computed": false,
+  "response_validation": "not_performed",
+  "scope": "12 fixed off-grid dBZ point values at 0/10/20 minutes; one terminal 3-hour forecast at 200 minutes absolute; same-operator synthetic truth only",
+  "source_after": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "821c385bfcd8f4e72b1308e4064eeb0f6fc218bbc8fb3c92189fd1061ccb1b1c",
+    "examples/weather_scenarios/fv_long_horizon_case.py": "22feb5c49495b26c78caa826e73f34a9abb21a4dbf71cfa5e34fbaae884cbc85",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_point_3h_forward_case.py": "a23bab3d10bde9ca08661979df9e2c94a0de7bde6c7c732b5ed2b9ec769f61ec",
+    "examples/weather_scenarios/fv_point_3h_forward_probe.py": "8ab664ebcb42d6c74d1b056a751df57941816ca1804538f9afd954b26f95ca75",
+    "examples/weather_scenarios/fv_point_3h_forward_runner.py": "bf50195f2ff7d7ba7550e54ebb3473f0d501cde2663dd8d4f0e5281db97570af",
+    "examples/weather_scenarios/fv_point_research_case.py": "358dd1bb46f7cf2ebb0fcf7bb33d4735b66419412d97d0b7847e7eab236f5f2e",
+    "examples/weather_scenarios/fv_point_response_preflight.py": "6929668a5d2c95a64499ab598a0f045d66e47a80cf7a997513f448fff8ba3ccf",
+    "examples/weather_scenarios/fv_point_response_preflight_runner.py": "7e25520af78418323a28dd3aec152040829bba597ab2902c4a80413c1088aab8",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_point_research_problem.py": "ffdb27fd40aa6943ab4c04860695303e4270291377a7b86535c06416704eec19",
+    "src/advar/fv_point_sampler.py": "e3116a9250a5890521d66502aacd69c6ea32cc348fb961e6ffb88cf97750d3af",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  },
+  "source_before": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "821c385bfcd8f4e72b1308e4064eeb0f6fc218bbc8fb3c92189fd1061ccb1b1c",
+    "examples/weather_scenarios/fv_long_horizon_case.py": "22feb5c49495b26c78caa826e73f34a9abb21a4dbf71cfa5e34fbaae884cbc85",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_point_3h_forward_case.py": "a23bab3d10bde9ca08661979df9e2c94a0de7bde6c7c732b5ed2b9ec769f61ec",
+    "examples/weather_scenarios/fv_point_3h_forward_probe.py": "8ab664ebcb42d6c74d1b056a751df57941816ca1804538f9afd954b26f95ca75",
+    "examples/weather_scenarios/fv_point_3h_forward_runner.py": "bf50195f2ff7d7ba7550e54ebb3473f0d501cde2663dd8d4f0e5281db97570af",
+    "examples/weather_scenarios/fv_point_research_case.py": "358dd1bb46f7cf2ebb0fcf7bb33d4735b66419412d97d0b7847e7eab236f5f2e",
+    "examples/weather_scenarios/fv_point_response_preflight.py": "6929668a5d2c95a64499ab598a0f045d66e47a80cf7a997513f448fff8ba3ccf",
+    "examples/weather_scenarios/fv_point_response_preflight_runner.py": "7e25520af78418323a28dd3aec152040829bba597ab2902c4a80413c1088aab8",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_point_research_problem.py": "ffdb27fd40aa6943ab4c04860695303e4270291377a7b86535c06416704eec19",
+    "src/advar/fv_point_sampler.py": "e3116a9250a5890521d66502aacd69c6ea32cc348fb961e6ffb88cf97750d3af",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  },
+  "source_unchanged": true,
+  "stationarity_passed": "not_tested",
+  "strict_branch_diagnostic": {
+    "observed_minmod_stages": 0,
+    "reason": "minmod joint oracle left its strict smooth branch",
+    "status": "refused"
+  },
+  "substeps_per_interval": 90,
+  "terminal": {
+    "forecast": [
+      [
+        15.350553679501076,
+        15.773207845275277,
+        16.273968747055985,
+        16.942464676866948,
+        17.907716489314037
+      ],
+      [
+        16.033281376016824,
+        16.423456937506767,
+        16.877619311829356,
+        17.422777024069028,
+        18.596450220925785
+      ],
+      [
+        16.342984403881864,
+        16.946977358612042,
+        17.57598745345776,
+        18.010820642493556,
+        18.73048586082752
+      ],
+      [
+        15.90549497977106,
+        17.0148374401917,
+        18.00228875011523,
+        18.66571623330244,
+        18.668667098658428
+      ]
+    ],
+    "forecast_sha256": "3bf232d016f2319556a45fbac6fb598b01ae9c626e3182a54ec51161e9075b8f",
+    "forecast_shape": [
+      4,
+      5
+    ],
+    "manual_terminal_mse": 1.8176932978102554e-25,
+    "max_abs_difference_from_same_operator_truth_dbz": 1.1688428003253648e-12,
+    "objective": 0.9421520472268183,
+    "observed_minmod_stages": 3600,
+    "score": 1.8176932978102554e-25,
+    "seconds": 3.6404768750071526,
+    "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+  }
+}
