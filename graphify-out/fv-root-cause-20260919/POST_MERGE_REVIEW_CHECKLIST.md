@@ -363,6 +363,15 @@ changes the numerical refiner, not the objective, observation contract or gates.
   under its final branch (`FV_POINT_CENTERED_PRIOR_RESPONSE_RESULTS.md`).
   The original zero-centered-prior input's seven refusals remain open
   separately; this constructed case does not prove its convergence.
+- [x] Under the same constructed fixed prior, exclude exactly one
+  middle-time point as genuinely missing (`status=1`, canonical fill),
+  use the three-active-point principal covariance, and pass the full
+  response plus two signed reanalysis pairs. The missing parameter's
+  direct/indirect/total gradients are zero
+  (`FV_POINT_MISSING_CENTERED_RESPONSE_RESULTS.md`).
+- [ ] Qualify fixed QC exclusion and one entire empty point-observation
+  time separately; neither follows automatically from the one-missing
+  result.
 - [ ] Combine the point likelihood with the separately verified 3-hour
   forward schedule only after the one-lead point response contract is
   established; independent physical accuracy remains a separate target.
