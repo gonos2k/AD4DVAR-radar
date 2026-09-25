@@ -340,11 +340,14 @@ changes the numerical refiner, not the objective, observation contract or gates.
   start after scope exit cannot append to that collector. In-flight callbacks
   still require completion before report publication. See
   `FV_ASYNC_OBSERVER_SCOPE.md`.
-- [ ] Full concurrent GN/refinement, in-process simultaneous forward-AD
-  response, production async-service publication/lifecycle integration and
-  general input coverage remain separate unverified G9 scope. The process result is limited to
-  two archived synthetic cases and is not an independent reanalysis or
-  physical-accuracy check.
+- [x] A bounded fixed-case process response job lifecycle now cancels one
+  worker after a parseable `running` record, reaps it without publishing,
+  and atomically publishes another only after source/input/resource,
+  branch and PCG/HVP checks (`FV_RESPONSE_JOB_LIFECYCLE_RESULTS.md`).
+- [ ] Full concurrent GN/refinement, in-process simultaneous forward AD,
+  production queue/recovery and general input coverage remain separate G9
+  scope. The two fixed archived-response workers are not independent
+  reanalysis or physical-accuracy checks.
 
 ## PR177–195 review follow-up — combined point-observation response
 

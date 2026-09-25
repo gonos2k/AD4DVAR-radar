@@ -3,6 +3,7 @@ import importlib.util
 import os
 from pathlib import Path
 import sys
+from threading import Event, Timer
 
 import pytest
 
@@ -35,6 +36,27 @@ def test_resource_guard_records_normal_exit(tmp_path):
     assert result['exit_code']==0
     assert type(result['child_pid']) is int and result['child_pid']!=os.getpid()
     assert (tmp_path/'guard.log').read_text().strip()=='done'
+
+
+def test_resource_guard_cancels_only_the_requested_child(tmp_path):
+    module=load('fv86_resource_runner')
+    cancelled=Event()
+    timer=Timer(.1,cancelled.set)
+    timer.start()
+    try:
+        result=module.run_guarded(
+            [sys.executable,'-c','import time; time.sleep(10)'],
+            wall_seconds=5,rss_bytes=2*1024**3,
+            report_path=tmp_path/'cancel.resource.json',
+            log_path=tmp_path/'cancel.log',
+            cancel_requested=cancelled.is_set,
+        )
+    finally:
+        timer.cancel()
+    assert result['resource_termination']=='cancelled'
+    assert result['exit_code']!=0
+    assert result['elapsed_seconds']<4
+    assert result['monitor_error'] is None
 
 
 @pytest.mark.parametrize(('message','expected'),[

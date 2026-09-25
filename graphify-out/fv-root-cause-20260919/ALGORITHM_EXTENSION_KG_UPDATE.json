@@ -708,5 +708,17 @@
     "record": "FV_PARTIAL_POLICY_DECISION_PLAN.md,FV_PARTIAL_POLICY_DECISION_RESULTS.md,FV_PARTIAL_POLICY_DECISION.json; original run3 output manifest preserved",
     "graphify": "code-only incremental update:7540 nodes,66748 edges,295 communities;no semantic LLM extraction",
     "status": "R4-D support-policy choice closed;R4-R new cross-sector search/qualified response remains open"
+  },
+  "fv_process_response_job_lifecycle": {
+    "baseline": "main 106f331 after PR205 archived partial-policy refusal accounting",
+    "scope": "two concurrent process-isolated fixed archived fv4x5 conditional local-response jobs;one completes/publishes after full gates,one cancels after parseable running report with no publication;not production service",
+    "success": "worker PID14273 exit0;54 strict stages and branch,PCG/HVP and source/input/archive gates;total-0.003038272528696361,true adjoint residual9.888163804832049e-11;child reaped579713.970228208,publication decision579714.078692,atomic write completed579714.079100583",
+    "cancel": "distinct PID14275,cancel accepted579692.477926208 before child reap579692.74567825;child exit-15/resource termination cancelled;partial raw report never published;other worker unaffected",
+    "resource": "pair22.659842667053454s;success child22.3051692500012s/84 RSS samples/peak340033536B;cancel child1.0699283750727773s/4 samples/peak223084544B;each under300s/sampled768MiB cap;parent and between-sample memory excluded",
+    "publication_contract": "token lock linearizes cancellation versus publication;parseable running child report required before cancel;publication only after worker/monitor exit and validation;atomic file replacement;physical validation and nonlinear reanalysis not performed",
+    "verification": "44 affected tests passed,error-level basedpyright0;GREEN/RED prelaunch GO after race/readiness fixes;full CPU/package CI not run",
+    "record": "FV_RESPONSE_JOB_LIFECYCLE_PLAN.md,FV_RESPONSE_JOB_LIFECYCLE_RESULTS.md,response_job_lifecycle_attempt1/manifest.json",
+    "graphify": "code-only incremental update:7571 nodes,66810 edges,330 communities;no semantic LLM extraction",
+    "status": "R7-L bounded fixed-case lifecycle closed;R7-P general production queue/recovery,concurrent GN and input coverage remain open"
   }
 }

@@ -18,7 +18,8 @@ reanalysis, and physical skill. Prior evidence remains in
 | R5-F | Point observations and 3-hour leads need a combined forward path | Preserve the one-lead reference and use a regular 18-lead terminal score with matching point observation, boundary/time and resource contracts | **Closed for one fixed same-operator 4×5 forward case.** Point observations and 18-lead terminal FV field pass; strict branch refuses, so no long response. See `FV_POINT_3H_FORWARD_RESULTS.md` |
 | R5-R | Point-observation 3-hour stationary response | Obtain a qualified long-horizon branch and stationary analysis, then full adjoint/VJP and signed endpoints without changing the time/score contract | Open; R5-F proves forward execution only |
 | R6 | General observation products remain unsupported | Bind product-defined footprint/coordinate, censoring/QC provenance and covariance semantics separately; do not infer physical measurements from prepared synthetic masks | Open; needs a declared product contract |
-| R7 | Service-level concurrency and result publication | Preserve process-level forward-AD isolation; verify cancellation, resource accounting, in-flight callback completion and publication ordering in a bounded service path | Open; current process result is two fixed local responses |
+| R7-L | Fixed-case response job lifecycle | Keep forward AD in separate workers; verify two-job cancellation, resource accounting, worker/diagnostic completion and atomic result publication | **Closed for two fixed fv4x5 research jobs.** One qualified response published after child exit; the other was cancelled and never published. See `FV_RESPONSE_JOB_LIFECYCLE_RESULTS.md` |
+| R7-P | Production concurrency and recovery | Add general request/input contracts, durable queue/recovery, full concurrent GN/refinement and supported in-process policy only if verified | Open; the fixed two-job run is not an operational service |
 | R8 | Independent physical performance, finite influence and learning | Use independent verification events and a predeclared finite-amplitude range; keep learned error/prior normalization and data splitting separate from local synthetic derivative checks | Open; current truth is same-operator synthetic |
 
 Do not relabel skipped CI jobs or focused tests as a full CPU/package
@@ -136,3 +137,17 @@ historical numerical reports; new attempts must have distinct records.
 - [ ] A cross-sector nominal search and valid response for this input
   require a separate numerical method and final-point proof; none of
   the archived refusals proves the inverse problem has no root.
+
+## R7 process-isolated response lifecycle
+
+- [x] Add default-inactive process cancellation to the sampled wall/RSS
+  guard; verify child-group termination and reap without changing
+  existing callers.
+- [x] Run two fixed archived 4×5 responses in distinct processes and
+  directories. Wait for a complete `running` child record before
+  cancelling one; require the other to finish all branch, PCG/HVP,
+  source/input and resource gates before atomic publication
+  (`FV_RESPONSE_JOB_LIFECYCLE_RESULTS.md`).
+- [ ] Production request types, durable restart/recovery, concurrent
+  GN/refinement, generic FV inputs and whole-system memory limits remain
+  separate from this research lifecycle evidence.
