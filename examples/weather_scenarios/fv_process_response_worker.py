@@ -10,6 +10,7 @@ import platform
 import sys
 import time
 from typing import Any
+from uuid import UUID
 
 import torch
 from torch import Tensor
@@ -34,7 +35,27 @@ def _hashes() -> dict[str, str]:
             for name in SOURCE_PATHS}
 
 
-def run(case_id: str, output: Path) -> dict[str, Any]:
+def _canonical_attempt_id(value: str) -> str:
+    """Require the lowercase canonical spelling of an RFC 4122 UUID4."""
+    try:
+        parsed = UUID(value)
+    except (AttributeError, TypeError, ValueError) as error:
+        raise ValueError("attempt_id must be a canonical UUID4") from error
+    if str(parsed) != value or parsed.version != 4 or parsed.variant != "specified in RFC 4122":
+        raise ValueError("attempt_id must be a canonical UUID4")
+    return value
+
+
+def _parse_attempt_id(value: str) -> str:
+    try:
+        return _canonical_attempt_id(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from error
+
+
+def run(case_id: str, output: Path, attempt_id: str | None = None) -> dict[str, Any]:
+    if attempt_id is not None:
+        attempt_id = _canonical_attempt_id(attempt_id)
     if case_id not in ("fv4x5", "fv8x10"):
         raise ValueError("worker case must be fv4x5 or fv8x10")
     source_before = _hashes()
@@ -57,6 +78,8 @@ def run(case_id: str, output: Path) -> dict[str, Any]:
         "input_identity": identity, "nonlinear_analyses": 0,
         "nonlinear_reanalyses": 0, "physical_validation": "not_performed",
     }
+    if attempt_id is not None:
+        report["attempt_id"] = attempt_id
 
     def save() -> None:
         output.write_text(json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n")
@@ -193,6 +216,7 @@ def run(case_id: str, output: Path) -> dict[str, Any]:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--case", choices=("fv4x5", "fv8x10"), required=True)
+    parser.add_argument("--attempt-id", type=_parse_attempt_id)
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
-    run(arguments.case, arguments.output)
+    run(arguments.case, arguments.output, arguments.attempt_id)

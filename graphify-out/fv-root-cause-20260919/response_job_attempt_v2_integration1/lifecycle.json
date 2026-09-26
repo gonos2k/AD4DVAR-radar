@@ -1,0 +1,152 @@
+{
+  "archive_after": {
+    "fv86_reanalysis.json": "c80282301138ccae67ce49b86c1d1f2dcc88bc8a144b571eecbe23904ed5a302",
+    "fv86_seed_a.json": "c8de13325e4d76a5e904a6ef457deed853aa762cc6d051afd7fb59cd6b9e3bd0",
+    "minmod_middle_time_bias_final.json": "a0f9568b59bce283b39d1527d3ab64f7034d41c3d41eb3e843ca0ffd7b8fce88",
+    "minmod_parameter_vjp.json": "b207c838945baaedffdd3d53e6a41ad124950b9b4a96ea771f59953c0bd25456"
+  },
+  "archive_before": {
+    "fv86_reanalysis.json": "c80282301138ccae67ce49b86c1d1f2dcc88bc8a144b571eecbe23904ed5a302",
+    "fv86_seed_a.json": "c8de13325e4d76a5e904a6ef457deed853aa762cc6d051afd7fb59cd6b9e3bd0",
+    "minmod_middle_time_bias_final.json": "a0f9568b59bce283b39d1527d3ab64f7034d41c3d41eb3e843ca0ffd7b8fce88",
+    "minmod_parameter_vjp.json": "b207c838945baaedffdd3d53e6a41ad124950b9b4a96ea771f59953c0bd25456"
+  },
+  "attempt_id": "7d503398-bd27-4a13-9140-bc3cf9fea981",
+  "cancellation_requested_monotonic": null,
+  "child_completed_monotonic": 634225.003929291,
+  "elapsed_seconds": 24.14478291699197,
+  "execution_status": "completed",
+  "input_after": {
+    "control": {
+      "dtype": "torch.float64",
+      "sha256": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+      "shape": [
+        26
+      ]
+    },
+    "direction": {
+      "dtype": "torch.float64",
+      "sha256": "1f69a289a5972798203f33b9b84c65119621b0beb39dd8f3e3c2f5e25099a90f",
+      "shape": [
+        61
+      ]
+    },
+    "parameters": {
+      "dtype": "torch.float64",
+      "sha256": "64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07",
+      "shape": [
+        61
+      ]
+    },
+    "problem": "c2bb9beeddec0d8805f083ddfd335ac0e332335a3fa0823ff2b8b5c63b966ad2",
+    "verification": {
+      "dtype": "torch.float64",
+      "sha256": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+      "shape": [
+        4,
+        5
+      ]
+    }
+  },
+  "input_before": {
+    "control": {
+      "dtype": "torch.float64",
+      "sha256": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+      "shape": [
+        26
+      ]
+    },
+    "direction": {
+      "dtype": "torch.float64",
+      "sha256": "1f69a289a5972798203f33b9b84c65119621b0beb39dd8f3e3c2f5e25099a90f",
+      "shape": [
+        61
+      ]
+    },
+    "parameters": {
+      "dtype": "torch.float64",
+      "sha256": "64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07",
+      "shape": [
+        61
+      ]
+    },
+    "problem": "c2bb9beeddec0d8805f083ddfd335ac0e332335a3fa0823ff2b8b5c63b966ad2",
+    "verification": {
+      "dtype": "torch.float64",
+      "sha256": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+      "shape": [
+        4,
+        5
+      ]
+    }
+  },
+  "memory_scope": "sampled child RSS only; parent and between-sample spikes excluded",
+  "numerical_status": "eligible",
+  "physical_validation": "not_performed",
+  "published_monotonic": 634225.124277583,
+  "raw_child_read_error": null,
+  "request_id": "v2_binding_1",
+  "resource": {
+    "attempt_id": "7d503398-bd27-4a13-9140-bc3cf9fea981",
+    "attempt_manifest_sha256": "251cc530b6b9a06bd33a219bf8801f54e39b224c021693b7848e8738ca277e60",
+    "child_pid": 51948,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_process_response_worker.py",
+      "--case",
+      "fv4x5",
+      "--attempt-id",
+      "7d503398-bd27-4a13-9140-bc3cf9fea981",
+      "--output",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/response_job_attempt_v2_integration1/worker.raw.json"
+    ],
+    "elapsed_seconds": 23.87296766601503,
+    "exit_code": 0,
+    "monitor_error": null,
+    "resource_termination": null,
+    "rss_limit_bytes": 805306368,
+    "rss_samples": 89,
+    "sampled_peak_rss_bytes": 350339072,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300
+  },
+  "response_published": true,
+  "response_validation": "archived_reference_matched",
+  "runner_error": null,
+  "source_after": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_concurrent_response_probe.py": "a57d09441fc1e37ec28c60810685a618074725747b98da2fb5671a7c72507430",
+    "examples/weather_scenarios/fv_concurrent_response_runner.py": "f9a4e1f46451ce153468e7c2ffd33bcb3498e4c20b19c36fab41a9dfcf31d52a",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_process_response_runner.py": "327c4c8533914307b7118f0b963c038c3f30fcc227dddf5ea730338337f8c270",
+    "examples/weather_scenarios/fv_process_response_worker.py": "c83d77cc15dd9c3af6aed4bcf4c67e8e81b1672264fd5ceb139f6ba7d8ec7b5d",
+    "examples/weather_scenarios/fv_response_job_lifecycle.py": "bba29fd47d61e980416ebeaa011af3fb7392db22cef7cce3c74762b460d02724",
+    "examples/weather_scenarios/fv_scaled_research_case.py": "cf827cb08715bc684f3dff2afd7507ddb6c693c688b8684c655c2b82e179a6d8",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  },
+  "source_before": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_concurrent_response_probe.py": "a57d09441fc1e37ec28c60810685a618074725747b98da2fb5671a7c72507430",
+    "examples/weather_scenarios/fv_concurrent_response_runner.py": "f9a4e1f46451ce153468e7c2ffd33bcb3498e4c20b19c36fab41a9dfcf31d52a",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_process_response_runner.py": "327c4c8533914307b7118f0b963c038c3f30fcc227dddf5ea730338337f8c270",
+    "examples/weather_scenarios/fv_process_response_worker.py": "c83d77cc15dd9c3af6aed4bcf4c67e8e81b1672264fd5ceb139f6ba7d8ec7b5d",
+    "examples/weather_scenarios/fv_response_job_lifecycle.py": "bba29fd47d61e980416ebeaa011af3fb7392db22cef7cce3c74762b460d02724",
+    "examples/weather_scenarios/fv_scaled_research_case.py": "cf827cb08715bc684f3dff2afd7507ddb6c693c688b8684c655c2b82e179a6d8",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  }
+}

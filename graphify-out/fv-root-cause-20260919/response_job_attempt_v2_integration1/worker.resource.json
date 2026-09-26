@@ -1,0 +1,24 @@
+{
+  "attempt_id": "7d503398-bd27-4a13-9140-bc3cf9fea981",
+  "attempt_manifest_sha256": "251cc530b6b9a06bd33a219bf8801f54e39b224c021693b7848e8738ca277e60",
+  "child_pid": 51948,
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_process_response_worker.py",
+    "--case",
+    "fv4x5",
+    "--attempt-id",
+    "7d503398-bd27-4a13-9140-bc3cf9fea981",
+    "--output",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/response_job_attempt_v2_integration1/worker.raw.json"
+  ],
+  "elapsed_seconds": 23.87296766601503,
+  "exit_code": 0,
+  "monitor_error": null,
+  "resource_termination": null,
+  "rss_limit_bytes": 805306368,
+  "rss_samples": 89,
+  "sampled_peak_rss_bytes": 350339072,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "wall_limit_seconds": 300
+}
