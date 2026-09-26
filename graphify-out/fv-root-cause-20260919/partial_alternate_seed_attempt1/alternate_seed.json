@@ -1,0 +1,193 @@
+{
+  "archive_manifest_sha256": "d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd",
+  "curvature": {
+    "hvp_columns": 26,
+    "lambda_max": 4772.72431894504,
+    "lambda_min": 1.0167708532836979,
+    "lambda_ratio": 0.0002130378344392714,
+    "symmetry_relative": 1.6261648929351038e-16
+  },
+  "curvature_control_sha256": "125e0200fdf85f996715ba1bc04aa3f631333614bf15cf2c16630b94c1897421",
+  "elapsed_seconds": 21.80121433304157,
+  "eligible_candidate_count": 29,
+  "environment": {
+    "device": "CPU FP64",
+    "python": "3.12.13",
+    "torch": "2.13.0"
+  },
+  "gradient_max": 0.006848117531724784,
+  "gradient_norm": 0.012208793948431365,
+  "input_after": {
+    "current_problem_identity": {
+      "fixed_problem_sha256": "838fcf77a43b209b53dfe62f6a1657d0f8eba5a41797e431451059f3f8d18158",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    },
+    "fixed_input_fields": {
+      "common_bias_std_dbz": 0.25,
+      "missing_indices": [
+        [
+          1,
+          1,
+          2
+        ],
+        [
+          2,
+          2,
+          3
+        ]
+      ],
+      "observation_counts": {
+        "censored": 0,
+        "missing": 2,
+        "qc_rejected": 0,
+        "valid": 58
+      },
+      "tensor_sha256": {
+        "direction": "f75710a114ba2fb0ad1013ccaa15729e7d69b05031ea1b3537a519be77611a38",
+        "missing_mask": "21257c511085d4ac7cf048aa8d526556286321fad5f9d4235c7d239ad785199a",
+        "observation_dbz": "fc89685ee7bb07f7c3dcd5eb45fc6a6bb90bf73dae5500a6453c563e33c08a12",
+        "parameters": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+        "valid_mask": "6d2c1c3e23427974a855012eb8885dbb00c357f53dc4e4ab38bc58864fe20aec",
+        "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+        "warm_start_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+        "whitener_mode": "2b9b699f1aa5d630bac602ec23f2889b53b79c539aef63018b440a310ae1fb72"
+      },
+      "verification_constructor": "tests.test_fv_research_partial_observation._problem: warm-start partial forecast dBZ + 0.1 * fixed pattern, then detach",
+      "warm_start_branch": {
+        "euler_stages": 54,
+        "minimum_scaled_face_flux_margin": 0.007752734889703382,
+        "minimum_scaled_slope_margin": 0.0007615693500034068,
+        "signature_sha256": "3c5e5433d3d74a8f840bdd28834b2a73c98edf3b3fc4b46c5ab89567b1e4c70d"
+      },
+      "warm_start_gradient_max": 1.083842990538571,
+      "warm_start_objective": 0.02127260121736458
+    },
+    "historical_manifest_sha256": "6d859284dbb737910e2a94252e37cf87322924cae2fa9e88381f9e29dd18a5a3",
+    "historical_preflight_sha256": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
+    "historical_problem_identity": {
+      "fixed_problem_sha256": "ffc5a82cb9e4cda7667378b1932c6703e61a6a0c2d16d37ca1c6268b2f860e48",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    }
+  },
+  "input_before": {
+    "current_problem_identity": {
+      "fixed_problem_sha256": "838fcf77a43b209b53dfe62f6a1657d0f8eba5a41797e431451059f3f8d18158",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    },
+    "fixed_input_fields": {
+      "common_bias_std_dbz": 0.25,
+      "missing_indices": [
+        [
+          1,
+          1,
+          2
+        ],
+        [
+          2,
+          2,
+          3
+        ]
+      ],
+      "observation_counts": {
+        "censored": 0,
+        "missing": 2,
+        "qc_rejected": 0,
+        "valid": 58
+      },
+      "tensor_sha256": {
+        "direction": "f75710a114ba2fb0ad1013ccaa15729e7d69b05031ea1b3537a519be77611a38",
+        "missing_mask": "21257c511085d4ac7cf048aa8d526556286321fad5f9d4235c7d239ad785199a",
+        "observation_dbz": "fc89685ee7bb07f7c3dcd5eb45fc6a6bb90bf73dae5500a6453c563e33c08a12",
+        "parameters": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+        "valid_mask": "6d2c1c3e23427974a855012eb8885dbb00c357f53dc4e4ab38bc58864fe20aec",
+        "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+        "warm_start_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+        "whitener_mode": "2b9b699f1aa5d630bac602ec23f2889b53b79c539aef63018b440a310ae1fb72"
+      },
+      "verification_constructor": "tests.test_fv_research_partial_observation._problem: warm-start partial forecast dBZ + 0.1 * fixed pattern, then detach",
+      "warm_start_branch": {
+        "euler_stages": 54,
+        "minimum_scaled_face_flux_margin": 0.007752734889703382,
+        "minimum_scaled_slope_margin": 0.0007615693500034068,
+        "signature_sha256": "3c5e5433d3d74a8f840bdd28834b2a73c98edf3b3fc4b46c5ab89567b1e4c70d"
+      },
+      "warm_start_gradient_max": 1.083842990538571,
+      "warm_start_objective": 0.02127260121736458
+    },
+    "historical_manifest_sha256": "6d859284dbb737910e2a94252e37cf87322924cae2fa9e88381f9e29dd18a5a3",
+    "historical_preflight_sha256": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
+    "historical_problem_identity": {
+      "fixed_problem_sha256": "ffc5a82cb9e4cda7667378b1932c6703e61a6a0c2d16d37ca1c6268b2f860e48",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    }
+  },
+  "new_adjoint_reanalysis_runs": 0,
+  "new_newton_refinement_runs": 0,
+  "new_product_gn_runs": 0,
+  "numerical_status": "seed_locally_spd",
+  "objective": 0.02076496753914496,
+  "phase": "finished",
+  "physical_validation": "not_performed",
+  "pid": 17960,
+  "plan_sha256": "a3fb9ed7879ece170c4398e41bca230c5d76cb3d8790e7eaec06a20b60de5500",
+  "raw_unchanged": true,
+  "response_validation": "not_performed",
+  "reviewed_probe_sha256": "443d7225b5322c9a2d9e89f22b1993d2c878f5c3e98186d6e7b9cf8a7d3dfff0",
+  "scope": "post-hoc archived alternate-sector seed gate only; no GN/refiner/response",
+  "seed_branch": {
+    "euler_stages": 54,
+    "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+    "minimum_scaled_slope_margin": 0.0004060611332810128,
+    "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+  },
+  "selected_backtrack": 3,
+  "selected_control_sha256": "125e0200fdf85f996715ba1bc04aa3f631333614bf15cf2c16630b94c1897421",
+  "selected_iteration": 5,
+  "selected_previous_policy_reason": "merit_switch_refused",
+  "selected_previously_accepted": false,
+  "selected_signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d",
+  "source_after": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_partial_alternate_seed_gate.py": "443d7225b5322c9a2d9e89f22b1993d2c878f5c3e98186d6e7b9cf8a7d3dfff0",
+    "examples/weather_scenarios/fv_partial_alternate_seed_runner.py": "5c7cf933ffa0dfc4a2a51e4e35193580702e3671fa6d51323a335e9d0bfd5cd9",
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "758397e502b1f7821cc62fe9f1cf47b440cabdc4933596a3076ef762ad282f0e",
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7756da5561f67d47d1a813cc2cd720931b3ba29d132758e16e2628db6fe220c8",
+    "examples/weather_scenarios/fv_partial_sector_root_probe.py": "fddc3ddb20a3a961f73eb2d40dd379b25e87cd6109ca836476f45a1408350ccc",
+    "examples/weather_scenarios/fv_partial_sector_root_runner.py": "2bc6607a1bc4c369cd11edbd359d7a3754352dc7df2b7377944811161e37b18e",
+    "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+    "examples/weather_scenarios/fv_point_merit_root_probe.py": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+    "examples/weather_scenarios/fv_point_sector_policy.py": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d"
+  },
+  "source_before": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_partial_alternate_seed_gate.py": "443d7225b5322c9a2d9e89f22b1993d2c878f5c3e98186d6e7b9cf8a7d3dfff0",
+    "examples/weather_scenarios/fv_partial_alternate_seed_runner.py": "5c7cf933ffa0dfc4a2a51e4e35193580702e3671fa6d51323a335e9d0bfd5cd9",
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "758397e502b1f7821cc62fe9f1cf47b440cabdc4933596a3076ef762ad282f0e",
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7756da5561f67d47d1a813cc2cd720931b3ba29d132758e16e2628db6fe220c8",
+    "examples/weather_scenarios/fv_partial_sector_root_probe.py": "fddc3ddb20a3a961f73eb2d40dd379b25e87cd6109ca836476f45a1408350ccc",
+    "examples/weather_scenarios/fv_partial_sector_root_runner.py": "2bc6607a1bc4c369cd11edbd359d7a3754352dc7df2b7377944811161e37b18e",
+    "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+    "examples/weather_scenarios/fv_point_merit_root_probe.py": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+    "examples/weather_scenarios/fv_point_sector_policy.py": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d"
+  }
+}

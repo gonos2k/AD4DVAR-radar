@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_alternate_seed_gate.py",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/partial_alternate_seed_attempt1/alternate_seed.json",
+    "--expected-plan-sha256",
+    "a3fb9ed7879ece170c4398e41bca230c5d76cb3d8790e7eaec06a20b60de5500",
+    "--expected-probe-sha256",
+    "443d7225b5322c9a2d9e89f22b1993d2c878f5c3e98186d6e7b9cf8a7d3dfff0"
+  ],
+  "child_pid": 17960,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 23.506945208995603,
+  "sampled_peak_rss_bytes": 346718208,
+  "rss_samples": 89,
+  "wall_limit_seconds": 120,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

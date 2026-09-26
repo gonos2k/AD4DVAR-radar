@@ -776,5 +776,18 @@
     "graphify": "code-only incremental update:7665 nodes,67006 edges,251 communities;no semantic LLM extraction",
     "record": "FV_PARTIAL_FACE_GEOMETRY_PLAN.md,FV_PARTIAL_FACE_GEOMETRY_RESULTS.md,partial_face_geometry_attempt1/geometry.json",
     "status": "face-margin geometry diagnostic closed; next root method requires a separately frozen plan and final classical stationary response gates"
+  },
+  "fv_partial_alternate_seed_gate": {
+    "baseline": "main f08385d after PR211 face-geometry audit",
+    "scope": "one posthoc exploratory alternate-sector candidate chosen deterministically from PR209 rejected trials; exact seed branch and26-column Hessian gate only;no new GN/Newton/adjoint/reanalysis",
+    "selection": "29 finite cross-signature preceding-accepted candidates with slope/face margins>1e-4; exact tuple order picks iteration5/backtrack3 SHA125e0200fdf85f996715ba1bc04aa3f631333614bf15cf2c16630b94c1897421; was merit_switch_refused on prior path",
+    "seed": "fresh J0.02076496753914496,g2=0.012208793948431365,gmax=0.006848117531724784,54-stage full signature50d3b1a4...,slope margin4.060611333e-4,face margin1.166271417e-4;not stationary",
+    "curvature": "26 exact gradient-JVP columns,symmetry1.6261648929351038e-16,lambda_min1.0167708532836979,lambda_max4772.72431894504,ratio0.0002130378344392714;local SPD gate passed",
+    "execution": "parent completed,child exit0,23.506945208995603s,89 sampled RSS,peak346718208B under120s/sampled1GiB;all current20 source/input/plan/raw identities stable",
+    "limits": "seed eligibility only,face margin1.166 times gate;one posthoc correlated start,not root existence,basin size,response or physical skill;R4-R open",
+    "verification": "69 affected focused tests passed with18 existing warnings;basedpyright1.39.9 error-level0;GREEN/RED raw gate review;full CPU/package CI not run",
+    "graphify": "code-only incremental update:7699 nodes,67065 edges,271 communities;no semantic LLM extraction",
+    "record": "FV_PARTIAL_ALTERNATE_SEED_GATE_PLAN.md,FV_PARTIAL_ALTERNATE_SEED_GATE_RESULTS.md,partial_alternate_seed_attempt1/alternate_seed.json,partial_alternate_seed_attempt1/alternate_seed.run.json",
+    "status": "alternate-sector seed local SPD qualified;separate root-only refinement still required"
   }
 }

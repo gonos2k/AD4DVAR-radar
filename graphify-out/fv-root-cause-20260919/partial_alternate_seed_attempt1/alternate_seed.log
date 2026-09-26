@@ -1,0 +1,14 @@
+{
+  "curvature": {
+    "hvp_columns": 26,
+    "lambda_max": 4772.72431894504,
+    "lambda_min": 1.0167708532836979,
+    "lambda_ratio": 0.0002130378344392714,
+    "symmetry_relative": 1.6261648929351038e-16
+  },
+  "elapsed_seconds": 21.80121433304157,
+  "gradient_max": 0.006848117531724784,
+  "numerical_status": "seed_locally_spd",
+  "phase": "finished",
+  "refusal": null
+}

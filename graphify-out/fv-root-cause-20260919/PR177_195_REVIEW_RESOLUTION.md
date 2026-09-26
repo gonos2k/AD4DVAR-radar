@@ -15,7 +15,7 @@ reanalysis, and physical skill. Prior evidence remains in
 | R3-Q | QC-excluded point profile needs a stationary response | Keep external QC status distinct from missing and clear sky; qualify a fixed-mask root, full VJP and signed endpoints | **Closed for the constructed status-2 external-QC profile.** Full VJP, zero inactive slot and two signed pairs passed; numerics match R3-M under the same active mask, while identity differs. See `FV_POINT_QC_CENTERED_RESPONSE_RESULTS.md` |
 | R3-E | One wholly empty observation time needs a stationary response | Preserve time integration and external background while qualifying root, VJP and signed endpoints | **Closed for the constructed exactly-one-empty-first-time profile.** Four inactive first-time slots, nonzero theta path, full VJP and two signed pairs passed; see `FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_RESULTS.md` |
 | R4-D | Two-hole collocated partial refusal needs a support decision | Preserve three original attempts, separate process exit/resource/numerical status, and choose current refusal or a newly justified sector-aware search without relaxing final response gates | **Closed as explicit current-policy refusal for this exact input.** Archived attempt-3 first-failure counts 3 signature / 13 face-margin are source/output-hash bound; no sensitivity issued. See `FV_PARTIAL_POLICY_DECISION_RESULTS.md` |
-| R4-R | Qualified response for the original two-hole collocated case | Only a separately declared branch-aware numerical method and fresh final stationary branch/adjoint/signed endpoints could establish it | **Open.** A new current-source, one-shot cross-sector Newton–PCG attempt completed without a root: eight accepted corrections, final gradient maximum `0.00682447` and final accepted face margin `5.54e-7`; no sensitivity issued. A read-only audit localized the shrinking margin to (q_y[2,0]) approaching zero. See `FV_PARTIAL_SECTOR_ROOT_ATTEMPT1_RESULTS.md` and `FV_PARTIAL_FACE_GEOMETRY_RESULTS.md`. This does not prove root absence |
+| R4-R | Qualified response for the original two-hole collocated case | Only a separately declared branch-aware numerical method and fresh final stationary branch/adjoint/signed endpoints could establish it | **Open.** The first current-source cross-sector search refused after eight steps at gradient maximum `0.00682447`; a read-only audit localized its shrinking face margin to (q_y[2,0]). A separately selected alternate-sector seed passed fresh branch and exact-Hessian SPD gates but has gradient maximum `0.00684812` and has not been refined. No sensitivity issued; see `FV_PARTIAL_SECTOR_ROOT_ATTEMPT1_RESULTS.md`, `FV_PARTIAL_FACE_GEOMETRY_RESULTS.md`, `FV_PARTIAL_ALTERNATE_SEED_GATE_RESULTS.md`. Root absence is not proved |
 | R5-F | Point observations and 3-hour leads need a combined forward path | Preserve the one-lead reference and use a regular 18-lead terminal score with matching point observation, boundary/time and resource contracts | **Closed for one fixed same-operator 4×5 forward case.** Point observations and 18-lead terminal FV field pass; strict branch refuses, so no long response. See `FV_POINT_3H_FORWARD_RESULTS.md` |
 | R5-R-D | Fixed 3-hour point input needs a response-support decision | Keep its forward success separate from strict branch eligibility and response publication | **Closed for the exact PR #204 input/control as current-gate refusal.** The strict branch rejected before an admitted stage; no sensitivity was issued. See `FV_POINT_3H_RESPONSE_POLICY_RESULTS.md` |
 | R5-R-R | Qualified point-observation 3-hour stationary response | Find a strict long-horizon branch and stationary analysis, then full adjoint/VJP and signed endpoints without changing the time/score contract | Open research target; R5-F proves forward execution only |
@@ -175,6 +175,14 @@ historical numerical reports; new attempts must have distinct records.
   about 548 times after iteration 2 while the maximum face flux stays
   nearly constant. This localizes an approached upwind-switch surface,
   not a root or causal proof (`FV_PARTIAL_FACE_GEOMETRY_RESULTS.md`).
+- [x] Freeze one post-hoc alternate-sector seed from the 29 archived
+  eligible changed-signature candidates: iteration 5/backtrack 3,
+  previously merit-refused. Fresh fixed-input J/gradient/54-stage
+  branch matches the archive, both margins exceed `1e-4`, and its
+  own exact 26-column Hessian passes the local SPD gate. No product
+  GN/Newton/adjoint/reanalysis ran; the gradient maximum remains
+  `0.00684812`, so this is **seed eligibility only**
+  (`FV_PARTIAL_ALTERNATE_SEED_GATE_RESULTS.md`).
 
 ## R7 process-isolated response lifecycle
 
