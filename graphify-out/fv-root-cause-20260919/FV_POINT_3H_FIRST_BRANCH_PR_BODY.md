@@ -1,0 +1,5 @@
+The fixed 3-hour point-observation case passed its forward check but its strict minmod branch diagnostic refused before admitting a stage, leaving the reason unknown. This change adds a source- and input-bound, guarded first-failure diagnostic that reports the exact stage and predicate without changing the FV model or publishing a sensitivity.
+
+One planned run found a single failure at global callback stage 0, during the first analysis replay substep: `q_y[3,1]` has absolute face flux `5.5511e-17` versus the strict `4.5475e-15` threshold. The guarded child exited 0; the resource guard recorded 3.755 seconds elapsed and sampled peak child RSS 239.3 MB. Fixture construction performs its existing 3,600-stage same-operator truth trajectory; the diagnostic forecast stops at its first callback. Stationarity, adjoint, response and physical validation remain untested. R5-R-R remains open.
+
+Validation: 14 focused tests and 46 affected tests passed (18 existing TorchScript warnings); error-level basedpyright reported 0 errors. GREEN/RED reviewed the plan, code and one-shot raw evidence. Full CPU/package CI and nonlinear reanalysis were not run.

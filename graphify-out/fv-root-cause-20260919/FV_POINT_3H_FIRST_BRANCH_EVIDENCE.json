@@ -1,0 +1,62 @@
+{
+  "archived_input_identity_sha256": "00665e879d0e370e15f2bf3ef253a2267eb59335c2f51036289ff22632808744",
+  "files_sha256": {
+    "examples/weather_scenarios/fv_point_3h_first_branch_probe.py": "c82f1407c0a93160ff87ae5d5efcb785ad8dae2a73e7bac6a7c2a5c55e728d3e",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "3ed45d9ec1ba1a4dd5eb522c48b4a2d6fe7b7dd1d8d34ddf76628f8e96a4e114",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_FIRST_BRANCH_PLAN.md": "ed468d020ed1f4b7170c8b6089537b1535f85f0c1e635f717a0a12aba3d3fd32",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_FIRST_BRANCH_PR_BODY.md": "5e863c0b763f11660a981a89ab979545d4bc7fcee0002bf09412763c4bd0e1a5",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_FIRST_BRANCH_RESULTS.md": "7200a76eef7d2c2fb5a5be6eb796f6643d4c3ea003ac27eb5598ef17643fe562",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_FORWARD_EVIDENCE.json": "a78f09769c5201eafcb7eaedd4f8e506266f80409476780e128d4b08608cfc4e",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_RESPONSE_POLICY.json": "7df3012761264b5a063b7a1a5218d2e7157cd2aa5b7eb0e8156f57a666fc921c",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "72123692f7b453a81c635abc8e3ea4bbcf5672f7d9043c48e38b08e50fa6468d",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_first_branch_affected_tests.log": "daf3631e1d1bb79dc3d76db956583c61520f62b4fa58fc325e2fb86c099210a5",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_first_branch_graphify.log": "88207ac209e481b991b3a0422bc4d1ed06111c20a303af705992945d631ef56f",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_first_branch_tests.log": "c025d8b8ff3377b9f2ce3141ba09e44e2e7a1d6a9689507ed9ab5051313f228a",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_first_branch_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/point_3h_first_branch_attempt1/point_3h_first_branch.json": "c0a1e26b7fad1dba74b3ebbb52bc8d8465b824569fb4028c25236fc6a8a2c988",
+    "graphify-out/fv-root-cause-20260919/point_3h_first_branch_attempt1/point_3h_first_branch.log": "c0a1e26b7fad1dba74b3ebbb52bc8d8465b824569fb4028c25236fc6a8a2c988",
+    "graphify-out/fv-root-cause-20260919/point_3h_first_branch_attempt1/point_3h_first_branch.resource.json": "f4527f44a65b2b7375d0a3b9867e65f36cc2e0bc326ae009459bfe4002c46884",
+    "graphify-out/fv-root-cause-20260919/point_3h_first_branch_attempt1/point_3h_first_branch.run.json": "9909ff65f3e5a982546b773db68f1ee8cb60bab71fccb425fadc362500fcb770",
+    "tests/test_fv_point_3h_first_branch_probe.py": "d827d5450c97e9b05d1a42d49ecbe882e688d5b27c3184d447b83a27d6cc1f71"
+  },
+  "first_failure": {
+    "count": 1,
+    "first_index": [
+      3,
+      1
+    ],
+    "index_space": "y_face_array_0based",
+    "orientation": "y",
+    "predicate": "y_face_flux_nonzero",
+    "values": {
+      "tolerance": 4.5474735088646444e-15,
+      "values_min_abs": 5.551115123125783e-17
+    }
+  },
+  "limits": "diagnostic at one fixed control; no root-absence, response, finite-impact or physical-skill claim",
+  "resource": {
+    "child_pid": 94612,
+    "elapsed_seconds": 3.754693082999438,
+    "exit_code": 0,
+    "rss_samples": 14,
+    "sampled_peak_rss_bytes": 239304704
+  },
+  "scope": "one source/input-bound fixed PR204 point 3-hour first-branch diagnostic, no stationary response",
+  "stage_context": {
+    "forecast_lead_index": null,
+    "interval_end_seconds": 600,
+    "interval_index": 0,
+    "interval_start_seconds": 0,
+    "phase": "analysis_replay",
+    "ssprk_euler_stage_index": 0,
+    "substep_index": 0
+  },
+  "stage_index": 0,
+  "verification": {
+    "affected_tests_passed": 46,
+    "affected_warnings": 18,
+    "focused_tests_passed": 14,
+    "full_cpu_package_regression": "not_run",
+    "typecheck_errors": 0
+  }
+}

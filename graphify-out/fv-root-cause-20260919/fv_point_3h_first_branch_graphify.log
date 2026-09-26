@@ -1,0 +1,4 @@
+Implementation-agent incremental refresh after an intentional helper deletion:
+graphify update . --force --no-cluster
+Current graph.json: 7898 nodes, 206277 edges.
+No clustering/report regeneration was requested; GRAPH_REPORT.md retains the prior counts and is not used as this refresh evidence.

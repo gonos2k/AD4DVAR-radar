@@ -840,5 +840,16 @@
     "limits": "unsigned mutable local artifacts, no authenticated recovery or durable queue, parent-crash orphan possible, process-local cancellation, no generic request/concurrent GN/aggregate memory/physical skill claim",
     "record": "FV_RESPONSE_JOB_ATTEMPT_BINDING_PLAN.md,FV_RESPONSE_JOB_ATTEMPT_V2_EXECUTION_PLAN.md,FV_RESPONSE_JOB_ATTEMPT_BINDING_RESULTS.md,FV_RESPONSE_JOB_ATTEMPT_BINDING_EVIDENCE.json,response_job_attempt_v2_integration1",
     "status": "R7-P fixed-case attempt-binding subitem closed; production recovery and general execution remain open"
+  },
+  "fv_point_3h_first_branch_diagnostic": {
+    "baseline": "main 513e5a1 after PR216 fixed FV v2 attempt binding",
+    "scope": "one pinned PR204 4x5 point-observation 18-lead input/control strict minmod first-refusal diagnostic; no optimizer/adjoint/reanalysis",
+    "finding": "global callback stage0, first SSPRK Euler stage in first 0-600s analysis replay interval; only strict failure is near-zero q_y[3,1] face flux abs5.551115123125783e-17 <= tolerance4.5474735088646444e-15; no stage admitted",
+    "interpretation": "explains generic archived strict-branch refusal at this control; does not prove structural zero flux, root absence, or all future controls ineligible",
+    "execution": "one child exit0, 3.754693083s, 14 sampled RSS, peak239304704B under180s trigger/sampled768MiB; child and parent completed diagnostic refusal with no stationarity/response/physical-validation claim",
+    "verification": "14 focused tests, 46 affected tests with18 existing warnings, basedpyright1.39.9 error-level0, GREEN/RED prelaunch code review; full CPU/package CI not run",
+    "graphify": "incremental forced no-cluster code refresh after intentional helper deletion; graph.json 7898 nodes and 206277 edges; GRAPH_REPORT.md old counts",
+    "record": "FV_POINT_3H_FIRST_BRANCH_PLAN.md,FV_POINT_3H_FIRST_BRANCH_RESULTS.md,FV_POINT_3H_FIRST_BRANCH_EVIDENCE.json,point_3h_first_branch_attempt1",
+    "status": "first branch-cause diagnostic closed;R5-R-R qualified 3-hour stationary response still open"
   }
 }
