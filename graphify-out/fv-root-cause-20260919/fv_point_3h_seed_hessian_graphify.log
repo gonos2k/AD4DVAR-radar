@@ -1,0 +1,2 @@
+Implementation-agent code-only Graphify incremental AST refresh; no semantic extraction.
+Final graph.json parses: 8150 nodes, 773039 links.

@@ -1,0 +1,54 @@
+{
+  "branch": {
+    "signature_sha256": "80a1fac22b536bfedcedfda506e11d85f4b9f2a73c5610c73fa8dfdb210dfe51",
+    "stages": 3600
+  },
+  "candidate_control_sha256": "97ce3a636b25d79ca0aab208035e4299f9f4ad26ea00d557531e7a9eded2080b",
+  "files_sha256": {
+    "examples/weather_scenarios/fv_point_3h_seed_hessian_probe.py": "5b772aec38f60ff0634a0555b7332b9b9fb09e9fb88774665950390bc9b7a638",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "0a6bcce6ca55967fb7e1e4074d618c1553d66a1b797f24770a53c7ad42984df5",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_SEED_HESSIAN_PLAN.md": "06af1a0aa1a17795cfa685a3117a66cd1895c0a851f67694abe3efaa122af831",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_SEED_HESSIAN_PR_BODY.md": "a3608afdc07a060a87d987ea70de222aecbd25adaab0c6069b4beea8bea22f79",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_SEED_HESSIAN_RESULTS.md": "c2fbc9e6d70f83868aaba42c6eeec167828d5a7d99134878b88933c37469ba9e",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_SEED_LINEAR_EVIDENCE.json": "676f768cd285de8fee5d4f4b2321502112da5fbfd6072a7ca4021592b8695ad9",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "acc9a33d4b25d0fe66fbc9375cf7552b86a59b1b840e8ece584f1f58aca30e2b",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "8f5d2fb2acff5b5c1524a2232860b79430493878dc23d50721345c028f69c070",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_seed_hessian_affected_tests.log": "d7a28b352ee5b8a33c95ced378a141db7580e6b6f5ac220ddfc78c06f2ec3390",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_seed_hessian_graphify.log": "98df9c80e038aed5b7d914ea74676c08af854ae412c15ab5488cd9ec8fcd2ee7",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_seed_hessian_tests.log": "cb57803489e174364a149e7014977c32847f66be8ffe46785f5fc3704ca5a9de",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_seed_hessian_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/point_3h_seed_hessian_attempt1/point_3h_seed_hessian.json": "a3aa8a4bcc18a664d8ca34779fde9343f3926215336b19ba5b72ec2fb215ebde",
+    "graphify-out/fv-root-cause-20260919/point_3h_seed_hessian_attempt1/point_3h_seed_hessian.log": "a3aa8a4bcc18a664d8ca34779fde9343f3926215336b19ba5b72ec2fb215ebde",
+    "graphify-out/fv-root-cause-20260919/point_3h_seed_hessian_attempt1/point_3h_seed_hessian.resource.json": "aa594f3d50f221caed1712b991c8bc6896f5ca0a0c5b2a0592d0eb69fadba151",
+    "graphify-out/fv-root-cause-20260919/point_3h_seed_hessian_attempt1/point_3h_seed_hessian.run.json": "e5f17a254c6c306094090df6a3495a9995ff37f2727cfd9e02945b213eba2a8e",
+    "tests/test_fv_point_3h_seed_hessian_probe.py": "f5508341bf0b7b9c1f802e92161cf5de284f681ff3d0890ee867805d43d6e0ca"
+  },
+  "gradient_max": 2.254729681485403,
+  "hessian": {
+    "curvature_threshold": 3.433313750146871e-05,
+    "curvature_verdict": "locally_negative_curvature",
+    "fresh_eigenpair_relative_residual": 1.5316195634377663e-16,
+    "hessian_sha256": "647115b7dc0b56acae4a34d45122798e39dddde36d3973f4d972b85b0763406c",
+    "hvp_calls": 27,
+    "lambda_max": 3433.313750146871,
+    "lambda_min": -0.746077701362521,
+    "negative_eigen_count": 1,
+    "symmetry_relative": 1.0949379174674463e-15
+  },
+  "limits": "FP64 measured local seed Hessian only; no stationary root, response, finite impact or physical validation",
+  "resource": {
+    "elapsed_seconds": 286.9182247079443,
+    "exit_code": 0,
+    "pid": 53397,
+    "rss_samples": 1058,
+    "sampled_peak_rss_bytes": 343703552
+  },
+  "scope": "one exact 26-column HVP Hessian curvature audit at fixed nonstationary PR218 point 3-hour seed; no step/response",
+  "verification": {
+    "affected_tests_passed": 89,
+    "affected_warnings": 18,
+    "focused_tests_passed": 14,
+    "full_cpu_package_regression": "not_run",
+    "typecheck_errors": 0
+  }
+}

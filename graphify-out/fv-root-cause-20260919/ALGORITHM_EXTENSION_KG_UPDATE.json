@@ -878,5 +878,18 @@
     "limits": "visited PCG nonpositive curvature refusal is not proof of global Hessian indefiniteness/root absence; stationarity, response, finite influence and physical skill remain open; incomplete nonfinite margin reporting edge recorded",
     "record": "FV_POINT_3H_SEED_LINEAR_PLAN.md,FV_POINT_3H_SEED_LINEAR_RESULTS.md,FV_POINT_3H_SEED_LINEAR_EVIDENCE.json,point_3h_seed_linear_attempt1",
     "status": "R5 seed stationarity/one-RHS linear preflight closed with nonstationary/PCG refusal;R5-R-R open"
+  },
+  "fv_point_3h_seed_hessian_audit": {
+    "baseline": "main aa471d6 after PR219 branch-supported but nonstationary seed and PCG curvature refusal",
+    "scope": "one exact 26-column gradient-JVP Hessian audit at fixed PR218 3h point seed; no Newton step/PCG retry/score/adjoint/VJP/reanalysis",
+    "branch_and_gradient": "strict3600 Euler/choice/face-sign stages same signature80a1fac22b536bfedcedfda506e11d85f4b9f2a73c5610c73fa8dfdb210dfe51,J0.9323736303384679,gmax2.254729681485403; nonstationary",
+    "spectrum": "26 HVP columns plus fresh min-eigenvector HVP; symmetric-part lambda_min -0.746077701362521,lambda_max3433.313750146871,1 negative and25 positive; symmetry_relative1.0949379174674463e-15,fresh_eigenpair_relative_residual1.5316195634377663e-16,predeclared_delta3.433313750146871e-5; measured local negative curvature at this seed",
+    "hashes": "H647115b7dc0b56acae4a34d45122798e39dddde36d3973f4d972b85b0763406c,min_eigenvector621cd1cdcdf2db098a7435835cf4b1bb975b8d7f16174d10aa867cc78a77067d",
+    "execution": "one guarded child exit0,guard286.918224708s,child285.035144708s,1058 sampled RSS,peak343703552B under600s trigger/sampled1GiB; Hessian phase270.931864083s; source/input/plan/archive stable",
+    "verification": "14 focused and89 affected tests passed with18 existing warnings; basedpyright1.39.9 error-level0; GREEN/RED plan/code/raw review; full CPU/package CI not run",
+    "graphify": "incremental AST code refresh, valid graph.json8150 nodes/773039 links, no semantic extraction",
+    "limits": "finite-dimensional FP64 audit not rigorous interval certificate; negative curvature at nonstationary seed does not prove root absence or final stationary branch curvature; response/finite impact/physical skill open",
+    "record": "FV_POINT_3H_SEED_HESSIAN_PLAN.md,FV_POINT_3H_SEED_HESSIAN_RESULTS.md,FV_POINT_3H_SEED_HESSIAN_EVIDENCE.json,point_3h_seed_hessian_attempt1",
+    "status": "R5 seed curvature ambiguity closed;R5-R-R stationary response still open"
   }
 }
