@@ -1,0 +1,2 @@
+Incremental code-only Graphify AST refresh for 4 new/changed probe and test files; no semantic extraction.
+Final graph.json parses: 8294 nodes, 210382 links.

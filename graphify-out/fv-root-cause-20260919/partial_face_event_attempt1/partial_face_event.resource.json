@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_face_event_probe.py",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/partial_face_event_attempt1/partial_face_event.json",
+    "--expected-plan-sha256",
+    "bf6a5634062233167d68a927b7c079da069dcbc7f245daf9d08b28153ebe4d50",
+    "--expected-probe-sha256",
+    "14fd0659353056d1d801b1ba84eb2b2efd9f22421f2456ce8b56320c52d21f36"
+  ],
+  "child_pid": 36701,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 10.51564287499059,
+  "sampled_peak_rss_bytes": 345260032,
+  "rss_samples": 39,
+  "wall_limit_seconds": 300,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

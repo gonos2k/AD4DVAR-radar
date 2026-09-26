@@ -271,6 +271,12 @@ changes the numerical refiner, not the objective, observation contract or gates.
   response for the same two-hole input require separate mathematical
   justification and signed endpoint validation. The current refusal
   does not prove root absence.
+- [x] A source-bound, guarded face-event diagnostic on the two archived
+  accepted chords located `q_y[2,0]=0` and compared finite derivatives
+  on both sides. The sampled signature changed only in that face sign;
+  all eight points failed the response face-margin gate. This narrows
+  the numerical search question without closing the stationary-response
+  item (`FV_PARTIAL_FACE_EVENT_ATTEMPT1_RESULTS.md`).
 - [x] Bounded maintain/decay/growth fixed-branch classification and zero-face/
   flat forward-versus-response refusal (G4). See `FV_GROWTH_BRANCH_SCOPE.md`.
 - [x] At zero-flow control, prove every face of the supported 4×5/8×10
