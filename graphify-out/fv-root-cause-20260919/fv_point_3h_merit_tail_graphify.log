@@ -1,0 +1,2 @@
+Incremental code-only Graphify AST refresh after immutable policy refactor; no semantic extraction.
+Final graph.json parses: 8240 nodes, 212454 links.

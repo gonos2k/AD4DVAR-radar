@@ -917,5 +917,19 @@
     "limits": "two exploratory steps then declared line-search refusal;no continuous path,stationary root,final Hessian/adjoint/VJP,signed impact or physical skill; R5-R-R open",
     "record": "FV_POINT_3H_MERIT_CONTINUATION_PLAN.md,FV_POINT_3H_MERIT_CONTINUATION_RESULTS.md,FV_POINT_3H_MERIT_CONTINUATION_EVIDENCE.json,point_3h_merit_continuation_attempt1",
     "status": "bounded relinearized continuation attempt closed;qualified 3-hour stationary response remains open"
+  },
+  "fv_point_3h_merit_tail_policy": {
+    "baseline": "main 12d4234 after PR223 bounded merit continuation refusal; historical executed source Git32ee38d SHA00bed148ffc7549eca3cd8446ac1fd1d5c4042f1278867808aafe78f51e848dc",
+    "scope": "immutable default/tail policy refactor of existing research continuation runner; one tail from pinned PR223 accepted control baed75... with 12 alphas 0.000078125*2^-k,max2 accepted epochs/24 trials,internal240s/guard300s sampled1GiB",
+    "input": "PR223 raw SHAeb5b9d1ea712766607fc87b67d1053bd8b103dad1fdc06bcd8fa2916293b248c and evidence SHA99c9fe27c2df7136a881e03d2f886709379ef8ded66d2b41af3dd9d224688b8f pinned; same p/truth/domain/time/boundary/score definition",
+    "path": "one guarded child accepted two first-alpha0.000078125 changed-signature endpoints; each own strict3600 branch/margin; final extra strict check passed; numerical status accepted_epoch_limit, not root",
+    "values": "start J0.9314590521034872,Phi0.9755199172601001,ginf0.8727746789931015;first J0.9314473935070856,Phi0.9533070968486816,ginf0.865280110188193;last J0.9314353874766477,Phi0.9522514198858343,ginf0.8719793800953134;gmax nonmonotone and far above final gate",
+    "candidate": "control SHA602b08828b92508dfaed3605f4626882a1cf70646730da1cb866416dd15cf0b9,strict signature18a36b01bc9a8b7c21ea1970f79f8bd379a52ceb67b7fae72b2e79c1c5d0eed8;segment not certified",
+    "execution": "one child exit0,guard45.922072625s,child44.656367250s,172 sampled RSS peak379846656B under300s trigger/sampled1GiB;2 trials,2 HVP+2 VJP,5 branch oracle calls;phase sum44.650981335s",
+    "verification": "11 focused and110 affected tests passed with18 existing warnings;basedpyright1.39.9 error-level0;GREEN/RED plan/code/raw review;full CPU/package CI not run",
+    "graphify": "incremental AST code refresh,valid graph.json8240 nodes/212454 links,no semantic extraction",
+    "limits": "smaller tail is an experiment, not predicted success; two strict endpoint improvements but no stationary root/final Hessian/adjoint/VJP/signed impact/physical skill;R5-R-R open",
+    "record": "FV_POINT_3H_MERIT_TAIL_PLAN.md,FV_POINT_3H_MERIT_TAIL_RESULTS.md,FV_POINT_3H_MERIT_TAIL_EVIDENCE.json,point_3h_merit_tail_attempt1",
+    "status": "one smaller-alpha tail completed at two-step limit; qualified 3-hour response remains open"
   }
 }

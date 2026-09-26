@@ -420,6 +420,11 @@ changes the numerical refiner, not the objective, observation contract or gates.
   J and gradient merit; epoch 3 refused all eight trial sizes. Final
   gradient maximum `0.87277468` remains nonstationary
   (`FV_POINT_3H_MERIT_CONTINUATION_RESULTS.md`).
+- [x] Preserve that run's default policy while testing a separately
+  pinned smaller-alpha tail. Two first-alpha strict endpoints lowered
+  J and merit, but the second gradient maximum rose slightly and the
+  final value `0.87197938` remains nonstationary
+  (`FV_POINT_3H_MERIT_TAIL_RESULTS.md`).
 - [ ] A stationary analysis point and long-horizon adjoint/reanalysis
   remain unachieved. The latest exploratory endpoint is still far
   above the `<1e-10` gradient gate, and its own Hessian/adjoint have

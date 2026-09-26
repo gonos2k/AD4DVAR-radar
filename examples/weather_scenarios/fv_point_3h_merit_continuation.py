@@ -6,6 +6,7 @@ the connecting path, a root, or a response.
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
 import hashlib
 import json
 import math
@@ -56,6 +57,74 @@ REAP_GRACE_SECONDS = 2
 SAMPLED_RSS_BYTES = 1024**3
 DEFAULT_DIRECTORY = EVIDENCE / "point_3h_merit_continuation_attempt1"
 
+
+@dataclass(frozen=True)
+class RunPolicy:
+    """Immutable seed, search, and guard settings for one profile."""
+
+    name: str
+    plan: Path
+    plan_sha256: str
+    seed_report: Path
+    seed_report_sha256: str
+    seed_evidence: Path
+    seed_evidence_sha256: str
+    seed_control_sha256: str
+    seed_signature_sha256: str
+    seed_report_status: str
+    seed_j: float
+    seed_phi: float
+    seed_gradient_inf: float
+    alpha_grid: tuple[float, ...]
+    max_accepted_epochs: int
+    max_total_trials: int
+    internal_budget_seconds: float
+    wall_seconds: int
+    reap_grace_seconds: int
+    sampled_rss_bytes: int
+    output_directory: Path
+
+    @property
+    def max_trials_per_epoch(self) -> int:
+        return len(self.alpha_grid)
+
+
+DEFAULT_POLICY = RunPolicy(
+    name="default", plan=PLAN, plan_sha256=PLAN_SHA256,
+    seed_report=SEED_REPORT, seed_report_sha256=SEED_REPORT_SHA256,
+    seed_evidence=SEED_EVIDENCE, seed_evidence_sha256=SEED_EVIDENCE_SHA256,
+    seed_control_sha256=SEED_CONTROL_SHA256,
+    seed_signature_sha256=SEED_SIGNATURE_SHA256,
+    seed_report_status="candidate_accepted_branch_changed",
+    seed_j=SEED_J, seed_phi=SEED_PHI, seed_gradient_inf=SEED_GRADIENT_INF,
+    alpha_grid=tuple(INITIAL_ALPHA / 2**i for i in range(MAX_TRIALS_PER_EPOCH)),
+    max_accepted_epochs=MAX_ACCEPTED_EPOCHS, max_total_trials=MAX_TOTAL_TRIALS,
+    internal_budget_seconds=INTERNAL_BUDGET_SECONDS, wall_seconds=WALL_SECONDS,
+    reap_grace_seconds=REAP_GRACE_SECONDS, sampled_rss_bytes=SAMPLED_RSS_BYTES,
+    output_directory=DEFAULT_DIRECTORY,
+)
+
+TAIL_POLICY = RunPolicy(
+    name="tail", plan=EVIDENCE / "FV_POINT_3H_MERIT_TAIL_PLAN.md",
+    plan_sha256="8663ccc4046ca0ddde489b57a51127259747b335978776556b7e9a02f8f679ff",
+    seed_report=EVIDENCE / "point_3h_merit_continuation_attempt1/point_3h_merit_continuation.json",
+    seed_report_sha256="eb5b9d1ea712766607fc87b67d1053bd8b103dad1fdc06bcd8fa2916293b248c",
+    seed_evidence=EVIDENCE / "FV_POINT_3H_MERIT_CONTINUATION_EVIDENCE.json",
+    seed_evidence_sha256="99c9fe27c2df7136a881e03d2f886709379ef8ded66d2b41af3dd9d224688b8f",
+    seed_control_sha256="baed75b17f6552cecf999be2a23db75725fef8d713a1dd360326ee82680159ba",
+    seed_signature_sha256="2925e02c77e293436b8eccfeda1db44390bb4ca6f106f5a5b581818d9ab57dc5",
+    seed_report_status="epoch_line_search_refused",
+    seed_j=0.9314590521034872, seed_phi=0.9755199172601001,
+    seed_gradient_inf=0.8727746789931015,
+    alpha_grid=tuple(0.000078125 / 2**i for i in range(12)),
+    max_accepted_epochs=2, max_total_trials=24,
+    internal_budget_seconds=240.0, wall_seconds=300, reap_grace_seconds=2,
+    sampled_rss_bytes=1024**3,
+    output_directory=EVIDENCE / "point_3h_merit_tail_attempt1",
+)
+
+POLICIES = {policy.name: policy for policy in (DEFAULT_POLICY, TAIL_POLICY)}
+
 SOURCE_PATHS = tuple(dict.fromkeys((
     *seed_linear.SOURCE_PATHS,
     "examples/weather_scenarios/fv_point_3h_merit_step_probe.py",
@@ -97,14 +166,15 @@ def _finite_number(value: object) -> bool:
 
 
 def _continuation_link(current: dict[str, Any],
-                       previous: dict[str, Any] | None) -> bool:
+                       previous: dict[str, Any] | None,
+                       policy: RunPolicy = DEFAULT_POLICY) -> bool:
     """Bind each fresh epoch point to the pinned seed or prior accepted trial."""
     if previous is None:
         expected = {
-            "control_sha256": SEED_CONTROL_SHA256,
-            "branch_signature_sha256": SEED_SIGNATURE_SHA256,
-            "objective": SEED_J, "phi": SEED_PHI,
-            "gradient_inf": SEED_GRADIENT_INF,
+            "control_sha256": policy.seed_control_sha256,
+            "branch_signature_sha256": policy.seed_signature_sha256,
+            "objective": policy.seed_j, "phi": policy.seed_phi,
+            "gradient_inf": policy.seed_gradient_inf,
         }
     else:
         expected = {
@@ -116,12 +186,13 @@ def _continuation_link(current: dict[str, Any],
     return all(current.get(key) == value for key, value in expected.items())
 
 
-def _budget_exhausted(started: float, now: float | None = None) -> bool:
-    return (time.monotonic() if now is None else now) - started >= INTERNAL_BUDGET_SECONDS
+def _budget_exhausted(started: float, now: float | None = None,
+                      policy: RunPolicy = DEFAULT_POLICY) -> bool:
+    return (time.monotonic() if now is None else now) - started >= policy.internal_budget_seconds
 
 
-def _trial_slots(total_trials: int) -> int:
-    return min(MAX_TRIALS_PER_EPOCH, max(0, MAX_TOTAL_TRIALS - total_trials))
+def _trial_slots(total_trials: int, policy: RunPolicy = DEFAULT_POLICY) -> int:
+    return min(policy.max_trials_per_epoch, max(0, policy.max_total_trials - total_trials))
 
 
 def _transpose_consistency(hg: Tensor, htg: Tensor) -> dict[str, Any]:
@@ -210,27 +281,46 @@ def _strict_endpoint(problem: Any, control: Tensor,
             "scope": scope}
 
 
-def _seed_control() -> Tensor:
-    if _sha(SEED_REPORT) != SEED_REPORT_SHA256:
-        raise ValueError("pinned PR #221 raw report SHA256 changed")
-    raw = json.loads(SEED_REPORT.read_text())
+def _seed_report(policy: RunPolicy) -> dict[str, Any]:
+    if _sha(policy.seed_report) != policy.seed_report_sha256:
+        raise ValueError(f"pinned {policy.name} raw report SHA256 changed")
+    raw = json.loads(policy.seed_report.read_text())
     if (raw.get("execution_status") != "completed"
-            or raw.get("numerical_status") != "candidate_accepted_branch_changed"
-            or raw.get("accepted_candidate", {}).get("control_sha256") != SEED_CONTROL_SHA256
-            or raw.get("accepted_candidate", {}).get("branch_signature_sha256") != SEED_SIGNATURE_SHA256
-            or raw.get("accepted_candidate", {}).get("objective") != SEED_J
-            or raw.get("accepted_candidate", {}).get("phi") != SEED_PHI
-            or raw.get("accepted_candidate", {}).get("gradient_inf") != SEED_GRADIENT_INF):
-        raise ValueError("pinned PR #221 accepted endpoint evidence changed")
+            or raw.get("numerical_status") != policy.seed_report_status
+            or raw.get("accepted_candidate", {}).get("control_sha256") != policy.seed_control_sha256
+            or raw.get("accepted_candidate", {}).get("branch_signature_sha256") != policy.seed_signature_sha256
+            or raw.get("accepted_candidate", {}).get("objective") != policy.seed_j
+            or raw.get("accepted_candidate", {}).get("phi") != policy.seed_phi
+            or raw.get("accepted_candidate", {}).get("gradient_inf") != policy.seed_gradient_inf):
+        raise ValueError(f"pinned {policy.name} accepted endpoint evidence changed")
+    return raw
+
+
+def _seed_control(policy: RunPolicy = DEFAULT_POLICY) -> Tensor:
+    raw = _seed_report(policy)
     control = torch.as_tensor(raw["accepted_candidate"]["control"], dtype=torch.float64)
-    if control.shape != (EXPECTED_CONTROLS,) or seed_linear._tensor_sha(control) != SEED_CONTROL_SHA256:
+    if control.shape != (EXPECTED_CONTROLS,) or seed_linear._tensor_sha(control) != policy.seed_control_sha256:
         raise ValueError("pinned PR #221 control shape, dtype, or SHA256 changed")
     return control
 
 
-def run_probe(output: Path) -> dict[str, Any]:
+def run_probe(output: Path, policy: RunPolicy = DEFAULT_POLICY) -> dict[str, Any]:
     """Run the bounded relinearized endpoint search inside the one guarded child."""
     started = time.monotonic()
+    PLAN, PLAN_SHA256 = policy.plan, policy.plan_sha256
+    SEED_REPORT, SEED_REPORT_SHA256 = policy.seed_report, policy.seed_report_sha256
+    SEED_EVIDENCE, SEED_EVIDENCE_SHA256 = policy.seed_evidence, policy.seed_evidence_sha256
+    SEED_CONTROL_SHA256 = policy.seed_control_sha256
+    SEED_SIGNATURE_SHA256 = policy.seed_signature_sha256
+    SEED_J, SEED_PHI = policy.seed_j, policy.seed_phi
+    SEED_GRADIENT_INF = policy.seed_gradient_inf
+    MAX_ACCEPTED_EPOCHS, MAX_TOTAL_TRIALS = (
+        policy.max_accepted_epochs, policy.max_total_trials,
+    )
+    MAX_TRIALS_PER_EPOCH = policy.max_trials_per_epoch
+    INTERNAL_BUDGET_SECONDS = policy.internal_budget_seconds
+    WALL_SECONDS, REAP_GRACE_SECONDS = policy.wall_seconds, policy.reap_grace_seconds
+    SAMPLED_RSS_BYTES = policy.sampled_rss_bytes
     report: dict[str, Any] = {
         "pid": os.getpid(), "execution_status": "running",
         "execution_phase": "source_check", "numerical_status": "not_reached",
@@ -238,13 +328,14 @@ def run_probe(output: Path) -> dict[str, Any]:
         "response_computed": False, "adjoint_computed": False,
         "score_computed": False, "pcg_calls": 0,
         "path_certified": False, "root_certified": False,
-        "plan_sha256": PLAN_SHA256, "seed_report_sha256": SEED_REPORT_SHA256,
-        "seed_evidence_sha256": SEED_EVIDENCE_SHA256,
-        "seed_control_sha256": SEED_CONTROL_SHA256,
-        "wall_limit_seconds": WALL_SECONDS,
-        "termination_reap_grace_seconds": REAP_GRACE_SECONDS,
-        "rss_limit_bytes": SAMPLED_RSS_BYTES,
-        "internal_budget_seconds": INTERNAL_BUDGET_SECONDS,
+        "profile": policy.name,
+        "plan_sha256": policy.plan_sha256, "seed_report_sha256": policy.seed_report_sha256,
+        "seed_evidence_sha256": policy.seed_evidence_sha256,
+        "seed_control_sha256": policy.seed_control_sha256,
+        "wall_limit_seconds": policy.wall_seconds,
+        "termination_reap_grace_seconds": policy.reap_grace_seconds,
+        "rss_limit_bytes": policy.sampled_rss_bytes,
+        "internal_budget_seconds": policy.internal_budget_seconds,
         "environment": {"python": platform.python_version(), "torch": torch.__version__,
                         "device": "CPU FP64"},
     }
@@ -272,7 +363,7 @@ def run_probe(output: Path) -> dict[str, Any]:
 
         tick = time.monotonic()
         problem, original, base_control, parameters, truth, input_before = seed_linear._prepare_fixed_seed()
-        control = _seed_control()
+        control = _seed_control(policy)
         if (base_control.shape != control.shape or control.dtype != torch.float64
                 or parameters.shape != (EXPECTED_PARAMETERS,)
                 or problem.layout["controls"] != EXPECTED_CONTROLS
@@ -301,7 +392,7 @@ def run_probe(output: Path) -> dict[str, Any]:
             if len(report["candidate_attempts"]) >= MAX_TOTAL_TRIALS:
                 report["numerical_status"] = "trial_limit"
                 break
-            if _budget_exhausted(started):
+            if _budget_exhausted(started, policy=policy):
                 report["numerical_status"] = "internal_budget_exhausted"
                 break
             report.update(execution_phase="strict_current_branch", current_epoch=epoch)
@@ -316,7 +407,7 @@ def run_probe(output: Path) -> dict[str, Any]:
                 "strict_branch_and_margin_pass", 0.0) + time.monotonic() - tick
             report.update(current_branch=branch, current_branch_margins=margins,
                           branch_status=branch.get("status"))
-            if _budget_exhausted(started):
+            if _budget_exhausted(started, policy=policy):
                 report["numerical_status"] = "internal_budget_exhausted"
                 _write_json(output, report)
                 break
@@ -327,7 +418,7 @@ def run_probe(output: Path) -> dict[str, Any]:
             tick = time.monotonic()
             metrics = _fresh_merit(problem, control, parameters, gradient_fn)
             phase_seconds["fresh_current_merit"] = phase_seconds.get("fresh_current_merit", 0.0) + time.monotonic() - tick
-            if _budget_exhausted(started):
+            if _budget_exhausted(started, policy=policy):
                 report["numerical_status"] = "internal_budget_exhausted"
                 _write_json(output, report)
                 break
@@ -340,7 +431,7 @@ def run_probe(output: Path) -> dict[str, Any]:
                                "gradient_inf": float(gradient.abs().max()),
                                "control_sha256": seed_linear._tensor_sha(control),
                                "branch_signature_sha256": current_signature_sha}
-            if epoch == 0 and not _continuation_link(current_metrics, None):
+            if epoch == 0 and not _continuation_link(current_metrics, None, policy):
                 report["numerical_status"] = "pinned_seed_merit_mismatch"
                 break
             report["current"] = current_metrics
@@ -358,7 +449,7 @@ def run_probe(output: Path) -> dict[str, Any]:
             )[1]
             htg = pullback(gradient)[0]
             phase_seconds["fresh_hg_and_htg"] = phase_seconds.get("fresh_hg_and_htg", 0.0) + time.monotonic() - tick
-            if _budget_exhausted(started):
+            if _budget_exhausted(started, policy=policy):
                 report["numerical_status"] = "internal_budget_exhausted"
                 _write_json(output, report)
                 break
@@ -400,11 +491,11 @@ def run_probe(output: Path) -> dict[str, Any]:
             report["accepted_epochs"].append(epoch_record)
             current_branch_call_unrecorded = False
             accepted = False
-            for index in range(_trial_slots(len(report["candidate_attempts"]))):
-                if _budget_exhausted(started):
+            for index in range(_trial_slots(len(report["candidate_attempts"]), policy)):
+                if _budget_exhausted(started, policy=policy):
                     report["numerical_status"] = "internal_budget_exhausted"
                     break
-                alpha = INITIAL_ALPHA / (2 ** index)
+                alpha = policy.alpha_grid[index]
                 candidate_control = control + alpha * direction
                 attempt: dict[str, Any] = {
                     "epoch": epoch, "trial": index, "alpha": alpha,
@@ -425,7 +516,7 @@ def run_probe(output: Path) -> dict[str, Any]:
                     attempt.update(branch=branch, branch_status=branch.get("status"))
                     if branch.get("status") == "passed_strict_branch":
                         attempt["branch_signature_sha256"] = branch.get("signature_sha256")
-                    if _budget_exhausted(started):
+                    if _budget_exhausted(started, policy=policy):
                         attempt.update(objective_status="not_evaluated_internal_budget",
                                        refusal_reason="internal phase budget expired after strict endpoint check")
                         report["numerical_status"] = "internal_budget_exhausted"
@@ -441,7 +532,7 @@ def run_probe(output: Path) -> dict[str, Any]:
                             candidate_metrics = _fresh_merit(problem, candidate_control,
                                                              parameters, gradient_fn)
                             phase_seconds["fresh_candidate_merit"] = phase_seconds.get("fresh_candidate_merit", 0.0) + time.monotonic() - tick
-                            if _budget_exhausted(started):
+                            if _budget_exhausted(started, policy=policy):
                                 report["numerical_status"] = "internal_budget_exhausted"
                                 if candidate_metrics is None:
                                     attempt.update(objective_status="nonfinite_or_invalid",
@@ -514,7 +605,7 @@ def run_probe(output: Path) -> dict[str, Any]:
                 and report["numerical_status"] in {
                     "accepted_epoch_limit", "handoff_candidate_only", "trial_limit",
                 }
-                and not _budget_exhausted(started)):
+                and not _budget_exhausted(started, policy=policy)):
             report.update(execution_phase="final_accepted_branch")
             tick = time.monotonic()
             branch_oracle_calls += 1
@@ -525,7 +616,7 @@ def run_probe(output: Path) -> dict[str, Any]:
                 "strict_branch_and_margin_pass", 0.0) + time.monotonic() - tick
             report["final_accepted_branch"] = final_branch
             report["final_accepted_branch_margins"] = final_margins
-            if _budget_exhausted(started):
+            if _budget_exhausted(started, policy=policy):
                 report["numerical_status"] = "internal_budget_exhausted"
             elif final_branch.get("status") != "passed_strict_branch":
                 report["numerical_status"] = "final_accepted_branch_or_margin_refused"
@@ -595,20 +686,22 @@ def run_probe(output: Path) -> dict[str, Any]:
     return report
 
 
-def _valid_resource(resource: dict[str, Any], command: list[str]) -> bool:
+def _valid_resource(resource: dict[str, Any], command: list[str],
+                    policy: RunPolicy = DEFAULT_POLICY) -> bool:
     elapsed, peak = resource.get("elapsed_seconds"), resource.get("sampled_peak_rss_bytes")
     return (resource.get("command") == command and resource.get("exit_code") == 0
             and resource.get("resource_termination") is None
             and resource.get("monitor_error") is None
-            and resource.get("wall_limit_seconds") == WALL_SECONDS
-            and resource.get("rss_limit_bytes") == SAMPLED_RSS_BYTES
+            and resource.get("wall_limit_seconds") == policy.wall_seconds
+            and resource.get("rss_limit_bytes") == policy.sampled_rss_bytes
             and type(resource.get("rss_samples")) is int and resource["rss_samples"] > 0
-            and type(peak) is int and 0 < peak <= SAMPLED_RSS_BYTES
+            and type(peak) is int and 0 < peak <= policy.sampled_rss_bytes
             and isinstance(elapsed, (int, float)) and not isinstance(elapsed, bool)
-            and math.isfinite(elapsed) and 0 <= elapsed <= WALL_SECONDS)
+            and math.isfinite(elapsed) and 0 <= elapsed <= policy.wall_seconds)
 
 
-def _valid_child(child: object, sources: dict[str, str]) -> bool:
+def _valid_child(child: object, sources: dict[str, str],
+                 policy: RunPolicy = DEFAULT_POLICY) -> bool:
     if not isinstance(child, dict):
         return False
     costs = child.get("costs")
@@ -627,15 +720,16 @@ def _valid_child(child: object, sources: dict[str, str]) -> bool:
     }
     if not (child.get("execution_status") == "completed"
             and child.get("execution_phase") == "finished"
+            and child.get("profile") == policy.name
             and child.get("numerical_status") in known_statuses
             and child.get("source_before") == child.get("source_after") == sources
             and child.get("source_unchanged") is True
-            and child.get("plan_sha256") == PLAN_SHA256 and child.get("plan_unchanged") is True
-            and child.get("seed_report_sha256") == SEED_REPORT_SHA256
+            and child.get("plan_sha256") == policy.plan_sha256 and child.get("plan_unchanged") is True
+            and child.get("seed_report_sha256") == policy.seed_report_sha256
             and child.get("seed_report_unchanged") is True
-            and child.get("seed_evidence_sha256") == SEED_EVIDENCE_SHA256
+            and child.get("seed_evidence_sha256") == policy.seed_evidence_sha256
             and child.get("seed_evidence_unchanged") is True
-            and child.get("seed_control_sha256") == SEED_CONTROL_SHA256
+            and child.get("seed_control_sha256") == policy.seed_control_sha256
             and child.get("archive_unchanged") is True
             and child.get("fixed_input_unchanged") is True
             and child.get("response_computed") is False
@@ -643,9 +737,10 @@ def _valid_child(child: object, sources: dict[str, str]) -> bool:
             and child.get("score_computed") is False and child.get("pcg_calls") == 0
             and child.get("path_certified") is False and child.get("root_certified") is False
             and type(child.get("pid")) is int and child["pid"] > 0
-            and child.get("wall_limit_seconds") == WALL_SECONDS
-            and child.get("rss_limit_bytes") == SAMPLED_RSS_BYTES
-            and len(epochs) <= MAX_ACCEPTED_EPOCHS and len(attempts) <= MAX_TOTAL_TRIALS
+            and child.get("wall_limit_seconds") == policy.wall_seconds
+            and child.get("rss_limit_bytes") == policy.sampled_rss_bytes
+            and len(epochs) <= policy.max_accepted_epochs
+            and len(attempts) <= policy.max_total_trials
             and costs.get("accepted_epoch_count") == sum(
                 item.get("accepted") is True for item in epochs if isinstance(item, dict))
             and costs.get("epoch_count") == len(epochs)
@@ -683,7 +778,7 @@ def _valid_child(child: object, sources: dict[str, str]) -> bool:
         if (not isinstance(epoch, dict) or epoch.get("epoch") != epoch_index
                 or not isinstance(epoch.get("current"), dict)
                 or not isinstance(epoch.get("trials"), list)
-                or len(epoch["trials"]) > MAX_TRIALS_PER_EPOCH
+                or len(epoch["trials"]) > policy.max_trials_per_epoch
                 or type(epoch.get("accepted")) is not bool
                 or (len(epoch["trials"]) == 0
                     and not (child.get("numerical_status") == "internal_budget_exhausted"
@@ -691,7 +786,7 @@ def _valid_child(child: object, sources: dict[str, str]) -> bool:
                              and epoch.get("accepted") is False))):
             return False
         current = epoch["current"]
-        if not _continuation_link(current, previous_accepted):
+        if not _continuation_link(current, previous_accepted, policy):
             return False
         current_branch = epoch.get("current_branch")
         if (not isinstance(current_branch, dict)
@@ -722,7 +817,8 @@ def _valid_child(child: object, sources: dict[str, str]) -> bool:
         for trial_index, trial in enumerate(epoch["trials"]):
             if (not isinstance(trial, dict) or trial.get("epoch") != epoch_index
                     or trial.get("trial") != trial_index
-                    or trial.get("alpha") != INITIAL_ALPHA / 2**trial_index
+                    or trial_index >= len(policy.alpha_grid)
+                    or trial.get("alpha") != policy.alpha_grid[trial_index]
                     or trial.get("path_certified") is not False):
                 return False
             global_index = expected_trial_count + trial_index
@@ -780,6 +876,9 @@ def _valid_child(child: object, sources: dict[str, str]) -> bool:
         epoch_trials.extend(epoch["trials"])
     if expected_trial_count != len(attempts):
         return False
+    if (child.get("numerical_status") == "epoch_line_search_refused"
+            and len(attempts) >= policy.max_total_trials):
+        return False
     accepted = child.get("accepted_candidate")
     if last_accepted is None:
         terminal_current = child.get("current")
@@ -789,7 +888,7 @@ def _valid_child(child: object, sources: dict[str, str]) -> bool:
         )
         if child.get("numerical_status") == "handoff_candidate_only":
             return (accepted is None and isinstance(terminal_current, dict)
-                    and _continuation_link(terminal_current, None)
+                    and _continuation_link(terminal_current, None, policy)
                     and isinstance(terminal_branch, dict)
                     and terminal_branch.get("status") == "passed_strict_branch"
                     and terminal_margin_ok
@@ -800,7 +899,7 @@ def _valid_child(child: object, sources: dict[str, str]) -> bool:
                     and isinstance(terminal_branch, dict)
                     and terminal_branch.get("status") == "passed_strict_branch"
                     and terminal_margin_ok
-                    and not _continuation_link(terminal_current, None))
+                    and not _continuation_link(terminal_current, None, policy))
         if child.get("numerical_status") in {
             "transpose_consistency_refused", "no_joint_descent_direction",
             "true_slope_refused",
@@ -809,7 +908,7 @@ def _valid_child(child: object, sources: dict[str, str]) -> bool:
                     and isinstance(terminal_branch, dict)
                     and terminal_branch.get("status") == "passed_strict_branch"
                     and terminal_margin_ok
-                    and _continuation_link(terminal_current, None))
+                    and _continuation_link(terminal_current, None, policy))
         return accepted is None and child.get("numerical_status") not in {
             "accepted_epoch_limit", "final_accepted_branch_or_margin_refused",
         }
@@ -853,7 +952,7 @@ def _valid_child(child: object, sources: dict[str, str]) -> bool:
     if status in {"transpose_consistency_refused", "no_joint_descent_direction",
                   "true_slope_refused"}:
         if (not isinstance(terminal_current, dict)
-                or not _continuation_link(terminal_current, last_accepted)
+                or not _continuation_link(terminal_current, last_accepted, policy)
                 or not isinstance(terminal_branch, dict)
                 or terminal_branch.get("status") != "passed_strict_branch"
                 or not terminal_margins_ok):
@@ -901,16 +1000,16 @@ def _valid_child(child: object, sources: dict[str, str]) -> bool:
     if status in {"current_merit_refused", "current_branch_or_margin_refused"}:
         expected_current_hash = (last_accepted.get("control_sha256")
                                  if last_accepted is not None
-                                 else SEED_CONTROL_SHA256)
+                                 else policy.seed_control_sha256)
         if child.get("current_control_sha256") != expected_current_hash:
             return False
-    if status == "accepted_epoch_limit" and accepted_count != MAX_ACCEPTED_EPOCHS:
+    if status == "accepted_epoch_limit" and accepted_count != policy.max_accepted_epochs:
         return False
-    if status == "trial_limit" and len(attempts) != MAX_TOTAL_TRIALS:
+    if status == "trial_limit" and len(attempts) != policy.max_total_trials:
         return False
     if status == "epoch_line_search_refused":
         if (not epochs or epochs[-1].get("accepted") is not False
-                or len(epochs[-1]["trials"]) != MAX_TRIALS_PER_EPOCH
+                or len(epochs[-1]["trials"]) != policy.max_trials_per_epoch
                 or any(item.get("accepted") is True for item in epochs[-1]["trials"])):
             return False
     if status == "handoff_candidate_only" and accepted.get("gradient_inf", 1.0) >= 1.0e-4:
@@ -937,27 +1036,33 @@ def _valid_child(child: object, sources: dict[str, str]) -> bool:
     )
 
 
-def run(directory: Path) -> dict[str, Any]:
+def run(directory: Path, policy: RunPolicy = DEFAULT_POLICY) -> dict[str, Any]:
     """Launch one bounded child; parent only checks source, archive, and report."""
     started = time.monotonic()
     if directory.exists() and any(directory.iterdir()):
         raise ValueError("continuation output directory must be fresh and empty")
     directory.mkdir(parents=True, exist_ok=True)
-    output = directory / "point_3h_merit_continuation.json"
+    stem = ("point_3h_merit_continuation" if policy.name == "default"
+            else "point_3h_merit_tail")
+    output = directory / f"{stem}.json"
     command = [sys.executable, str(Path(__file__).resolve()), "--output", str(output)]
+    if policy.name != "default":
+        command.extend(("--profile", policy.name))
     sources_before = _source_hashes()
     if (not first_branch._sources_match_archive(sources_before)
-            or _sha(PLAN) != PLAN_SHA256 or _sha(SEED_REPORT) != SEED_REPORT_SHA256
-            or _sha(SEED_EVIDENCE) != SEED_EVIDENCE_SHA256):
+            or _sha(policy.plan) != policy.plan_sha256
+            or _sha(policy.seed_report) != policy.seed_report_sha256
+            or _sha(policy.seed_evidence) != policy.seed_evidence_sha256):
         raise ValueError("continuation source or pinned evidence changed before launch")
+    _seed_report(policy)
     archive_before = first_branch._archive_input_identity()
     if _canonical_sha(archive_before) != seed_linear.ARCHIVED_INPUT_SHA256:
         raise ValueError("fixed archived input identity changed before launch")
     prelaunch = time.monotonic() - started
-    resource = run_guarded(command, wall_seconds=WALL_SECONDS,
-                           rss_bytes=SAMPLED_RSS_BYTES,
-                           report_path=directory / "point_3h_merit_continuation.resource.json",
-                           log_path=directory / "point_3h_merit_continuation.log")
+    resource = run_guarded(command, wall_seconds=policy.wall_seconds,
+                           rss_bytes=policy.sampled_rss_bytes,
+                           report_path=directory / f"{stem}.resource.json",
+                           log_path=directory / f"{stem}.log")
     try:
         child = json.loads(output.read_text())
         read_error = None
@@ -968,13 +1073,14 @@ def run(directory: Path) -> dict[str, Any]:
         archive_unchanged = first_branch._archive_input_identity() == archive_before
     except (OSError, ValueError, json.JSONDecodeError):
         archive_unchanged = False
-    child_valid = _valid_child(child, sources_before)
+    child_valid = _valid_child(child, sources_before, policy)
     if isinstance(child, dict):
         child_valid = child_valid and child.get("pid") == resource.get("child_pid")
-    ok = (_valid_resource(resource, command) and child_valid
+    ok = (_valid_resource(resource, command, policy) and child_valid
           and sources_before == sources_after and archive_unchanged
-          and _sha(PLAN) == PLAN_SHA256 and _sha(SEED_REPORT) == SEED_REPORT_SHA256
-          and _sha(SEED_EVIDENCE) == SEED_EVIDENCE_SHA256)
+          and _sha(policy.plan) == policy.plan_sha256
+          and _sha(policy.seed_report) == policy.seed_report_sha256
+          and _sha(policy.seed_evidence) == policy.seed_evidence_sha256)
     result = {
         "execution_status": "completed" if ok else "failed",
         "execution_phase": "finished" if ok else "guard_or_evidence_failure",
@@ -988,15 +1094,17 @@ def run(directory: Path) -> dict[str, Any]:
         "parent_elapsed_seconds": time.monotonic() - started,
         "child_read_error": read_error, "resource": resource,
         "source_sha256": sources_before, "source_unchanged": sources_before == sources_after,
-        "plan_sha256": PLAN_SHA256, "plan_unchanged": _sha(PLAN) == PLAN_SHA256,
-        "seed_report_sha256": SEED_REPORT_SHA256,
-        "seed_report_unchanged": _sha(SEED_REPORT) == SEED_REPORT_SHA256,
-        "seed_evidence_sha256": SEED_EVIDENCE_SHA256,
-        "seed_evidence_unchanged": _sha(SEED_EVIDENCE) == SEED_EVIDENCE_SHA256,
+        "profile": policy.name,
+        "plan_sha256": policy.plan_sha256,
+        "plan_unchanged": _sha(policy.plan) == policy.plan_sha256,
+        "seed_report_sha256": policy.seed_report_sha256,
+        "seed_report_unchanged": _sha(policy.seed_report) == policy.seed_report_sha256,
+        "seed_evidence_sha256": policy.seed_evidence_sha256,
+        "seed_evidence_unchanged": _sha(policy.seed_evidence) == policy.seed_evidence_sha256,
         "archive_unchanged": archive_unchanged, "child_report_valid": bool(child_valid),
         "scope": "bounded endpoint J/Phi continuation; no connecting-path, root, or response claim",
     }
-    _write_json(directory / "point_3h_merit_continuation.run.json", result)
+    _write_json(directory / f"{stem}.run.json", result)
     return result
 
 
@@ -1004,12 +1112,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path)
     parser.add_argument("--directory", type=Path)
+    parser.add_argument("--profile", choices=tuple(POLICIES), default="default")
     args = parser.parse_args()
+    policy = POLICIES[args.profile]
     if args.output is not None:
-        result = run_probe(args.output)
+        result = run_probe(args.output, policy)
         code = 0 if result.get("execution_status") == "completed" else 2
     elif args.directory is not None:
-        result = run(args.directory)
+        result = run(args.directory, policy)
+        code = 0 if result["execution_status"] == "completed" else 1
+    elif args.profile != "default":
+        result = run(policy.output_directory, policy)
         code = 0 if result["execution_status"] == "completed" else 1
     else:
         parser.error("provide --output for child mode or --directory for guarded mode")

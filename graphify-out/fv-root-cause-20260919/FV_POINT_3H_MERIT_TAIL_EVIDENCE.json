@@ -1,0 +1,65 @@
+{
+  "files_sha256": {
+    "examples/weather_scenarios/fv_point_3h_merit_continuation.py": "d241108e0e42201c968ddf1d5bf2832b144a70bfbb5f3537409a93cac8b6937f",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "23f697a09c7e6bef3bdbcb183762d7e06b3923aafa47255a0d72c505163ca80d",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_MERIT_CONTINUATION_EVIDENCE.json": "99c9fe27c2df7136a881e03d2f886709379ef8ded66d2b41af3dd9d224688b8f",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_MERIT_TAIL_PLAN.md": "8663ccc4046ca0ddde489b57a51127259747b335978776556b7e9a02f8f679ff",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_MERIT_TAIL_PR_BODY.md": "8f302768668e5f1d1961a01ed1f530b53d67c02a57bbfd0db55f49afa11f658d",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_MERIT_TAIL_RESULTS.md": "e4d071f064b1280b95e5954295ff5ebe5feb47653c9b8efb34df6d2cb2794a85",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "f075d7accc52e63b5651aae0a099715a5846515c3e6b5bfb824be64c16c8426f",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "5dc76f72957e6d14878e15cfa89591568daec78465a9ca1c2b0fa2d050c05796",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_tail_affected_tests.log": "1735dc41a06dd1f5c1962e6fa9778f0bd104ad4ab82b6cd2685ca058fc46808b",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_tail_graphify.log": "a2a45b0a8e70efcda0a68ed90a307e89e9736201904ae5fce6307542c95171d7",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_tail_legacy_source.log": "2b813b0746e02f1e4f24c9f053ef65da37877fd602d48e3499d39200c641b911",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_tail_run_stdout.log": "10aaf41930cb111c21c00f8eef64611481029b192da424e3a9e9426570f13a7f",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_tail_tests.log": "3890f61769a6d179d348fc74971cca9002bca47301cc07a1a8ca39b6ab958aaf",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_tail_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/point_3h_merit_tail_attempt1/point_3h_merit_tail.json": "c961be69fa8da93a0e4a65991136440043ff7fcc46a32f6dc068bf0daaeb6264",
+    "graphify-out/fv-root-cause-20260919/point_3h_merit_tail_attempt1/point_3h_merit_tail.log": "c961be69fa8da93a0e4a65991136440043ff7fcc46a32f6dc068bf0daaeb6264",
+    "graphify-out/fv-root-cause-20260919/point_3h_merit_tail_attempt1/point_3h_merit_tail.resource.json": "04fddf6c37e8c2845f793a4e4b003ef35dacb86261098d7785dd239f33b90658",
+    "graphify-out/fv-root-cause-20260919/point_3h_merit_tail_attempt1/point_3h_merit_tail.run.json": "10aaf41930cb111c21c00f8eef64611481029b192da424e3a9e9426570f13a7f",
+    "tests/test_fv_point_3h_merit_continuation.py": "a093614d73be8b5c2773950da169175d43c80bb9ddf335dbcfc91395272047bd"
+  },
+  "final_accepted_control_sha256": "602b08828b92508dfaed3605f4626882a1cf70646730da1cb866416dd15cf0b9",
+  "historical_source_git_commit": "32ee38d72084735555e11ab4fbbad34afc321f45",
+  "historical_source_sha256": "00bed148ffc7549eca3cd8446ac1fd1d5c4042f1278867808aafe78f51e848dc",
+  "last_accepted": {
+    "J": 0.9314353874766477,
+    "Phi": 0.9522514198858343,
+    "branch_signature_sha256": "18a36b01bc9a8b7c21ea1970f79f8bd379a52ceb67b7fae72b2e79c1c5d0eed8",
+    "gradient_inf": 0.8719793800953134,
+    "path_certified": false
+  },
+  "limits": "two exploratory strict endpoints at planned alpha, gradient remains nonstationary/nonmonotone; no final Hessian, adjoint, VJP, signed impact or physical skill",
+  "path": {
+    "accepted_epoch_count": 2,
+    "alpha_each": 7.8125e-05,
+    "branch_oracle_calls": 5,
+    "hvp_calls": 2,
+    "profile": "tail",
+    "status": "accepted_epoch_limit",
+    "trial_count": 2,
+    "vjp_calls": 2
+  },
+  "resource": {
+    "elapsed_seconds": 45.922072624904104,
+    "exit_code": 0,
+    "pid": 57197,
+    "rss_samples": 172,
+    "sampled_peak_rss_bytes": 379846656
+  },
+  "scope": "one immutable tail policy run from PR223 accepted endpoint, 2 accepted changed-branch steps; no root/response",
+  "seed_control_sha256": "baed75b17f6552cecf999be2a23db75725fef8d713a1dd360326ee82680159ba",
+  "start": {
+    "J": 0.9314590521034872,
+    "Phi": 0.9755199172601001,
+    "gradient_inf": 0.8727746789931015
+  },
+  "verification": {
+    "affected_tests_passed": 110,
+    "affected_warnings": 18,
+    "focused_tests_passed": 11,
+    "full_cpu_package_regression": "not_run",
+    "typecheck_errors": 0
+  }
+}
