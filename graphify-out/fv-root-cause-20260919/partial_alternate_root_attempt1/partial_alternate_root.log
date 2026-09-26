@@ -1,0 +1,7 @@
+{
+  "elapsed_seconds": 247.95950183295645,
+  "final_gradient_max": null,
+  "numerical_status": "root_refused",
+  "phase": "root_refinement",
+  "refusal": "RefinementNumericalRefusal: stationarity refinement iteration budget exhausted: gradient_max=0.006708378264014107"
+}
