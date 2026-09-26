@@ -800,5 +800,16 @@
     "graphify": "code-only incremental update:7762 nodes,67229 edges,270 communities;no semantic LLM extraction",
     "record": "FV_PARTIAL_ALTERNATE_ROOT_PLAN.md,FV_PARTIAL_ALTERNATE_ROOT_ATTEMPT1_RESULTS.md,partial_alternate_root_attempt1/partial_alternate_root.json,partial_alternate_root_attempt1/partial_alternate_root.run.json",
     "status": "R4-R original two-hole qualified response remains open;two separate branch-aware root attempts refused under their fixed8-step policy"
+  },
+  "fv_response_job_singlehost_lock": {
+    "baseline": "main 8f45088 after PR213 alternate-sector root refusal",
+    "scope": "fixed fv4x5 response job duplicate-launch exclusion on one POSIX macOS/Linux host and local filesystem; existing numerical worker and publication behavior unchanged",
+    "contract": "persistent sibling flock on canonicalized parent+job name acquired before nonempty-directory check and held through worker/reap/validation/token-locked publication/lifecycle;same job second caller raises ResponseJobBusyError before worker;distinct directories independent;lock inode never unlinked",
+    "regressions": "same-path two-thread exactly one fake worker,cross-process contention and later acquisition,exception release,parent-symlink alias contends,preexisting directory/lock symlink rejection;no new guarded FV worker integration run",
+    "limits": "advisory local filesystem lock,not adversarial path-swap safety or Windows/network FS;no durable parent-crash recovery,queue,retry,generic request,concurrent GN/refinement,in-process AD,aggregate memory guarantee",
+    "verification": "38 affected focused tests passed;basedpyright1.39.9 error-level0;GREEN/RED code/contract review;full CPU/package CI not run",
+    "graphify": "code-only incremental update:7771 nodes,67256 edges,264 communities;no semantic LLM extraction",
+    "record": "FV_RESPONSE_JOB_SINGLEHOST_LOCK_PLAN.md,FV_RESPONSE_JOB_SINGLEHOST_LOCK_RESULTS.md;PR177_195_REVIEW_RESOLUTION.md R7",
+    "status": "R7-P launch-exclusion subitem closed;R7-P durable recovery and production/general execution remain open"
   }
 }

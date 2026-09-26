@@ -1,0 +1,36 @@
+{
+  "base_commit": "8f45088450afa09a106ef1f544fcf3586a08f2fd",
+  "commands": [
+    ".venv/bin/python -m pytest tests/test_fv_response_job_lifecycle.py tests/test_fv_process_response.py tests/test_fv_concurrent_response.py -q",
+    "uvx --from basedpyright==1.39.9 basedpyright --level error examples/weather_scenarios/fv_response_job_lifecycle.py tests/test_fv_response_job_lifecycle.py",
+    "graphify update ."
+  ],
+  "file_sha256": {
+    "examples/weather_scenarios/fv_response_job_lifecycle.py": "bb44af7d481225187c59509a2192ba89bbfec8cf993e51cc2baa4b815234c8f1",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "fad40716d25b8006b65775d6b36cab23dfacce354cb8fb1b89f7d9cf600f9440",
+    "graphify-out/fv-root-cause-20260919/FV_RESPONSE_JOB_SINGLEHOST_LOCK_PLAN.md": "83e0fb520cb6c7cc6b60255061e29c13df25f5f7f33ca3e2d3c7ebb18d5df7c8",
+    "graphify-out/fv-root-cause-20260919/FV_RESPONSE_JOB_SINGLEHOST_LOCK_RESULTS.md": "c9870146383f24abe053bc55b8d53352a62ea38aa54f97153e1587fd6a1b74fc",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "9c65641bcc04462ea6caccb78adc24e87a9d668ff6563a17a4072963f581a79a",
+    "graphify-out/fv-root-cause-20260919/fv_response_job_singlehost_lock_graphify.log": "18f211a1ceb4f1750678080c028f22c715ce8bce9bf8aff92b82e78d14a7301e",
+    "graphify-out/fv-root-cause-20260919/fv_response_job_singlehost_lock_tests.log": "5b1480caf5ff6e39de779f01456a3fa3ac67ddde8455859df6f6bb1a683b67f5",
+    "graphify-out/fv-root-cause-20260919/fv_response_job_singlehost_lock_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/response_job_lifecycle_attempt1/manifest.json": "2e4ca9a2299fcdb82e0110e03f90aa577df22977a37a38b3eb66a7e2449de2b5",
+    "tests/test_fv_response_job_lifecycle.py": "68ebd870a31075dff1fb4dfba8d418a4d1221c7db3398789755354cac74f7e77"
+  },
+  "graphify_snapshot": {
+    "communities": 264,
+    "edges": 67256,
+    "full_graph_committed": false,
+    "graph_json_sha256": "e7c24379b2335882feec3e6f7714ea275d60c6e9e4ba267f61168e518a667c55",
+    "graph_report_sha256": "3dbb565954e4f81fe187d436ed7126c4f480cf47f576a2948af075bcde0827d6",
+    "nodes": 7771
+  },
+  "prior_pr206_manifest_sha256": "2e4ca9a2299fcdb82e0110e03f90aa577df22977a37a38b3eb66a7e2449de2b5",
+  "scope": "single-host POSIX local-filesystem duplicate-launch exclusion for fixed fv4x5 research response job; no durable recovery",
+  "verification": {
+    "basedpyright_1_39_9": "0 errors,0 warnings,0 notes",
+    "focused_pytest": "38 passed",
+    "full_cpu_package_ci": "not_run",
+    "new_guarded_fv_response_workers": 0
+  }
+}

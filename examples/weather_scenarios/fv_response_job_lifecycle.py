@@ -3,16 +3,20 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
+import errno
+import fcntl
 import hashlib
 import json
 import math
 import os
 from pathlib import Path
 import re
+import stat
 import sys
 from threading import Lock
 import time
-from typing import Any, Callable
+from typing import Any, Callable, Iterator
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -66,6 +70,39 @@ def _atomic_json(path: Path, data: dict[str, Any]) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(data, indent=2, sort_keys=True, allow_nan=False) + "\n")
     os.replace(temporary, path)
+
+
+class ResponseJobBusyError(RuntimeError):
+    """Another coordinator owns this fixed job directory on this host."""
+
+
+@contextmanager
+def _exclusive_job_launch(directory: Path) -> Iterator[None]:
+    """Hold one persistent-inode lock through job completion and publication."""
+    if directory.is_symlink():
+        raise ValueError("response job directory cannot be a symlink")
+    directory.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = directory.parent.resolve(strict=True) / f".{directory.name}.launch.lock"
+    if lock_path.is_symlink():
+        raise ValueError("response job lock cannot be a symlink")
+    flags = os.O_CREAT | os.O_RDWR | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(lock_path, flags, 0o600)
+    acquired = False
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise ValueError("response job lock must be a regular file")
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as error:
+            if error.errno not in (errno.EAGAIN, errno.EWOULDBLOCK):
+                raise
+            raise ResponseJobBusyError("response job directory is already running") from error
+        acquired = True
+        yield
+    finally:
+        if acquired:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+        os.close(descriptor)
 
 
 class CancellationToken:
@@ -179,6 +216,12 @@ def run_job(directory: Path, *, request_id: str,
             token: CancellationToken | None = None) -> dict[str, Any]:
     if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", request_id):
         raise ValueError("response request_id must be 1-64 safe characters")
+    with _exclusive_job_launch(directory):
+        return _run_job_locked(directory, request_id=request_id, token=token)
+
+
+def _run_job_locked(directory: Path, *, request_id: str,
+                    token: CancellationToken | None) -> dict[str, Any]:
     if directory.exists() and any(directory.iterdir()):
         raise ValueError("response job directory must be empty")
     directory.mkdir(parents=True, exist_ok=True)
