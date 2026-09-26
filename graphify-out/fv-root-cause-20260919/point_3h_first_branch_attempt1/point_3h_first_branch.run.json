@@ -1,0 +1,42 @@
+{
+  "child_read_error": null,
+  "diagnostic_status": "refused_first_branch",
+  "execution_status": "completed",
+  "first_failure": {
+    "count": 1,
+    "first_index": [
+      3,
+      1
+    ],
+    "index_space": "y_face_array_0based",
+    "orientation": "y",
+    "predicate": "y_face_flux_nonzero",
+    "values": {
+      "tolerance": 4.5474735088646444e-15,
+      "values_min_abs": 5.551115123125783e-17
+    }
+  },
+  "physical_validation": "not_performed",
+  "resource": {
+    "child_pid": 94612,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_first_branch_probe.py",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/point_3h_first_branch_attempt1/point_3h_first_branch.json"
+    ],
+    "elapsed_seconds": 3.754693082999438,
+    "exit_code": 0,
+    "monitor_error": null,
+    "resource_termination": null,
+    "rss_limit_bytes": 805306368,
+    "rss_samples": 14,
+    "sampled_peak_rss_bytes": 239304704,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 180
+  },
+  "response_computed": false,
+  "response_validation": "not_performed",
+  "scope": "fixed PR #204 3-hour point forecast; strict branch cause only; no solver or response",
+  "stationarity_passed": "not_tested"
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_first_branch_probe.py",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/point_3h_first_branch_attempt1/point_3h_first_branch.json"
+  ],
+  "child_pid": 94612,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 3.754693082999438,
+  "sampled_peak_rss_bytes": 239304704,
+  "rss_samples": 14,
+  "wall_limit_seconds": 180,
+  "rss_limit_bytes": 805306368,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}
