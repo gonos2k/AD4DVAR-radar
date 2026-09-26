@@ -158,10 +158,16 @@ historical numerical reports; new attempts must have distinct records.
   still require a further separately justified numerical method and
   final-point proof; neither the archived nor new bounded refusal
   proves that the inverse problem has no root.
-- [ ] Before broader reuse of this probe, classify a known strict-branch
-  refusal at the GN seed as numerical ineligibility rather than a
-  generic execution failure. The current attempt's GN seed passed,
-  so this status edge did not affect its result.
+- [x] Classify a known strict-branch refusal at the GN seed as
+  `seed_branch_refused`, distinct from curvature/refinement refusal and
+  callback execution error. The runner requires the exact failed seed
+  trace and forbids curvature/root/response evidence in that status;
+  expected/unknown/malformed cases and forged parent reports are
+  covered by small regressions. This is a status-contract repair, not
+  a new guarded FV GN/root experiment; focused preflight tests still
+  exercise FV forward/branch checks. Attempt 1's GN seed passed and
+  its refusal is unchanged
+  (`FV_PARTIAL_SEED_BRANCH_STATUS_RESULTS.md`).
 
 ## R7 process-isolated response lifecycle
 

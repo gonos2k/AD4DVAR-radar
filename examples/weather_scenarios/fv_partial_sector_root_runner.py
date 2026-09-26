@@ -22,7 +22,7 @@ from examples.weather_scenarios import fv_partial_sector_root_probe as probe
 WALL_SECONDS = 600
 SAMPLED_RSS_BYTES = 1024**3
 ROOT_STATUSES = {"root_margin_qualified", "root_low_margin"}
-REFUSALS = {"seed_curvature_refused", "root_refused"}
+REFUSALS = {"seed_branch_refused", "seed_curvature_refused", "root_refused"}
 
 
 def _digest(value: object) -> bool:
@@ -50,6 +50,24 @@ def _control(value: object) -> torch.Tensor | None:
 
 _BRANCH_FIELDS = ("signature_sha256", "euler_stages",
                   "minimum_scaled_slope_margin", "minimum_scaled_face_flux_margin")
+_SEED_BRANCH_REFUSAL_KEYS = frozenset({
+    "pid", "phase", "numerical_status", "response_validation",
+    "physical_validation", "plan_sha256", "source_before", "source_after",
+    "input_before", "input_after", "warm_control_sha256",
+    "parameters_sha256", "environment", "scope", "branch_calls",
+    "trial_records", "policy_records", "linear_solves", "gauss_newton",
+    "seed_gradient_norm", "seed_gradient_max", "refusal", "elapsed_seconds",
+    "warm_control_unchanged", "parameters_unchanged", "source_unchanged",
+    "input_unchanged", "plan_unchanged",
+})
+_GN_RESULT_KEYS = frozenset({
+    "reason", "outer_iterations", "pcg_iterations", "initial_objective",
+    "final_objective", "control", "control_sha256", "seconds",
+})
+_GN_SOLVE_KEYS = frozenset({
+    "phase", "hvp_calls", "rtol", "max_iterations", "seconds",
+    "converged", "iterations", "relative_residual", "error",
+})
 
 
 def _branch_call_matches(call: object, control_sha: str, branch: dict[str, Any]) -> bool:
@@ -57,6 +75,35 @@ def _branch_call_matches(call: object, control_sha: str, branch: dict[str, Any])
             and call.get("status") == "core_branch_admitted"
             and call.get("control_sha256") == control_sha
             and all(call.get(key) == branch[key] for key in _BRANCH_FIELDS))
+
+
+def _valid_seed_branch_refusal(child: dict[str, Any]) -> bool:
+    calls = child.get("branch_calls")
+    solves = child.get("linear_solves")
+    if not (set(child) == _SEED_BRANCH_REFUSAL_KEYS
+            and child.get("phase") == "seed_branch"
+            and isinstance(calls, list) and len(calls) == 1
+            and isinstance(calls[0], dict)
+            and set(calls[0]) == {"status", "control_sha256", "reason"}
+            and isinstance(child.get("gauss_newton"), dict)
+            and set(child["gauss_newton"]) == _GN_RESULT_KEYS
+            and isinstance(solves, list)):
+        return False
+    reason = calls[0].get("reason")
+    if not isinstance(reason, str) or not reason.startswith("ValueError: "):
+        return False
+    branch_error = reason.removeprefix("ValueError: ")
+    return (
+        calls[0].get("status") == "core_branch_refused"
+        and calls[0].get("control_sha256") == child["gauss_newton"]["control_sha256"]
+        and branch_error in probe._KNOWN_BRANCH_REFUSALS
+        and child.get("refusal") == f"_SeedBranchRefusal: {branch_error}"
+        and child.get("trial_records") == []
+        and child.get("policy_records") == []
+        and all(isinstance(entry, dict)
+                and entry.get("phase") == "gauss_newton"
+                and set(entry).issubset(_GN_SOLVE_KEYS) for entry in solves)
+    )
 
 
 def _valid_refinement_path(child: dict[str, Any], calls: list[Any]) -> bool:
@@ -249,19 +296,23 @@ def run(directory: Path) -> dict[str, object]:
         and isinstance(child.get("gauss_newton"), dict)
         and (seed_control := _control(child["gauss_newton"].get("control"))) is not None
         and child["gauss_newton"].get("control_sha256") == probe._tensor_sha(seed_control)
-        and _branch(child.get("seed_branch"))
-        and isinstance(child.get("branch_calls"), list)
-        and any(_branch_call_matches(call, child["gauss_newton"]["control_sha256"],
-                                     child["seed_branch"])
-                for call in child["branch_calls"])
-        and ((child["numerical_status"] in ROOT_STATUSES
-              and resource["exit_code"] == 0 and _valid_root(child))
-             or (child["numerical_status"] in REFUSALS
-                 and resource["exit_code"] == 2
-                 and isinstance(child.get("refusal"), str)
-                 and (child.get("phase") == "seed_curvature"
-                      if child["numerical_status"] == "seed_curvature_refused"
-                      else child.get("phase") in ("sector_refinement", "final_curvature"))))
+        and ((child["numerical_status"] == "seed_branch_refused"
+              and resource["exit_code"] == 2
+              and _valid_seed_branch_refusal(child))
+             or (_branch(child.get("seed_branch"))
+                 and isinstance(child.get("branch_calls"), list)
+                 and any(_branch_call_matches(call, child["gauss_newton"]["control_sha256"],
+                                              child["seed_branch"])
+                         for call in child["branch_calls"])
+                 and ((child["numerical_status"] in ROOT_STATUSES
+                       and resource["exit_code"] == 0 and _valid_root(child))
+                      or (child["numerical_status"] in REFUSALS - {"seed_branch_refused"}
+                          and resource["exit_code"] == 2
+                          and isinstance(child.get("refusal"), str)
+                          and (child.get("phase") == "seed_curvature"
+                               if child["numerical_status"] == "seed_curvature_refused"
+                               else child.get("phase") in (
+                                   "sector_refinement", "final_curvature"))))))
     )
     result: dict[str, object] = {
         "execution_status": "completed" if resource_ok and child_ok else "failed",
