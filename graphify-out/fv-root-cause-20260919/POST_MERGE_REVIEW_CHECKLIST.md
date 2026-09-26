@@ -410,8 +410,12 @@ changes the numerical refiner, not the objective, observation contract or gates.
   (`-0.7460777`) at this **nonstationary** seed; the result is local
   curvature evidence, not a root or response
   (`FV_POINT_3H_SEED_HESSIAN_RESULTS.md`).
+- [x] Complete one declared joint J/gradient-merit exploration step
+  from that seed. An independently strict endpoint on a changed branch
+  reduced both measured scalars and gradient maximum to `1.26053496`;
+  the segment and stationary response remain uncertified
+  (`FV_POINT_3H_MERIT_STEP_RESULTS.md`).
 - [ ] A stationary analysis point and long-horizon adjoint/reanalysis
-  remain unachieved. The alternate branch-supported seed has
-  `||g||_inf=2.25472968`; its negative local curvature requires a
-  separately declared search policy. Independent physical accuracy
-  remains separate.
+  remain unachieved. The accepted exploratory endpoint is still far
+  above the `<1e-10` gradient gate, and its own Hessian/adjoint have
+  not been checked. Independent physical accuracy remains separate.

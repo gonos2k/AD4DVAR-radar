@@ -1,0 +1,332 @@
+{
+  "accepted_candidate": {
+    "acceptance": {
+      "accepted": true,
+      "actual_decrease": true,
+      "armijo_limits": {
+        "j": 0.9323733198830048,
+        "phi": 4.035529935647216
+      },
+      "armijo_passed": null,
+      "armijo_required": false,
+      "branch_changed": true,
+      "decrease_j": 0.0004231398715104362,
+      "decrease_phi": 1.417877056890518,
+      "refusal_reasons": [],
+      "roundoff_floors": {
+        "j": 2.6499652402050852e-14,
+        "phi": 1.1472684961127033e-13
+      }
+    },
+    "alpha": 0.00125,
+    "backtrack": 4,
+    "branch_changed": true,
+    "branch_signature_sha256": "c1d60b87479fea5937ae44d4740cb0de3adf10e62fc50018cab69abb12ca47bb",
+    "control": [
+      -8.02611248068177e-05,
+      -9.234499505191056e-05,
+      -4.617509257918843e-05,
+      -1.8431445213607114e-05,
+      -9.106838629126727e-07,
+      -0.00015923655709093658,
+      -0.0003305003851161341,
+      -0.00030692750307656014,
+      -0.00014734870099860744,
+      -8.547815087180977e-06,
+      -0.00014208150923341402,
+      -0.0002998226466221825,
+      -0.0002188593042654709,
+      -0.00012810776283583164,
+      -1.4578475022550276e-05,
+      -2.6345281883148804e-05,
+      -1.2124069282075488e-05,
+      -3.089417726034571e-05,
+      -6.997817844370438e-05,
+      -5.598981606896465e-06,
+      0.86733896622599,
+      -0.6777211806969231,
+      0.5492712684071995,
+      0.4235261893796966,
+      -0.30966930000165327,
+      0.2721374191916544
+    ],
+    "control_sha256": "9f8d3ae0d77d8b24f1565ab622cf8fe7bbfd83766fbd67964a6a5bd52920a078",
+    "gradient_blocks": {
+      "all_l2": 2.2885432521199545,
+      "dynamics_l2": 1.9045639310487428,
+      "field_l2": 1.268883938495533,
+      "max_abs_component": 1.2605349625093007
+    },
+    "gradient_inf": 1.2605349625093007,
+    "objective": 0.9319504904669574,
+    "phi": 2.6187151084118883,
+    "segment_certified": false
+  },
+  "archive_unchanged": true,
+  "candidate_attempts": [
+    {
+      "accepted": false,
+      "alpha": 0.02,
+      "backtrack": 0,
+      "branch_changed": true,
+      "branch_signature_sha256": "acbdee6d3ffb4bac7b509f057fc4387dd231ed0b6eec62728a1afe0dfb65a2b6",
+      "branch_status": "passed_strict",
+      "control_sha256": "1db1d4053f1d348f64fb37589c84d86d79191a044e2aa18512b3b4193e79d92d",
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9323686630510573,
+          "phi": 4.01959649081937
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.6309511093811401,
+        "decrease_phi": -2090.1369892229945,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6499652402050852e-14,
+          "phi": 1.1472684961127033e-13
+        }
+      },
+      "gradient_blocks": {
+        "all_l2": 64.7174409473721,
+        "dynamics_l2": 53.933368994213794,
+        "field_l2": 35.77064259571769,
+        "max_abs_component": 53.00350455672182
+      },
+      "gradient_inf": 53.00350455672182,
+      "gradient_l2": 64.7174409473721,
+      "objective": 1.563324739719608,
+      "objective_status": "finite",
+      "phi": 2094.173581388297,
+      "segment_certified": false
+    },
+    {
+      "accepted": false,
+      "alpha": 0.01,
+      "backtrack": 1,
+      "branch_changed": true,
+      "branch_signature_sha256": "5b594e8ec9cd4c718a5938b3e8c5e89a72c0d6ba566427fcee702f778cfe72f1",
+      "branch_status": "passed_strict",
+      "control_sha256": "dccd8b728a5b3b2265fb5964f1c2059f847e597096a16dcf37ff28c2b7018b92",
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9323711466947625,
+          "phi": 4.028094328060888
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.14665383737336712,
+        "decrease_phi": -501.21948926810455,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6499652402050852e-14,
+          "phi": 1.1472684961127033e-13
+        }
+      },
+      "gradient_blocks": {
+        "all_l2": 31.78855395998399,
+        "dynamics_l2": 26.428169533021407,
+        "field_l2": 17.665333792507084,
+        "max_abs_component": 25.8229059725116
+      },
+      "gradient_inf": 25.8229059725116,
+      "gradient_l2": 31.78855395998399,
+      "objective": 1.079027467711835,
+      "objective_status": "finite",
+      "phi": 505.25608143340696,
+      "segment_certified": false
+    },
+    {
+      "accepted": false,
+      "alpha": 0.005,
+      "backtrack": 2,
+      "branch_changed": true,
+      "branch_signature_sha256": "86affc91043b4a8967ce64e2c4b60ead3dd5bde6de2ed03af096b0a70b9a3487",
+      "branch_status": "passed_strict",
+      "control_sha256": "fc2dd681a34cfc74273fe7240cedcc6f02a9703db7715f51a1b6d69e4f8b6dbb",
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9323723885166152,
+          "phi": 4.032343246681647
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.030502011377853577,
+        "decrease_phi": -104.88862396941428,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6499652402050852e-14,
+          "phi": 1.1472684961127033e-13
+        }
+      },
+      "gradient_blocks": {
+        "all_l2": 14.759757188701764,
+        "dynamics_l2": 12.189240659460902,
+        "field_l2": 8.323030963247618,
+        "max_abs_component": 11.817865389104297
+      },
+      "gradient_inf": 11.817865389104297,
+      "gradient_l2": 14.759757188701764,
+      "objective": 0.9628756417163215,
+      "objective_status": "finite",
+      "phi": 108.92521613471669,
+      "segment_certified": false
+    },
+    {
+      "accepted": false,
+      "alpha": 0.0025,
+      "backtrack": 3,
+      "branch_changed": true,
+      "branch_signature_sha256": "84661173a88e3eca4a83a9bf9f1d06bd73d642b7254a7cd77728b3e0facbd950",
+      "branch_status": "passed_strict",
+      "control_sha256": "d08600d660937cec0e7698f0be9e2bd9c0a378a7fe470f89055419435113c79d",
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9323730094275415,
+          "phi": 4.034467705992027
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.004519293709026928,
+        "decrease_phi": -15.59949317067468,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6499652402050852e-14,
+          "phi": 1.1472684961127033e-13
+        }
+      },
+      "gradient_blocks": {
+        "all_l2": 6.266751205525409,
+        "dynamics_l2": 5.1163516713642165,
+        "field_l2": 3.618717486469863,
+        "max_abs_component": 4.779507398356788
+      },
+      "gradient_inf": 4.779507398356788,
+      "gradient_l2": 6.266751205525409,
+      "objective": 0.9368929240474948,
+      "objective_status": "finite",
+      "phi": 19.636085335977086,
+      "segment_certified": false
+    },
+    {
+      "accepted": true,
+      "alpha": 0.00125,
+      "backtrack": 4,
+      "branch_changed": true,
+      "branch_signature_sha256": "c1d60b87479fea5937ae44d4740cb0de3adf10e62fc50018cab69abb12ca47bb",
+      "branch_status": "passed_strict",
+      "control_sha256": "9f8d3ae0d77d8b24f1565ab622cf8fe7bbfd83766fbd67964a6a5bd52920a078",
+      "gate": {
+        "accepted": true,
+        "actual_decrease": true,
+        "armijo_limits": {
+          "j": 0.9323733198830048,
+          "phi": 4.035529935647216
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": 0.0004231398715104362,
+        "decrease_phi": 1.417877056890518,
+        "refusal_reasons": [],
+        "roundoff_floors": {
+          "j": 2.6499652402050852e-14,
+          "phi": 1.1472684961127033e-13
+        }
+      },
+      "gradient_blocks": {
+        "all_l2": 2.2885432521199545,
+        "dynamics_l2": 1.9045639310487428,
+        "field_l2": 1.268883938495533,
+        "max_abs_component": 1.2605349625093007
+      },
+      "gradient_inf": 1.2605349625093007,
+      "gradient_l2": 2.2885432521199545,
+      "objective": 0.9319504904669574,
+      "objective_status": "finite",
+      "phi": 2.6187151084118883,
+      "segment_certified": false
+    }
+  ],
+  "child_read_error": null,
+  "child_report_valid": true,
+  "execution_phase": "finished",
+  "execution_status": "completed",
+  "hessian_evidence_sha256": "77bf193a2f891748199c12c0a318bd47fcb0f199a23da3f0e926d7fa4ebf8ed0",
+  "hessian_evidence_unchanged": true,
+  "numerical_status": "candidate_accepted_branch_changed",
+  "parent_elapsed_seconds": 32.375488459016196,
+  "parent_prelaunch_seconds": 0.009465334005653858,
+  "plan_sha256": "9af6bc4b0a30694f109b144579297704ecda4e1ce888fdb8d621dc9a1f7abfb6",
+  "plan_unchanged": true,
+  "resource": {
+    "child_pid": 14845,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_merit_step_probe.py",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/point_3h_merit_step_attempt1/point_3h_merit_step.json"
+    ],
+    "elapsed_seconds": 32.36192033300176,
+    "exit_code": 0,
+    "monitor_error": null,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 121,
+    "sampled_peak_rss_bytes": 395788288,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300
+  },
+  "scope": "one pinned joint J/Phi descent direction and at most eight endpoint trials; candidate only; no root, response, PCG, or score",
+  "source_sha256": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_long_horizon_case.py": "22feb5c49495b26c78caa826e73f34a9abb21a4dbf71cfa5e34fbaae884cbc85",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_point_3h_first_branch_probe.py": "c82f1407c0a93160ff87ae5d5efcb785ad8dae2a73e7bac6a7c2a5c55e728d3e",
+    "examples/weather_scenarios/fv_point_3h_forward_case.py": "a23bab3d10bde9ca08661979df9e2c94a0de7bde6c7c732b5ed2b9ec769f61ec",
+    "examples/weather_scenarios/fv_point_3h_forward_probe.py": "8ab664ebcb42d6c74d1b056a751df57941816ca1804538f9afd954b26f95ca75",
+    "examples/weather_scenarios/fv_point_3h_forward_runner.py": "bf50195f2ff7d7ba7550e54ebb3473f0d501cde2663dd8d4f0e5281db97570af",
+    "examples/weather_scenarios/fv_point_3h_merit_step_probe.py": "4a00255762f3d30b4d235bcce4651d143e28070c57cc33ccc20ecb249900abbf",
+    "examples/weather_scenarios/fv_point_3h_seed_linear_probe.py": "65e73c10ec1be38e620888625ee4340e8b330050cb940eba15e34830e20c2731",
+    "examples/weather_scenarios/fv_point_3h_shifted_branch_probe.py": "fd4f36c5802a1ad0a2e40bb8a4a8e2fac2dd0d6aa0c6418922c87c9149e10c11",
+    "examples/weather_scenarios/fv_point_research_case.py": "358dd1bb46f7cf2ebb0fcf7bb33d4735b66419412d97d0b7847e7eab236f5f2e",
+    "examples/weather_scenarios/fv_point_response_preflight.py": "6929668a5d2c95a64499ab598a0f045d66e47a80cf7a997513f448fff8ba3ccf",
+    "examples/weather_scenarios/fv_point_response_preflight_runner.py": "7e25520af78418323a28dd3aec152040829bba597ab2902c4a80413c1088aab8",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_point_research_problem.py": "ffdb27fd40aa6943ab4c04860695303e4270291377a7b86535c06416704eec19",
+    "src/advar/fv_point_sampler.py": "e3116a9250a5890521d66502aacd69c6ea32cc348fb961e6ffb88cf97750d3af",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  },
+  "source_unchanged": true
+}

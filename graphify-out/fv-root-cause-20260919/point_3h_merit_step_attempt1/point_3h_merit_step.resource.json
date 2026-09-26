@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_merit_step_probe.py",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/point_3h_merit_step_attempt1/point_3h_merit_step.json"
+  ],
+  "child_pid": 14845,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 32.36192033300176,
+  "sampled_peak_rss_bytes": 395788288,
+  "rss_samples": 121,
+  "wall_limit_seconds": 300,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}
