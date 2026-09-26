@@ -366,8 +366,15 @@ changes the numerical refiner, not the objective, observation contract or gates.
   stationary root under a **fixed nonzero dynamics prior mean**; compute
   the full 13-component adjoint/VJP and pass two signed reanalysis pairs
   under its final branch (`FV_POINT_CENTERED_PRIOR_RESPONSE_RESULTS.md`).
-  The original zero-centered-prior input's seven refusals remain open
+  The original zero-centered-prior input's seven refusals are recorded
   separately; this constructed case does not prove its convergence.
+- [x] Classify the original zero-centered-prior correlated point input
+  as unsupported by its current declared nominal-search policies,
+  without issuing a sensitivity or claiming root nonexistence. The two
+  final sector attempts' source-bound, 16-candidate refusals are
+  preserved (`FV_POINT_ORIGINAL_POLICY_RESULTS.md`).
+- [ ] A newly justified sector-aware method and a fresh stationary
+  adjoint/signed response for that exact original input remain open.
 - [x] Under the same constructed fixed prior, exclude exactly one
   middle-time point as genuinely missing (`status=1`, canonical fill),
   use the three-active-point principal covariance, and pass the full
