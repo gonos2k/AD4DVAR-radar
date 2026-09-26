@@ -415,7 +415,12 @@ changes the numerical refiner, not the objective, observation contract or gates.
   reduced both measured scalars and gradient maximum to `1.26053496`;
   the segment and stationary response remain uncertified
   (`FV_POINT_3H_MERIT_STEP_RESULTS.md`).
+- [x] Relinearize on the accepted endpoint's own strict branch under
+  one 8-epoch/64-trial budget. Two more changed-branch steps reduced
+  J and gradient merit; epoch 3 refused all eight trial sizes. Final
+  gradient maximum `0.87277468` remains nonstationary
+  (`FV_POINT_3H_MERIT_CONTINUATION_RESULTS.md`).
 - [ ] A stationary analysis point and long-horizon adjoint/reanalysis
-  remain unachieved. The accepted exploratory endpoint is still far
+  remain unachieved. The latest exploratory endpoint is still far
   above the `<1e-10` gradient gate, and its own Hessian/adjoint have
   not been checked. Independent physical accuracy remains separate.

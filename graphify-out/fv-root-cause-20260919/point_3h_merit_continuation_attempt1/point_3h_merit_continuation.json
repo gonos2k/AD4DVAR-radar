@@ -1,0 +1,2878 @@
+{
+  "accepted_candidate": {
+    "alpha": 0.00015625,
+    "branch_changed": true,
+    "branch_signature_sha256": "2925e02c77e293436b8eccfeda1db44390bb4ca6f106f5a5b581818d9ab57dc5",
+    "control": [
+      -6.529841377583769e-05,
+      -6.916810565486738e-05,
+      -2.9352405258379975e-05,
+      -1.2058020278355005e-05,
+      -5.113303796892219e-07,
+      -0.00011268761811879986,
+      -0.00020260378737783132,
+      -0.00015992598177057003,
+      -7.314118183139327e-05,
+      -4.729535962012635e-06,
+      -9.403414375293477e-05,
+      -0.00016798538324496246,
+      -0.00010771447279482363,
+      -5.868541629658908e-05,
+      -7.0550335778701285e-06,
+      -1.7644119913735685e-05,
+      -7.095699396899332e-06,
+      -1.7009196762625154e-05,
+      -3.0039085535051977e-05,
+      -2.1550684698680103e-06,
+      0.8673256256612945,
+      -0.6777019726975759,
+      0.5492832263067204,
+      0.42357111270571957,
+      -0.3096117219352675,
+      0.27250223951310604
+    ],
+    "control_sha256": "baed75b17f6552cecf999be2a23db75725fef8d713a1dd360326ee82680159ba",
+    "epoch": 1,
+    "gradient_inf": 0.8727746789931015,
+    "objective": 0.9314590521034872,
+    "path_certified": false,
+    "phi": 0.9755199172601001,
+    "trial": 7
+  },
+  "accepted_epochs": [
+    {
+      "accepted": true,
+      "accepted_trial": 5,
+      "current": {
+        "branch_signature_sha256": "c1d60b87479fea5937ae44d4740cb0de3adf10e62fc50018cab69abb12ca47bb",
+        "control_sha256": "9f8d3ae0d77d8b24f1565ab622cf8fe7bbfd83766fbd67964a6a5bd52920a078",
+        "gradient_inf": 1.2605349625093007,
+        "gradient_l2": 2.2885432521199545,
+        "objective": 0.9319504904669574,
+        "phi": 2.6187151084118883
+      },
+      "current_branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "c1d60b87479fea5937ae44d4740cb0de3adf10e62fc50018cab69abb12ca47bb",
+        "status": "passed_strict_branch"
+      },
+      "current_branch_margins": {
+        "absolute_face_flux_over_global_maximum": {
+          "absolute_minimum": 0.0007486677427356314,
+          "global_maximum_absolute_flux": 0.15937587197403363,
+          "index": [
+            3,
+            1
+          ],
+          "orientation": "y",
+          "stage_context": {
+            "forecast_lead_index": null,
+            "interval_end_seconds": 600,
+            "interval_index": 0,
+            "interval_start_seconds": 0,
+            "phase": "analysis_replay",
+            "ssprk_euler_stage_index": 0,
+            "substep_index": 0
+          },
+          "stage_index": 0,
+          "value": 0.0046974973906816235
+        },
+        "complete": true,
+        "expected_stage_count": 3600,
+        "flux_global_maximum_absolute": 0.15937587197403363,
+        "nonfinite": false,
+        "normalized_minima": {
+          "x_active_limiter_gap_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": 6,
+              "interval_end_seconds": 4800,
+              "interval_index": 5,
+              "interval_start_seconds": 4200,
+              "phase": "future_forecast",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 17
+            },
+            "stage_index": 1295,
+            "value": 1.3509670239105556e-07
+          },
+          "x_left_slope_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": null,
+              "interval_end_seconds": 600,
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "phase": "analysis_replay",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 67
+            },
+            "stage_index": 135,
+            "value": 0.015472863784807089
+          },
+          "x_right_slope_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": 2,
+              "interval_end_seconds": 2400,
+              "interval_index": 1,
+              "interval_start_seconds": 1800,
+              "phase": "future_forecast",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 76
+            },
+            "stage_index": 693,
+            "value": 0.018681285718909917
+          },
+          "y_active_limiter_gap_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": 4,
+              "interval_end_seconds": 3600,
+              "interval_index": 3,
+              "interval_start_seconds": 3000,
+              "phase": "future_forecast",
+              "ssprk_euler_stage_index": 0,
+              "substep_index": 20
+            },
+            "stage_index": 940,
+            "value": 9.79904036020607e-07
+          },
+          "y_left_slope_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": null,
+              "interval_end_seconds": 600,
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "phase": "analysis_replay",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 51
+            },
+            "stage_index": 103,
+            "value": 0.02488480693531708
+          },
+          "y_right_slope_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": 7,
+              "interval_end_seconds": 5400,
+              "interval_index": 6,
+              "interval_start_seconds": 4800,
+              "phase": "future_forecast",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 4
+            },
+            "stage_index": 1449,
+            "value": 3.128763400800083e-06
+          }
+        },
+        "observed_stage_count": 3600
+      },
+      "direction": {
+        "curvature_dot": 11428.236755635273,
+        "curvature_threshold": 4.0652003967768145e-10,
+        "direction_l2": 1.0,
+        "direction_max_abs": 0.8026582792869403,
+        "direction_sha256": "47fa56b24db70894904245144d944138dfc369e4c3a4a02effa53fed77668269",
+        "gradient_l2": 2.2885432521199545,
+        "hg_l2": 6249.8938240895395,
+        "slope_j": -1.8285489445574852,
+        "slope_phi": -6249.8938240895395,
+        "status": "passed"
+      },
+      "epoch": 0,
+      "transpose_consistency": {
+        "difference_l2": 4.90550975921821e-12,
+        "hg_l2": 6249.8938240895395,
+        "htg_l2": 6249.8938240895395,
+        "reason": null,
+        "relative_difference": 7.848948953837349e-16,
+        "status": "passed",
+        "tolerance": 1e-08
+      },
+      "trials": [
+        {
+          "accepted": false,
+          "alpha": 0.02,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "71f57af81c7c42d827b5ac796bbfb7bef4eb1a6fe75403517b8dbefda3137418",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "71f57af81c7c42d827b5ac796bbfb7bef4eb1a6fe75403517b8dbefda3137418",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "9a6bc93415c1f91aa6154b821d6a169bce3e1340e37e89d235dc9aea72442306",
+          "epoch": 0,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9319468333690684,
+              "phi": 2.606215320763709
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.6408347816172885,
+            "decrease_phi": -2125.1383088245843,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.6487626043574364e-14,
+              "phi": 7.442835989229162e-14
+            }
+          },
+          "gradient_inf": 52.70010375013666,
+          "gradient_l2": 65.23430116024845,
+          "objective": 1.572785272084246,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 2127.757023932996,
+          "trial": 0
+        },
+        {
+          "accepted": false,
+          "alpha": 0.01,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "b5d1396a532a62768123f478a999853425c87127dff65641aa9dc3c0165b737b",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "b5d1396a532a62768123f478a999853425c87127dff65641aa9dc3c0165b737b",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "fccb2e9d247c301a724a4b8e10ad16a0e4679fabe9490f66a0da3fe70c5ece3d",
+          "epoch": 0,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9319486619180128,
+              "phi": 2.612465214587799
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.15256440732700483,
+            "decrease_phi": -518.62017324153,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.6487626043574364e-14,
+              "phi": 7.442835989229162e-14
+            }
+          },
+          "gradient_inf": 26.39764285086622,
+          "gradient_l2": 32.28742443583699,
+          "objective": 1.0845148977939623,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 521.2388883499418,
+          "trial": 1
+        },
+        {
+          "accepted": false,
+          "alpha": 0.005,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "24861d2268aa65e14f94258061f5fd61efd3b8d95a98b924e09baeee4ded875b",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "24861d2268aa65e14f94258061f5fd61efd3b8d95a98b924e09baeee4ded875b",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "cb05e1327f8ff6d1e5fd28f80dc1cf18a08a2b2203bc9b344eec5caf21984337",
+          "epoch": 0,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9319495761924852,
+              "phi": 2.6155901614998434
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.03369925937626983,
+            "decrease_phi": -115.4012356965154,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.6487626043574364e-14,
+              "phi": 7.442835989229162e-14
+            }
+          },
+          "gradient_inf": 12.674211783928275,
+          "gradient_l2": 15.363590127631452,
+          "objective": 0.9656497498432273,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 118.01995080492729,
+          "trial": 2
+        },
+        {
+          "accepted": false,
+          "alpha": 0.0025,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "28f0f6413d30d0d3b7132379eca2c0da9e93449c42118ab0069c1707971e6fe6",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "28f0f6413d30d0d3b7132379eca2c0da9e93449c42118ab0069c1707971e6fe6",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "5e20b3e8f8594714a19d41d8c85fb241911bbea0a56c5f2c551ef0755bdb614a",
+          "epoch": 0,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9319500333297213,
+              "phi": 2.617152634955866
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.006150160187212705,
+            "decrease_phi": -21.171152826002082,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.6487626043574364e-14,
+              "phi": 7.442835989229162e-14
+            }
+          },
+          "gradient_inf": 5.724014166076927,
+          "gradient_l2": 6.89780659839256,
+          "objective": 0.9381006506541701,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 23.78986793441397,
+          "trial": 3
+        },
+        {
+          "accepted": false,
+          "alpha": 0.00125,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "6b4078284c86b30eee0ca93fec84c1c7cafa1d12038720a2bd12c87bf02c8333",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "6b4078284c86b30eee0ca93fec84c1c7cafa1d12038720a2bd12c87bf02c8333",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "e6c4286d9c75ad8aacfb74b9ce3d92d639382f73b55527edf50d9688a26726c8",
+          "epoch": 0,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9319502618983394,
+              "phi": 2.617933871683877
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.0003956053276411575,
+            "decrease_phi": -1.3968035070581273,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.6487626043574364e-14,
+              "phi": 7.442835989229162e-14
+            }
+          },
+          "gradient_inf": 2.2347242550660305,
+          "gradient_l2": 2.833908472576352,
+          "objective": 0.9323460957945986,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 4.0155186154700155,
+          "trial": 4
+        },
+        {
+          "accepted": true,
+          "alpha": 0.000625,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "c0d1cc66a45285687795e3049e68968c275641f6f46f9b3b0ced9aeaf217154d",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "c0d1cc66a45285687795e3049e68968c275641f6f46f9b3b0ced9aeaf217154d",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "61a6fd2f5f76d059c421a1405d4fd99b9622c3232a8d592dce281084e4064230",
+          "epoch": 0,
+          "gate": {
+            "accepted": true,
+            "actual_decrease": true,
+            "armijo_limits": {
+              "j": 0.9319503761826484,
+              "phi": 2.6183244900478826
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": 0.00047243598360813266,
+            "decrease_phi": 1.6030186797263701,
+            "refusal_reasons": [],
+            "roundoff_floors": {
+              "j": 2.6487626043574364e-14,
+              "phi": 7.442835989229162e-14
+            }
+          },
+          "gradient_inf": 0.8564443672589114,
+          "gradient_l2": 1.4252693981739157,
+          "objective": 0.9314780544833493,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 1.0156964286855181,
+          "trial": 5
+        }
+      ],
+      "true_slope_j": -1.8285489445574852,
+      "true_slope_phi": -6249.89382408954
+    },
+    {
+      "accepted": true,
+      "accepted_trial": 7,
+      "current": {
+        "branch_signature_sha256": "c0d1cc66a45285687795e3049e68968c275641f6f46f9b3b0ced9aeaf217154d",
+        "control_sha256": "61a6fd2f5f76d059c421a1405d4fd99b9622c3232a8d592dce281084e4064230",
+        "gradient_inf": 0.8564443672589114,
+        "gradient_l2": 1.4252693981739157,
+        "objective": 0.9314780544833493,
+        "phi": 1.0156964286855181
+      },
+      "current_branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "c0d1cc66a45285687795e3049e68968c275641f6f46f9b3b0ced9aeaf217154d",
+        "status": "passed_strict_branch"
+      },
+      "current_branch_margins": {
+        "absolute_face_flux_over_global_maximum": {
+          "absolute_minimum": 0.0007742976994234985,
+          "global_maximum_absolute_flux": 0.15928757334722973,
+          "index": [
+            3,
+            1
+          ],
+          "orientation": "y",
+          "stage_context": {
+            "forecast_lead_index": null,
+            "interval_end_seconds": 600,
+            "interval_index": 0,
+            "interval_start_seconds": 0,
+            "phase": "analysis_replay",
+            "ssprk_euler_stage_index": 0,
+            "substep_index": 0
+          },
+          "stage_index": 0,
+          "value": 0.0048610050561547135
+        },
+        "complete": true,
+        "expected_stage_count": 3600,
+        "flux_global_maximum_absolute": 0.15928757334722973,
+        "nonfinite": false,
+        "normalized_minima": {
+          "x_active_limiter_gap_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": 6,
+              "interval_end_seconds": 4800,
+              "interval_index": 5,
+              "interval_start_seconds": 4200,
+              "phase": "future_forecast",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 22
+            },
+            "stage_index": 1305,
+            "value": 7.455110738875073e-06
+          },
+          "x_left_slope_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": null,
+              "interval_end_seconds": 600,
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "phase": "analysis_replay",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 67
+            },
+            "stage_index": 135,
+            "value": 0.015529773752064527
+          },
+          "x_right_slope_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": 2,
+              "interval_end_seconds": 2400,
+              "interval_index": 1,
+              "interval_start_seconds": 1800,
+              "phase": "future_forecast",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 76
+            },
+            "stage_index": 693,
+            "value": 0.01870276115667898
+          },
+          "y_active_limiter_gap_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": 2,
+              "interval_end_seconds": 2400,
+              "interval_index": 1,
+              "interval_start_seconds": 1800,
+              "phase": "future_forecast",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 59
+            },
+            "stage_index": 659,
+            "value": 6.332804751348025e-07
+          },
+          "y_left_slope_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": null,
+              "interval_end_seconds": 600,
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "phase": "analysis_replay",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 51
+            },
+            "stage_index": 103,
+            "value": 0.024961898415042125
+          },
+          "y_right_slope_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": 7,
+              "interval_end_seconds": 5400,
+              "interval_index": 6,
+              "interval_start_seconds": 4800,
+              "phase": "future_forecast",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 16
+            },
+            "stage_index": 1473,
+            "value": 1.3943790457048069e-06
+          }
+        },
+        "observed_stage_count": 3600
+      },
+      "direction": {
+        "curvature_dot": 439.29792795959514,
+        "curvature_threshold": 4.65100733131674e-11,
+        "direction_l2": 0.9999999999999999,
+        "direction_max_abs": 0.8757830598573298,
+        "direction_sha256": "b68c5f73853a81a827db1cf72cab4085d02854438049741d9708ac6295f19455",
+        "gradient_l2": 1.4252693981739157,
+        "hg_l2": 1148.1532736379254,
+        "slope_j": -0.38261261631705235,
+        "slope_phi": -1148.1532736379252,
+        "status": "passed"
+      },
+      "epoch": 1,
+      "transpose_consistency": {
+        "difference_l2": 1.1982355199656613e-12,
+        "hg_l2": 1148.1532736379254,
+        "htg_l2": 1148.1532736379254,
+        "reason": null,
+        "relative_difference": 1.0436198262702767e-15,
+        "status": "passed",
+        "tolerance": 1e-08
+      },
+      "trials": [
+        {
+          "accepted": false,
+          "alpha": 0.02,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "182daaab938ae03281b6abdbfdc491e590cf1b834335a1b135062b290fe7efb9",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "182daaab938ae03281b6abdbfdc491e590cf1b834335a1b135062b290fe7efb9",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "b60f028e0f0eaabb606430b2bd30358e84db9fd8d1e178673a452ba46fab29a0",
+          "epoch": 1,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314772892581167,
+              "phi": 1.0134001221382423
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.6544274832022124,
+            "decrease_phi": -2155.0668622448384,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.6474198605323787e-14,
+              "phi": 2.886782876559886e-14
+            }
+          },
+          "gradient_inf": 54.50201374161255,
+          "gradient_l2": 65.66707788037357,
+          "objective": 1.5859055376855618,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 2156.082558673524,
+          "trial": 0
+        },
+        {
+          "accepted": false,
+          "alpha": 0.01,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "546dd87b82b56c6d5bf40d900b10569ba76deab41fb0a0755416e1787b151861",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "546dd87b82b56c6d5bf40d900b10569ba76deab41fb0a0755416e1787b151861",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "1af67f468588713bcf5c42ca30f68798691730d7727a471a0bec05ae1c1f2aba",
+          "epoch": 1,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314776718707329,
+              "phi": 1.0145482754118802
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.16308766506457684,
+            "decrease_phi": -555.1376622007136,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.6474198605323787e-14,
+              "phi": 2.886782876559886e-14
+            }
+          },
+          "gradient_inf": 27.480008938002992,
+          "gradient_l2": 33.35126260366762,
+          "objective": 1.0945657195479261,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 556.1533586293991,
+          "trial": 1
+        },
+        {
+          "accepted": false,
+          "alpha": 0.005,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "ed43aebec0ecd32fc32397ce01f959b7e3b0e0936d2260ed58bc57001a85c99b",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "ed43aebec0ecd32fc32397ce01f959b7e3b0e0936d2260ed58bc57001a85c99b",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "044e5debc2d38dee4c05d19356db1b23ffabe7e850d2190ecfde9966da82d8f9",
+          "epoch": 1,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314778631770412,
+              "phi": 1.0151223520486992
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.03987034756160002,
+            "decrease_phi": -136.89805705473867,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.6474198605323787e-14,
+              "phi": 2.886782876559886e-14
+            }
+          },
+          "gradient_inf": 13.535922417981485,
+          "gradient_l2": 16.608055484217545,
+          "objective": 0.9713484020449493,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 137.9137534834242,
+          "trial": 2
+        },
+        {
+          "accepted": false,
+          "alpha": 0.0025,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "1ce9dbaad8c5197f00125e882a42ebf6b23c4b0eaf6012da90dcb29efc5c685f",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "1ce9dbaad8c5197f00125e882a42ebf6b23c4b0eaf6012da90dcb29efc5c685f",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "3e0ecea8d1703ece17adf5ec2de64340afd0a18f6d2524385e06d1f278a76079",
+          "epoch": 1,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314779588301952,
+              "phi": 1.0154093903671086
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.009488666813816993,
+            "decrease_phi": -32.812076177921064,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.6474198605323787e-14,
+              "phi": 2.886782876559886e-14
+            }
+          },
+          "gradient_inf": 6.523777615304486,
+          "gradient_l2": 8.225299095668994,
+          "objective": 0.9409667212971663,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 33.82777260660658,
+          "trial": 3
+        },
+        {
+          "accepted": false,
+          "alpha": 0.00125,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "0ea5656bbf766b583b4ead482f04507a155544ecbee1cfdb4e6ec5d99c9c5bc7",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "0ea5656bbf766b583b4ead482f04507a155544ecbee1cfdb4e6ec5d99c9c5bc7",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "0a1f552ce2e61bcdd24614642d59c5bfc2dc8f27adac33593c1fe31357fb8322",
+          "epoch": 1,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314780066567723,
+              "phi": 1.0155529095263134
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.0021324775374046423,
+            "decrease_phi": -7.48177627995626,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.6474198605323787e-14,
+              "phi": 2.886782876559886e-14
+            }
+          },
+          "gradient_inf": 3.0166186202565415,
+          "gradient_l2": 4.122492621859202,
+          "objective": 0.933610532020754,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 8.497472708641778,
+          "trial": 4
+        },
+        {
+          "accepted": false,
+          "alpha": 0.000625,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "74ca1fcf74a877c9e0e8c21836d2113accb0cac1cc8c984b0d12c6c2181bfe6a",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "74ca1fcf74a877c9e0e8c21836d2113accb0cac1cc8c984b0d12c6c2181bfe6a",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "78a835caf4860eac6e6fc88c0010db233506b4bd69e904dd9bfcbb939a9fed58",
+          "epoch": 1,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314780305700607,
+              "phi": 1.0156246691059159
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.0004134478785529083,
+            "decrease_phi": -1.5107747613288203,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.6474198605323787e-14,
+              "phi": 2.886782876559886e-14
+            }
+          },
+          "gradient_inf": 1.263953674725378,
+          "gradient_l2": 2.2478750810551453,
+          "objective": 0.9318915023619022,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 2.5264711900143384,
+          "trial": 5
+        },
+        {
+          "accepted": false,
+          "alpha": 0.0003125,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "42090e184cffd08a097eb8dd9bc781d4a6d5871ba7cfd9cd96f234c3db10e614",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "42090e184cffd08a097eb8dd9bc781d4a6d5871ba7cfd9cd96f234c3db10e614",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "35c2d830115bbcf50977177d0cd1e3b6f0380c7a3200189827220c83535efc06",
+          "epoch": 1,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314780425267051,
+              "phi": 1.0156605488957169
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -4.356426520168988e-05,
+            "decrease_phi": -0.19816210212026508,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.6474198605323787e-14,
+              "phi": 2.886782876559886e-14
+            }
+          },
+          "gradient_inf": 0.8890990715827914,
+          "gradient_l2": 1.5581133019172793,
+          "objective": 0.931521618748551,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 1.2138585308057832,
+          "trial": 6
+        },
+        {
+          "accepted": true,
+          "alpha": 0.00015625,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "2925e02c77e293436b8eccfeda1db44390bb4ca6f106f5a5b581818d9ab57dc5",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "2925e02c77e293436b8eccfeda1db44390bb4ca6f106f5a5b581818d9ab57dc5",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "baed75b17f6552cecf999be2a23db75725fef8d713a1dd360326ee82680159ba",
+          "epoch": 1,
+          "gate": {
+            "accepted": true,
+            "actual_decrease": true,
+            "armijo_limits": {
+              "j": 0.9314780485050271,
+              "phi": 1.0156784887906176
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": 1.9002379862076424e-05,
+            "decrease_phi": 0.040176511425418004,
+            "refusal_reasons": [],
+            "roundoff_floors": {
+              "j": 2.6474198605323787e-14,
+              "phi": 2.886782876559886e-14
+            }
+          },
+          "gradient_inf": 0.8727746789931015,
+          "gradient_l2": 1.3967962752385188,
+          "objective": 0.9314590521034872,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 0.9755199172601001,
+          "trial": 7
+        }
+      ],
+      "true_slope_j": -0.38261261631705235,
+      "true_slope_phi": -1148.1532736379252
+    },
+    {
+      "accepted": false,
+      "current": {
+        "branch_signature_sha256": "2925e02c77e293436b8eccfeda1db44390bb4ca6f106f5a5b581818d9ab57dc5",
+        "control_sha256": "baed75b17f6552cecf999be2a23db75725fef8d713a1dd360326ee82680159ba",
+        "gradient_inf": 0.8727746789931015,
+        "gradient_l2": 1.3967962752385188,
+        "objective": 0.9314590521034872,
+        "phi": 0.9755199172601001
+      },
+      "current_branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "2925e02c77e293436b8eccfeda1db44390bb4ca6f106f5a5b581818d9ab57dc5",
+        "status": "passed_strict_branch"
+      },
+      "current_branch_margins": {
+        "absolute_face_flux_over_global_maximum": {
+          "absolute_minimum": 0.0007679630698590456,
+          "global_maximum_absolute_flux": 0.1593089824910881,
+          "index": [
+            3,
+            1
+          ],
+          "orientation": "y",
+          "stage_context": {
+            "forecast_lead_index": null,
+            "interval_end_seconds": 600,
+            "interval_index": 0,
+            "interval_start_seconds": 0,
+            "phase": "analysis_replay",
+            "ssprk_euler_stage_index": 0,
+            "substep_index": 0
+          },
+          "stage_index": 0,
+          "value": 0.004820588631290808
+        },
+        "complete": true,
+        "expected_stage_count": 3600,
+        "flux_global_maximum_absolute": 0.1593089824910881,
+        "nonfinite": false,
+        "normalized_minima": {
+          "x_active_limiter_gap_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": 1,
+              "interval_end_seconds": 1800,
+              "interval_index": 0,
+              "interval_start_seconds": 1200,
+              "phase": "future_forecast",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 45
+            },
+            "stage_index": 451,
+            "value": 1.6824459398602114e-07
+          },
+          "x_left_slope_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": null,
+              "interval_end_seconds": 600,
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "phase": "analysis_replay",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 67
+            },
+            "stage_index": 135,
+            "value": 0.015518316126111329
+          },
+          "x_right_slope_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": 2,
+              "interval_end_seconds": 2400,
+              "interval_index": 1,
+              "interval_start_seconds": 1800,
+              "phase": "future_forecast",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 76
+            },
+            "stage_index": 693,
+            "value": 0.01870046771104586
+          },
+          "y_active_limiter_gap_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": null,
+              "interval_end_seconds": 1200,
+              "interval_index": 1,
+              "interval_start_seconds": 600,
+              "phase": "analysis_replay",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 21
+            },
+            "stage_index": 223,
+            "value": 8.56156251804508e-07
+          },
+          "y_left_slope_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": null,
+              "interval_end_seconds": 600,
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "phase": "analysis_replay",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 51
+            },
+            "stage_index": 103,
+            "value": 0.024946254575181577
+          },
+          "y_right_slope_over_q_scale": {
+            "stage_context": {
+              "forecast_lead_index": 7,
+              "interval_end_seconds": 5400,
+              "interval_index": 6,
+              "interval_start_seconds": 4800,
+              "phase": "future_forecast",
+              "ssprk_euler_stage_index": 1,
+              "substep_index": 13
+            },
+            "stage_index": 1467,
+            "value": 1.454721359721134e-07
+          }
+        },
+        "observed_stage_count": 3600
+      },
+      "direction": {
+        "curvature_dot": 195.84298452007306,
+        "curvature_threshold": 2.8243444703913087e-11,
+        "direction_l2": 1.0,
+        "direction_max_abs": 0.673211287489854,
+        "direction_sha256": "21c8884cb44fba5c5bf116cad7b6a464b0568a09da1b174506725a4f38dd84ba",
+        "gradient_l2": 1.3967962752385188,
+        "hg_l2": 711.4336465159454,
+        "slope_j": -0.2752793397938955,
+        "slope_phi": -711.4336465159453,
+        "status": "passed"
+      },
+      "epoch": 2,
+      "transpose_consistency": {
+        "difference_l2": 6.692971101538011e-13,
+        "hg_l2": 711.4336465159454,
+        "htg_l2": 711.4336465159455,
+        "reason": null,
+        "relative_difference": 9.407723593500298e-16,
+        "status": "passed",
+        "tolerance": 1e-08
+      },
+      "trials": [
+        {
+          "accepted": false,
+          "alpha": 0.02,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "2f5c9b9914729c8510478da6999dbee534bab55f6c90f2c0d2b69e04829434c6",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "2f5c9b9914729c8510478da6999dbee534bab55f6c90f2c0d2b69e04829434c6",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "693f0b6a66ecf3d48f12ec77a5db17b8e252914dac77197c398e1692f5d82adc",
+          "epoch": 2,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314585015448077,
+              "phi": 0.9740970499670683
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.6390925434236706,
+            "decrease_phi": -2135.4983227155794,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.647365852520486e-14,
+              "phi": 2.7725943631938325e-14
+            }
+          },
+          "gradient_inf": 51.19940430299884,
+          "gradient_l2": 65.36778782600555,
+          "objective": 1.5705515955271578,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 2136.4738426328395,
+          "trial": 0
+        },
+        {
+          "accepted": false,
+          "alpha": 0.01,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "baebec1ba9b2f95a50e50626f395171de45cf44e7bafcc90057dc2c45fd4f823",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "baebec1ba9b2f95a50e50626f395171de45cf44e7bafcc90057dc2c45fd4f823",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "6f35fd056ac34a8e7bfbad6d171a15418e94ee925dd4202643f6e73517680cd7",
+          "epoch": 2,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314587768241475,
+              "phi": 0.9748084836135842
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.1586630641033221,
+            "decrease_phi": -538.021797524542,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.647365852520486e-14,
+              "phi": 2.7725943631938325e-14
+            }
+          },
+          "gradient_inf": 26.12077186674305,
+          "gradient_l2": 32.83282861532957,
+          "objective": 1.0901221162068093,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 538.997317441802,
+          "trial": 1
+        },
+        {
+          "accepted": false,
+          "alpha": 0.005,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "e6b9737ea1ec8eb0eb5dce1cf3deeae6342e777cf6af0dc497b9f54274b4d2be",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "e6b9737ea1ec8eb0eb5dce1cf3deeae6342e777cf6af0dc497b9f54274b4d2be",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "3a74ea463dde9b4b162d05ff7b1b0d76f790f757bf1924cb52617fc4b9bc3191",
+          "epoch": 2,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314589144638173,
+              "phi": 0.9751642004368422
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.0389293998254755,
+            "decrease_phi": -132.87915514363647,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.647365852520486e-14,
+              "phi": 2.7725943631938325e-14
+            }
+          },
+          "gradient_inf": 13.150623994064869,
+          "gradient_l2": 16.36182600206325,
+          "objective": 0.9703884519289627,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 133.85467506089657,
+          "trial": 2
+        },
+        {
+          "accepted": false,
+          "alpha": 0.0025,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "d08e71524d3255aabef24635f0b6f421cfc514986fc292dcfe47f4e4e8d87a6e",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "d08e71524d3255aabef24635f0b6f421cfc514986fc292dcfe47f4e4e8d87a6e",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "d6087db8a97386fef4077d84a4a284bfff0ed7200fccd691f45bff40e8ba667f",
+          "epoch": 2,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314589832836523,
+              "phi": 0.9753420588484711
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.00939115759885123,
+            "decrease_phi": -32.330792041750435,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.647365852520486e-14,
+              "phi": 2.7725943631938325e-14
+            }
+          },
+          "gradient_inf": 6.613112820119674,
+          "gradient_l2": 8.161655709353408,
+          "objective": 0.9408502097023385,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 33.306311959010536,
+          "trial": 3
+        },
+        {
+          "accepted": false,
+          "alpha": 0.00125,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "d5100b900005edf89e38e695740ff414efe6a5669826107af5e3b59da30b9b7d",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "d5100b900005edf89e38e695740ff414efe6a5669826107af5e3b59da30b9b7d",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "e723a1174374e375a41e1c35cc49832f96d043e3068ecc3a95a7beaa4947a9fe",
+          "epoch": 2,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314590176935698,
+              "phi": 0.9754309880542856
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.002176452861100464,
+            "decrease_phi": -7.64740713974892,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.647365852520486e-14,
+              "phi": 2.7725943631938325e-14
+            }
+          },
+          "gradient_inf": 3.3341595475360757,
+          "gradient_l2": 4.152812795445762,
+          "objective": 0.9336355049645877,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 8.62292705700902,
+          "trial": 4
+        },
+        {
+          "accepted": false,
+          "alpha": 0.000625,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "8b13b085e63d9e5569047947cd7cadfa90ef950b8b4964ec9ca79e00f5a76276",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "8b13b085e63d9e5569047947cd7cadfa90ef950b8b4964ec9ca79e00f5a76276",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "acd78dd1ebf7515328b96412770cb6ff0b4db7329fb57d3911bf75fa42cb91c6",
+          "epoch": 2,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314590348985284,
+              "phi": 0.9754754526571928
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -0.0004581540809268647,
+            "decrease_phi": -1.690349649399673,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.647365852520486e-14,
+              "phi": 2.7725943631938325e-14
+            }
+          },
+          "gradient_inf": 1.6925359123846881,
+          "gradient_l2": 2.3090558965342405,
+          "objective": 0.9319172061844141,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 2.665869566659773,
+          "trial": 5
+        },
+        {
+          "accepted": false,
+          "alpha": 0.0003125,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "7d5c38007e37590fde4b0d7efa89e08febacd6046b8ff1fea800ad357cd1fe31",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "7d5c38007e37590fde4b0d7efa89e08febacd6046b8ff1fea800ad357cd1fe31",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "e621a0a83f2869fe028fbae2178b6a8371aa2ff111d9c12dbd4736e18a382df6",
+          "epoch": 2,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314590435010078,
+              "phi": 0.9754976849586465
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": -7.153261722725457e-05,
+            "decrease_phi": -0.3115098944724308,
+            "refusal_reasons": [
+              "analysis_objective_not_decreased_beyond_roundoff",
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.647365852520486e-14,
+              "phi": 2.7725943631938325e-14
+            }
+          },
+          "gradient_inf": 0.8713292916725321,
+          "gradient_l2": 1.6043876163399735,
+          "objective": 0.9315305847207145,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 1.287029811732531,
+          "trial": 6
+        },
+        {
+          "accepted": false,
+          "alpha": 0.00015625,
+          "branch": {
+            "choice_stage_count": 3600,
+            "euler_stages": 3600,
+            "face_sign_stage_count": 3600,
+            "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+            "signature_sha256": "fc034e7dfc8c1ca5bef95981e60a4fd93e917c41fd79bc4ed7ed505810eb34e6",
+            "status": "passed_strict_branch"
+          },
+          "branch_changed": true,
+          "branch_signature_sha256": "fc034e7dfc8c1ca5bef95981e60a4fd93e917c41fd79bc4ed7ed505810eb34e6",
+          "branch_status": "passed_strict_branch",
+          "control_sha256": "56e1f41341c6cf102de380f08a1e7dcf208dec3a488f2edd88fc287c6f41d119",
+          "epoch": 2,
+          "gate": {
+            "accepted": false,
+            "actual_decrease": false,
+            "armijo_limits": {
+              "j": 0.9314590478022475,
+              "phi": 0.9755088011093733
+            },
+            "armijo_passed": null,
+            "armijo_required": false,
+            "branch_changed": true,
+            "decrease_j": 3.622325093988188e-06,
+            "decrease_phi": -0.022305937368693574,
+            "refusal_reasons": [
+              "stationarity_merit_not_decreased_beyond_roundoff"
+            ],
+            "roundoff_floors": {
+              "j": 2.647365852520486e-14,
+              "phi": 2.7725943631938325e-14
+            }
+          },
+          "gradient_inf": 0.8577825496579354,
+          "gradient_l2": 1.4126753729210357,
+          "objective": 0.9314554297783932,
+          "objective_status": "finite",
+          "path_certified": false,
+          "phi": 0.9978258546287937,
+          "trial": 7
+        }
+      ],
+      "true_slope_j": -0.2752793397938955,
+      "true_slope_phi": -711.4336465159454
+    }
+  ],
+  "adjoint_computed": false,
+  "archive_before": {
+    "control_sha256": "adc5bfd01e98e32b09ccc963f096a6f6a3c7307d600a0ba20f8ddc8dcad3721e",
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "problem": {
+      "fixed_problem_sha256": "16fa95b534c3b61cf5d1506770cbfc77edb527c40d1f4c536f5130cba24e1fc3",
+      "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+    },
+    "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+  },
+  "archive_unchanged": true,
+  "branch_status": "passed_strict_branch",
+  "candidate_attempts": [
+    {
+      "accepted": false,
+      "alpha": 0.02,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "71f57af81c7c42d827b5ac796bbfb7bef4eb1a6fe75403517b8dbefda3137418",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "71f57af81c7c42d827b5ac796bbfb7bef4eb1a6fe75403517b8dbefda3137418",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "9a6bc93415c1f91aa6154b821d6a169bce3e1340e37e89d235dc9aea72442306",
+      "epoch": 0,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9319468333690684,
+          "phi": 2.606215320763709
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.6408347816172885,
+        "decrease_phi": -2125.1383088245843,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6487626043574364e-14,
+          "phi": 7.442835989229162e-14
+        }
+      },
+      "gradient_inf": 52.70010375013666,
+      "gradient_l2": 65.23430116024845,
+      "objective": 1.572785272084246,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 2127.757023932996,
+      "trial": 0
+    },
+    {
+      "accepted": false,
+      "alpha": 0.01,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "b5d1396a532a62768123f478a999853425c87127dff65641aa9dc3c0165b737b",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "b5d1396a532a62768123f478a999853425c87127dff65641aa9dc3c0165b737b",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "fccb2e9d247c301a724a4b8e10ad16a0e4679fabe9490f66a0da3fe70c5ece3d",
+      "epoch": 0,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9319486619180128,
+          "phi": 2.612465214587799
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.15256440732700483,
+        "decrease_phi": -518.62017324153,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6487626043574364e-14,
+          "phi": 7.442835989229162e-14
+        }
+      },
+      "gradient_inf": 26.39764285086622,
+      "gradient_l2": 32.28742443583699,
+      "objective": 1.0845148977939623,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 521.2388883499418,
+      "trial": 1
+    },
+    {
+      "accepted": false,
+      "alpha": 0.005,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "24861d2268aa65e14f94258061f5fd61efd3b8d95a98b924e09baeee4ded875b",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "24861d2268aa65e14f94258061f5fd61efd3b8d95a98b924e09baeee4ded875b",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "cb05e1327f8ff6d1e5fd28f80dc1cf18a08a2b2203bc9b344eec5caf21984337",
+      "epoch": 0,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9319495761924852,
+          "phi": 2.6155901614998434
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.03369925937626983,
+        "decrease_phi": -115.4012356965154,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6487626043574364e-14,
+          "phi": 7.442835989229162e-14
+        }
+      },
+      "gradient_inf": 12.674211783928275,
+      "gradient_l2": 15.363590127631452,
+      "objective": 0.9656497498432273,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 118.01995080492729,
+      "trial": 2
+    },
+    {
+      "accepted": false,
+      "alpha": 0.0025,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "28f0f6413d30d0d3b7132379eca2c0da9e93449c42118ab0069c1707971e6fe6",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "28f0f6413d30d0d3b7132379eca2c0da9e93449c42118ab0069c1707971e6fe6",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "5e20b3e8f8594714a19d41d8c85fb241911bbea0a56c5f2c551ef0755bdb614a",
+      "epoch": 0,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9319500333297213,
+          "phi": 2.617152634955866
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.006150160187212705,
+        "decrease_phi": -21.171152826002082,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6487626043574364e-14,
+          "phi": 7.442835989229162e-14
+        }
+      },
+      "gradient_inf": 5.724014166076927,
+      "gradient_l2": 6.89780659839256,
+      "objective": 0.9381006506541701,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 23.78986793441397,
+      "trial": 3
+    },
+    {
+      "accepted": false,
+      "alpha": 0.00125,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "6b4078284c86b30eee0ca93fec84c1c7cafa1d12038720a2bd12c87bf02c8333",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "6b4078284c86b30eee0ca93fec84c1c7cafa1d12038720a2bd12c87bf02c8333",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "e6c4286d9c75ad8aacfb74b9ce3d92d639382f73b55527edf50d9688a26726c8",
+      "epoch": 0,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9319502618983394,
+          "phi": 2.617933871683877
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.0003956053276411575,
+        "decrease_phi": -1.3968035070581273,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6487626043574364e-14,
+          "phi": 7.442835989229162e-14
+        }
+      },
+      "gradient_inf": 2.2347242550660305,
+      "gradient_l2": 2.833908472576352,
+      "objective": 0.9323460957945986,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 4.0155186154700155,
+      "trial": 4
+    },
+    {
+      "accepted": true,
+      "alpha": 0.000625,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "c0d1cc66a45285687795e3049e68968c275641f6f46f9b3b0ced9aeaf217154d",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "c0d1cc66a45285687795e3049e68968c275641f6f46f9b3b0ced9aeaf217154d",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "61a6fd2f5f76d059c421a1405d4fd99b9622c3232a8d592dce281084e4064230",
+      "epoch": 0,
+      "gate": {
+        "accepted": true,
+        "actual_decrease": true,
+        "armijo_limits": {
+          "j": 0.9319503761826484,
+          "phi": 2.6183244900478826
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": 0.00047243598360813266,
+        "decrease_phi": 1.6030186797263701,
+        "refusal_reasons": [],
+        "roundoff_floors": {
+          "j": 2.6487626043574364e-14,
+          "phi": 7.442835989229162e-14
+        }
+      },
+      "gradient_inf": 0.8564443672589114,
+      "gradient_l2": 1.4252693981739157,
+      "objective": 0.9314780544833493,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 1.0156964286855181,
+      "trial": 5
+    },
+    {
+      "accepted": false,
+      "alpha": 0.02,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "182daaab938ae03281b6abdbfdc491e590cf1b834335a1b135062b290fe7efb9",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "182daaab938ae03281b6abdbfdc491e590cf1b834335a1b135062b290fe7efb9",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "b60f028e0f0eaabb606430b2bd30358e84db9fd8d1e178673a452ba46fab29a0",
+      "epoch": 1,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314772892581167,
+          "phi": 1.0134001221382423
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.6544274832022124,
+        "decrease_phi": -2155.0668622448384,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6474198605323787e-14,
+          "phi": 2.886782876559886e-14
+        }
+      },
+      "gradient_inf": 54.50201374161255,
+      "gradient_l2": 65.66707788037357,
+      "objective": 1.5859055376855618,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 2156.082558673524,
+      "trial": 0
+    },
+    {
+      "accepted": false,
+      "alpha": 0.01,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "546dd87b82b56c6d5bf40d900b10569ba76deab41fb0a0755416e1787b151861",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "546dd87b82b56c6d5bf40d900b10569ba76deab41fb0a0755416e1787b151861",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "1af67f468588713bcf5c42ca30f68798691730d7727a471a0bec05ae1c1f2aba",
+      "epoch": 1,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314776718707329,
+          "phi": 1.0145482754118802
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.16308766506457684,
+        "decrease_phi": -555.1376622007136,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6474198605323787e-14,
+          "phi": 2.886782876559886e-14
+        }
+      },
+      "gradient_inf": 27.480008938002992,
+      "gradient_l2": 33.35126260366762,
+      "objective": 1.0945657195479261,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 556.1533586293991,
+      "trial": 1
+    },
+    {
+      "accepted": false,
+      "alpha": 0.005,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "ed43aebec0ecd32fc32397ce01f959b7e3b0e0936d2260ed58bc57001a85c99b",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "ed43aebec0ecd32fc32397ce01f959b7e3b0e0936d2260ed58bc57001a85c99b",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "044e5debc2d38dee4c05d19356db1b23ffabe7e850d2190ecfde9966da82d8f9",
+      "epoch": 1,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314778631770412,
+          "phi": 1.0151223520486992
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.03987034756160002,
+        "decrease_phi": -136.89805705473867,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6474198605323787e-14,
+          "phi": 2.886782876559886e-14
+        }
+      },
+      "gradient_inf": 13.535922417981485,
+      "gradient_l2": 16.608055484217545,
+      "objective": 0.9713484020449493,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 137.9137534834242,
+      "trial": 2
+    },
+    {
+      "accepted": false,
+      "alpha": 0.0025,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "1ce9dbaad8c5197f00125e882a42ebf6b23c4b0eaf6012da90dcb29efc5c685f",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "1ce9dbaad8c5197f00125e882a42ebf6b23c4b0eaf6012da90dcb29efc5c685f",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "3e0ecea8d1703ece17adf5ec2de64340afd0a18f6d2524385e06d1f278a76079",
+      "epoch": 1,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314779588301952,
+          "phi": 1.0154093903671086
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.009488666813816993,
+        "decrease_phi": -32.812076177921064,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6474198605323787e-14,
+          "phi": 2.886782876559886e-14
+        }
+      },
+      "gradient_inf": 6.523777615304486,
+      "gradient_l2": 8.225299095668994,
+      "objective": 0.9409667212971663,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 33.82777260660658,
+      "trial": 3
+    },
+    {
+      "accepted": false,
+      "alpha": 0.00125,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "0ea5656bbf766b583b4ead482f04507a155544ecbee1cfdb4e6ec5d99c9c5bc7",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "0ea5656bbf766b583b4ead482f04507a155544ecbee1cfdb4e6ec5d99c9c5bc7",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "0a1f552ce2e61bcdd24614642d59c5bfc2dc8f27adac33593c1fe31357fb8322",
+      "epoch": 1,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314780066567723,
+          "phi": 1.0155529095263134
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.0021324775374046423,
+        "decrease_phi": -7.48177627995626,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6474198605323787e-14,
+          "phi": 2.886782876559886e-14
+        }
+      },
+      "gradient_inf": 3.0166186202565415,
+      "gradient_l2": 4.122492621859202,
+      "objective": 0.933610532020754,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 8.497472708641778,
+      "trial": 4
+    },
+    {
+      "accepted": false,
+      "alpha": 0.000625,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "74ca1fcf74a877c9e0e8c21836d2113accb0cac1cc8c984b0d12c6c2181bfe6a",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "74ca1fcf74a877c9e0e8c21836d2113accb0cac1cc8c984b0d12c6c2181bfe6a",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "78a835caf4860eac6e6fc88c0010db233506b4bd69e904dd9bfcbb939a9fed58",
+      "epoch": 1,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314780305700607,
+          "phi": 1.0156246691059159
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.0004134478785529083,
+        "decrease_phi": -1.5107747613288203,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6474198605323787e-14,
+          "phi": 2.886782876559886e-14
+        }
+      },
+      "gradient_inf": 1.263953674725378,
+      "gradient_l2": 2.2478750810551453,
+      "objective": 0.9318915023619022,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 2.5264711900143384,
+      "trial": 5
+    },
+    {
+      "accepted": false,
+      "alpha": 0.0003125,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "42090e184cffd08a097eb8dd9bc781d4a6d5871ba7cfd9cd96f234c3db10e614",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "42090e184cffd08a097eb8dd9bc781d4a6d5871ba7cfd9cd96f234c3db10e614",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "35c2d830115bbcf50977177d0cd1e3b6f0380c7a3200189827220c83535efc06",
+      "epoch": 1,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314780425267051,
+          "phi": 1.0156605488957169
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -4.356426520168988e-05,
+        "decrease_phi": -0.19816210212026508,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.6474198605323787e-14,
+          "phi": 2.886782876559886e-14
+        }
+      },
+      "gradient_inf": 0.8890990715827914,
+      "gradient_l2": 1.5581133019172793,
+      "objective": 0.931521618748551,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 1.2138585308057832,
+      "trial": 6
+    },
+    {
+      "accepted": true,
+      "alpha": 0.00015625,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "2925e02c77e293436b8eccfeda1db44390bb4ca6f106f5a5b581818d9ab57dc5",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "2925e02c77e293436b8eccfeda1db44390bb4ca6f106f5a5b581818d9ab57dc5",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "baed75b17f6552cecf999be2a23db75725fef8d713a1dd360326ee82680159ba",
+      "epoch": 1,
+      "gate": {
+        "accepted": true,
+        "actual_decrease": true,
+        "armijo_limits": {
+          "j": 0.9314780485050271,
+          "phi": 1.0156784887906176
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": 1.9002379862076424e-05,
+        "decrease_phi": 0.040176511425418004,
+        "refusal_reasons": [],
+        "roundoff_floors": {
+          "j": 2.6474198605323787e-14,
+          "phi": 2.886782876559886e-14
+        }
+      },
+      "gradient_inf": 0.8727746789931015,
+      "gradient_l2": 1.3967962752385188,
+      "objective": 0.9314590521034872,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 0.9755199172601001,
+      "trial": 7
+    },
+    {
+      "accepted": false,
+      "alpha": 0.02,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "2f5c9b9914729c8510478da6999dbee534bab55f6c90f2c0d2b69e04829434c6",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "2f5c9b9914729c8510478da6999dbee534bab55f6c90f2c0d2b69e04829434c6",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "693f0b6a66ecf3d48f12ec77a5db17b8e252914dac77197c398e1692f5d82adc",
+      "epoch": 2,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314585015448077,
+          "phi": 0.9740970499670683
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.6390925434236706,
+        "decrease_phi": -2135.4983227155794,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.647365852520486e-14,
+          "phi": 2.7725943631938325e-14
+        }
+      },
+      "gradient_inf": 51.19940430299884,
+      "gradient_l2": 65.36778782600555,
+      "objective": 1.5705515955271578,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 2136.4738426328395,
+      "trial": 0
+    },
+    {
+      "accepted": false,
+      "alpha": 0.01,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "baebec1ba9b2f95a50e50626f395171de45cf44e7bafcc90057dc2c45fd4f823",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "baebec1ba9b2f95a50e50626f395171de45cf44e7bafcc90057dc2c45fd4f823",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "6f35fd056ac34a8e7bfbad6d171a15418e94ee925dd4202643f6e73517680cd7",
+      "epoch": 2,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314587768241475,
+          "phi": 0.9748084836135842
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.1586630641033221,
+        "decrease_phi": -538.021797524542,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.647365852520486e-14,
+          "phi": 2.7725943631938325e-14
+        }
+      },
+      "gradient_inf": 26.12077186674305,
+      "gradient_l2": 32.83282861532957,
+      "objective": 1.0901221162068093,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 538.997317441802,
+      "trial": 1
+    },
+    {
+      "accepted": false,
+      "alpha": 0.005,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "e6b9737ea1ec8eb0eb5dce1cf3deeae6342e777cf6af0dc497b9f54274b4d2be",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "e6b9737ea1ec8eb0eb5dce1cf3deeae6342e777cf6af0dc497b9f54274b4d2be",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "3a74ea463dde9b4b162d05ff7b1b0d76f790f757bf1924cb52617fc4b9bc3191",
+      "epoch": 2,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314589144638173,
+          "phi": 0.9751642004368422
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.0389293998254755,
+        "decrease_phi": -132.87915514363647,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.647365852520486e-14,
+          "phi": 2.7725943631938325e-14
+        }
+      },
+      "gradient_inf": 13.150623994064869,
+      "gradient_l2": 16.36182600206325,
+      "objective": 0.9703884519289627,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 133.85467506089657,
+      "trial": 2
+    },
+    {
+      "accepted": false,
+      "alpha": 0.0025,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "d08e71524d3255aabef24635f0b6f421cfc514986fc292dcfe47f4e4e8d87a6e",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "d08e71524d3255aabef24635f0b6f421cfc514986fc292dcfe47f4e4e8d87a6e",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "d6087db8a97386fef4077d84a4a284bfff0ed7200fccd691f45bff40e8ba667f",
+      "epoch": 2,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314589832836523,
+          "phi": 0.9753420588484711
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.00939115759885123,
+        "decrease_phi": -32.330792041750435,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.647365852520486e-14,
+          "phi": 2.7725943631938325e-14
+        }
+      },
+      "gradient_inf": 6.613112820119674,
+      "gradient_l2": 8.161655709353408,
+      "objective": 0.9408502097023385,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 33.306311959010536,
+      "trial": 3
+    },
+    {
+      "accepted": false,
+      "alpha": 0.00125,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "d5100b900005edf89e38e695740ff414efe6a5669826107af5e3b59da30b9b7d",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "d5100b900005edf89e38e695740ff414efe6a5669826107af5e3b59da30b9b7d",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "e723a1174374e375a41e1c35cc49832f96d043e3068ecc3a95a7beaa4947a9fe",
+      "epoch": 2,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314590176935698,
+          "phi": 0.9754309880542856
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.002176452861100464,
+        "decrease_phi": -7.64740713974892,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.647365852520486e-14,
+          "phi": 2.7725943631938325e-14
+        }
+      },
+      "gradient_inf": 3.3341595475360757,
+      "gradient_l2": 4.152812795445762,
+      "objective": 0.9336355049645877,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 8.62292705700902,
+      "trial": 4
+    },
+    {
+      "accepted": false,
+      "alpha": 0.000625,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "8b13b085e63d9e5569047947cd7cadfa90ef950b8b4964ec9ca79e00f5a76276",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "8b13b085e63d9e5569047947cd7cadfa90ef950b8b4964ec9ca79e00f5a76276",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "acd78dd1ebf7515328b96412770cb6ff0b4db7329fb57d3911bf75fa42cb91c6",
+      "epoch": 2,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314590348985284,
+          "phi": 0.9754754526571928
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -0.0004581540809268647,
+        "decrease_phi": -1.690349649399673,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.647365852520486e-14,
+          "phi": 2.7725943631938325e-14
+        }
+      },
+      "gradient_inf": 1.6925359123846881,
+      "gradient_l2": 2.3090558965342405,
+      "objective": 0.9319172061844141,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 2.665869566659773,
+      "trial": 5
+    },
+    {
+      "accepted": false,
+      "alpha": 0.0003125,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "7d5c38007e37590fde4b0d7efa89e08febacd6046b8ff1fea800ad357cd1fe31",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "7d5c38007e37590fde4b0d7efa89e08febacd6046b8ff1fea800ad357cd1fe31",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "e621a0a83f2869fe028fbae2178b6a8371aa2ff111d9c12dbd4736e18a382df6",
+      "epoch": 2,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314590435010078,
+          "phi": 0.9754976849586465
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": -7.153261722725457e-05,
+        "decrease_phi": -0.3115098944724308,
+        "refusal_reasons": [
+          "analysis_objective_not_decreased_beyond_roundoff",
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.647365852520486e-14,
+          "phi": 2.7725943631938325e-14
+        }
+      },
+      "gradient_inf": 0.8713292916725321,
+      "gradient_l2": 1.6043876163399735,
+      "objective": 0.9315305847207145,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 1.287029811732531,
+      "trial": 6
+    },
+    {
+      "accepted": false,
+      "alpha": 0.00015625,
+      "branch": {
+        "choice_stage_count": 3600,
+        "euler_stages": 3600,
+        "face_sign_stage_count": 3600,
+        "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+        "signature_sha256": "fc034e7dfc8c1ca5bef95981e60a4fd93e917c41fd79bc4ed7ed505810eb34e6",
+        "status": "passed_strict_branch"
+      },
+      "branch_changed": true,
+      "branch_signature_sha256": "fc034e7dfc8c1ca5bef95981e60a4fd93e917c41fd79bc4ed7ed505810eb34e6",
+      "branch_status": "passed_strict_branch",
+      "control_sha256": "56e1f41341c6cf102de380f08a1e7dcf208dec3a488f2edd88fc287c6f41d119",
+      "epoch": 2,
+      "gate": {
+        "accepted": false,
+        "actual_decrease": false,
+        "armijo_limits": {
+          "j": 0.9314590478022475,
+          "phi": 0.9755088011093733
+        },
+        "armijo_passed": null,
+        "armijo_required": false,
+        "branch_changed": true,
+        "decrease_j": 3.622325093988188e-06,
+        "decrease_phi": -0.022305937368693574,
+        "refusal_reasons": [
+          "stationarity_merit_not_decreased_beyond_roundoff"
+        ],
+        "roundoff_floors": {
+          "j": 2.647365852520486e-14,
+          "phi": 2.7725943631938325e-14
+        }
+      },
+      "gradient_inf": 0.8577825496579354,
+      "gradient_l2": 1.4126753729210357,
+      "objective": 0.9314554297783932,
+      "objective_status": "finite",
+      "path_certified": false,
+      "phi": 0.9978258546287937,
+      "trial": 7
+    }
+  ],
+  "child_elapsed_seconds": 121.0326028750278,
+  "child_phase_seconds": {
+    "fixture_reconstruction": 2.755750707932748,
+    "fresh_candidate_merit": 20.659579665167257,
+    "fresh_current_merit": 3.225224126013927,
+    "fresh_hg_and_htg": 28.830629958072677,
+    "source_and_archive_identity": 0.002831249963492155,
+    "strict_branch_and_margin_pass": 13.61132362508215,
+    "strict_endpoint_oracle": 51.897676165099256
+  },
+  "costs": {
+    "accepted_epoch_count": 2,
+    "adjoint_computed": false,
+    "branch_oracle_calls": 25,
+    "current_branch_call_unrecorded": false,
+    "current_branch_calls": 3,
+    "epoch_count": 3,
+    "exact_hvp_calls": 3,
+    "exact_vjp_calls": 3,
+    "pcg_calls": 0,
+    "response_computed": false,
+    "score_computed": false,
+    "trial_count": 22
+  },
+  "current": {
+    "branch_signature_sha256": "2925e02c77e293436b8eccfeda1db44390bb4ca6f106f5a5b581818d9ab57dc5",
+    "control_sha256": "baed75b17f6552cecf999be2a23db75725fef8d713a1dd360326ee82680159ba",
+    "gradient_inf": 0.8727746789931015,
+    "gradient_l2": 1.3967962752385188,
+    "objective": 0.9314590521034872,
+    "phi": 0.9755199172601001
+  },
+  "current_branch": {
+    "choice_stage_count": 3600,
+    "euler_stages": 3600,
+    "face_sign_stage_count": 3600,
+    "scope": "fixed off-grid dBZ points, declared valid-row errors, known state/boundary; pointwise branch only",
+    "signature_sha256": "2925e02c77e293436b8eccfeda1db44390bb4ca6f106f5a5b581818d9ab57dc5",
+    "status": "passed_strict_branch"
+  },
+  "current_branch_margins": {
+    "absolute_face_flux_over_global_maximum": {
+      "absolute_minimum": 0.0007679630698590456,
+      "global_maximum_absolute_flux": 0.1593089824910881,
+      "index": [
+        3,
+        1
+      ],
+      "orientation": "y",
+      "stage_context": {
+        "forecast_lead_index": null,
+        "interval_end_seconds": 600,
+        "interval_index": 0,
+        "interval_start_seconds": 0,
+        "phase": "analysis_replay",
+        "ssprk_euler_stage_index": 0,
+        "substep_index": 0
+      },
+      "stage_index": 0,
+      "value": 0.004820588631290808
+    },
+    "complete": true,
+    "expected_stage_count": 3600,
+    "flux_global_maximum_absolute": 0.1593089824910881,
+    "nonfinite": false,
+    "normalized_minima": {
+      "x_active_limiter_gap_over_q_scale": {
+        "stage_context": {
+          "forecast_lead_index": 1,
+          "interval_end_seconds": 1800,
+          "interval_index": 0,
+          "interval_start_seconds": 1200,
+          "phase": "future_forecast",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 45
+        },
+        "stage_index": 451,
+        "value": 1.6824459398602114e-07
+      },
+      "x_left_slope_over_q_scale": {
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 67
+        },
+        "stage_index": 135,
+        "value": 0.015518316126111329
+      },
+      "x_right_slope_over_q_scale": {
+        "stage_context": {
+          "forecast_lead_index": 2,
+          "interval_end_seconds": 2400,
+          "interval_index": 1,
+          "interval_start_seconds": 1800,
+          "phase": "future_forecast",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 76
+        },
+        "stage_index": 693,
+        "value": 0.01870046771104586
+      },
+      "y_active_limiter_gap_over_q_scale": {
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 1200,
+          "interval_index": 1,
+          "interval_start_seconds": 600,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 21
+        },
+        "stage_index": 223,
+        "value": 8.56156251804508e-07
+      },
+      "y_left_slope_over_q_scale": {
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 51
+        },
+        "stage_index": 103,
+        "value": 0.024946254575181577
+      },
+      "y_right_slope_over_q_scale": {
+        "stage_context": {
+          "forecast_lead_index": 7,
+          "interval_end_seconds": 5400,
+          "interval_index": 6,
+          "interval_start_seconds": 4800,
+          "phase": "future_forecast",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 13
+        },
+        "stage_index": 1467,
+        "value": 1.454721359721134e-07
+      }
+    },
+    "observed_stage_count": 3600
+  },
+  "current_control_sha256": "baed75b17f6552cecf999be2a23db75725fef8d713a1dd360326ee82680159ba",
+  "current_epoch": 2,
+  "direction": {
+    "curvature_dot": 195.84298452007306,
+    "curvature_threshold": 2.8243444703913087e-11,
+    "direction_l2": 1.0,
+    "direction_max_abs": 0.673211287489854,
+    "direction_sha256": "21c8884cb44fba5c5bf116cad7b6a464b0568a09da1b174506725a4f38dd84ba",
+    "gradient_l2": 1.3967962752385188,
+    "hg_l2": 711.4336465159454,
+    "slope_j": -0.2752793397938955,
+    "slope_phi": -711.4336465159453,
+    "status": "passed"
+  },
+  "environment": {
+    "device": "CPU FP64",
+    "python": "3.12.13",
+    "torch": "2.13.0"
+  },
+  "execution_phase": "finished",
+  "execution_status": "completed",
+  "fixed_input_unchanged": true,
+  "input_after": {
+    "archived_input": {
+      "control_sha256": "adc5bfd01e98e32b09ccc963f096a6f6a3c7307d600a0ba20f8ddc8dcad3721e",
+      "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+      "problem": {
+        "fixed_problem_sha256": "16fa95b534c3b61cf5d1506770cbfc77edb527c40d1f4c536f5130cba24e1fc3",
+        "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+      },
+      "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+    },
+    "changed_control_index": 21,
+    "changed_control_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25
+    ],
+    "control_sha256": "baed75b17f6552cecf999be2a23db75725fef8d713a1dd360326ee82680159ba",
+    "original_flow_fractions": [
+      0.7,
+      -0.6,
+      0.5,
+      0.4,
+      -0.30000000000000004
+    ],
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "shifted_flow_fractions": [
+      0.7000127997384171,
+      -0.590023405934295,
+      0.49998281128253647,
+      0.3999346312755789,
+      -0.30008382481949897
+    ],
+    "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+  },
+  "input_before": {
+    "archived_input": {
+      "control_sha256": "adc5bfd01e98e32b09ccc963f096a6f6a3c7307d600a0ba20f8ddc8dcad3721e",
+      "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+      "problem": {
+        "fixed_problem_sha256": "16fa95b534c3b61cf5d1506770cbfc77edb527c40d1f4c536f5130cba24e1fc3",
+        "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+      },
+      "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+    },
+    "changed_control_index": 21,
+    "changed_control_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25
+    ],
+    "control_sha256": "9f8d3ae0d77d8b24f1565ab622cf8fe7bbfd83766fbd67964a6a5bd52920a078",
+    "original_flow_fractions": [
+      0.7,
+      -0.6,
+      0.5,
+      0.4,
+      -0.30000000000000004
+    ],
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "shifted_flow_fractions": [
+      0.7000196031238174,
+      -0.5900359269566487,
+      0.49997384259873734,
+      0.3998968926546456,
+      -0.30013621705831894
+    ],
+    "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+  },
+  "internal_budget_seconds": 540.0,
+  "layout": {
+    "controls": 26,
+    "euler_stages": 3600,
+    "forecast_time_seconds": 12000.0,
+    "observation_shape": [
+      3,
+      4
+    ],
+    "observation_times_seconds": [
+      0.0,
+      600.0,
+      1200.0
+    ],
+    "parameters": 13,
+    "state_shape": [
+      4,
+      5
+    ],
+    "theta_index": 12
+  },
+  "numerical_status": "epoch_line_search_refused",
+  "path_certified": false,
+  "pcg_calls": 0,
+  "pid": 6167,
+  "pinned_seed": {
+    "branch_signature_sha256": "c1d60b87479fea5937ae44d4740cb0de3adf10e62fc50018cab69abb12ca47bb",
+    "control_sha256": "9f8d3ae0d77d8b24f1565ab622cf8fe7bbfd83766fbd67964a6a5bd52920a078",
+    "gradient_inf": 1.2605349625093007,
+    "objective": 0.9319504904669574,
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "phi": 2.6187151084118883,
+    "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+  },
+  "plan_sha256": "33a3b3d558b83711d066bea8e3d2d92de4779e630811b2d4b2a2d7246e0ba521",
+  "plan_unchanged": true,
+  "response_computed": false,
+  "root_certified": false,
+  "rss_limit_bytes": 1073741824,
+  "score_computed": false,
+  "seed_control_sha256": "9f8d3ae0d77d8b24f1565ab622cf8fe7bbfd83766fbd67964a6a5bd52920a078",
+  "seed_evidence_sha256": "df026542d85910a61a9181ae46df8f5c7e6ac8d8bfa80dbc318e33d429b85a8a",
+  "seed_evidence_unchanged": true,
+  "seed_report_sha256": "024b89d346ae0136542888527d3bb528d7f638c1e3be44f3aa7cdb2232d10f3a",
+  "seed_report_unchanged": true,
+  "source_after": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_long_horizon_case.py": "22feb5c49495b26c78caa826e73f34a9abb21a4dbf71cfa5e34fbaae884cbc85",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_point_3h_first_branch_probe.py": "c82f1407c0a93160ff87ae5d5efcb785ad8dae2a73e7bac6a7c2a5c55e728d3e",
+    "examples/weather_scenarios/fv_point_3h_forward_case.py": "a23bab3d10bde9ca08661979df9e2c94a0de7bde6c7c732b5ed2b9ec769f61ec",
+    "examples/weather_scenarios/fv_point_3h_forward_probe.py": "8ab664ebcb42d6c74d1b056a751df57941816ca1804538f9afd954b26f95ca75",
+    "examples/weather_scenarios/fv_point_3h_forward_runner.py": "bf50195f2ff7d7ba7550e54ebb3473f0d501cde2663dd8d4f0e5281db97570af",
+    "examples/weather_scenarios/fv_point_3h_merit_continuation.py": "00bed148ffc7549eca3cd8446ac1fd1d5c4042f1278867808aafe78f51e848dc",
+    "examples/weather_scenarios/fv_point_3h_merit_step_probe.py": "4a00255762f3d30b4d235bcce4651d143e28070c57cc33ccc20ecb249900abbf",
+    "examples/weather_scenarios/fv_point_3h_seed_linear_probe.py": "65e73c10ec1be38e620888625ee4340e8b330050cb940eba15e34830e20c2731",
+    "examples/weather_scenarios/fv_point_3h_shifted_branch_probe.py": "fd4f36c5802a1ad0a2e40bb8a4a8e2fac2dd0d6aa0c6418922c87c9149e10c11",
+    "examples/weather_scenarios/fv_point_research_case.py": "358dd1bb46f7cf2ebb0fcf7bb33d4735b66419412d97d0b7847e7eab236f5f2e",
+    "examples/weather_scenarios/fv_point_response_preflight.py": "6929668a5d2c95a64499ab598a0f045d66e47a80cf7a997513f448fff8ba3ccf",
+    "examples/weather_scenarios/fv_point_response_preflight_runner.py": "7e25520af78418323a28dd3aec152040829bba597ab2902c4a80413c1088aab8",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_point_research_problem.py": "ffdb27fd40aa6943ab4c04860695303e4270291377a7b86535c06416704eec19",
+    "src/advar/fv_point_sampler.py": "e3116a9250a5890521d66502aacd69c6ea32cc348fb961e6ffb88cf97750d3af",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  },
+  "source_before": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_long_horizon_case.py": "22feb5c49495b26c78caa826e73f34a9abb21a4dbf71cfa5e34fbaae884cbc85",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_point_3h_first_branch_probe.py": "c82f1407c0a93160ff87ae5d5efcb785ad8dae2a73e7bac6a7c2a5c55e728d3e",
+    "examples/weather_scenarios/fv_point_3h_forward_case.py": "a23bab3d10bde9ca08661979df9e2c94a0de7bde6c7c732b5ed2b9ec769f61ec",
+    "examples/weather_scenarios/fv_point_3h_forward_probe.py": "8ab664ebcb42d6c74d1b056a751df57941816ca1804538f9afd954b26f95ca75",
+    "examples/weather_scenarios/fv_point_3h_forward_runner.py": "bf50195f2ff7d7ba7550e54ebb3473f0d501cde2663dd8d4f0e5281db97570af",
+    "examples/weather_scenarios/fv_point_3h_merit_continuation.py": "00bed148ffc7549eca3cd8446ac1fd1d5c4042f1278867808aafe78f51e848dc",
+    "examples/weather_scenarios/fv_point_3h_merit_step_probe.py": "4a00255762f3d30b4d235bcce4651d143e28070c57cc33ccc20ecb249900abbf",
+    "examples/weather_scenarios/fv_point_3h_seed_linear_probe.py": "65e73c10ec1be38e620888625ee4340e8b330050cb940eba15e34830e20c2731",
+    "examples/weather_scenarios/fv_point_3h_shifted_branch_probe.py": "fd4f36c5802a1ad0a2e40bb8a4a8e2fac2dd0d6aa0c6418922c87c9149e10c11",
+    "examples/weather_scenarios/fv_point_research_case.py": "358dd1bb46f7cf2ebb0fcf7bb33d4735b66419412d97d0b7847e7eab236f5f2e",
+    "examples/weather_scenarios/fv_point_response_preflight.py": "6929668a5d2c95a64499ab598a0f045d66e47a80cf7a997513f448fff8ba3ccf",
+    "examples/weather_scenarios/fv_point_response_preflight_runner.py": "7e25520af78418323a28dd3aec152040829bba597ab2902c4a80413c1088aab8",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_point_research_problem.py": "ffdb27fd40aa6943ab4c04860695303e4270291377a7b86535c06416704eec19",
+    "src/advar/fv_point_sampler.py": "e3116a9250a5890521d66502aacd69c6ea32cc348fb961e6ffb88cf97750d3af",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  },
+  "source_unchanged": true,
+  "termination_reap_grace_seconds": 2,
+  "transpose_consistency": {
+    "difference_l2": 6.692971101538011e-13,
+    "hg_l2": 711.4336465159454,
+    "htg_l2": 711.4336465159455,
+    "reason": null,
+    "relative_difference": 9.407723593500298e-16,
+    "status": "passed",
+    "tolerance": 1e-08
+  },
+  "true_slope_j": -0.2752793397938955,
+  "true_slope_phi": -711.4336465159454,
+  "wall_limit_seconds": 600
+}
