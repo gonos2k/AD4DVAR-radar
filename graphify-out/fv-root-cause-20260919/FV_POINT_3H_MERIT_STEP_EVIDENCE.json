@@ -1,0 +1,56 @@
+{
+  "accepted_control_sha256": "9f8d3ae0d77d8b24f1565ab622cf8fe7bbfd83766fbd67964a6a5bd52920a078",
+  "candidate": {
+    "J": 0.9319504904669574,
+    "Phi": 2.6187151084118883,
+    "alpha": 0.00125,
+    "backtrack": 4,
+    "branch_changed": true,
+    "branch_signature_sha256": "c1d60b87479fea5937ae44d4740cb0de3adf10e62fc50018cab69abb12ca47bb",
+    "gradient_inf": 1.2605349625093007,
+    "segment_certified": false
+  },
+  "cost": {
+    "branch_oracle_calls": 6,
+    "candidate_count": 5,
+    "exact_hvp_calls": 1,
+    "guard_elapsed_seconds": 32.36192033300176,
+    "rss_samples": 121,
+    "sampled_peak_rss_bytes": 395788288
+  },
+  "files_sha256": {
+    "examples/weather_scenarios/fv_point_3h_merit_step_probe.py": "4a00255762f3d30b4d235bcce4651d143e28070c57cc33ccc20ecb249900abbf",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "ab788504efcc095dca6881b2d58feec8b881e51d3fe9bbf8344633a54e4a1257",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_MERIT_STEP_PLAN.md": "9af6bc4b0a30694f109b144579297704ecda4e1ce888fdb8d621dc9a1f7abfb6",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_MERIT_STEP_PR_BODY.md": "96d8c3e9f9c0a472acb9347c7bcf3b729f57becf9b4ba692420f67906ff3240b",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_MERIT_STEP_RESULTS.md": "d9ea837f50ac3c120137a6163f609448c2440f35a8a955e7b173ac7e0b317abe",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_SEED_HESSIAN_EVIDENCE.json": "77bf193a2f891748199c12c0a318bd47fcb0f199a23da3f0e926d7fa4ebf8ed0",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "3a41da7219022a55b8e4051957d97739c290dc95ad5f0ebb94fc945278ebb5c3",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "3be4d304d37211d2ddee63fe21c2a707c2751db7887ad03a5f99d56a7dc198c6",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_step_affected_tests.log": "6745d19ee0f82dfe8f0eac11d6d9b3b6e3f5d292e4c281d1f6dff8a9569ac623",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_step_graphify.log": "348cf8c58ff2545fdaf4ca9a18d18c2e8d86071ebcfb55c88b33f8509d6126a7",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_step_tests.log": "a29ea94dccf5f415ad32514367464d62af090be83df2b92e82a25ce5a19389bf",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_step_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/point_3h_merit_step_attempt1/point_3h_merit_step.json": "024b89d346ae0136542888527d3bb528d7f638c1e3be44f3aa7cdb2232d10f3a",
+    "graphify-out/fv-root-cause-20260919/point_3h_merit_step_attempt1/point_3h_merit_step.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/point_3h_merit_step_attempt1/point_3h_merit_step.resource.json": "3ee5c326a0b5d38da9950ede56e15a559324f46d748c983db4fa83814bfeee7e",
+    "graphify-out/fv-root-cause-20260919/point_3h_merit_step_attempt1/point_3h_merit_step.run.json": "a61677a053a03d5eaebbc990e24d9654e1cf8056d35de3b6c9fb532690401c51",
+    "tests/test_fv_point_3h_merit_step_probe.py": "d0f2b9500694259f0b48c97d698e6ff689690616af9e418293471e07b9146c87"
+  },
+  "limits": "one endpoint-only exploratory sector switch; no stationarity, final curvature, adjoint, VJP, signed impact or physical validation",
+  "scope": "one fixed three-hour point seed exact-Hg joint J/Phi exploratory step, one accepted changed-branch endpoint; no root/response",
+  "seed": {
+    "J": 0.9323736303384679,
+    "Phi": 4.036592165302406,
+    "branch_signature_sha256": "80a1fac22b536bfedcedfda506e11d85f4b9f2a73c5610c73fa8dfdb210dfe51",
+    "gradient_inf": 2.254729681485403
+  },
+  "seed_control_sha256": "97ce3a636b25d79ca0aab208035e4299f9f4ad26ea00d557531e7a9eded2080b",
+  "verification": {
+    "affected_tests_passed": 99,
+    "affected_warnings": 18,
+    "focused_tests_passed": 10,
+    "full_cpu_package_regression": "not_run",
+    "typecheck_errors": 0
+  }
+}

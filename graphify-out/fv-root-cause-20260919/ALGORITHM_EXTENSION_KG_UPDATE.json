@@ -891,5 +891,18 @@
     "limits": "finite-dimensional FP64 audit not rigorous interval certificate; negative curvature at nonstationary seed does not prove root absence or final stationary branch curvature; response/finite impact/physical skill open",
     "record": "FV_POINT_3H_SEED_HESSIAN_PLAN.md,FV_POINT_3H_SEED_HESSIAN_RESULTS.md,FV_POINT_3H_SEED_HESSIAN_EVIDENCE.json,point_3h_seed_hessian_attempt1",
     "status": "R5 seed curvature ambiguity closed;R5-R-R stationary response still open"
+  },
+  "fv_point_3h_merit_one_step": {
+    "baseline": "main e80ce71 after PR220 verified negative Hessian curvature at strict nonstationary point seed",
+    "scope": "one exact-Hg joint J/Phi exploratory direction in fixed 4x5 point 3h problem, max8 alpha grid0.02*2^-k, one accepted endpoint maximum; no root/response",
+    "direction": "seed gTHg21105.599973680168 vs scaled sign floor6.862479154494133e-10,Hg L2 8497.837241518195,d=-Hg/||Hg||,DJ slope-2.483643705314073,DPhi slope-8497.837241518195; prior same-seed Hessian symmetry evidence SHA77bf193a2f891748199c12c0a318bd47fcb0f199a23da3f0e926d7fa4ebf8ed0 pinned",
+    "trials": "five fixed alphas tried; first four independently strict changed-branch endpoints increased both J and Phi and were refused; fifth alpha0.00125 accepted on changed strict signature c1d60b87479fea5937ae44d4740cb0de3adf10e62fc50018cab69abb12ca47bb; no segment certificate",
+    "measured_progress": "J0.9323736303384679 to0.9319504904669574, Phi4.036592165302406 to2.6187151084118883, ginf2.254729681485403 to1.2605349625093007; accepted control SHA9f8d3ae0d77d8b24f1565ab622cf8fe7bbfd83766fbd67964a6a5bd52920a078; still nonstationary",
+    "execution": "one guarded child exit0,guard32.361920333s,child30.921482458s,121 sampled RSS,peak395788288B under300s trigger/sampled1GiB;six branch oracle calls,one HVP,5 candidate J/grad; phase sum19.271433959s leaves11.650048499s unallocated, candidate branch checks not separately timed",
+    "verification": "10 focused and99 affected tests passed with18 existing warnings; basedpyright1.39.9 error-level0; GREEN/RED plan/code/raw review and forged branch-change Armijo-bypass regression; full CPU/package CI not run",
+    "graphify": "incremental AST code refresh, valid graph.json8193 nodes/1057103 links, no semantic extraction",
+    "limits": "strict endpoint-only branch switch, no continuous path, stationarity, final Hessian, adjoint, VJP, finite impact or physical skill; relinearize on accepted endpoint before any further direction",
+    "record": "FV_POINT_3H_MERIT_STEP_PLAN.md,FV_POINT_3H_MERIT_STEP_RESULTS.md,FV_POINT_3H_MERIT_STEP_EVIDENCE.json,point_3h_merit_step_attempt1",
+    "status": "first exploratory joint-descent step closed;R5-R-R stationary response remains open"
   }
 }
