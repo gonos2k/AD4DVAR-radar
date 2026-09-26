@@ -789,5 +789,16 @@
     "graphify": "code-only incremental update:7699 nodes,67065 edges,271 communities;no semantic LLM extraction",
     "record": "FV_PARTIAL_ALTERNATE_SEED_GATE_PLAN.md,FV_PARTIAL_ALTERNATE_SEED_GATE_RESULTS.md,partial_alternate_seed_attempt1/alternate_seed.json,partial_alternate_seed_attempt1/alternate_seed.run.json",
     "status": "alternate-sector seed local SPD qualified;separate root-only refinement still required"
+  },
+  "fv_partial_alternate_root_attempt1": {
+    "baseline": "main 7af3126 after PR212 posthoc alternate-sector local SPD seed gate",
+    "scope": "one source/input-bound root-only exact-HVP Newton-PCG refinement from the fixed PR212 rejected-trial seed, no new GN/adjoint/VJP/signed reanalysis; posthoc exploratory correlated start",
+    "path": "75 candidate trials,8 accepted/67 measured-Phi policy rejected;one accepted switch from alternate50d3b1a4 signature back to GN695ecd60,then seven same-signature Armijo accepts;each of eight PCGs29 iterations,max independently monitored true relative residual1.3605125544e-13",
+    "refusal": "eight-step iteration budget exhausted at last accepted gmax0.006708378264014107 versus1e-10 threshold;last accepted face margin2.3865525984512733e-9;no fresh final-root Hessian or response,not a root_low_margin stationary point and not root-absence proof",
+    "execution": "parent completed bounded numerical refusal,child exit2 without resource termination;250.5204069999745s,926 sampled RSS,peak365150208B under600s/sampled1GiB;22 current source hashes,input,plan and PR209/PR212 archived records stable",
+    "verification": "110 affected focused tests passed with18 existing warnings;basedpyright1.39.9 error-level0;GREEN/RED raw result and refusal audit;full CPU/package CI not run",
+    "graphify": "code-only incremental update:7762 nodes,67229 edges,270 communities;no semantic LLM extraction",
+    "record": "FV_PARTIAL_ALTERNATE_ROOT_PLAN.md,FV_PARTIAL_ALTERNATE_ROOT_ATTEMPT1_RESULTS.md,partial_alternate_root_attempt1/partial_alternate_root.json,partial_alternate_root_attempt1/partial_alternate_root.run.json",
+    "status": "R4-R original two-hole qualified response remains open;two separate branch-aware root attempts refused under their fixed8-step policy"
   }
 }
