@@ -1,0 +1,52 @@
+{
+  "archived_input_identity_sha256": "00665e879d0e370e15f2bf3ef253a2267eb59335c2f51036289ff22632808744",
+  "candidate_changed_control_indices": [
+    21
+  ],
+  "candidate_control_sha256": "97ce3a636b25d79ca0aab208035e4299f9f4ad26ea00d557531e7a9eded2080b",
+  "files_sha256": {
+    "examples/weather_scenarios/fv_point_3h_shifted_branch_probe.py": "fd4f36c5802a1ad0a2e40bb8a4a8e2fac2dd0d6aa0c6418922c87c9149e10c11",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "e5efceff5de9a677c55f1e8125e984f5ff150a3cbf6566ef0bf959c9ee18df21",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_FIRST_BRANCH_EVIDENCE.json": "8c600e46b6d1fc2f145ed89e997d934826249a387bb35d7f5c4af941bbb3e09c",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_SHIFTED_BRANCH_PLAN.md": "3fa9bc123e9aedddfb027abd373960e71db0b7b7693bb83a3877bbc35d8db6f6",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_SHIFTED_BRANCH_PR_BODY.md": "f616d903af80ba78391ee83f4c83a55f116e5f4975e1f9a6559186902db37cff",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_SHIFTED_BRANCH_RESULTS.md": "a97a0887106aab38cb7dea641dec944ae15384908d28e64f044694ac9c4027ec",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "07dbfb6ee5816f86432b8dd6101b0743549c7502806345ad306dbafcc30732de",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_shifted_branch_affected_tests.log": "3211dd1ffaf2ff41b4464ecea3ca418cbfcefc90b3fb703f9ca8a68a282e2275",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_shifted_branch_graphify.log": "581ca6dba7f14839d183885d3ea46afba92708c599b05f2346f0181f82c51fa9",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_shifted_branch_tests.log": "191385852a5318fcb45e074da02696ebbc75387ea5761d4f194c153010caf165",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_shifted_branch_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/point_3h_shifted_branch_attempt1/point_3h_shifted_branch.json": "3b6a2dd05983c8f0200604dd69a5ef0512da3419dd38049d4ec9ad4bd819d5c3",
+    "graphify-out/fv-root-cause-20260919/point_3h_shifted_branch_attempt1/point_3h_shifted_branch.log": "3b6a2dd05983c8f0200604dd69a5ef0512da3419dd38049d4ec9ad4bd819d5c3",
+    "graphify-out/fv-root-cause-20260919/point_3h_shifted_branch_attempt1/point_3h_shifted_branch.resource.json": "ebdcf3f55d363c83383ec4251558f1cd30429a5cdfceb6149991536216244ab3",
+    "graphify-out/fv-root-cause-20260919/point_3h_shifted_branch_attempt1/point_3h_shifted_branch.run.json": "ae0c068f8f2a15be8e5f3db5dc6e63aa4d98f453e79226cec530ff07c8d9a1ad",
+    "tests/test_fv_point_3h_shifted_branch_probe.py": "cc2e9c7b76d380673b568d4b35394013b0472ff4d3d00fcaeacfb604d7544a82"
+  },
+  "limits": "branch at alternate control only; stationarity, Hessian, adjoint, VJP, signed endpoints and physical skill not tested",
+  "resource": {
+    "elapsed_seconds": 9.432684415951371,
+    "exit_code": 0,
+    "pid": 43857,
+    "rss_samples": 35,
+    "sampled_peak_rss_bytes": 235323392
+  },
+  "scope": "one predeclared alternate-control 4x5 point 3-hour strict-branch feasibility; no stationary response",
+  "static": {
+    "face_count": 49,
+    "minimum_abs_flux": 0.0008000000000000229,
+    "near_zero_face_count": 0,
+    "threshold": 4.5247361413203206e-15
+  },
+  "trajectory": {
+    "pointwise_stages": 3600,
+    "signature_sha256": "80a1fac22b536bfedcedfda506e11d85f4b9f2a73c5610c73fa8dfdb210dfe51",
+    "strict_oracle_stages": 3600
+  },
+  "verification": {
+    "affected_tests_passed": 65,
+    "affected_warnings": 18,
+    "focused_tests_passed": 19,
+    "full_cpu_package_regression": "not_run",
+    "typecheck_errors": 0
+  }
+}
