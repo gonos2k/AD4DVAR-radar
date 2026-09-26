@@ -60,6 +60,19 @@ def test_changed_sector_gets_explicit_measured_merit_decision():
     ("root_margin_qualified", "wrong_switch_merit", "failed"),
     ("root_low_margin", None, "completed"),
     ("root_refused", None, "completed"),
+    ("seed_branch_refused", None, "completed"),
+    ("seed_branch_refused", "wrong_seed_hash", "failed"),
+    ("seed_branch_refused", "unrecognized_seed_reason", "failed"),
+    ("seed_branch_refused", "admitted_seed", "failed"),
+    ("seed_branch_refused", "seed_curvature_present", "failed"),
+    ("seed_branch_refused", "final_gradient_present", "failed"),
+    ("seed_branch_refused", "response_data_present", "failed"),
+    ("seed_branch_refused", "final_curvature_hash_present", "failed"),
+    ("seed_branch_refused", "nested_gn_response", "failed"),
+    ("seed_branch_refused", "nested_branch_final", "failed"),
+    ("seed_branch_refused", "adjoint_solve_phase", "failed"),
+    ("seed_branch_refused", "wrong_exit", "failed"),
+    ("seed_branch_refused", "resource_limited", "failed"),
     ("seed_curvature_refused", None, "completed"),
     ("root_margin_qualified", "wrong_final_hash", "failed"),
     ("root_margin_qualified", "missing_final_trace", "failed"),
@@ -96,16 +109,25 @@ def test_parent_distinguishes_root_refusal_and_resource(
         assert wall_seconds == 600 and rss_bytes == 1024**3
         child: dict[str, Any] = {
             "pid": 123, "phase": "finished" if root else (
+                "seed_branch" if status == "seed_branch_refused" else
                 "seed_curvature" if status == "seed_curvature_refused" else "sector_refinement"),
             "numerical_status": status, "response_validation": "not_performed",
             "physical_validation": "not_performed",
             "source_unchanged": True, "input_unchanged": True,
             "plan_unchanged": True, "warm_control_unchanged": True,
             "parameters_unchanged": True,
+            "warm_control_sha256": control_sha,
+            "parameters_sha256": control_sha,
+            "environment": {"device": "CPU FP64"},
+            "scope": "test", "elapsed_seconds": 1.0,
+            "seed_gradient_max": 1.0,
             "source_before": source, "source_after": source,
             "input_before": input_identity, "input_after": input_identity,
             "plan_sha256": probe.PLAN_SHA256,
-            "gauss_newton": {"control": control, "control_sha256": control_sha},
+            "gauss_newton": {"control": control, "control_sha256": control_sha,
+                             "reason": "test", "outer_iterations": 0,
+                             "pcg_iterations": 0, "initial_objective": 0.5,
+                             "final_objective": 0.5, "seconds": 1.0},
             "seed_branch": seed_branch,
             "seed_gradient_norm": 1.0,
             "branch_calls": [{"status": "core_branch_admitted",
@@ -140,6 +162,17 @@ def test_parent_distinguishes_root_refusal_and_resource(
                                           "control_sha256": control_sha, **final})
         else:
             child["refusal"] = "declared numerical refusal"
+            if status == "seed_branch_refused":
+                reason = "minmod joint oracle left its strict smooth branch"
+                child.pop("seed_branch")
+                child["refusal"] = f"_SeedBranchRefusal: {reason}"
+                child["branch_calls"] = [{
+                    "status": "core_branch_refused", "control_sha256": control_sha,
+                    "reason": f"ValueError: {reason}",
+                }]
+                child["trial_records"] = []
+                child["policy_records"] = []
+                child["linear_solves"] = []
         if mutation == "wrong_final_hash":
             child["final_control_sha256"] = "f" * 64
         elif mutation == "missing_final_trace":
@@ -180,6 +213,26 @@ def test_parent_distinguishes_root_refusal_and_resource(
                     child["policy_records"][0]["delta"] = 0.0
         elif mutation == "fake_armijo":
             child["trial_records"][0]["armijo_ratio"] = 1.1
+        elif mutation == "wrong_seed_hash":
+            child["branch_calls"][0]["control_sha256"] = "f" * 64
+        elif mutation == "unrecognized_seed_reason":
+            child["branch_calls"][0]["reason"] = "ValueError: programming defect"
+        elif mutation == "admitted_seed":
+            child["branch_calls"][0]["status"] = "core_branch_admitted"
+        elif mutation == "seed_curvature_present":
+            child["seed_curvature"] = curvature
+        elif mutation == "final_gradient_present":
+            child["final_gradient_max"] = 1e-12
+        elif mutation == "response_data_present":
+            child["response"] = {"total_gradient": [0.0]}
+        elif mutation == "final_curvature_hash_present":
+            child["final_curvature_control_sha256"] = control_sha
+        elif mutation == "nested_gn_response":
+            child["gauss_newton"]["response"] = {"total_gradient": [0.0]}
+        elif mutation == "nested_branch_final":
+            child["branch_calls"][0]["final_branch"] = "forged"
+        elif mutation == "adjoint_solve_phase":
+            child["linear_solves"].append({"phase": "adjoint_response"})
         elif mutation == "false_high_margin":
             child["response_margin_qualified"] = True
         resource = {
@@ -237,12 +290,16 @@ def test_callback_failure_is_not_scientific_refusal(
     assert saved["response_validation"] == "not_performed"
 
 
-@pytest.mark.parametrize("candidate_error,expected", [
-    ("unexpected malformed observer", "execution_error"),
-    ("minmod joint oracle left its strict smooth branch", "root_refused"),
+@pytest.mark.parametrize("at_seed,error_type,branch_error,expected", [
+    (False, ValueError, "unexpected malformed observer", "execution_error"),
+    (False, ValueError, "minmod joint oracle left its strict smooth branch", "root_refused"),
+    (True, ValueError, "minmod joint oracle left its strict smooth branch", "seed_branch_refused"),
+    (True, ValueError, "unexpected malformed observer", "execution_error"),
+    (True, ValueError, "malformed-summary", "execution_error"),
+    (True, RuntimeError, "unexpected oracle runtime", "execution_error"),
 ])
-def test_candidate_branch_value_error_has_explicit_classification(
-    monkeypatch, tmp_path, candidate_error, expected,
+def test_branch_error_has_explicit_seed_and_candidate_classification(
+    monkeypatch, tmp_path, at_seed, error_type, branch_error, expected,
 ):
     identity = {"current_problem_identity": {"fixed_problem_sha256": "test"}}
     monkeypatch.setattr(probe, "_preflight_identity", lambda: identity)
@@ -267,17 +324,27 @@ def test_candidate_branch_value_error_has_explicit_classification(
     branch = {"euler_stages": 54, "minimum_scaled_slope_margin": 0.2,
               "choices": [0], "face_signs": [1]}
     def traced(_problem, control, _parameters):
-        if bool(control.abs().max() > 0):
-            raise ValueError(candidate_error)
+        if branch_error == "malformed-summary":
+            return {"euler_stages": 54, "minimum_scaled_slope_margin": 0.2}, "fixed", 0.3
+        if at_seed or bool(control.abs().max() > 0):
+            raise error_type(branch_error)
         return branch, "fixed", 0.3
     monkeypatch.setattr(probe.preflight, "branch_with_face_margin", traced)
     output = tmp_path / "child.json"
     if expected == "execution_error":
-        with pytest.raises(RefinementCallbackError, match="unexpected branch oracle ValueError"):
+        error_match = ("sector policy needs full" if branch_error == "malformed-summary"
+                       else branch_error)
+        with pytest.raises((RefinementCallbackError, RuntimeError, ValueError), match=error_match):
             probe.run(output)
         assert json.loads(output.read_text())["numerical_status"] == "running"
     else:
-        assert probe.run(output)["numerical_status"] == expected
+        report = probe.run(output)
+        assert report["numerical_status"] == expected
+        if at_seed:
+            assert report["phase"] == "seed_branch"
+            assert report["branch_calls"][0]["status"] == "core_branch_refused"
+            assert "seed_curvature" not in report
+            assert report["trial_records"] == []
 
 
 def test_nonfinite_candidate_is_recorded_without_invalid_json(monkeypatch, tmp_path):

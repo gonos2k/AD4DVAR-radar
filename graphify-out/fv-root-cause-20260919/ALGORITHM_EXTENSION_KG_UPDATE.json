@@ -755,5 +755,15 @@
     "graphify": "code-only incremental update:7646 nodes,66971 edges,311 communities;no semantic LLM extraction",
     "record": "FV_PARTIAL_SECTOR_ROOT_PLAN.md,FV_PARTIAL_SECTOR_ROOT_ATTEMPT1_RESULTS.md,partial_sector_root_attempt1/partial_sector_root.json,partial_sector_root_attempt1/partial_sector_root.run.json",
     "status": "R4-D remains closed as current-policy refusal;R4-R qualified response remains open;new source-bound sector-aware policy refused after eight steps without issuing sensitivity"
+  },
+  "fv_partial_seed_branch_status": {
+    "baseline": "main 0f64b6c after PR209 root-only numerical refusal",
+    "scope": "status-classification repair only for a known GN seed strict minmod branch refusal; focused preflight tests perform FV forward/branch checks, but no new guarded FV GN/root experiment and no change to prior raw result",
+    "classification": "seed_branch_refused at phase seed_branch before Hessian; exact known ValueError allowlist and GN-control-linked failed trace; unexpected callback/summary errors remain execution failures",
+    "parent_gate": "exit2 plus normal resource/provenance,exact seed refusal report schema,one allowlisted refused trace tied to GN control hash,no curvature/refinement/root/response fields",
+    "verification": "93 affected focused tests passed with18 existing warnings;basedpyright1.39.9 error-level0;small analytic actual-refiner candidate tests and fake guarded-parent mutations;full FV/CPU/package CI not run",
+    "graphify": "code-only incremental update:7649 nodes,66980 edges,253 communities;no semantic LLM extraction",
+    "record": "FV_PARTIAL_SEED_BRANCH_STATUS_RESULTS.md;PR177_195_REVIEW_RESOLUTION.md R4 subsection",
+    "status": "seed-status edge closed; R4-R qualified original two-hole response still open"
   }
 }

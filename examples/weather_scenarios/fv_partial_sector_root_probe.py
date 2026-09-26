@@ -69,6 +69,10 @@ class _NumericalGateRefusal(ValueError):
     """Known seed/final exact-curvature or branch qualification refusal."""
 
 
+class _SeedBranchRefusal(ValueError):
+    """The GN seed failed a declared strict minmod branch condition."""
+
+
 _KNOWN_BRANCH_REFUSALS = frozenset({
     "minmod joint oracle left its strict smooth branch",
     "partial sector core margin resolvability refused",
@@ -241,9 +245,17 @@ def run(output: Path) -> dict[str, Any]:
         seed_gradient = torch.func.grad(problem.objective, argnums=0)(seed, parameters)
         report["seed_gradient_norm"] = float(torch.linalg.vector_norm(seed_gradient))
         report["seed_gradient_max"] = float(seed_gradient.abs().max())
+        report["phase"] = "seed_branch"
+        save()
+        try:
+            seed_branch, _ = branch_check(seed, parameters)
+        except ValueError as error:
+            if str(error) not in _KNOWN_BRANCH_REFUSALS:
+                raise
+            raise _SeedBranchRefusal(str(error)) from error
+        report["seed_branch"] = _branch_summary(seed_branch)
         report["phase"] = "seed_curvature"
         save()
-        report["seed_branch"] = _branch_summary(branch_check(seed, parameters)[0])
         report["seed_curvature"] = _hessian_audit(problem, seed, parameters)
         report["seed_curvature_control_sha256"] = _tensor_sha(seed)
         report["phase"] = "sector_refinement"
@@ -289,6 +301,9 @@ def run(output: Path) -> dict[str, Any]:
                     refinement_iterations=refined.iterations,
                     refinement_hvp_count=refined.hvp_count,
                 )
+    except _SeedBranchRefusal as error:
+        report.update(numerical_status="seed_branch_refused",
+                      refusal=f"{type(error).__name__}: {error}")
     except _NumericalGateRefusal as error:
         report.update(numerical_status=("seed_curvature_refused"
                                         if report["phase"] == "seed_curvature"

@@ -1,0 +1,34 @@
+{
+  "base_commit": "0f64b6c9d927adbcc9b795d5a31db0744b2f14f0",
+  "changed_source_and_evidence_sha256": {
+    "examples/weather_scenarios/fv_partial_sector_root_probe.py": "fddc3ddb20a3a961f73eb2d40dd379b25e87cd6109ca836476f45a1408350ccc",
+    "examples/weather_scenarios/fv_partial_sector_root_runner.py": "2bc6607a1bc4c369cd11edbd359d7a3754352dc7df2b7377944811161e37b18e",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "bc371de8b09ad20c0b5b36ec32a568e41056f2349cb1a7f0ad12991eb1933f9e",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_SEED_BRANCH_STATUS_RESULTS.md": "c4ac055b215eaf08bd88a22450c009da9ad3b5791907fca464f587c22aa44933",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "607c6cec9e8880b000865f6963a2b8e0585f74252f1efaec549691711892ce36",
+    "graphify-out/fv-root-cause-20260919/fv_partial_seed_branch_status_graphify.log": "1627a4d00734f62c2054a8a29da79907f44a6185b45c656e6ab97e79d3372939",
+    "graphify-out/fv-root-cause-20260919/fv_partial_seed_branch_status_tests.log": "e4090bc72a49124dd270a5c85f8af6880f129f9531de191110ba1692e209cca9",
+    "graphify-out/fv-root-cause-20260919/fv_partial_seed_branch_status_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/partial_sector_root_attempt1/manifest.json": "d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd",
+    "graphify-out/fv-root-cause-20260919/partial_sector_root_attempt1/partial_sector_root.json": "fbd3ee4bc723f9074b789cf59a5a22040dee58f286ea8bdbc9a016a1bbce0f53",
+    "tests/test_fv_partial_sector_root.py": "6649398a03154cfc4c5a635237f16a61742bc7355545a92ec982d39b554c15a6"
+  },
+  "focused_fv_preflight": "pytest includes fixed-input 54-stage FV forward/branch and warm objective/gradient checks",
+  "full_cpu_package_ci": "not_run",
+  "graphify_local_snapshot": {
+    "communities": 253,
+    "edges": 66980,
+    "full_graph_committed": false,
+    "graph_json_sha256": "1c9bf0ab0381637dd0008392795f897b5b500ce780d9be9080993889d5a10fd4",
+    "graph_report_sha256": "d409eb7ec494be6bec8f24dd652340c3daa444aeaf4074a07b792d53ff056df1",
+    "nodes": 7649
+  },
+  "new_guarded_fv_gn_root_experiments": 0,
+  "old_pr209_raw_evidence": "historical snapshot preserved; old manifest is checked at its original commit, not against subsequently updated checklist/source bytes",
+  "scope": "seed strict-branch refusal status classification; focused FV preflight runs, but no new guarded FV GN/root optimization",
+  "verification_commands": [
+    ".venv/bin/python -m pytest tests/test_fv_partial_sector_root.py tests/test_local_refinement.py tests/test_fv_point_merit_root.py tests/test_fv_partial_reanalysis_preflight.py tests/test_fv_research_partial_observation.py -q",
+    "uvx --from basedpyright==1.39.9 basedpyright --level error examples/weather_scenarios/fv_partial_sector_root_probe.py examples/weather_scenarios/fv_partial_sector_root_runner.py tests/test_fv_partial_sector_root.py",
+    "graphify update ."
+  ]
+}
