@@ -1,0 +1,31 @@
+{
+  "archived_child_sha256": "27d955afd419f6b243012681b8af6f8086d1653e8fd440c35a7e2a4f9b1dbb07",
+  "execution_status": "completed",
+  "forward_evidence_sha256": "a78f09769c5201eafcb7eaedd4f8e506266f80409476780e128d4b08608cfc4e",
+  "forward_validation": "passed_same_operator",
+  "future_method": "separately qualified strict 3-hour branch and stationary point, then exact adjoint/VJP and signed endpoints",
+  "input_identity": {
+    "control_sha256": "adc5bfd01e98e32b09ccc963f096a6f6a3c7307d600a0ba20f8ddc8dcad3721e",
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "problem": {
+      "fixed_problem_sha256": "16fa95b534c3b61cf5d1506770cbfc77edb527c40d1f4c536f5130cba24e1fc3",
+      "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+    },
+    "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+  },
+  "local_branch_supported": false,
+  "numerical_solver_runs": 0,
+  "physical_validation": "not_performed",
+  "plan_sha256": "d1d87f91306a2c4c3fed2b99c329314c04670a4ada56c79a884e72ebdd905b00",
+  "raw_manifest_sha256": "056963a6f264a97aa165501a1ff6c07bf62842f17ff26992037cb977e0469de8",
+  "response_computed": false,
+  "response_support_status": "unsupported_by_current_strict_branch_gate",
+  "response_validation": "not_performed",
+  "scope": "exact fixed 4x5 point-observation 18-lead input/control only; forward success is not response eligibility",
+  "separate_analysis_stages": 360,
+  "stationarity_passed": "not_tested",
+  "stationary_root_absence_proved": false,
+  "strict_branch_admitted_stages": 0,
+  "strict_branch_reason": "minmod joint oracle left its strict smooth branch",
+  "terminal_forecast_call_stages": 3600
+}
