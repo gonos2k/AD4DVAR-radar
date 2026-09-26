@@ -1,0 +1,38 @@
+{
+  "base_commit": "2d8b06d0aa9ba5e02bd043feadbe790e5f8c801c",
+  "commands": [
+    ".venv/bin/python -m pytest tests/test_fv_response_job_reconcile.py tests/test_fv_response_job_lifecycle.py tests/test_fv_process_response.py tests/test_fv_concurrent_response.py -q",
+    "uvx --from basedpyright==1.39.9 basedpyright --level error examples/weather_scenarios/fv_response_job_reconcile.py tests/test_fv_response_job_reconcile.py",
+    "graphify update ."
+  ],
+  "file_sha256": {
+    "examples/weather_scenarios/fv_response_job_reconcile.py": "f232b733d272a2602f5a92ca177202bb66b1dfa6dff97fc07a9c7fe6d4a0588c",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "f474521ef85c0811e2df5004e2826bd351f3dad7a15e6b94737e99c2ca2da317",
+    "graphify-out/fv-root-cause-20260919/FV_RESPONSE_JOB_RECONCILIATION_TRIAGE_PLAN.md": "689dace4f33c2e434536d5e21e6029e4ebc4329525657df0c9f2b05bcad6c7e3",
+    "graphify-out/fv-root-cause-20260919/FV_RESPONSE_JOB_RECONCILIATION_TRIAGE_RESULTS.md": "2be1a337221a6af846e71c2f1c348093cf8bcbd5f187e3765e4cd6edd65ec4aa",
+    "graphify-out/fv-root-cause-20260919/FV_RESPONSE_JOB_SINGLEHOST_LOCK_EVIDENCE.json": "6f659881ab30741944908641d5b66b339f06d6c50ab7f84224e104f02cac9da7",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "4dbb4fb76cd663e8db78c61c766de144d063d0bf7d30292836733361ad5b54c6",
+    "graphify-out/fv-root-cause-20260919/fv_response_job_reconciliation_triage_graphify.log": "24bad0f1d96c67a52def79d071eff3d2ec79f5d6b1bd54a9b4d42c71a88484ea",
+    "graphify-out/fv-root-cause-20260919/fv_response_job_reconciliation_triage_tests.log": "54e345b4a426fe7a4df84447a7fc1c380145afded3e31b6aa1c6ad8906fbc73e",
+    "graphify-out/fv-root-cause-20260919/fv_response_job_reconciliation_triage_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/response_job_lifecycle_attempt1/manifest.json": "2e4ca9a2299fcdb82e0110e03f90aa577df22977a37a38b3eb66a7e2449de2b5",
+    "tests/test_fv_response_job_reconcile.py": "8fc136539a7f7bdd94835910d1b2a4ac5e871c491baeebb9df42ad1583558788"
+  },
+  "graphify_snapshot": {
+    "communities": 267,
+    "edges": 67341,
+    "full_graph_committed": false,
+    "graph_json_sha256": "e6d8b1eaaf2d07700e4e8b67b3bbc80238fe19319d209cce712629f7c442ec25",
+    "graph_report_sha256": "2fdaf419f87ee52c2f4e3c67eb77bf1b9a1d6ecb4e96cabbb22be7b28a62e002",
+    "nodes": 7807
+  },
+  "prior_pr206_manifest_sha256": "2e4ca9a2299fcdb82e0110e03f90aa577df22977a37a38b3eb66a7e2449de2b5",
+  "prior_pr214_evidence_sha256": "6f659881ab30741944908641d5b66b339f06d6c50ab7f84224e104f02cac9da7",
+  "scope": "fixed fv4x5 post-crash artifact triage only; publication candidate is unauthenticated, no worker/retry/publication or lifecycle mutation",
+  "verification": {
+    "basedpyright_1_39_9": "0 errors,0 warnings,0 notes",
+    "focused_pytest": "69 passed",
+    "full_cpu_package_ci": "not_run",
+    "new_guarded_fv_response_workers": 0
+  }
+}
