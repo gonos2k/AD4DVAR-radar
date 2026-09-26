@@ -851,5 +851,18 @@
     "graphify": "incremental forced no-cluster code refresh after intentional helper deletion; graph.json 7898 nodes and 206277 edges; GRAPH_REPORT.md old counts",
     "record": "FV_POINT_3H_FIRST_BRANCH_PLAN.md,FV_POINT_3H_FIRST_BRANCH_RESULTS.md,FV_POINT_3H_FIRST_BRANCH_EVIDENCE.json,point_3h_first_branch_attempt1",
     "status": "first branch-cause diagnostic closed;R5-R-R qualified 3-hour stationary response still open"
+  },
+  "fv_point_3h_shifted_branch_feasibility": {
+    "baseline": "main 6bff075 after PR217 original fixed-control first-branch refusal at qy[3,1]",
+    "scope": "one predeclared alternate control for unchanged PR204 point-observation 4x5 18-lead/3-hour problem; second flow fraction -0.60 to -0.59 at control[21], no parameter/score-target/boundary/time change",
+    "algebra": "qy[3,1]=-(aX+3aXY+1.5aQuadratic+9aX2Y); original coefficients [0.077,-0.048,0.035,0.016,-0.009] cancel exactly in real arithmetic; basis difference nonzero, so not all-control structural zero",
+    "static_gate": "production bounded_fv_coefficients plus face_volume_fluxes,49 faces,0 near-zero,min_abs_flux0.0008000000000000229 vs strict128eps maximum-based threshold4.5247361413203206e-15",
+    "trajectory": "candidate observer passed all3600 stage predicates; independent original branch_check returned3600 Euler/choice/face-sign stages, compact signature SHA80a1fac22b536bfedcedfda506e11d85f4b9f2a73c5610c73fa8dfdb210dfe51",
+    "execution": "one guarded child exit0,9.432684416s guard elapsed,8.144159125s raw child internal,35 sampled RSS,peak235323392B under180s trigger/sampled768MiB; parent did not reconstruct FV fixture",
+    "verification": "19 focused and65 affected tests passed with18 existing warnings; basedpyright1.39.9 error-level0; GREEN/RED prelaunch and raw audit; no full CPU/package CI",
+    "graphify": "targeted incremental AST refresh, valid graph.json 8051 nodes/206571 links, no semantic extraction",
+    "limits": "branch feasible at alternate control only; stationarity/Hessian/adjoint/VJP/signed reanalysis/finite segment/physical skill not tested; R5-R-R open",
+    "record": "FV_POINT_3H_SHIFTED_BRANCH_PLAN.md,FV_POINT_3H_SHIFTED_BRANCH_RESULTS.md,FV_POINT_3H_SHIFTED_BRANCH_EVIDENCE.json,point_3h_shifted_branch_attempt1",
+    "status": "alternate-control strict-branch feasibility subitem closed; qualified 3-hour stationary response remains open"
   }
 }

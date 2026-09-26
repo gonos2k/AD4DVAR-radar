@@ -1,0 +1,3 @@
+Implementation-agent targeted incremental AST refresh of shifted probe and test; no semantic extraction.
+Final graph.json parses: 8051 nodes, 206571 edges.
+A read during a prior in-progress graph write saw incomplete JSON; final refresh used temp + atomic replace and parsed successfully.

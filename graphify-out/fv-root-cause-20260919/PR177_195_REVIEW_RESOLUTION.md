@@ -18,7 +18,7 @@ reanalysis, and physical skill. Prior evidence remains in
 | R4-R | Qualified response for the original two-hole collocated case | Only a separately declared branch-aware numerical method and fresh final stationary branch/adjoint/signed endpoints could establish it | **Open.** The first current-source search refused after eight steps at gradient maximum `0.00682447`; the face diagnostic localized its shrinking margin to (q_y[2,0]). A post-hoc alternate-sector seed passed its own exact-Hessian SPD gate, but its separately guarded root-only refinement also exhausted eight steps at `0.00670838` and returned to the former GN signature. No sensitivity issued; see `FV_PARTIAL_SECTOR_ROOT_ATTEMPT1_RESULTS.md`, `FV_PARTIAL_FACE_GEOMETRY_RESULTS.md`, `FV_PARTIAL_ALTERNATE_SEED_GATE_RESULTS.md`, `FV_PARTIAL_ALTERNATE_ROOT_ATTEMPT1_RESULTS.md`. Root absence is not proved |
 | R5-F | Point observations and 3-hour leads need a combined forward path | Preserve the one-lead reference and use a regular 18-lead terminal score with matching point observation, boundary/time and resource contracts | **Closed for one fixed same-operator 4×5 forward case.** Point observations and 18-lead terminal FV field pass; strict branch refuses, so no long response. See `FV_POINT_3H_FORWARD_RESULTS.md` |
 | R5-R-D | Fixed 3-hour point input needs a response-support decision | Keep its forward success separate from strict branch eligibility and response publication | **Closed for the exact PR #204 input/control as current-gate refusal.** The strict branch rejected before an admitted stage; no sensitivity was issued. See `FV_POINT_3H_RESPONSE_POLICY_RESULTS.md` |
-| R5-R-R | Qualified point-observation 3-hour stationary response | Find a strict long-horizon branch and stationary analysis, then full adjoint/VJP and signed endpoints without changing the time/score contract | **Open.** One source-bound diagnostic localized the current control's first strict refusal to nearly zero `q_y[3,1]` at global stage 0; no root or response was computed. See `FV_POINT_3H_FIRST_BRANCH_RESULTS.md` |
+| R5-R-R | Qualified point-observation 3-hour stationary response | Find a strict long-horizon branch and stationary analysis, then full adjoint/VJP and signed endpoints without changing the time/score contract | **Open.** The original control's first refusal was nearly zero `q_y[3,1]`; one predeclared alternate flow control passed all 3,600 strict stages, but stationarity and response remain untested. See `FV_POINT_3H_FIRST_BRANCH_RESULTS.md` and `FV_POINT_3H_SHIFTED_BRANCH_RESULTS.md` |
 | R6 | General observation products remain unsupported | Bind product-defined footprint/coordinate, censoring/QC provenance and covariance semantics separately; do not infer physical measurements from prepared synthetic masks | Open; needs a declared product contract |
 | R7-L | Fixed-case response job lifecycle | Keep forward AD in separate workers; verify two-job cancellation, resource accounting, worker/diagnostic completion and atomic result publication | **Closed for two fixed fv4x5 research jobs.** One qualified response published after child exit; the other was cancelled and never published. See `FV_RESPONSE_JOB_LIFECYCLE_RESULTS.md` |
 | R7-P | Production concurrency and recovery | Add general request/input contracts, durable queue/recovery, full concurrent GN/refinement and supported in-process policy only if verified | **Open.** Same-host duplicate launch is excluded; a durable attempt manifest binds one fixed response to its raw/resource/publication records, and read-only triage classifies them. One actual fixed FV v2 run passed. This is not authenticated recovery or a general service; see `FV_RESPONSE_JOB_ATTEMPT_BINDING_RESULTS.md` |
@@ -136,9 +136,19 @@ historical numerical reports; new attempts must have distinct records.
   violation in that stage. This is a branch-cause diagnostic, not a
   stationary-root or sensitivity result
   (`FV_POINT_3H_FIRST_BRANCH_RESULTS.md`).
-- [ ] Establish a strict long-horizon branch and eligible stationary
-  response separately. This run's strict branch refused before an
-  admitted stage, and no adjoint or nonlinear reanalysis was run.
+- [x] Prove the face is a coefficient cancellation, then run one
+  predeclared alternate flow control (`control[21]`, fraction
+  `-0.60→-0.59`) while keeping observations, background parameters,
+  target, boundary and time contract fixed. Its 49 static faces and
+  all 3,600 pointwise and full-oracle stages pass under the unchanged
+  strict rule. This qualifies a branch at that **control only**; it is
+  not a stationary point, response or finite-interval validation
+  (`FV_POINT_3H_SHIFTED_BRANCH_RESULTS.md`).
+- [ ] Starting from a declared branch-supported seed, establish an
+  eligible long-horizon stationary point whose **final** strict branch
+  passes, then compute the adjoint/full VJP and signed nonlinear
+  reanalysis. The alternate seed passes the branch only; no
+  stationarity, adjoint or reanalysis has been run.
 
 ## R4 original two-hole collocated partial input
 
