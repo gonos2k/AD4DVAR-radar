@@ -1,0 +1,26 @@
+{
+  "base_head": "0338040122cb493fdcc7ad36ced222fb984b7651",
+  "classify_command": ".venv/bin/python examples/weather_scenarios/fv_point_3h_response_policy.py > graphify-out/fv-root-cause-20260919/FV_POINT_3H_RESPONSE_POLICY.json",
+  "numerical_solver_runs": 0,
+  "scope": "read-only exact PR204 point/3h branch-response support refusal; forward success retained and no response/physical claim",
+  "sha256": {
+    "examples/weather_scenarios/fv_point_3h_response_policy.py": "bdbe27bd029aad8a57f86c8d7652f12b287f0c77a8f2bc1e35347e496820bde0",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "5e9540693139b0233dc82165b9ce39665e83b7231696c43a9c951a0f832241ba",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_FORWARD_EVIDENCE.json": "a78f09769c5201eafcb7eaedd4f8e506266f80409476780e128d4b08608cfc4e",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_RESPONSE_POLICY.json": "7df3012761264b5a063b7a1a5218d2e7157cd2aa5b7eb0e8156f57a666fc921c",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_RESPONSE_POLICY_PLAN.md": "d1d87f91306a2c4c3fed2b99c329314c04670a4ada56c79a884e72ebdd905b00",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_RESPONSE_POLICY_RESULTS.md": "5d1cd984afc687122d42d075d3cc7659119709dfb9c6572d5d7c5fcdbd04f14e",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "340907813c386c34a1e7368bc7ca6d63126278cd863c9459c67db70a1a934023",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "28a423a62de011217341307c8250f16e8c129595ddb65e0193a2d5af1dbdfc97",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_response_policy_graphify.log": "db3a9082d007b51fbb62f529ccf0302d334fa9d7b3633367aec2ef2566a7a857",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_response_policy_tests.log": "334a936299bc4b9e372fed631ba727e9c025776e4d85e8cd89b1475257ab4d01",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_response_policy_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/point_3h_forward_attempt1/manifest.json": "056963a6f264a97aa165501a1ff6c07bf62842f17ff26992037cb977e0469de8",
+    "graphify-out/fv-root-cause-20260919/point_3h_forward_attempt1/point_3h_forward.json": "27d955afd419f6b243012681b8af6f8086d1653e8fd440c35a7e2a4f9b1dbb07",
+    "graphify-out/fv-root-cause-20260919/point_3h_forward_attempt1/point_3h_forward.resource.json": "3ba0530cea348c3929971dee55e550cadbb699c5ff998c8a20485edab80d75c6",
+    "graphify-out/fv-root-cause-20260919/point_3h_forward_attempt1/point_3h_forward.run.json": "99ce48ade22ef500da10446bc0a87e0567311f21e02089978070061fef52fbc6",
+    "tests/test_fv_point_3h_response_policy.py": "8a2931d5c1059a4254ac2d7e5466b9269027c7972375e9ead7dddc53d0768ce4"
+  },
+  "test_command": ".venv/bin/python -m pytest tests/test_fv_point_3h_response_policy.py -q",
+  "typecheck_command": "uvx --from basedpyright basedpyright --level error examples/weather_scenarios/fv_point_3h_response_policy.py tests/test_fv_point_3h_response_policy.py"
+}

@@ -396,6 +396,10 @@ changes the numerical refiner, not the objective, observation contract or gates.
   3-hour FV **terminal forward** schedule, preserving the old one-lead
   identity. A fixed off-grid point case passed same-operator point and
   terminal-field parity (`FV_POINT_3H_FORWARD_RESULTS.md`).
+- [x] For that exact 3-hour input/control, classify strict local
+  response as unsupported under the current branch gate while retaining
+  forward success and no physical-skill claim
+  (`FV_POINT_3H_RESPONSE_POLICY_RESULTS.md`).
 - [ ] A strict 3-hour point branch, stationary analysis and long-horizon
   adjoint/reanalysis are still unverified; the combined forward run's
   strict branch refused. Independent physical accuracy remains separate.

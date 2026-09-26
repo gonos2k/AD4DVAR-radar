@@ -17,7 +17,8 @@ reanalysis, and physical skill. Prior evidence remains in
 | R4-D | Two-hole collocated partial refusal needs a support decision | Preserve three original attempts, separate process exit/resource/numerical status, and choose current refusal or a newly justified sector-aware search without relaxing final response gates | **Closed as explicit current-policy refusal for this exact input.** Archived attempt-3 first-failure counts 3 signature / 13 face-margin are source/output-hash bound; no sensitivity issued. See `FV_PARTIAL_POLICY_DECISION_RESULTS.md` |
 | R4-R | Qualified response for the original two-hole collocated case | Only a separately declared branch-aware numerical method and fresh final stationary branch/adjoint/signed endpoints could establish it | Open research target; current policy refusal does not prove root absence |
 | R5-F | Point observations and 3-hour leads need a combined forward path | Preserve the one-lead reference and use a regular 18-lead terminal score with matching point observation, boundary/time and resource contracts | **Closed for one fixed same-operator 4×5 forward case.** Point observations and 18-lead terminal FV field pass; strict branch refuses, so no long response. See `FV_POINT_3H_FORWARD_RESULTS.md` |
-| R5-R | Point-observation 3-hour stationary response | Obtain a qualified long-horizon branch and stationary analysis, then full adjoint/VJP and signed endpoints without changing the time/score contract | Open; R5-F proves forward execution only |
+| R5-R-D | Fixed 3-hour point input needs a response-support decision | Keep its forward success separate from strict branch eligibility and response publication | **Closed for the exact PR #204 input/control as current-gate refusal.** The strict branch rejected before an admitted stage; no sensitivity was issued. See `FV_POINT_3H_RESPONSE_POLICY_RESULTS.md` |
+| R5-R-R | Qualified point-observation 3-hour stationary response | Find a strict long-horizon branch and stationary analysis, then full adjoint/VJP and signed endpoints without changing the time/score contract | Open research target; R5-F proves forward execution only |
 | R6 | General observation products remain unsupported | Bind product-defined footprint/coordinate, censoring/QC provenance and covariance semantics separately; do not infer physical measurements from prepared synthetic masks | Open; needs a declared product contract |
 | R7-L | Fixed-case response job lifecycle | Keep forward AD in separate workers; verify two-job cancellation, resource accounting, worker/diagnostic completion and atomic result publication | **Closed for two fixed fv4x5 research jobs.** One qualified response published after child exit; the other was cancelled and never published. See `FV_RESPONSE_JOB_LIFECYCLE_RESULTS.md` |
 | R7-P | Production concurrency and recovery | Add general request/input contracts, durable queue/recovery, full concurrent GN/refinement and supported in-process policy only if verified | Open; the fixed two-job run is not an operational service |
@@ -124,6 +125,10 @@ historical numerical reports; new attempts must have distinct records.
   and point analysis values match at FP64 tolerance; 360 analysis and
   3,600 replayed terminal-call SSPRK stages were observed
   (`FV_POINT_3H_FORWARD_RESULTS.md`).
+- [x] Classify this exact long-horizon input's response support
+  separately: forward execution passed, but the strict minmod branch
+  refused before admitting a stage, so no local response is issued
+  (`FV_POINT_3H_RESPONSE_POLICY_RESULTS.md`).
 - [ ] Establish a strict long-horizon branch and eligible stationary
   response separately. This run's strict branch refused before an
   admitted stage, and no adjoint or nonlinear reanalysis was run.

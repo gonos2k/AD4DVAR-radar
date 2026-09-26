@@ -732,5 +732,16 @@
     "record": "FV_POINT_ORIGINAL_POLICY_PLAN.md,FV_POINT_ORIGINAL_POLICY_RESULTS.md,FV_POINT_ORIGINAL_POLICY.json;two historical raw manifests remain unchanged",
     "graphify": "code-only incremental update:7594 nodes,66852 edges,285 communities;no semantic LLM extraction",
     "status": "R2-O-D current-policy support decision closed;R2-O-R new sector search/fresh response remains open"
+  },
+  "fv_point_three_hour_response_support_decision": {
+    "baseline": "main 0338040 after PR207 original zero-centered point search-policy support decision",
+    "scope": "read-only classification of exact fixed 4x5 off-grid point/18-lead input from PR204;no new FV forward,GN,adjoint or reanalysis",
+    "forward": "archived child/parent completed,exit0,no resource termination;point observations reproduced within1e-9dBZ and terminal same-operator synthetic field within1e-9dBZ;360 separate analysis and3600 replayed terminal-call SSPRK stages",
+    "response_gate": "strict minmod branch refused with minmod joint oracle left its strict smooth branch before any admitted diagnostic stage;stationarity not tested, response not computed/validated, physical skill not evaluated",
+    "decision": "exact input/control unsupported_by_current_strict_branch_gate for local response;forward remains passed;no proof that other long-horizon stationary branch/root is absent",
+    "record": "FV_POINT_3H_RESPONSE_POLICY_PLAN.md,FV_POINT_3H_RESPONSE_POLICY_RESULTS.md,FV_POINT_3H_RESPONSE_POLICY.json;PR204 raw/aggregate evidence preserved",
+    "graphify": "code-only incremental update:7610 nodes,66878 edges,308 communities;no semantic LLM extraction",
+    "verification": "ten read-only classification/mutation tests passed incl resource-sidecar and source/aggregate mismatches,error-level basedpyright0;16 original raw entries and pinned PR204 aggregate hash checked;no new FV solve or full CPU/package CI",
+    "status": "R5-R-D current-input response support decision closed;R5-R-R qualified long-horizon branch/stationary adjoint/signed endpoints open"
   }
 }
