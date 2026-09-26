@@ -1,0 +1,63 @@
+{
+  "archive_manifest_sha256": "d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd",
+  "base_commit": "f08385d10af49917e03895e6e95457755b627c9f",
+  "command": ".venv/bin/python examples/weather_scenarios/fv_partial_alternate_seed_runner.py --directory graphify-out/fv-root-cause-20260919/partial_alternate_seed_attempt1 --expected-plan-sha256 a3fb9ed7879ece170c4398e41bca230c5d76cb3d8790e7eaec06a20b60de5500 --expected-probe-sha256 443d7225b5322c9a2d9e89f22b1993d2c878f5c3e98186d6e7b9cf8a7d3dfff0 --expected-runner-sha256 5c7cf933ffa0dfc4a2a51e4e35193580702e3671fa6d51323a335e9d0bfd5cd9",
+  "current_source_sha256": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_partial_alternate_seed_gate.py": "443d7225b5322c9a2d9e89f22b1993d2c878f5c3e98186d6e7b9cf8a7d3dfff0",
+    "examples/weather_scenarios/fv_partial_alternate_seed_runner.py": "5c7cf933ffa0dfc4a2a51e4e35193580702e3671fa6d51323a335e9d0bfd5cd9",
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "758397e502b1f7821cc62fe9f1cf47b440cabdc4933596a3076ef762ad282f0e",
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7756da5561f67d47d1a813cc2cd720931b3ba29d132758e16e2628db6fe220c8",
+    "examples/weather_scenarios/fv_partial_sector_root_probe.py": "fddc3ddb20a3a961f73eb2d40dd379b25e87cd6109ca836476f45a1408350ccc",
+    "examples/weather_scenarios/fv_partial_sector_root_runner.py": "2bc6607a1bc4c369cd11edbd359d7a3754352dc7df2b7377944811161e37b18e",
+    "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+    "examples/weather_scenarios/fv_point_merit_root_probe.py": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+    "examples/weather_scenarios/fv_point_sector_policy.py": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d"
+  },
+  "file_sha256": {
+    "examples/weather_scenarios/fv_partial_alternate_seed_gate.py": "443d7225b5322c9a2d9e89f22b1993d2c878f5c3e98186d6e7b9cf8a7d3dfff0",
+    "examples/weather_scenarios/fv_partial_alternate_seed_runner.py": "5c7cf933ffa0dfc4a2a51e4e35193580702e3671fa6d51323a335e9d0bfd5cd9",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "12d93de265650294a2d243b84142fc61e9cf043c5b46fb0431639b24ba1515cd",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_ALTERNATE_SEED_GATE_PLAN.md": "a3fb9ed7879ece170c4398e41bca230c5d76cb3d8790e7eaec06a20b60de5500",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_ALTERNATE_SEED_GATE_RESULTS.md": "6d6c35987fa0122df92cbd78a6029cd3c1a1d089f1e3daea0a352dc49466e14a",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "e8efbc12d7a15ada7256b7058859d833e413d2682b4d1ac10a86aed405b4e84e",
+    "graphify-out/fv-root-cause-20260919/fv_partial_alternate_seed_gate_graphify.log": "aef29a2d5ab831e592b6e3d969a586c2d0aca495f222297cb92fff40d1b84fea",
+    "graphify-out/fv-root-cause-20260919/fv_partial_alternate_seed_gate_tests.log": "4b54f3f6146aaee7d4765305ff4c1fde2da0e811f190a3e5199d7b9fd471a931",
+    "graphify-out/fv-root-cause-20260919/fv_partial_alternate_seed_gate_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/partial_alternate_seed_attempt1/alternate_seed.json": "14ae79c97af18be76b758687a94bca783321ee98967f13c26f60f5938a0a78b6",
+    "graphify-out/fv-root-cause-20260919/partial_alternate_seed_attempt1/alternate_seed.log": "6fc6afd08c21b6d7561f934b8b7a7242ffdca92b0ed9d207082807dccdd0c5c9",
+    "graphify-out/fv-root-cause-20260919/partial_alternate_seed_attempt1/alternate_seed.resource.json": "eee3233ec1ef1a9e50d818330c24e68c901812bcc86f3b4e11c5a5b4bca69314",
+    "graphify-out/fv-root-cause-20260919/partial_alternate_seed_attempt1/alternate_seed.run.json": "beaa67921744adab8abbc3046d72f47a578f0e9d20436f5f0e912604d058ddae",
+    "graphify-out/fv-root-cause-20260919/partial_sector_root_attempt1/manifest.json": "d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd",
+    "tests/test_fv_partial_alternate_seed_gate.py": "a4fa90f65f6f6602b8abd181c912ec212f69701d17fd0b1c12eeabecca54b594"
+  },
+  "graphify_snapshot": {
+    "communities": 271,
+    "edges": 67065,
+    "full_graph_committed": false,
+    "graph_json_sha256": "dd4374661a0e1dd8942a7c1b1406c6f7d793cb3412a127db4bef04b0f2851d17",
+    "graph_report_sha256": "b22560d8e6fc2a465beaedea1df9abc8081eeed1680cf19a4b2e540a3bbe47e2",
+    "nodes": 7699
+  },
+  "reviewed_plan_sha256": "a3fb9ed7879ece170c4398e41bca230c5d76cb3d8790e7eaec06a20b60de5500",
+  "reviewed_probe_sha256": "443d7225b5322c9a2d9e89f22b1993d2c878f5c3e98186d6e7b9cf8a7d3dfff0",
+  "reviewed_runner_sha256": "5c7cf933ffa0dfc4a2a51e4e35193580702e3671fa6d51323a335e9d0bfd5cd9",
+  "scope": "one posthoc exploratory archived-candidate branch/Hessian seed gate; fixed-input FV preflights run, no new GN/Newton/adjoint/reanalysis",
+  "selected_control_sha256": "125e0200fdf85f996715ba1bc04aa3f631333614bf15cf2c16630b94c1897421",
+  "selected_signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d",
+  "verification": {
+    "basedpyright_1_39_9": "0 errors,0 warnings,0 notes",
+    "focused_pytest": "69 passed,18 existing warnings",
+    "full_cpu_package_ci": "not_run"
+  }
+}
