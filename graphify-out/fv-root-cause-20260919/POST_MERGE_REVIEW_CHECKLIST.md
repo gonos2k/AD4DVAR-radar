@@ -400,6 +400,13 @@ changes the numerical refiner, not the objective, observation contract or gates.
   response as unsupported under the current branch gate while retaining
   forward success and no physical-skill claim
   (`FV_POINT_3H_RESPONSE_POLICY_RESULTS.md`).
-- [ ] A strict 3-hour point branch, stationary analysis and long-horizon
-  adjoint/reanalysis are still unverified; the combined forward run's
-  strict branch refused. Independent physical accuracy remains separate.
+- [x] Locate the original control's stage-0 near-zero face refusal and
+  verify one predeclared alternate flow control on a strict 3-hour point
+  branch. All 3,600 stages pass at that alternate control
+  (`FV_POINT_3H_FIRST_BRANCH_RESULTS.md`,
+  `FV_POINT_3H_SHIFTED_BRANCH_RESULTS.md`).
+- [ ] A stationary analysis and long-horizon adjoint/reanalysis are still
+  unverified. The alternate branch-supported seed has
+  `||g||_inf=2.25472968`, and its first exact-HVP PCG attempt refused
+  the SPD premise after 15 HVPs (`FV_POINT_3H_SEED_LINEAR_RESULTS.md`).
+  Independent physical accuracy remains separate.

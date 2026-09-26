@@ -1,0 +1,54 @@
+{
+  "branch": {
+    "margins_complete": true,
+    "signature_sha256": "80a1fac22b536bfedcedfda506e11d85f4b9f2a73c5610c73fa8dfdb210dfe51",
+    "stages": 3600
+  },
+  "candidate_control_sha256": "97ce3a636b25d79ca0aab208035e4299f9f4ad26ea00d557531e7a9eded2080b",
+  "files_sha256": {
+    "examples/weather_scenarios/fv_point_3h_seed_linear_probe.py": "65e73c10ec1be38e620888625ee4340e8b330050cb940eba15e34830e20c2731",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "70b48f52241f2cad004a2d50273d70ab698aef7646be7a029f77b890aabf04f3",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_SEED_LINEAR_PLAN.md": "7f801b06d5772d0cb4a7a757f7c856c9c6d2cceddaf067adaa2666f87ea64d1f",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_SEED_LINEAR_PR_BODY.md": "4d9c2433d277ec9cce1ecea90c91e9b5f9035226d05421a175b3490e012081ce",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_SEED_LINEAR_RESULTS.md": "7476a1156590f8265871b59a51369c570f592974b39e926b27d3c8e441a7a79f",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_SHIFTED_BRANCH_EVIDENCE.json": "f76fea6cadf426ba1b4ca5ca9147f634325fb10858e26dd38099f63a03a1a1f9",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "bb9199eb4bc00ea2b8130167b3f094b0edd4b94c2fd068fd530f319ebbe134d2",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "612d7dda25eaf9a6fe81e02ea213c967edfe326d844fba35013efbfefbff4675",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_seed_linear_affected_tests.log": "10d3c215fd64c15f9fb020fd568a0cf24e62fc5a33a2fa2a6f86075793091479",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_seed_linear_graphify.log": "fe3aa2e4db3b4da708ad43bb0a1e2d590b05b15da0e0f02ab41481ec109f319a",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_seed_linear_tests.log": "3a7abe4bbd6fe033b4cb65c0e83944328f6796b20671a9f135d4a59450c2ef9f",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_seed_linear_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/point_3h_seed_linear_attempt1/point_3h_seed_linear.json": "c28d8337ccf6e364e4b416bf8eb79ea3ea43df8ef2cbd47bdae900805cd0581f",
+    "graphify-out/fv-root-cause-20260919/point_3h_seed_linear_attempt1/point_3h_seed_linear.log": "c28d8337ccf6e364e4b416bf8eb79ea3ea43df8ef2cbd47bdae900805cd0581f",
+    "graphify-out/fv-root-cause-20260919/point_3h_seed_linear_attempt1/point_3h_seed_linear.resource.json": "90b842b0366e1a9280c37bce4625f0b030154c83b82f59fcfc976496cda7ec2e",
+    "graphify-out/fv-root-cause-20260919/point_3h_seed_linear_attempt1/point_3h_seed_linear.run.json": "3b18f9436c4647294cb55b44219fc24189e7e8172e2fd687fbd28801b98676ee",
+    "tests/test_fv_point_3h_seed_linear_probe.py": "26cdf4cf4416354124bea9eda69e605a1a1111aefa596d3627abc2038c25b241"
+  },
+  "limits": "PCG visited-direction refusal does not prove global indefinite Hessian or absent root; stationarity/response/physical validation incomplete",
+  "linear": {
+    "completed_iterations": "unavailable",
+    "hvp_calls": 15,
+    "pcg_result_returned": false,
+    "refusal": "operator must be symmetric positive definite",
+    "status": "pcg_refused_non_spd"
+  },
+  "objective": {
+    "gradient_max": 2.254729681485403,
+    "value": 0.9323736303384679
+  },
+  "resource": {
+    "elapsed_seconds": 117.19889654195867,
+    "exit_code": 0,
+    "pid": 88028,
+    "rss_samples": 438,
+    "sampled_peak_rss_bytes": 324206592
+  },
+  "scope": "one fixed point three-hour branch-supported seed J gradient and one exact-HVP PCG RHS; no step/response",
+  "verification": {
+    "affected_tests_passed": 75,
+    "affected_warnings": 18,
+    "focused_tests_passed": 10,
+    "full_cpu_package_regression": "not_run",
+    "typecheck_errors": 0
+  }
+}

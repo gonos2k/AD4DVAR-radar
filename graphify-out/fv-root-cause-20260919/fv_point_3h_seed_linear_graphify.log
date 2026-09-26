@@ -1,0 +1,2 @@
+Implementation-agent incremental code AST refresh; no semantic extraction.
+Final graph.json parses: 8106 nodes, 418599 links.
