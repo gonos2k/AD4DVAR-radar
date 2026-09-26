@@ -7,8 +7,90 @@ import sys
 from threading import Event, Thread
 import time
 
+import pytest
+
 from examples.weather_scenarios import fv_process_response_worker as worker
 from examples.weather_scenarios import fv_response_job_lifecycle as jobs
+
+
+def test_same_directory_second_coordinator_is_busy_before_worker(monkeypatch, tmp_path):
+    entered, release = Event(), Event()
+    calls = []
+    def fake_job(directory, *, request_id, token):
+        calls.append(request_id)
+        entered.set()
+        assert release.wait(5)
+        return {"execution_status": "completed"}
+    monkeypatch.setattr(jobs, "_run_job_locked", fake_job)
+    outcomes = []
+    first = Thread(target=lambda: outcomes.append(
+        jobs.run_job(tmp_path / "same", request_id="first")))
+    first.start()
+    assert entered.wait(5)
+    with pytest.raises(jobs.ResponseJobBusyError, match="already running"):
+        jobs.run_job(tmp_path / "same", request_id="second")
+    release.set()
+    first.join(5)
+    assert not first.is_alive()
+    assert outcomes == [{"execution_status": "completed"}]
+    assert calls == ["first"]
+    assert (tmp_path / ".same.launch.lock").is_file()
+
+
+def test_same_host_lock_blocks_another_process_then_releases(tmp_path):
+    directory = tmp_path / "job"
+    code = ("from pathlib import Path\n"
+            "from examples.weather_scenarios import fv_response_job_lifecycle as jobs\n"
+            "import sys\n"
+            "with jobs._exclusive_job_launch(Path(sys.argv[1])):\n"
+            "    print('acquired')\n")
+    command = [sys.executable, "-c", code, str(directory)]
+    with jobs._exclusive_job_launch(directory):
+        blocked = subprocess.run(command, cwd=jobs.ROOT, capture_output=True,
+                                 text=True, timeout=20, check=False)
+        assert blocked.returncode != 0
+        assert "ResponseJobBusyError" in blocked.stderr
+        with jobs._exclusive_job_launch(tmp_path / "other"):
+            pass
+    acquired = subprocess.run(command, cwd=jobs.ROOT, capture_output=True,
+                              text=True, timeout=20, check=False)
+    assert acquired.returncode == 0, acquired.stderr
+    assert acquired.stdout.strip() == "acquired"
+
+
+def test_parent_path_aliases_contend_on_one_job_lock(tmp_path):
+    real_parent = tmp_path / "real"
+    real_parent.mkdir()
+    alias_parent = tmp_path / "alias"
+    alias_parent.symlink_to(real_parent, target_is_directory=True)
+    with jobs._exclusive_job_launch(real_parent / "job"):
+        with pytest.raises(jobs.ResponseJobBusyError, match="already running"):
+            with jobs._exclusive_job_launch(alias_parent / "job"):
+                pass
+    assert (real_parent / ".job.launch.lock").is_file()
+
+
+def test_job_lock_releases_after_exception_and_rejects_symlinks(tmp_path):
+    directory = tmp_path / "job"
+    with pytest.raises(RuntimeError, match="injected"):
+        with jobs._exclusive_job_launch(directory):
+            raise RuntimeError("injected")
+    with jobs._exclusive_job_launch(directory):
+        pass
+    lock_path = tmp_path / ".other.launch.lock"
+    target = tmp_path / "user_data"
+    target.write_text("preserve")
+    lock_path.symlink_to(target)
+    with pytest.raises(ValueError, match="lock cannot be a symlink"):
+        with jobs._exclusive_job_launch(tmp_path / "other"):
+            pass
+    assert target.read_text() == "preserve"
+    alias = tmp_path / "alias"
+    directory.mkdir()
+    alias.symlink_to(directory, target_is_directory=True)
+    with pytest.raises(ValueError, match="directory cannot be a symlink"):
+        with jobs._exclusive_job_launch(alias):
+            pass
 
 
 def _archived_child():
