@@ -1,0 +1,73 @@
+{
+  "all_response_margin_qualified": false,
+  "chord_count": 2,
+  "comparisons": [
+    {
+      "changed_face_sign_entries": 54,
+      "chord": "accepted_iteration_1",
+      "offset": 0.00390625,
+      "only_face_sign_change_each_stage": "qy[2,0]",
+      "phi_right_minus_left": 2.8044581557622173e-05
+    },
+    {
+      "changed_face_sign_entries": 54,
+      "chord": "accepted_iteration_1",
+      "offset": 0.0009765625,
+      "only_face_sign_change_each_stage": "qy[2,0]",
+      "phi_right_minus_left": 2.8121902728682236e-05
+    },
+    {
+      "changed_face_sign_entries": 54,
+      "chord": "accepted_iteration_2",
+      "offset": 0.00390625,
+      "only_face_sign_change_each_stage": "qy[2,0]",
+      "phi_right_minus_left": -2.8065877305038982e-05
+    },
+    {
+      "changed_face_sign_entries": 54,
+      "chord": "accepted_iteration_2",
+      "offset": 0.0009765625,
+      "only_face_sign_change_each_stage": "qy[2,0]",
+      "phi_right_minus_left": -2.8126163867082977e-05
+    }
+  ],
+  "execution_status": "completed",
+  "face_margin_max": 1.4922461485196594e-06,
+  "face_margin_min": 3.345436329713301e-07,
+  "files_sha256": {
+    "examples/weather_scenarios/fv_partial_face_event_probe.py": "14fd0659353056d1d801b1ba84eb2b2efd9f22421f2456ce8b56320c52d21f36",
+    "examples/weather_scenarios/fv_partial_face_event_runner.py": "786f510ec820fa448fbfbe3bbea2f980cfc8ca0c20f1a8fd27f9081b13a0dce1",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "efe99e6173d8d7e49f710ac8847e6ecce2c12896d677471370170832e81b4c0e",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_FACE_EVENT_ATTEMPT1_PR_BODY.md": "019754a8fc049d553959e6dff33784139212e5c16f41c6d65d5c0cbc1076ea6e",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_FACE_EVENT_ATTEMPT1_RESULTS.md": "2d77ee6fc8cf873f2f56184154a57bbd8976e2f06a1fa5206f7dbbb1f6726ce2",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_FACE_EVENT_PLAN.md": "bf6a5634062233167d68a927b7c079da069dcbc7f245daf9d08b28153ebe4d50",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "7d8ebf88caf6ca9e85a95c338fa9f8c015ee114d9a87493df41a5bc464a8ff25",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "e8389d98f8894fa6137cb1b2f0d9d1e01dc1282bf5923c78b3b63b04942fb97b",
+    "graphify-out/fv-root-cause-20260919/fv_partial_face_event_affected_tests.log": "6439eff34e55bd788159acd77bf88cc24c245f3457174cf9486f7917415e05b6",
+    "graphify-out/fv-root-cause-20260919/fv_partial_face_event_graphify.log": "57696f6d1ae476df87ff25e193a899298e37c08d282bee585c6bf8c2de5be0a3",
+    "graphify-out/fv-root-cause-20260919/fv_partial_face_event_run_stdout.log": "b7efa165db5b8c26dd2745b74146336777bbb90bd4aeebac4e33877472d50978",
+    "graphify-out/fv-root-cause-20260919/fv_partial_face_event_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/partial_face_event_attempt1/partial_face_event.json": "7b0798414c2f7036189db0afef5cbf101b53c8903c29acf4079b4de0f2b0ca1d",
+    "graphify-out/fv-root-cause-20260919/partial_face_event_attempt1/partial_face_event.log": "3313363c34320da4c188bc73112888e0699d3612ca36bcb11f5316267be9a05d",
+    "graphify-out/fv-root-cause-20260919/partial_face_event_attempt1/partial_face_event.resource.json": "407eebfbbb363ca160c352ce1909471d1ffc30768a2c5d3128a513722497a181",
+    "graphify-out/fv-root-cause-20260919/partial_face_event_attempt1/partial_face_event.run.json": "b7efa165db5b8c26dd2745b74146336777bbb90bd4aeebac4e33877472d50978",
+    "graphify-out/fv-root-cause-20260919/partial_sector_root_attempt1/manifest.json": "d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd",
+    "tests/test_fv_partial_face_event_probe.py": "4b098fa29ff0d18379fbf3a59ced0a73768c83c6a1277306ddbefa65cd6cb2e1",
+    "tests/test_fv_partial_face_event_runner.py": "ed9368ebad87724c3f4c4e2ed41836fddb5a4f7ee342c6113f3d5b513b93fee5"
+  },
+  "limits": "finite-offset diagnostic only; no event Hessian, stationary root, qualified response, causal isolation or physical skill",
+  "numerical_status": "face_event_diagnostic_only",
+  "resource": {
+    "elapsed_seconds": 10.51564287499059,
+    "exit_code": 0,
+    "rss_samples": 39,
+    "sampled_peak_rss_bytes": 345260032
+  },
+  "sample_count": 8,
+  "verification": {
+    "affected_tests_passed": 97,
+    "existing_warnings": 18,
+    "full_cpu_package_regression": "not_run",
+    "typecheck_errors": 0
+  }
+}

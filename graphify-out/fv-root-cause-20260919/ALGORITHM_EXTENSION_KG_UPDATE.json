@@ -931,5 +931,18 @@
     "limits": "smaller tail is an experiment, not predicted success; two strict endpoint improvements but no stationary root/final Hessian/adjoint/VJP/signed impact/physical skill;R5-R-R open",
     "record": "FV_POINT_3H_MERIT_TAIL_PLAN.md,FV_POINT_3H_MERIT_TAIL_RESULTS.md,FV_POINT_3H_MERIT_TAIL_EVIDENCE.json,point_3h_merit_tail_attempt1",
     "status": "one smaller-alpha tail completed at two-step limit; qualified 3-hour response remains open"
+  },
+  "fv_partial_face_event_attempt1": {
+    "baseline": "main 50d07ae after PR224; original PR209 two-hole current-source archived accepted chords, no new root solve",
+    "scope": "read-only two accepted PR209 straight chords; production q_y[2,0] sign event bisection max64, side offsets2^-8 and2^-10; fixed 58-valid/2-missing 4x5 input,54 stages; no event AD,GN,root,adjoint,VJP,reanalysis",
+    "identity": "PR209 archive manifest SHA d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd, frozen plan bf6a5634062233167d68a927b7c079da069dcbc7f245daf9d08b28153ebe4d50, probe14fd0659353056d1d801b1ba84eb2b2efd9f22421f2456ce8b56320c52d21f36, runner786f510ec820fa448fbfbe3bbea2f980cfc8ca0c20f1a8fd27f9081b13a0dce1; source/input/archive stable",
+    "events": "chord1 qy -2.284976149e-5 to+2.604183741e-6,exact FP64 zero t0.8976906842801782 after42 bisections; chord2 +2.604183741e-6 to-2.022172400e-5,zero t0.11408863233083366 after44",
+    "sides": "8/8 finite off-event 54-stage traces; two offsets within each side identical full signature; across near sides all limiter choices/other face signs identical and only qy[2,0] flips in54 stages; both chord directions gTHd negative left,positive right; near-offset Phi gaps +2.8121902728682236e-5 and-2.8126163867082977e-5",
+    "qualification": "slope margins about4.066e-4 exceed1e-4,face margins3.3454e-7 to1.49225e-6 below1e-4 for all8; no response-eligible sample,stationary root or causal proof;finite offsets do not establish one-sided limiting derivative",
+    "execution": "guarded child exit0,parent completed,child9.091827084s,guard10.515642875s,39 sampled RSS peak345260032B under300s/sampled1GiB;source/input/plan/raw stable",
+    "verification": "97 affected tests passed with18 existing warnings;basedpyright1.39.9 error-level0;GREEN/RED plan/code/raw audit;full CPU/package CI and real radar validation not run",
+    "graphify": "incremental code-only AST refresh,parseable graph.json8294 nodes/210382 links,no semantic extraction",
+    "record": "FV_PARTIAL_FACE_EVENT_PLAN.md,FV_PARTIAL_FACE_EVENT_ATTEMPT1_RESULTS.md,FV_PARTIAL_FACE_EVENT_ATTEMPT1_EVIDENCE.json,partial_face_event_attempt1",
+    "status": "R4 face-event diagnostic closed at sampled local scope;R4-R qualified stationary response open"
   }
 }
