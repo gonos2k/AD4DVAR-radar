@@ -1,0 +1,290 @@
+{
+  "archived_report_sha256": {
+    "fv86_reanalysis.json": "c80282301138ccae67ce49b86c1d1f2dcc88bc8a144b571eecbe23904ed5a302",
+    "fv86_seed_a.json": "c8de13325e4d76a5e904a6ef457deed853aa762cc6d051afd7fb59cd6b9e3bd0",
+    "minmod_middle_time_bias_final.json": "a0f9568b59bce283b39d1527d3ab64f7034d41c3d41eb3e843ca0ffd7b8fce88",
+    "minmod_parameter_vjp.json": "b207c838945baaedffdd3d53e6a41ad124950b9b4a96ea771f59953c0bd25456"
+  },
+  "attempt_id": "7d503398-bd27-4a13-9140-bc3cf9fea981",
+  "case_id": "fv4x5",
+  "executable": "/Users/yhlee/ADVAR/.venv/bin/python",
+  "input_identity": {
+    "control": {
+      "dtype": "torch.float64",
+      "sha256": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+      "shape": [
+        26
+      ]
+    },
+    "direction": {
+      "dtype": "torch.float64",
+      "sha256": "1f69a289a5972798203f33b9b84c65119621b0beb39dd8f3e3c2f5e25099a90f",
+      "shape": [
+        61
+      ]
+    },
+    "parameters": {
+      "dtype": "torch.float64",
+      "sha256": "64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07",
+      "shape": [
+        61
+      ]
+    },
+    "problem": "c2bb9beeddec0d8805f083ddfd335ac0e332335a3fa0823ff2b8b5c63b966ad2",
+    "verification": {
+      "dtype": "torch.float64",
+      "sha256": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+      "shape": [
+        4,
+        5
+      ]
+    }
+  },
+  "input_identity_after": {
+    "control": {
+      "dtype": "torch.float64",
+      "sha256": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+      "shape": [
+        26
+      ]
+    },
+    "direction": {
+      "dtype": "torch.float64",
+      "sha256": "1f69a289a5972798203f33b9b84c65119621b0beb39dd8f3e3c2f5e25099a90f",
+      "shape": [
+        61
+      ]
+    },
+    "parameters": {
+      "dtype": "torch.float64",
+      "sha256": "64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07",
+      "shape": [
+        61
+      ]
+    },
+    "problem": "c2bb9beeddec0d8805f083ddfd335ac0e332335a3fa0823ff2b8b5c63b966ad2",
+    "verification": {
+      "dtype": "torch.float64",
+      "sha256": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+      "shape": [
+        4,
+        5
+      ]
+    }
+  },
+  "inputs_unchanged": true,
+  "nonlinear_analyses": 0,
+  "nonlinear_reanalyses": 0,
+  "phase": "finished",
+  "physical_validation": "not_performed",
+  "pid": 51948,
+  "python": "3.12.13",
+  "response": {
+    "archived_branch_choices_sha256": "8ad1dc344d37d6f53b4e8087bd9a5c2eee358b0de6d49386cf6e3e89b13afff3",
+    "archived_branch_face_signs_sha256": "e75f2ccd77548a7975cc997d421ba530d7c0c036b9b60d25e6d6ba68e0cf2a40",
+    "archived_total": -0.003038272528696361,
+    "branch_choices_sha256": "8ad1dc344d37d6f53b4e8087bd9a5c2eee358b0de6d49386cf6e3e89b13afff3",
+    "branch_euler_stages": 54,
+    "branch_face_signs_sha256": "e75f2ccd77548a7975cc997d421ba530d7c0c036b9b60d25e6d6ba68e0cf2a40",
+    "direct": 0.0,
+    "gradient_max": 6.962040319247187e-12,
+    "hvp_count": 26,
+    "indirect": -0.003038272528696361,
+    "pcg_iterations": 25,
+    "pcg_monitor": {
+      "converged": true,
+      "hvp_calls": 26,
+      "hvp_event_times": [
+        634203.9774185,
+        634204.762191375,
+        634205.50112375,
+        634206.237512916,
+        634206.975640458,
+        634207.72112625,
+        634208.475725375,
+        634209.241270333,
+        634209.979105208,
+        634210.722309791,
+        634211.484870916,
+        634212.227559875,
+        634212.962572,
+        634213.70561375,
+        634214.44477775,
+        634215.17629225,
+        634215.919797875,
+        634216.677051791,
+        634217.430932958,
+        634218.190618041,
+        634218.939221291,
+        634219.676574333,
+        634220.436902416,
+        634221.19974575,
+        634221.965483125,
+        634222.799868291
+      ],
+      "hvp_intervals": [
+        [
+          634203.162306541,
+          634203.9774185
+        ],
+        [
+          634203.977525041,
+          634204.762191375
+        ],
+        [
+          634204.762298708,
+          634205.50112375
+        ],
+        [
+          634205.501229583,
+          634206.237512916
+        ],
+        [
+          634206.237618708,
+          634206.975640458
+        ],
+        [
+          634206.975745458,
+          634207.72112625
+        ],
+        [
+          634207.721238375,
+          634208.475725375
+        ],
+        [
+          634208.475829833,
+          634209.241270333
+        ],
+        [
+          634209.241379458,
+          634209.979105208
+        ],
+        [
+          634209.979209,
+          634210.722309791
+        ],
+        [
+          634210.72241825,
+          634211.484870916
+        ],
+        [
+          634211.484978375,
+          634212.227559875
+        ],
+        [
+          634212.227665875,
+          634212.962572
+        ],
+        [
+          634212.962685375,
+          634213.70561375
+        ],
+        [
+          634213.705713166,
+          634214.44477775
+        ],
+        [
+          634214.444879791,
+          634215.17629225
+        ],
+        [
+          634215.176387,
+          634215.919797875
+        ],
+        [
+          634215.91989675,
+          634216.677051791
+        ],
+        [
+          634216.677154458,
+          634217.430932958
+        ],
+        [
+          634217.431036583,
+          634218.190618041
+        ],
+        [
+          634218.190726666,
+          634218.939221291
+        ],
+        [
+          634218.93932375,
+          634219.676574333
+        ],
+        [
+          634219.676672125,
+          634220.436902416
+        ],
+        [
+          634220.437010791,
+          634221.19974575
+        ],
+        [
+          634221.199854333,
+          634221.965483125
+        ],
+        [
+          634221.965564416,
+          634222.799868291
+        ]
+      ],
+      "iterations": 25,
+      "max_iterations": 104,
+      "relative_residual": 9.888156801707082e-11,
+      "rhs": {
+        "dtype": "torch.float64",
+        "sha256": "88eecd8eadf3cc6685a2798cf4e99c4c642f074e202433fb2a5f119c2a7a6dd2",
+        "shape": [
+          26
+        ]
+      },
+      "rtol": 1e-10,
+      "seconds": 19.63820087502245
+    },
+    "pcg_relative_residual": 9.888156801707082e-11,
+    "relative_difference": 0.0,
+    "stage_observer_events": 54,
+    "total": -0.003038272528696361,
+    "true_adjoint_relative_residual": 9.888163804832049e-11,
+    "true_adjoint_residual": 4.731895349640923e-12
+  },
+  "response_ended_monotonic": 634224.322485125,
+  "response_started_monotonic": 634202.087783583,
+  "source_after": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_concurrent_response_probe.py": "a57d09441fc1e37ec28c60810685a618074725747b98da2fb5671a7c72507430",
+    "examples/weather_scenarios/fv_concurrent_response_runner.py": "f9a4e1f46451ce153468e7c2ffd33bcb3498e4c20b19c36fab41a9dfcf31d52a",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_process_response_runner.py": "327c4c8533914307b7118f0b963c038c3f30fcc227dddf5ea730338337f8c270",
+    "examples/weather_scenarios/fv_process_response_worker.py": "c83d77cc15dd9c3af6aed4bcf4c67e8e81b1672264fd5ceb139f6ba7d8ec7b5d",
+    "examples/weather_scenarios/fv_scaled_research_case.py": "cf827cb08715bc684f3dff2afd7507ddb6c693c688b8684c655c2b82e179a6d8",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  },
+  "source_before": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_concurrent_response_probe.py": "a57d09441fc1e37ec28c60810685a618074725747b98da2fb5671a7c72507430",
+    "examples/weather_scenarios/fv_concurrent_response_runner.py": "f9a4e1f46451ce153468e7c2ffd33bcb3498e4c20b19c36fab41a9dfcf31d52a",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_process_response_runner.py": "327c4c8533914307b7118f0b963c038c3f30fcc227dddf5ea730338337f8c270",
+    "examples/weather_scenarios/fv_process_response_worker.py": "c83d77cc15dd9c3af6aed4bcf4c67e8e81b1672264fd5ceb139f6ba7d8ec7b5d",
+    "examples/weather_scenarios/fv_scaled_research_case.py": "cf827cb08715bc684f3dff2afd7507ddb6c693c688b8684c655c2b82e179a6d8",
+    "examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  },
+  "source_unchanged": true,
+  "status": "completed",
+  "torch": "2.13.0"
+}

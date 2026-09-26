@@ -8,11 +8,13 @@ import shutil
 import sys
 from threading import Event, Thread
 from typing import Any
+import uuid
 
 import pytest
 
 from examples.weather_scenarios import fv_response_job_lifecycle as jobs
 from examples.weather_scenarios import fv_response_job_reconcile as reconcile
+from examples.weather_scenarios import fv_process_response_worker as worker
 
 
 FIXTURE = (jobs.EVIDENCE / "response_job_lifecycle_attempt1/complete")
@@ -33,6 +35,10 @@ def _make_job(directory: Path, *, lifecycle: bool = False) -> None:
     raw_path = directory / "worker.raw.json"
     resource_path = directory / "worker.resource.json"
     published_path = directory / "published.json"
+    child = _json(raw_path)
+    child["source_before"] = worker._hashes()
+    child["source_after"] = worker._hashes()
+    _write(raw_path, child)
     resource = _json(resource_path)
     resource["command"] = [
         sys.executable,
@@ -53,6 +59,76 @@ def _make_job(directory: Path, *, lifecycle: bool = False) -> None:
         lifecycle_record["source_after"] = dict(lifecycle_record["source_before"])
         lifecycle_record["archive_before"] = jobs._archives()
         lifecycle_record["archive_after"] = dict(lifecycle_record["archive_before"])
+        _write(directory / "lifecycle.json", lifecycle_record)
+
+
+def _make_v2_job(directory: Path, *, lifecycle: bool = True) -> None:
+    _make_job(directory, lifecycle=lifecycle)
+    attempt_id = str(uuid.uuid4())
+    raw_path = directory / "worker.raw.json"
+    resource_path = directory / "worker.resource.json"
+    manifest_path = directory / "attempt.json"
+    raw = _json(raw_path)
+    raw["attempt_id"] = attempt_id
+    _write(raw_path, raw)
+
+    command = [
+        sys.executable,
+        str((jobs.ROOT / "examples/weather_scenarios/fv_process_response_worker.py").resolve()),
+        "--case", "fv4x5", "--attempt-id", attempt_id,
+        "--output", str(raw_path.resolve()),
+    ]
+    identity, expected_total = jobs._identity()
+    manifest = {
+        "schema_version": 1,
+        "attempt_id": attempt_id,
+        "request_id": "request_1",
+        "case_id": "fv4x5",
+        "job_dir": str(directory.resolve()),
+        "created_utc": "2026-09-27T00:00:00Z",
+        "command": command,
+        "source_sha256": jobs._sources(),
+        "archive_sha256": jobs._archives(),
+        "input_identity": identity,
+        "expected_response_total": expected_total,
+        "plan_sha256": jobs._sha(
+            jobs.EVIDENCE / "FV_RESPONSE_JOB_ATTEMPT_BINDING_PLAN.md"),
+        "resource_budget": {
+            "wall_seconds": jobs.CHILD_WALL_SECONDS,
+            "rss_limit_bytes": jobs.CHILD_RSS_BYTES,
+            "sampling_seconds": 0.25,
+            "scope": "sampled child RSS only; parent and between-sample spikes excluded",
+        },
+    }
+    _write(manifest_path, manifest)
+    manifest_sha = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+
+    resource = _json(resource_path)
+    resource.update({
+        "command": command,
+        "attempt_id": attempt_id,
+        "attempt_manifest_sha256": manifest_sha,
+    })
+    _write(resource_path, resource)
+
+    published = _json(directory / "published.json")
+    published.update({
+        "publication_schema_version": 2,
+        "attempt_id": attempt_id,
+        "attempt_manifest_sha256": manifest_sha,
+        "worker_report_sha256": hashlib.sha256(raw_path.read_bytes()).hexdigest(),
+        "resource_report_sha256": hashlib.sha256(resource_path.read_bytes()).hexdigest(),
+        "job_dir": str(directory.resolve()),
+        "source_sha256": jobs._sources(),
+        "archive_sha256": jobs._archives(),
+        "input_identity": identity,
+    })
+    _write(directory / "published.json", published)
+
+    if lifecycle:
+        lifecycle_record = _json(directory / "lifecycle.json")
+        lifecycle_record["attempt_id"] = attempt_id
+        lifecycle_record["resource"] = resource
         _write(directory / "lifecycle.json", lifecycle_record)
 
 
@@ -99,6 +175,124 @@ def test_consistent_terminal_lifecycle_allows_candidate_and_is_idempotent(tmp_pa
     assert first["candidate_is_authoritative"] is False
     assert "mutable lifecycle self-report" in first["candidate_limit"]
     assert before == after
+
+
+def test_fully_bound_v2_artifacts_allow_only_unauthenticated_candidate(tmp_path):
+    job_dir = tmp_path / "v2"
+    _make_v2_job(job_dir)
+    result = _inspect(job_dir)
+    assert result["state"] == "publication_candidate"
+    assert result["candidate_is_authoritative"] is False
+
+
+@pytest.mark.parametrize("marker", [
+    "attempt.json", "attempt_id", "manifest_digest", "resource_digest", "schema2",
+])
+def test_any_v2_marker_disables_legacy_fallback(tmp_path, marker):
+    job_dir = tmp_path / marker.replace(".", "-")
+    _make_job(job_dir, lifecycle=True)
+    if marker == "attempt.json":
+        _write(job_dir / marker, {"schema_version": 1})
+    else:
+        published = _json(job_dir / "published.json")
+        if marker == "attempt_id":
+            published["attempt_id"] = str(uuid.uuid4())
+        elif marker == "manifest_digest":
+            published["attempt_manifest_sha256"] = "0" * 64
+        elif marker == "resource_digest":
+            published["resource_report_sha256"] = "0" * 64
+        else:
+            published["publication_schema_version"] = 2
+        _write(job_dir / "published.json", published)
+    assert _inspect(job_dir)["state"] == "needs_reconciliation"
+
+
+def test_v2_marker_in_worker_log_disables_legacy_fallback(tmp_path):
+    job_dir = tmp_path / "log-marker"
+    _make_job(job_dir, lifecycle=True)
+    (job_dir / "worker.log").write_text("worker argv included --attempt-id abc\n")
+    assert _inspect(job_dir)["state"] == "needs_reconciliation"
+
+
+@pytest.mark.parametrize("tamper", [
+    "manifest", "raw_id", "resource_id", "resource_digest", "publication_digest",
+    "lifecycle_id", "job_path", "source_drift", "input_drift", "command",
+])
+def test_v2_binding_tampering_and_missing_chain_fail_closed(tmp_path, tamper):
+    job_dir = tmp_path / "tampered-v2"
+    _make_v2_job(job_dir)
+    if tamper == "manifest":
+        (job_dir / "attempt.json").unlink()
+    elif tamper in ("raw_id", "resource_id", "resource_digest"):
+        path = job_dir / ("worker.raw.json" if tamper == "raw_id" else "worker.resource.json")
+        record = _json(path)
+        key = "attempt_id" if tamper != "resource_digest" else "attempt_manifest_sha256"
+        record[key] = "0" * 64
+        _write(path, record)
+    elif tamper in ("publication_digest", "job_path", "source_drift", "input_drift"):
+        path = job_dir / "published.json"
+        record = _json(path)
+        key = {
+            "publication_digest": "resource_report_sha256",
+            "job_path": "job_dir",
+            "source_drift": "source_sha256",
+            "input_drift": "input_identity",
+        }[tamper]
+        record[key] = "0" * 64 if tamper == "publication_digest" else {}
+        _write(path, record)
+    elif tamper == "lifecycle_id":
+        record = _json(job_dir / "lifecycle.json")
+        record["attempt_id"] = str(uuid.uuid4())
+        _write(job_dir / "lifecycle.json", record)
+    else:
+        record = _json(job_dir / "attempt.json")
+        if tamper == "command":
+            record["command"][7] = str((tmp_path / "copied" / "worker.raw.json").resolve())
+        else:
+            record["source_sha256"]["examples/weather_scenarios/fv_response_job_lifecycle.py"] = "0" * 64
+        _write(job_dir / "attempt.json", record)
+    assert _inspect(job_dir)["state"] == "needs_reconciliation"
+
+
+def test_v2_copied_job_path_is_unresolved(tmp_path):
+    original = tmp_path / "original"
+    _make_v2_job(original)
+    copied = tmp_path / "copied"
+    shutil.copytree(original, copied)
+    assert _inspect(copied)["state"] == "needs_reconciliation"
+
+
+def test_v2_manifest_from_different_current_source_snapshot_is_unresolved(monkeypatch, tmp_path):
+    job_dir = tmp_path / "source-drift"
+    _make_v2_job(job_dir)
+    current = jobs._sources()
+    changed = dict(current)
+    changed["examples/weather_scenarios/fv_response_job_lifecycle.py"] = "0" * 64
+    monkeypatch.setattr(jobs, "_sources", lambda: changed)
+    assert _inspect(job_dir)["state"] == "needs_reconciliation"
+
+
+@pytest.mark.parametrize("artifact", ["worker.raw.json", "worker.resource.json"])
+def test_artifact_swap_after_snapshot_never_yields_candidate(monkeypatch, tmp_path, artifact):
+    job_dir = tmp_path / "snapshot-race"
+    _make_v2_job(job_dir)
+    stable_snapshot = jobs._stable_file_snapshot
+    swapped = False
+
+    def snapshot_then_swap(path: Path, *, sync: bool = False):
+        nonlocal swapped
+        result = stable_snapshot(path, sync=sync)
+        if path.name == artifact and not swapped:
+            swapped = True
+            changed = _json(path)
+            changed["snapshot_race"] = True
+            _write(path, changed)
+        return result
+
+    monkeypatch.setattr(jobs, "_stable_file_snapshot", snapshot_then_swap)
+    result = _inspect(job_dir)
+    assert swapped
+    assert result["state"] == "needs_reconciliation"
 
 
 @pytest.mark.parametrize("name", ["worker.raw.json", "worker.resource.json"])

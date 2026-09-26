@@ -385,8 +385,14 @@
     "time_contract": "18 future boundary pairs, nine substeps per interval,72 total SSPRK Euler stages; growth subdivided once per interval",
     "validation": "57 focused affected tests passed,18 existing warnings; pinned typecheck0; score JVP versus two central steps, no new GN/refinement/adjoint/reanalysis",
     "score_control_jvp": 0.007624811135571487,
-    "score_control_central_steps": [0.001, 0.0005],
-    "score_control_central_slopes": [0.00762482276147136, 0.007624814042039797],
+    "score_control_central_steps": [
+      0.001,
+      0.0005
+    ],
+    "score_control_central_slopes": [
+      0.00762482276147136,
+      0.007624814042039797
+    ],
     "graphify": "code-only incremental update:6850 nodes,65412 edges,257 communities; no semantic LLM extraction",
     "remaining": "G3-G10: missing observations, maintain/decay/flat/zero-face classification, noncollocated operator, irregular/long horizon, scoped validation and refusal accounting, independent physical validation and concurrent diagnostics"
   },
@@ -822,5 +828,17 @@
     "graphify": "code-only incremental update:7807 nodes,67341 edges,267 communities;no semantic LLM extraction",
     "record": "FV_RESPONSE_JOB_RECONCILIATION_TRIAGE_PLAN.md,FV_RESPONSE_JOB_RECONCILIATION_TRIAGE_RESULTS.md;PR177_195_REVIEW_RESOLUTION.md R7",
     "status": "R7-P crash-artifact triage subitem closed;durable journal/recovery and production/general execution remain open"
+  },
+  "fv_response_job_attempt_binding_v2": {
+    "baseline": "main a524c75 after PR215 read-only fixed-job triage",
+    "scope": "fixed fv4x5 one-host response attempt; pre-spawn durable UUID manifest and v2 raw/resource/publication/lifecycle digest binding; v2-only read-only reconciliation",
+    "invariants": "canonical job path, exact absolute worker command, source/archive/input and resource budget pinned before spawn; child exit and stable raw/resource bytes checked before token-locked durable publication; no v2-to-legacy fallback",
+    "execution": "one actual fixed FV worker attempt 7d503398-bd27-4a13-9140-bc3cf9fea981, child exit0, elapsed23.873s, 89 sampled RSS, peak350339072B under 300s trigger/sampled768MiB; 54 branch stages, gmax6.962040319e-12, true adjoint relative residual9.888163805e-11, total -0.003038272528696361 exactly archived",
+    "restart_inspection": "one read-only check returned publication_candidate and candidate_is_authoritative=false; no retry/adoption/publication by inspector",
+    "verification": "105 affected focused tests passed; basedpyright1.39.9 error-level0; GREEN/RED code review plus one-shot prelaunch GO; full CPU/package regression not run",
+    "graphify": "code-only incremental refresh: 7843 nodes, 67428 edges, 316 communities; no full semantic rebuild",
+    "limits": "unsigned mutable local artifacts, no authenticated recovery or durable queue, parent-crash orphan possible, process-local cancellation, no generic request/concurrent GN/aggregate memory/physical skill claim",
+    "record": "FV_RESPONSE_JOB_ATTEMPT_BINDING_PLAN.md,FV_RESPONSE_JOB_ATTEMPT_V2_EXECUTION_PLAN.md,FV_RESPONSE_JOB_ATTEMPT_BINDING_RESULTS.md,FV_RESPONSE_JOB_ATTEMPT_BINDING_EVIDENCE.json,response_job_attempt_v2_integration1",
+    "status": "R7-P fixed-case attempt-binding subitem closed; production recovery and general execution remain open"
   }
 }

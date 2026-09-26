@@ -114,6 +114,10 @@ def _archived_child():
     return child
 
 
+def published_attempt_id(directory):
+    return json.loads((directory / "attempt.json").read_text())["attempt_id"]
+
+
 def test_cancellation_token_serializes_publication(tmp_path):
     token = jobs.CancellationToken()
     assert token.cancel()
@@ -127,6 +131,28 @@ def test_cancellation_token_serializes_publication(tmp_path):
     published = json.loads((tmp_path / "published.json").read_text())
     assert published["value"] == 2
     assert isinstance(published["publication_decision_monotonic"], float)
+
+
+def test_legacy_worker_validation_does_not_require_attempt_metadata():
+    child = _archived_child()
+    identity, expected_total = jobs._identity()
+    command = [sys.executable,
+               str(jobs.ROOT / "examples/weather_scenarios/fv_process_response_worker.py"),
+               "--case", "fv4x5", "--output", "/tmp/legacy-worker.raw.json"]
+    resource = {
+        "command": command, "child_pid": 123, "exit_code": 0,
+        "resource_termination": None, "monitor_error": None,
+        "rss_samples": 3, "sampled_peak_rss_bytes": 300_000_000,
+        "wall_limit_seconds": 300, "rss_limit_bytes": 768 * 1024**2,
+        "elapsed_seconds": 5.0,
+    }
+    assert jobs._valid_worker(child, resource, identity, expected_total,
+                              jobs._sources(), command, time.monotonic())
+    assert not jobs._valid_worker(
+        child, resource, identity, expected_total, jobs._sources(), command,
+        time.monotonic(), expected_attempt_id="00000000-0000-4000-8000-000000000000",
+        expected_manifest_sha256="a" * 64,
+    )
 
 
 def test_cancellation_during_locked_publish_waits_and_cannot_retract(monkeypatch, tmp_path):
@@ -159,10 +185,25 @@ def test_cancellation_during_locked_publish_waits_and_cannot_retract(monkeypatch
 
 def test_finished_worker_publishes_only_after_reap_and_validation(monkeypatch, tmp_path):
     child = _archived_child()
+    events = []
+    original_fsync_directory = jobs._fsync_directory
+    def tracked_fsync(path):
+        events.append(("fsync_directory", Path(path)))
+        original_fsync_directory(path)
+    monkeypatch.setattr(jobs, "_fsync_directory", tracked_fsync)
     def fake_guard(command, *, wall_seconds, rss_bytes, report_path, log_path,
                    cancel_requested):
         assert wall_seconds == 300 and rss_bytes == 768 * 1024**2
         assert Path(command[1]).is_absolute() and Path(command[1]).is_file()
+        assert command[command.index("--attempt-id") - 1] == "fv4x5"
+        assert command.index("--attempt-id") < command.index("--output")
+        manifest_path = Path(command[-1]).parent / "attempt.json"
+        manifest = json.loads(manifest_path.read_text())
+        assert manifest["attempt_id"] == command[command.index("--attempt-id") + 1]
+        assert events[:2] == [("fsync_directory", tmp_path),
+                              ("fsync_directory", manifest_path.parent)]
+        events.append(("spawn", manifest_path.parent))
+        child["attempt_id"] = manifest["attempt_id"]
         assert not cancel_requested()
         Path(command[-1]).write_text(json.dumps(child))
         Path(log_path).write_text("")
@@ -179,7 +220,16 @@ def test_finished_worker_publishes_only_after_reap_and_validation(monkeypatch, t
     assert result["execution_status"] == "completed"
     assert result["numerical_status"] == "eligible"
     assert result["response_published"] is True
+    assert result["attempt_id"] == published_attempt_id(tmp_path / "success")
     published = json.loads((tmp_path / "success/published.json").read_text())
+    manifest = json.loads((tmp_path / "success/attempt.json").read_text())
+    resource = json.loads((tmp_path / "success/worker.resource.json").read_text())
+    assert published["publication_schema_version"] == 2
+    assert published["attempt_id"] == manifest["attempt_id"] == resource["attempt_id"]
+    assert published["attempt_manifest_sha256"] == jobs._sha(tmp_path / "success/attempt.json")
+    assert published["resource_report_sha256"] == jobs._sha(tmp_path / "success/worker.resource.json")
+    assert published["worker_report_sha256"] == jobs._sha(tmp_path / "success/worker.raw.json")
+    assert resource["attempt_manifest_sha256"] == jobs._sha(tmp_path / "success/attempt.json")
     assert published["worker_pid"] == 123
     assert published["worker_response_ended_monotonic"] <= published["child_completed_monotonic"]
     assert published["child_completed_monotonic"] <= published["publication_decision_monotonic"]
@@ -187,11 +237,105 @@ def test_finished_worker_publishes_only_after_reap_and_validation(monkeypatch, t
     assert not (tmp_path / "success/published.json.tmp").exists()
 
 
+def test_parent_directory_fsync_failure_prevents_worker_launch(monkeypatch, tmp_path):
+    calls = []
+    monkeypatch.setattr(jobs, "run_guarded", lambda *args, **kwargs: calls.append("spawn"))
+    def fail_parent_fsync(path):
+        if Path(path) == tmp_path:
+            raise OSError("injected parent fsync failure")
+    monkeypatch.setattr(jobs, "_fsync_directory", fail_parent_fsync)
+    with pytest.raises(OSError, match="parent fsync"):
+        jobs.run_job(tmp_path / "unlaunched", request_id="unlaunched")
+    assert calls == []
+    assert not (tmp_path / "unlaunched/attempt.json").exists()
+
+
+@pytest.mark.parametrize("artifact", ["raw", "manifest", "resource"])
+def test_attempt_artifact_mutation_after_validation_blocks_publication(
+        monkeypatch, tmp_path, artifact):
+    child = _archived_child()
+    def fake_guard(command, *, wall_seconds, rss_bytes, report_path, log_path,
+                   cancel_requested):
+        child["attempt_id"] = command[command.index("--attempt-id") + 1]
+        Path(command[-1]).write_text(json.dumps(child))
+        Path(log_path).write_text("")
+        resource = {"command": command, "child_pid": 123, "exit_code": 0,
+                    "resource_termination": None, "monitor_error": None,
+                    "rss_samples": 3, "sampled_peak_rss_bytes": 300_000_000,
+                    "wall_limit_seconds": wall_seconds, "rss_limit_bytes": rss_bytes,
+                    "elapsed_seconds": 5.0}
+        Path(report_path).write_text(json.dumps(resource))
+        return resource
+    original_valid_worker = jobs._valid_worker
+    def validate_then_mutate(*args, **kwargs):
+        valid = original_valid_worker(*args, **kwargs)
+        job_dir = Path(args[5][-1]).parent
+        artifact_path = {
+            "raw": job_dir / "worker.raw.json",
+            "manifest": job_dir / "attempt.json",
+            "resource": job_dir / "worker.resource.json",
+        }[artifact]
+        with artifact_path.open("a", encoding="utf-8") as stream:
+            stream.write(" ")
+        return valid
+    monkeypatch.setattr(jobs, "run_guarded", fake_guard)
+    monkeypatch.setattr(jobs, "_valid_worker", validate_then_mutate)
+    result = jobs.run_job(tmp_path / "mutated", request_id="mutated")
+    assert result["execution_status"] == "failed"
+    assert result["numerical_status"] == "not_verified"
+    assert result["response_published"] is False
+    assert not (tmp_path / "mutated/published.json").exists()
+
+
+def test_attempt_manifest_commit_failure_prevents_worker_launch(monkeypatch, tmp_path):
+    calls = []
+    monkeypatch.setattr(jobs, "run_guarded", lambda *args, **kwargs: calls.append("spawn"))
+    original = jobs._atomic_json
+    def fail_manifest(path, data):
+        if Path(path).name == "attempt.json":
+            raise OSError("injected manifest commit failure")
+        original(path, data)
+    monkeypatch.setattr(jobs, "_atomic_json", fail_manifest)
+    with pytest.raises(OSError, match="manifest commit"):
+        jobs.run_job(tmp_path / "uncommitted", request_id="uncommitted")
+    assert calls == []
+    assert not (tmp_path / "uncommitted/worker.raw.json").exists()
+
+
+def test_manifest_change_between_replace_and_snapshot_prevents_launch(monkeypatch, tmp_path):
+    calls = []
+    monkeypatch.setattr(jobs, "run_guarded", lambda *args, **kwargs: calls.append("spawn"))
+    original_snapshot = jobs._stable_file_snapshot
+    def mutate_before_manifest_snapshot(path, *, sync=False):
+        path = Path(path)
+        if path.name == "attempt.json":
+            with path.open("a", encoding="utf-8") as stream:
+                stream.write(" ")
+        return original_snapshot(path, sync=sync)
+    monkeypatch.setattr(jobs, "_stable_file_snapshot", mutate_before_manifest_snapshot)
+    with pytest.raises(OSError, match="manifest changed"):
+        jobs.run_job(tmp_path / "manifest-race", request_id="manifest-race")
+    assert calls == []
+    assert not (tmp_path / "manifest-race/worker.raw.json").exists()
+
+
+def test_publication_directory_fsync_failure_does_not_commit_token(monkeypatch, tmp_path):
+    token = jobs.CancellationToken()
+    def fail_directory_fsync(path):
+        raise OSError("injected publication directory fsync failure")
+    monkeypatch.setattr(jobs, "_fsync_directory", fail_directory_fsync)
+    with pytest.raises(OSError, match="publication directory fsync"):
+        token.publish_if_active(tmp_path / "uncertain.json", {"value": 1})
+    assert (tmp_path / "uncertain.json").is_file()
+    assert token.cancel() is True
+
+
 def test_cancelled_worker_with_partial_report_never_publishes(monkeypatch, tmp_path):
     token = jobs.CancellationToken()
     def fake_guard(command, *, wall_seconds, rss_bytes, report_path, log_path,
                    cancel_requested):
-        Path(command[-1]).write_text(json.dumps({"status": "running", "pid": 456}))
+        Path(command[-1]).write_text(json.dumps({"status": "running", "pid": 456,
+                                                "attempt_id": command[command.index("--attempt-id") + 1]}))
         Path(log_path).write_text("")
         assert token.cancel()
         assert cancel_requested()
@@ -216,6 +360,7 @@ def test_late_cancellation_before_publication_wins(monkeypatch, tmp_path):
     child = _archived_child()
     def fake_guard(command, *, wall_seconds, rss_bytes, report_path, log_path,
                    cancel_requested):
+        child["attempt_id"] = command[command.index("--attempt-id") + 1]
         Path(command[-1]).write_text(json.dumps(child))
         Path(log_path).write_text("")
         assert token.cancel()

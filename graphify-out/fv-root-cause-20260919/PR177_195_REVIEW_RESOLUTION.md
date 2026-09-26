@@ -21,7 +21,7 @@ reanalysis, and physical skill. Prior evidence remains in
 | R5-R-R | Qualified point-observation 3-hour stationary response | Find a strict long-horizon branch and stationary analysis, then full adjoint/VJP and signed endpoints without changing the time/score contract | Open research target; R5-F proves forward execution only |
 | R6 | General observation products remain unsupported | Bind product-defined footprint/coordinate, censoring/QC provenance and covariance semantics separately; do not infer physical measurements from prepared synthetic masks | Open; needs a declared product contract |
 | R7-L | Fixed-case response job lifecycle | Keep forward AD in separate workers; verify two-job cancellation, resource accounting, worker/diagnostic completion and atomic result publication | **Closed for two fixed fv4x5 research jobs.** One qualified response published after child exit; the other was cancelled and never published. See `FV_RESPONSE_JOB_LIFECYCLE_RESULTS.md` |
-| R7-P | Production concurrency and recovery | Add general request/input contracts, durable queue/recovery, full concurrent GN/refinement and supported in-process policy only if verified | **Open.** Same-host duplicate launch is excluded and fixed-case crash artifacts can now be classified without publication or retry. The classifier is not durable recovery or an authenticated result; see `FV_RESPONSE_JOB_SINGLEHOST_LOCK_RESULTS.md` and `FV_RESPONSE_JOB_RECONCILIATION_TRIAGE_RESULTS.md` |
+| R7-P | Production concurrency and recovery | Add general request/input contracts, durable queue/recovery, full concurrent GN/refinement and supported in-process policy only if verified | **Open.** Same-host duplicate launch is excluded; a durable attempt manifest binds one fixed response to its raw/resource/publication records, and read-only triage classifies them. One actual fixed FV v2 run passed. This is not authenticated recovery or a general service; see `FV_RESPONSE_JOB_ATTEMPT_BINDING_RESULTS.md` |
 | R8 | Independent physical performance, finite influence and learning | Use independent verification events and a predeclared finite-amplitude range; keep learned error/prior normalization and data splitting separate from local synthetic derivative checks | Open; current truth is same-operator synthetic |
 
 Do not relabel skipped CI jobs or focused tests as a full CPU/package
@@ -218,6 +218,15 @@ historical numerical reports; new attempts must have distinct records.
   Missing lifecycle or publication never triggers automatic publish,
   retry, PID signal or a recovered-success claim
   (`FV_RESPONSE_JOB_RECONCILIATION_TRIAGE_RESULTS.md`).
+- [x] Bind one fixed job attempt before spawn to a durable UUID-bearing
+  manifest with canonical job path, exact command, code/archive/input and
+  budget identity. Bind the reaped child, stable raw/resource bytes,
+  publication and terminal lifecycle to that attempt; require any v2
+  marker to use v2-only read-only reconciliation. Fake-guard mutations,
+  publication races and fsync failures are regression-tested. One actual
+  `fv4x5` job completed and the inspector returned an unauthenticated
+  `publication_candidate`, with no retry or recovered-success claim
+  (`FV_RESPONSE_JOB_ATTEMPT_BINDING_RESULTS.md`).
 - [ ] Production request types, durable restart/recovery, concurrent
   GN/refinement, generic FV inputs and whole-system memory limits remain
   separate from this research lifecycle evidence.

@@ -5,8 +5,10 @@ import json
 import os
 from pathlib import Path
 import platform
+import subprocess
 import sys
 import threading
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -21,6 +23,97 @@ from examples.weather_scenarios import (
 
 def test_worker_and_runner_bind_the_same_sources():
     assert worker.SOURCE_PATHS == runner.SOURCE_PATHS
+
+
+def test_worker_attempt_id_is_provenance_only_and_legacy_reports_omit_it(
+    tmp_path, monkeypatch
+):
+    attempt_id = "123e4567-e89b-42d3-a456-426614174000"
+    problem = SimpleNamespace(
+        identity={"fixed_problem_sha256": "problem"}, verification=object(),
+        objective=object(), score=object(),
+    )
+    monkeypatch.setattr(
+        shared, "_small_case", lambda: (problem, "control", "parameters", "direction", 0.08)
+    )
+    monkeypatch.setattr(shared, "_tensor_identity", lambda value: str(value))
+    monkeypatch.setattr(worker, "_hashes", lambda: {"worker": "source"})
+    response_calls = []
+
+    def stop_before_response(*args, **kwargs):
+        response_calls.append((args, kwargs))
+        raise RuntimeError("test stop after running report")
+
+    monkeypatch.setattr(worker, "compute_local_response", stop_before_response)
+    writes: dict[Path, list[dict[str, Any]]] = {}
+    original_write_text = Path.write_text
+
+    def capture_report(path, contents, *args, **kwargs):
+        result = original_write_text(path, contents, *args, **kwargs)
+        if path in writes:
+            writes[path].append(json.loads(contents))
+        return result
+
+    monkeypatch.setattr(Path, "write_text", capture_report)
+    tagged_path = tmp_path / "tagged.json"
+    legacy_path = tmp_path / "legacy.json"
+    writes[tagged_path] = []
+    writes[legacy_path] = []
+
+    with pytest.raises(RuntimeError, match="test stop"):
+        worker.run("fv4x5", tagged_path, attempt_id)
+    with pytest.raises(RuntimeError, match="test stop"):
+        worker.run("fv4x5", legacy_path)
+
+    tagged_running, tagged_final = writes[tagged_path]
+    legacy_running, legacy_final = writes[legacy_path]
+    assert tagged_running["status"] == "running"
+    assert tagged_final["status"] == "execution_error"
+    assert tagged_running["attempt_id"] == tagged_final["attempt_id"] == attempt_id
+    assert "attempt_id" not in legacy_running
+    assert "attempt_id" not in legacy_final
+    assert response_calls[0][0] == response_calls[1][0]
+    assert response_calls[0][1].keys() == response_calls[1][1].keys()
+    assert response_calls[0][1]["input_identity"] == response_calls[1][1]["input_identity"]
+
+
+@pytest.mark.parametrize(
+    "attempt_id",
+    (
+        "123E4567-E89B-42D3-A456-426614174000",
+        "{123e4567-e89b-42d3-a456-426614174000}",
+        "123e4567-e89b-12d3-a456-426614174000",
+        "123e4567-e89b-42d3-0456-426614174000",
+        "123e4567e89b42d3a456426614174000",
+    ),
+)
+def test_worker_rejects_noncanonical_attempt_id_in_run(tmp_path, attempt_id):
+    with pytest.raises(ValueError, match="canonical UUID4"):
+        worker.run("fv4x5", tmp_path / "invalid-run.json", attempt_id)
+
+
+def test_worker_rejects_invalid_attempt_id_in_cli(tmp_path):
+    output_path = tmp_path / "invalid-cli.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "examples.weather_scenarios.fv_process_response_worker",
+            "--case",
+            "fv4x5",
+            "--attempt-id",
+            "not-a-uuid",
+            "--output",
+            str(output_path),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    assert "canonical UUID4" in result.stderr
+    assert not output_path.exists()
 
 
 @pytest.mark.parametrize(
