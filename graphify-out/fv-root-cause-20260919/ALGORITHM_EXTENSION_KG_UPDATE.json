@@ -864,5 +864,19 @@
     "limits": "branch feasible at alternate control only; stationarity/Hessian/adjoint/VJP/signed reanalysis/finite segment/physical skill not tested; R5-R-R open",
     "record": "FV_POINT_3H_SHIFTED_BRANCH_PLAN.md,FV_POINT_3H_SHIFTED_BRANCH_RESULTS.md,FV_POINT_3H_SHIFTED_BRANCH_EVIDENCE.json,point_3h_shifted_branch_attempt1",
     "status": "alternate-control strict-branch feasibility subitem closed; qualified 3-hour stationary response remains open"
+  },
+  "fv_point_3h_seed_linear_preflight": {
+    "baseline": "main 890fe8c after PR218 alternate-control strict-branch pass",
+    "scope": "one source/input-bound 26-control/13-parameter fixed point 3h seed J gradient and one exact-HVP PCG Hs=-g; no step/score/adjoint/VJP/reanalysis",
+    "branch": "strict oracle 3600 Euler/choice/face-sign stages same signature80a1fac22b536bfedcedfda506e11d85f4b9f2a73c5610c73fa8dfdb210dfe51; separate no-grad margin forecast complete3600 stages",
+    "analysis": "J0.9323736303384679,gmax2.254729681485403,field_inf0.5736240663395087,dynamics_inf2.254729681485403; not stationary versus1e-10",
+    "linear": "exact gradient-JVP unpreconditioned PCG rtol1e-10 max104 refused operator must be symmetric positive definite after15 HVPs; no returned solution/true residual; raw iterations0 is placeholder and actual completed iteration count unavailable; no global Hessian spectrum claim",
+    "margins": "minimum active x gap/q scale9.968176299306184e-8 at stage1006, active y gap8.928182994641934e-7 at stage594; min face abs0.0008,normalized0.005025125628140845 at qy[3,1] stage0; pointwise only",
+    "execution": "one guarded child exit0,guard117.198896542s,child115.806355125s,438 sampled RSS,peak324206592B under600s trigger/sampled1GiB; linear phase106.644982709s; source/input/plan/archive stable",
+    "verification": "10 focused and75 affected tests passed with18 existing warnings; basedpyright1.39.9 error-level0; GREEN/RED plan/code/raw review; full CPU/package CI not run",
+    "graphify": "incremental AST code refresh, valid graph.json8106 nodes/418599 links; no semantic extraction",
+    "limits": "visited PCG nonpositive curvature refusal is not proof of global Hessian indefiniteness/root absence; stationarity, response, finite influence and physical skill remain open; incomplete nonfinite margin reporting edge recorded",
+    "record": "FV_POINT_3H_SEED_LINEAR_PLAN.md,FV_POINT_3H_SEED_LINEAR_RESULTS.md,FV_POINT_3H_SEED_LINEAR_EVIDENCE.json,point_3h_seed_linear_attempt1",
+    "status": "R5 seed stationarity/one-RHS linear preflight closed with nonstationary/PCG refusal;R5-R-R open"
   }
 }
