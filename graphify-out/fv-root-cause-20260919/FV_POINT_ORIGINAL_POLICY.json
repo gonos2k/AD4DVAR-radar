@@ -1,0 +1,71 @@
+{
+  "attempts": {
+    "gradient_merit": {
+      "accepted_signature_switches": 1,
+      "accepted_steps": 6,
+      "child_exit_code": 2,
+      "child_sha256": "929219cadd5e96e3c66f01abb6497b976462c213874686a9d8c3da92023d9c44",
+      "converged_pcg_solves": 7,
+      "elapsed_seconds": 170.295867958921,
+      "final_policy_rejections": 16,
+      "input_identity": {
+        "problem_identity": {
+          "fixed_problem_sha256": "3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5",
+          "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+        },
+        "tensor_sha256": {
+          "direction": "679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed",
+          "observation_coordinates": "7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02",
+          "observation_correlation": "7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef",
+          "parameters": "0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a",
+          "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+          "warm_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5"
+        }
+      },
+      "last_accepted_gradient_max": 0.006602351499307973,
+      "raw_manifest_sha256": "76aa289a628f37b8a4b7eba2e94ca408ef25f7bba24e69f72d2a37f67d44ef9e",
+      "resource_termination": null,
+      "sampled_peak_rss_bytes": 354222080,
+      "status": "merit_refused"
+    },
+    "triple_decrease": {
+      "accepted_signature_switches": 2,
+      "accepted_steps": 6,
+      "child_exit_code": 2,
+      "child_sha256": "c32d148cd08523661f4838ceebd518f57c26e6b92f0ebcf25d6493a4c1658aab",
+      "converged_pcg_solves": 7,
+      "elapsed_seconds": 170.38231024995912,
+      "final_policy_rejections": 16,
+      "input_identity": {
+        "problem_identity": {
+          "fixed_problem_sha256": "3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5",
+          "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+        },
+        "tensor_sha256": {
+          "direction": "679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed",
+          "observation_coordinates": "7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02",
+          "observation_correlation": "7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef",
+          "parameters": "0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a",
+          "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+          "warm_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5"
+        }
+      },
+      "last_accepted_gradient_max": 0.006432750851827679,
+      "raw_manifest_sha256": "88926d99730f75f6d6a9341046f883391525b76cd0576b71faf0af0a64a3de34",
+      "resource_termination": null,
+      "sampled_peak_rss_bytes": 362954752,
+      "status": "sector_refused"
+    }
+  },
+  "constructed_problem_sha256": "464664431b230dbbbc997b3e5f5bcf669c8f2fb629ae298b6c0a6d61502e5b79",
+  "constructed_response_report_sha256": "e0996a5081e20037d39f95049768d15d67e768b8aeda133a00fd638ff39e47aa",
+  "future_method": "new sector-aware root search with fresh stationarity/curvature/branch/adjoint/signed-endpoint proof",
+  "numerical_solver_runs": 0,
+  "original_problem_sha256": "3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5",
+  "plan_sha256": "0510599ecf4d2e3eca50398520d09f7db310641c0fa031ad45627f72c1fe5cc9",
+  "response_computed": false,
+  "response_validation": "not_performed",
+  "scope": "exact original zero-centered correlated point input only; constructed centered-prior input is different",
+  "stationary_root_absence_proved": false,
+  "support_status": "unsupported_by_current_declared_nominal_search_policies"
+}

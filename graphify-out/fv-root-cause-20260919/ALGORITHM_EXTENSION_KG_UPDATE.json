@@ -720,5 +720,17 @@
     "record": "FV_RESPONSE_JOB_LIFECYCLE_PLAN.md,FV_RESPONSE_JOB_LIFECYCLE_RESULTS.md,response_job_lifecycle_attempt1/manifest.json",
     "graphify": "code-only incremental update:7571 nodes,66810 edges,330 communities;no semantic LLM extraction",
     "status": "R7-L bounded fixed-case lifecycle closed;R7-P general production queue/recovery,concurrent GN and input coverage remain open"
+  },
+  "fv_point_original_input_support_decision": {
+    "baseline": "main f155f60 after PR206 bounded fixed-case process-response lifecycle",
+    "scope": "read-only support classification of the exact original zero-centered full-valid correlated 4x5 point input using two latest source/plan/resource-bound sector attempts;no new FV solve",
+    "triple_decrease": "six accepted corrections incl two sector switches,then16 iteration7 policy refusals;last accepted gmax0.006432750851827679;seven converged PCGs,child exit2,no resource termination",
+    "gradient_merit": "restart from prior sixth accepted control,six accepted corrections incl one sector switch,then16 iteration7 policy refusals;last accepted gmax0.006602351499307973;seven converged PCGs,child exit2,no resource termination",
+    "identity": "original fixed problem SHA3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5 differs from constructed centered-prior SHA464664431b230dbbbc997b3e5f5bcf669c8f2fb629ae298b6c0a6d61502e5b79",
+    "decision": "exact original input unsupported_by_current_declared_nominal_search_policies;no response issued;root absence not proved;seven prior bounded attempts are not independent weather cases",
+    "verification": "twelve read-only classification/mutation tests passed incl child/parent/resource status and coordinated resealed wrong-input attempt,error-level basedpyright0;original full input tensor IDs and two historical raw-manifest digests pinned;no new FV solve or full CPU/package CI",
+    "record": "FV_POINT_ORIGINAL_POLICY_PLAN.md,FV_POINT_ORIGINAL_POLICY_RESULTS.md,FV_POINT_ORIGINAL_POLICY.json;two historical raw manifests remain unchanged",
+    "graphify": "code-only incremental update:7594 nodes,66852 edges,285 communities;no semantic LLM extraction",
+    "status": "R2-O-D current-policy support decision closed;R2-O-R new sector search/fresh response remains open"
   }
 }

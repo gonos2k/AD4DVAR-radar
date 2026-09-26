@@ -9,7 +9,8 @@ reanalysis, and physical skill. Prior evidence remains in
 |---|---|---|---|
 | R1 | Preserve completed scope | Verify PR #177–#195 main integration, regular 3-hour forward result, fixed-control point likelihood and derivative tests, and process-isolated local responses without adding them as one success rate | Done at their reported scopes; no new FV run implied |
 | R2 | A full-valid correlated point profile needs a stationary response | In one declared 4×5 synthetic point problem, verify a qualified stationary point, true adjoint residual and full parameter gradient, then signed nonlinear reanalysis at two local sizes | **Closed for the constructed fixed centered-prior profile only.** One 26-control/13-parameter root, full VJP and four signed endpoints passed; see `FV_POINT_CENTERED_PRIOR_RESPONSE_RESULTS.md`. This is a different statistical problem from R2-O |
-| R2-O | Original zero-centered-prior correlated point input still refuses | Obtain a qualified root and signed response on that original input, or retain an explicit unsupported-status contract without claiming root absence | Stage A and seven bounded numerical attempts are recorded below; the latest merit-only attempt refused all 16 iteration-7 candidates. **Open** |
+| R2-O-D | Original zero-centered-prior correlated point input needs an explicit support decision | Preserve bounded attempts and input identity; separate child exit, numerical refusal and response non-issuance without claiming root absence | **Closed as current-policy refusal for this exact input.** The last two source-bound sector attempts each refused all 16 seventh-step candidates with maximum gradients above `1e-10`. See `FV_POINT_ORIGINAL_POLICY_RESULTS.md` |
+| R2-O-R | Original correlated point input's qualified response | Find a fresh stationary root under a separately justified nominal method, then exact adjoint/VJP and signed reanalysis | Open research target; the constructed centered-prior success is a different statistical problem |
 | R3-M | One missing point needs a stationary response | Under complete model state/boundaries, bind status 1 and a selected correlation submatrix to a qualified point root, full VJP, inactive-slot check and signed endpoints | **Closed for the constructed fixed-centered-prior profile with one middle-time point missing.** Full 13-vector and two signed pairs passed; see `FV_POINT_MISSING_CENTERED_RESPONSE_RESULTS.md` |
 | R3-Q | QC-excluded point profile needs a stationary response | Keep external QC status distinct from missing and clear sky; qualify a fixed-mask root, full VJP and signed endpoints | **Closed for the constructed status-2 external-QC profile.** Full VJP, zero inactive slot and two signed pairs passed; numerics match R3-M under the same active mask, while identity differs. See `FV_POINT_QC_CENTERED_RESPONSE_RESULTS.md` |
 | R3-E | One wholly empty observation time needs a stationary response | Preserve time integration and external background while qualifying root, VJP and signed endpoints | **Closed for the constructed exactly-one-empty-first-time profile.** Four inactive first-time slots, nonzero theta path, full VJP and two signed pairs passed; see `FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_RESULTS.md` |
@@ -61,6 +62,11 @@ historical numerical reports; new attempts must have distinct records.
   same-signature corrections were accepted, then all 16 iteration-7
   candidates raised measured gradient merit. No root or response was
   published. See `FV_POINT_MERIT_ROOT_ATTEMPT1_RESULTS.md`.
+- [x] Source/input/resource-bound read-only classification of the last
+  two sector attempts: this exact input is unsupported by the
+  **current declared nominal-search policies** and issues no response.
+  The constructed centered-prior input has a different identity;
+  root absence is not proved (`FV_POINT_ORIGINAL_POLICY_RESULTS.md`).
 - [ ] Find a qualifying stationary point for the original zero-centered
   input under a separately declared
   branch-aware or mathematically strict root-search policy. Keep final
