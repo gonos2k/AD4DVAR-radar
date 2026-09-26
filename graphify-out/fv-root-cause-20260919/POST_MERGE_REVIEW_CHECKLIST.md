@@ -405,8 +405,13 @@ changes the numerical refiner, not the objective, observation contract or gates.
   branch. All 3,600 stages pass at that alternate control
   (`FV_POINT_3H_FIRST_BRANCH_RESULTS.md`,
   `FV_POINT_3H_SHIFTED_BRANCH_RESULTS.md`).
-- [ ] A stationary analysis and long-horizon adjoint/reanalysis are still
-  unverified. The alternate branch-supported seed has
-  `||g||_inf=2.25472968`, and its first exact-HVP PCG attempt refused
-  the SPD premise after 15 HVPs (`FV_POINT_3H_SEED_LINEAR_RESULTS.md`).
-  Independent physical accuracy remains separate.
+- [x] Audit the alternate seed's exact 26-column Hessian after its
+  first PCG curvature refusal. One verified eigenvalue is negative
+  (`-0.7460777`) at this **nonstationary** seed; the result is local
+  curvature evidence, not a root or response
+  (`FV_POINT_3H_SEED_HESSIAN_RESULTS.md`).
+- [ ] A stationary analysis point and long-horizon adjoint/reanalysis
+  remain unachieved. The alternate branch-supported seed has
+  `||g||_inf=2.25472968`; its negative local curvature requires a
+  separately declared search policy. Independent physical accuracy
+  remains separate.

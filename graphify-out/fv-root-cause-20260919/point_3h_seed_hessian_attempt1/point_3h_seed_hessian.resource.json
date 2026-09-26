@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_seed_hessian_probe.py",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/point_3h_seed_hessian_attempt1/point_3h_seed_hessian.json"
+  ],
+  "child_pid": 53397,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 286.9182247079443,
+  "sampled_peak_rss_bytes": 343703552,
+  "rss_samples": 1058,
+  "wall_limit_seconds": 600,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}
