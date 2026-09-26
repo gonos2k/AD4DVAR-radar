@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import json
 import copy
+from dataclasses import FrozenInstanceError, replace
+from pathlib import Path
 from types import SimpleNamespace
 import hashlib
+import pytest
 
 import torch
 
@@ -72,6 +75,40 @@ def test_pinned_seed_checks_raw_report_and_control_tensor_sha() -> None:
     assert continuation.seed_linear._tensor_sha(control) == continuation.SEED_CONTROL_SHA256
 
 
+def test_tail_policy_pins_pr223_refused_epoch_endpoint_without_fv() -> None:
+    policy = continuation.TAIL_POLICY
+    raw = continuation._seed_report(policy)
+    control = continuation._seed_control(policy)
+
+    assert raw["numerical_status"] == "epoch_line_search_refused"
+    assert control.shape == (continuation.EXPECTED_CONTROLS,)
+    assert continuation.seed_linear._tensor_sha(control) == policy.seed_control_sha256
+    assert policy.alpha_grid == tuple(0.000078125 / 2**k for k in range(12))
+    assert (policy.max_accepted_epochs, policy.max_total_trials,
+            policy.internal_budget_seconds, policy.wall_seconds,
+            policy.sampled_rss_bytes) == (2, 24, 240.0, 300, 1024**3)
+    with pytest.raises(ValueError, match="accepted endpoint evidence changed"):
+        continuation._seed_report(replace(policy, seed_report_status="candidate_accepted_branch_changed"))
+
+
+def test_default_policy_preserves_historical_numeric_gates_and_cli_defaults() -> None:
+    policy = continuation.DEFAULT_POLICY
+
+    assert policy.plan == continuation.PLAN
+    assert policy.plan_sha256 == continuation.PLAN_SHA256
+    assert policy.seed_report_sha256 == continuation.SEED_REPORT_SHA256
+    assert policy.seed_evidence_sha256 == continuation.SEED_EVIDENCE_SHA256
+    assert policy.seed_control_sha256 == continuation.SEED_CONTROL_SHA256
+    assert policy.seed_signature_sha256 == continuation.SEED_SIGNATURE_SHA256
+    assert policy.alpha_grid == tuple(0.02 / 2**k for k in range(8))
+    assert (policy.max_accepted_epochs, policy.max_total_trials,
+            policy.internal_budget_seconds, policy.wall_seconds,
+            policy.sampled_rss_bytes) == (8, 64, 540.0, 600, 1024**3)
+    assert policy.output_directory == continuation.DEFAULT_DIRECTORY
+    with pytest.raises(FrozenInstanceError):
+        setattr(policy, "max_total_trials", 1)
+
+
 def test_epoch_link_requires_seed_or_immediately_prior_accepted_point() -> None:
     current = {
         "control_sha256": continuation.SEED_CONTROL_SHA256,
@@ -132,13 +169,12 @@ def test_analytic_two_epoch_relinearizes_after_branch_switch(tmp_path, monkeypat
 
     problem = QuadraticProblem()
     control_hash = hashlib.sha256(initial.numpy().tobytes()).hexdigest()
-    monkeypatch.setattr(continuation, "MAX_ACCEPTED_EPOCHS", 2)
-    monkeypatch.setattr(continuation, "SEED_CONTROL_SHA256", control_hash)
-    monkeypatch.setattr(continuation, "SEED_SIGNATURE_SHA256", "a" * 64)
-    monkeypatch.setattr(continuation, "SEED_J", 0.52)
-    monkeypatch.setattr(continuation, "SEED_PHI", 0.52)
-    monkeypatch.setattr(continuation, "SEED_GRADIENT_INF", 1.0)
-    monkeypatch.setattr(continuation, "_seed_control", lambda: initial.clone())
+    policy = replace(
+        continuation.DEFAULT_POLICY, max_accepted_epochs=2,
+        seed_control_sha256=control_hash, seed_signature_sha256="a" * 64,
+        seed_j=0.52, seed_phi=0.52, seed_gradient_inf=1.0,
+    )
+    monkeypatch.setattr(continuation, "_seed_control", lambda _policy=policy: initial.clone())
     monkeypatch.setattr(continuation, "_source_hashes", lambda: {"fake.py": "s" * 64})
     monkeypatch.setattr(continuation.first_branch, "_sources_match_archive", lambda _: True)
     monkeypatch.setattr(continuation.first_branch, "_archive_input_identity",
@@ -205,12 +241,12 @@ def test_analytic_two_epoch_relinearizes_after_branch_switch(tmp_path, monkeypat
     monkeypatch.setattr(torch.func, "jvp", record_jvp)
     monkeypatch.setattr(torch.func, "vjp", record_vjp)
 
-    result = continuation.run_probe(tmp_path / "analytic-child.json")
+    result = continuation.run_probe(tmp_path / "analytic-child.json", policy)
 
     assert result["execution_status"] == "completed"
     assert len(result["accepted_epochs"]) == 2
     source_identity = {"fake.py": "s" * 64}
-    assert continuation._valid_child(result, source_identity)
+    assert continuation._valid_child(result, source_identity, policy)
     first_accept = result["accepted_epochs"][0]["trials"][-1]
     assert first_accept["accepted"] is True
     assert first_accept["branch_changed"] is True
@@ -223,18 +259,22 @@ def test_analytic_two_epoch_relinearizes_after_branch_switch(tmp_path, monkeypat
     torch.testing.assert_close(jvp_bases[1], vjp_bases[1])
     forged = copy.deepcopy(result)
     forged["accepted_epochs"][1]["current"]["objective"] += 0.1
-    assert not continuation._valid_child(forged, source_identity)
+    assert not continuation._valid_child(forged, source_identity, policy)
+    forged_alpha = copy.deepcopy(result)
+    forged_alpha["accepted_epochs"][0]["trials"][0]["alpha"] *= 2
+    forged_alpha["candidate_attempts"][0]["alpha"] *= 2
+    assert not continuation._valid_child(forged_alpha, source_identity, policy)
     forged_handoff = copy.deepcopy(result)
     forged_handoff["numerical_status"] = "handoff_candidate_only"
     forged_handoff["accepted_candidate"]["gradient_inf"] = 0.0
     assert result["accepted_candidate"]["gradient_inf"] >= 1.0e-4
-    assert not continuation._valid_child(forged_handoff, source_identity)
+    assert not continuation._valid_child(forged_handoff, source_identity, policy)
     nested_control = copy.deepcopy(result)
     control_values = nested_control["accepted_candidate"]["control"]
     nested_control["accepted_candidate"]["control"] = [
         control_values[:13], control_values[13:],
     ]
-    assert not continuation._valid_child(nested_control, source_identity)
+    assert not continuation._valid_child(nested_control, source_identity, policy)
     nonfinite_control = copy.deepcopy(result)
     nonfinite_values = list(nonfinite_control["accepted_candidate"]["control"])
     nonfinite_values[0] = float("nan")
@@ -246,7 +286,30 @@ def test_analytic_two_epoch_relinearizes_after_branch_switch(tmp_path, monkeypat
     nonfinite_control["candidate_attempts"][-1]["control_sha256"] = nonfinite_hash
     nonfinite_control["accepted_candidate"]["control"] = nonfinite_values
     nonfinite_control["accepted_candidate"]["control_sha256"] = nonfinite_hash
-    assert not continuation._valid_child(nonfinite_control, source_identity)
+    assert not continuation._valid_child(nonfinite_control, source_identity, policy)
+
+    tail_cap_policy = replace(
+        policy, name="tail", alpha_grid=continuation.TAIL_POLICY.alpha_grid,
+        max_total_trials=len(continuation.TAIL_POLICY.alpha_grid),
+    )
+
+    def refuse_tail_endpoints(*_args):
+        return {"status": "branch_refused", "reason": "analytic refusal"}
+
+    monkeypatch.setattr(
+        continuation, "_strict_endpoint", refuse_tail_endpoints,
+    )
+    capped_tail = continuation.run_probe(tmp_path / "tail-cap-child.json", tail_cap_policy)
+    assert capped_tail["numerical_status"] == "trial_limit"
+    assert len(capped_tail["candidate_attempts"]) == tail_cap_policy.max_total_trials
+    assert capped_tail["accepted_candidate"] is None
+    assert len(capped_tail["accepted_epochs"]) == 1
+    assert capped_tail["accepted_epochs"][0]["accepted"] is False
+    assert continuation._valid_child(capped_tail, source_identity, tail_cap_policy)
+    forged_tail = copy.deepcopy(capped_tail)
+    forged_tail["numerical_status"] = "epoch_line_search_refused"
+    assert not continuation._valid_child(forged_tail, source_identity, tail_cap_policy)
+    monkeypatch.setattr(continuation, "_strict_endpoint", strict_endpoint)
 
     original_budget_check = continuation._budget_exhausted
     for stop_check in (2, 3, 4, 6, 7):
@@ -257,13 +320,13 @@ def test_analytic_two_epoch_relinearizes_after_branch_switch(tmp_path, monkeypat
         vjp_bases.clear()
         check_count = 0
 
-        def fake_clock(_started, *, stop_at=stop_check):
+        def fake_clock(_started, *, policy=None, stop_at=stop_check):
             nonlocal check_count
             check_count += 1
             return check_count >= stop_at
 
         monkeypatch.setattr(continuation, "_budget_exhausted", fake_clock)
-        stopped = continuation.run_probe(tmp_path / f"fake-clock-{stop_check}.json")
+        stopped = continuation.run_probe(tmp_path / f"fake-clock-{stop_check}.json", policy)
         assert stopped["numerical_status"] == "internal_budget_exhausted"
         assert stopped["accepted_candidate"] is None
         assert stopped["costs"]["current_branch_calls"] == 1
@@ -281,18 +344,17 @@ def test_analytic_two_epoch_relinearizes_after_branch_switch(tmp_path, monkeypat
         else:
             assert stopped["candidate_attempts"][0]["objective_status"] == "complete_after_budget"
             assert stopped["candidate_attempts"][0]["accepted"] is False
-        assert continuation._valid_child(stopped, source_identity), stop_check
+        assert continuation._valid_child(stopped, source_identity, policy), stop_check
 
     monkeypatch.setattr(continuation, "_budget_exhausted", original_budget_check)
-    monkeypatch.setattr(continuation, "MAX_TOTAL_TRIALS", 1)
-    capped = continuation.run_probe(tmp_path / "trial-cap-after-accept.json")
+    capped_policy = replace(policy, max_total_trials=1)
+    capped = continuation.run_probe(tmp_path / "trial-cap-after-accept.json", capped_policy)
     assert capped["numerical_status"] == "trial_limit"
     assert len(capped["candidate_attempts"]) == 1
     assert len(capped["accepted_epochs"]) == 1
     assert capped["accepted_epochs"][0]["accepted"] is True
-    assert continuation._valid_child(capped, source_identity)
+    assert continuation._valid_child(capped, source_identity, capped_policy)
 
-    monkeypatch.setattr(continuation, "MAX_TOTAL_TRIALS", 64)
     current_branch_calls = 0
     strict_endpoint_calls = 0
 
@@ -304,28 +366,31 @@ def test_analytic_two_epoch_relinearizes_after_branch_switch(tmp_path, monkeypat
         return branch_record(current), {"complete": True}
 
     monkeypatch.setattr(continuation, "_full_current_branch", refuse_second_current)
-    refusal = continuation.run_probe(tmp_path / "current-branch-refusal-after-accept.json")
+    refusal = continuation.run_probe(
+        tmp_path / "current-branch-refusal-after-accept.json", policy,
+    )
     assert refusal["numerical_status"] == "current_branch_or_margin_refused"
     assert len(refusal["accepted_epochs"]) == 1
     assert refusal["costs"]["current_branch_calls"] == 2
     assert refusal["costs"]["branch_oracle_calls"] == 3
-    assert continuation._valid_child(refusal, source_identity)
+    assert continuation._valid_child(refusal, source_identity, policy)
 
-    monkeypatch.setattr(continuation, "SEED_PHI", 0.0)
-    monkeypatch.setattr(continuation, "SEED_GRADIENT_INF", 0.0)
+    handoff_policy = replace(policy, seed_phi=0.0, seed_gradient_inf=0.0)
     monkeypatch.setattr(
         continuation, "_fresh_merit",
-        lambda *_args: (torch.tensor(continuation.SEED_J, dtype=torch.float64),
+        lambda *_args: (torch.tensor(handoff_policy.seed_j, dtype=torch.float64),
                         torch.zeros_like(initial),
                         torch.tensor(0.0, dtype=torch.float64)),
     )
     current_branch_calls = 0
-    handoff = continuation.run_probe(tmp_path / "initial-handoff-candidate.json")
+    handoff = continuation.run_probe(
+        tmp_path / "initial-handoff-candidate.json", handoff_policy,
+    )
     assert handoff["numerical_status"] == "handoff_candidate_only"
     assert handoff["accepted_epochs"] == []
     assert handoff["costs"]["exact_hvp_calls"] == 0
     assert handoff["costs"]["current_branch_call_unrecorded"] is True
-    assert continuation._valid_child(handoff, source_identity)
+    assert continuation._valid_child(handoff, source_identity, handoff_policy)
 
 
 def test_candidate_gate_requires_dual_decrease_and_only_same_branch_armijo() -> None:
@@ -352,8 +417,19 @@ def test_fake_guard_failure_is_reported_without_child_reconstruction(tmp_path, m
     monkeypatch.setattr(continuation.first_branch, "_sources_match_archive", lambda _: True)
 
     def fake_guard(command, *, wall_seconds, rss_bytes, report_path, log_path):
-        assert wall_seconds == continuation.WALL_SECONDS
-        assert rss_bytes == continuation.SAMPLED_RSS_BYTES
+        if "--profile" in command:
+            profile_index = command.index("--profile")
+            assert command[profile_index + 1] == "tail"
+            assert Path(command[command.index("--output") + 1]).name == "point_3h_merit_tail.json"
+            assert report_path.name == "point_3h_merit_tail.resource.json"
+            assert log_path.name == "point_3h_merit_tail.log"
+            assert wall_seconds == continuation.TAIL_POLICY.wall_seconds == 300
+            assert rss_bytes == continuation.TAIL_POLICY.sampled_rss_bytes == 1024**3
+            assert continuation.TAIL_POLICY.internal_budget_seconds == 240.0
+        else:
+            assert report_path.name == "point_3h_merit_continuation.resource.json"
+            assert wall_seconds == continuation.WALL_SECONDS
+            assert rss_bytes == continuation.SAMPLED_RSS_BYTES
         return {
             "command": command, "exit_code": -9,
             "resource_termination": "wall_limit", "monitor_error": None,
@@ -370,3 +446,12 @@ def test_fake_guard_failure_is_reported_without_child_reconstruction(tmp_path, m
     persisted = json.loads((tmp_path / "guard-refusal" /
                             "point_3h_merit_continuation.run.json").read_text())
     assert persisted["resource"]["resource_termination"] == "wall_limit"
+
+    tail_result = continuation.run(
+        tmp_path / "tail-guard-refusal", continuation.TAIL_POLICY,
+    )
+    assert tail_result["execution_status"] == "failed"
+    tail_persisted = json.loads((tmp_path / "tail-guard-refusal" /
+                                 "point_3h_merit_tail.run.json").read_text())
+    assert tail_persisted["resource"]["wall_limit_seconds"] == 300
+    assert tail_persisted["resource"]["rss_limit_bytes"] == 1024**3
