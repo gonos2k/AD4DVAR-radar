@@ -904,5 +904,18 @@
     "limits": "strict endpoint-only branch switch, no continuous path, stationarity, final Hessian, adjoint, VJP, finite impact or physical skill; relinearize on accepted endpoint before any further direction",
     "record": "FV_POINT_3H_MERIT_STEP_PLAN.md,FV_POINT_3H_MERIT_STEP_RESULTS.md,FV_POINT_3H_MERIT_STEP_EVIDENCE.json,point_3h_merit_step_attempt1",
     "status": "first exploratory joint-descent step closed;R5-R-R stationary response remains open"
+  },
+  "fv_point_3h_merit_continuation": {
+    "baseline": "main ef50893 after PR222 R6/R8 external-input contract and PR221 accepted branch-changing candidate",
+    "scope": "one pinned PR221 accepted 26-control point 3h endpoint; max8 accepted epochs/64 endpoint trials; fresh current branch/margins,J/g/Phi,Hg and H^Tg per epoch, strict endpoints; no root/response",
+    "path": "three current epochs,22 endpoint trials,2 accepted changed-signature endpoints; epoch0 alpha0.000625, epoch1 alpha0.00015625; epoch2 all8 fixed alpha trials strict but joint J/Phi refused, last decreased J but increased Phi",
+    "values": "start J0.9319504904669574,Phi2.6187151084118883,ginf1.2605349625093007;first accepted J0.9314780544833493,Phi1.0156964286855181,ginf0.8564443672589114;last accepted J0.9314590521034872,Phi0.9755199172601001,ginf0.8727746789931015;max gradient not monotone",
+    "candidate": "control SHA baed75b17f6552cecf999be2a23db75725fef8d713a1dd360326ee82680159ba,strict signature2925e02c77e293436b8eccfeda1db44390bb4ca6f106f5a5b581818d9ab57dc5,full3600-stage margins at third current point;segment uncertified",
+    "execution": "one guarded child exit0, numerical epoch_line_search_refused, guard122.320237125s, child121.032602875s,457 sampled RSS peak381059072B under600s trigger/sampled1GiB;25 branch oracle calls,3 HVP and3 VJP;phase sum120.983015497s",
+    "verification": "9 focused and108 affected tests passed with18 existing warnings;basedpyright1.39.9 error-level0;GREEN/RED plan/code/raw review;full CPU/package CI not run",
+    "graphify": "incremental AST code refresh, valid graph.json8222 nodes/70138 links, no semantic extraction",
+    "limits": "two exploratory steps then declared line-search refusal;no continuous path,stationary root,final Hessian/adjoint/VJP,signed impact or physical skill; R5-R-R open",
+    "record": "FV_POINT_3H_MERIT_CONTINUATION_PLAN.md,FV_POINT_3H_MERIT_CONTINUATION_RESULTS.md,FV_POINT_3H_MERIT_CONTINUATION_EVIDENCE.json,point_3h_merit_continuation_attempt1",
+    "status": "bounded relinearized continuation attempt closed;qualified 3-hour stationary response remains open"
   }
 }

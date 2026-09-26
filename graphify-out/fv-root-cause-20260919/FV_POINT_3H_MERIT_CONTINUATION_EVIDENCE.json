@@ -1,0 +1,61 @@
+{
+  "files_sha256": {
+    "examples/weather_scenarios/fv_point_3h_merit_continuation.py": "00bed148ffc7549eca3cd8446ac1fd1d5c4042f1278867808aafe78f51e848dc",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "8a04ebb1f9e075832adb05599e5b3c01c0026b525e8260e9bb987e410bd7e638",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_MERIT_CONTINUATION_PLAN.md": "33a3b3d558b83711d066bea8e3d2d92de4779e630811b2d4b2a2d7246e0ba521",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_MERIT_CONTINUATION_PR_BODY.md": "40dc9001ed0355d1ce57a72515fa0b30041a5018e949e42f1ed64bd191292133",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_MERIT_CONTINUATION_RESULTS.md": "262755626e72f257a0a6ab95bdb02931ffc3c59ebcdd1ceb682a2720683774cc",
+    "graphify-out/fv-root-cause-20260919/FV_POINT_3H_MERIT_STEP_EVIDENCE.json": "df026542d85910a61a9181ae46df8f5c7e6ac8d8bfa80dbc318e33d429b85a8a",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "e34669726ba654a432794662c88b248786f39f9934cbc7973af49cf84dc99d7c",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "94e8f565badb4405dd9d515096e2c786e3380da67f28969bf65c0b582b53e2f9",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_continuation_affected_tests.log": "ada969af064fc00ee9738a544dd290cbc49c7d238cfac31b6e3209c6e2daeed9",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_continuation_graphify.log": "1cdedc6de6d12258aba615d3fe60f234b294c59ae913db5881e95b41bdd613ad",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_continuation_run_stdout.log": "b30e1c5488484c7c17c39892f417559b9d022a5077de1db3e4125ccac3810016",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_continuation_tests.log": "07116559780cde47aab7dd35b5db9459e74dfe731e7c51733f169c41ae02f730",
+    "graphify-out/fv-root-cause-20260919/fv_point_3h_merit_continuation_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/point_3h_merit_continuation_attempt1/point_3h_merit_continuation.json": "eb5b9d1ea712766607fc87b67d1053bd8b103dad1fdc06bcd8fa2916293b248c",
+    "graphify-out/fv-root-cause-20260919/point_3h_merit_continuation_attempt1/point_3h_merit_continuation.log": "eb5b9d1ea712766607fc87b67d1053bd8b103dad1fdc06bcd8fa2916293b248c",
+    "graphify-out/fv-root-cause-20260919/point_3h_merit_continuation_attempt1/point_3h_merit_continuation.resource.json": "394952dbd5e619e3915a4b2e924d237a3c87fab5499bec3e55e3c0c432fc2d3f",
+    "graphify-out/fv-root-cause-20260919/point_3h_merit_continuation_attempt1/point_3h_merit_continuation.run.json": "b30e1c5488484c7c17c39892f417559b9d022a5077de1db3e4125ccac3810016",
+    "tests/test_fv_point_3h_merit_continuation.py": "3b7833eab3394de25748dc010f2e5a77675babc6e5b2c9e07ed3b08aa12b66b2"
+  },
+  "final_accepted_control_sha256": "baed75b17f6552cecf999be2a23db75725fef8d713a1dd360326ee82680159ba",
+  "last_accepted": {
+    "J": 0.9314590521034872,
+    "Phi": 0.9755199172601001,
+    "branch_signature_sha256": "2925e02c77e293436b8eccfeda1db44390bb4ca6f106f5a5b581818d9ab57dc5",
+    "gradient_inf": 0.8727746789931015,
+    "path_certified": false
+  },
+  "limits": "two exploratory steps then line-search refusal; no stationary point, full final Hessian, adjoint, VJP, signed impact or physical skill",
+  "path": {
+    "accepted_epoch_count": 2,
+    "branch_oracle_calls": 25,
+    "epoch_count": 3,
+    "hvp_calls": 3,
+    "status": "epoch_line_search_refused",
+    "trial_count": 22,
+    "vjp_calls": 3
+  },
+  "resource": {
+    "elapsed_seconds": 122.32023712503724,
+    "exit_code": 0,
+    "pid": 6167,
+    "rss_samples": 457,
+    "sampled_peak_rss_bytes": 381059072
+  },
+  "scope": "one source-bound 3h point continuation from PR221 accepted endpoint, max8 epochs/64 trials; two accepted switched endpoints then declared refusal; no root/response",
+  "seed": {
+    "J": 0.9319504904669574,
+    "Phi": 2.6187151084118883,
+    "gradient_inf": 1.2605349625093007
+  },
+  "seed_control_sha256": "9f8d3ae0d77d8b24f1565ab622cf8fe7bbfd83766fbd67964a6a5bd52920a078",
+  "verification": {
+    "affected_tests_passed": 108,
+    "affected_warnings": 18,
+    "focused_tests_passed": 9,
+    "full_cpu_package_regression": "not_run",
+    "typecheck_errors": 0
+  }
+}
