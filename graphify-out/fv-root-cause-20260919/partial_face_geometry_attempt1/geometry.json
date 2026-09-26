@@ -1,0 +1,2120 @@
+{
+  "accepted_count": 8,
+  "accepted_same_min_face_sign_crossings": 2,
+  "archive_manifest_sha256": "d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd",
+  "candidate_count": 52,
+  "elapsed_seconds": 3.187820916995406,
+  "entries": [
+    {
+      "coefficient_values": [
+        0.003352285725137138,
+        -0.0009595134681492832,
+        0.0029328125028630953,
+        -0.002336061979059718,
+        -0.0018576153932775919
+      ],
+      "control_sha256": "dec2e1279c2ace4d1339da0771144ad3125727b4c1e9d5e9303e2492d92bd550",
+      "label": "gn_seed",
+      "maximum_absolute_flux": 0.06661469652045893,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 2.2849761491866225e-05,
+      "minimum_sign": -1,
+      "minimum_signed_flux": -2.2849761491866225e-05,
+      "ratio": 0.00034301381955329527,
+      "ratio_absolute_difference": 0.0,
+      "reported_ratio": 0.00034301381955329527,
+      "signature_sha256": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8"
+    },
+    {
+      "accepted": false,
+      "backtrack": 0,
+      "coefficient_values": [
+        0.0033588958102605832,
+        -0.000992689656429726,
+        0.002895973075453631,
+        -0.002339886169376149,
+        -0.0018541402361434485
+      ],
+      "control_sha256": "2aa4cf201cf670864c225de5839b1d89cff4df5f872bde3a83380504f938ce20",
+      "gradient_max": 0.007320651268642519,
+      "gradient_norm": 0.013181918171787134,
+      "iteration": 1,
+      "label": "trial_1_0",
+      "maximum_absolute_flux": 0.06668733361797202,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 7.896706249743701e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 7.896706249743701e-05,
+      "objective": 0.020768240111214618,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0011841388493624768,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0011841388493624768,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 1,
+      "coefficient_values": [
+        0.0033555907707309503,
+        -0.0009761016042627639,
+        0.0029143929913072,
+        -0.0023379740795786757,
+        -0.0018558778209602465
+      ],
+      "control_sha256": "83e97b51660fdc4343a032ae5b832dbd9a0ca1efad4701c15d2b61af26fcace3",
+      "gradient_max": 0.007010654675544884,
+      "gradient_norm": 0.012529828293454818,
+      "iteration": 1,
+      "label": "trial_1_1",
+      "maximum_absolute_flux": 0.0666510145517069,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 2.805830335819541e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 2.805830335819541e-05,
+      "objective": 0.02076586939207484,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0004209733872307102,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0004209733872307102,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": true,
+      "backtrack": 2,
+      "coefficient_values": [
+        0.0033539382486916943,
+        -0.0009678075466102017,
+        0.0029236027977815045,
+        -0.002337018030658838,
+        -0.0018567466086820768
+      ],
+      "control_sha256": "5cbc43322f9a2813ca0d6254a3f4125c72d5d3dc5126f4e37ec5d901eeeb4c97",
+      "gradient_max": 0.006969335609634471,
+      "gradient_norm": 0.01223199125985204,
+      "iteration": 1,
+      "label": "trial_1_2",
+      "maximum_absolute_flux": 0.06663285540600372,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 2.604183740765459e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 2.604183740765459e-06,
+      "objective": 0.02076474204453648,
+      "policy_reason": "merit_switch_decrease",
+      "ratio": 3.9082577579750814e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": null,
+      "reported_ratio": 3.9082577579750814e-05,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 0,
+      "coefficient_values": [
+        0.003302267633298456,
+        -0.0007318064631826376,
+        0.0031885684511494304,
+        -0.002307584406235864,
+        -0.001881893293640985
+      ],
+      "control_sha256": "4497a2a9880ef41516f3de16d464a3c852f5d46c22bacfa2212b76dc6de005ad",
+      "gradient_max": 0.06742377809842155,
+      "gradient_norm": 0.09420789875958685,
+      "iteration": 2,
+      "label": "trial_2_0",
+      "maximum_absolute_flux": 0.06610982105772178,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          1,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 0.0005789235087921233,
+      "minimum_face_sign_changed_from_preceding_accepted": null,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 0.0005789235087921233,
+      "objective": 0.020784193012938566,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.008756997062307184,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.008756997062307184,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8"
+    },
+    {
+      "accepted": false,
+      "backtrack": 1,
+      "coefficient_values": [
+        0.003328103124748911,
+        -0.0008498088539874338,
+        0.0030560965922459414,
+        -0.0023223015338697003,
+        -0.0018693202807956678
+      ],
+      "control_sha256": "04707d9ec2d01eb8445c7d9abfab8fe7999594b47a37c17d9d29f730791575eb",
+      "gradient_max": 0.03684640972953652,
+      "gradient_norm": 0.05173600681398601,
+      "iteration": 2,
+      "label": "trial_2_1",
+      "maximum_absolute_flux": 0.06637130949606136,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 0.00036259300197826437,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": -1,
+      "minimum_signed_flux": -0.00036259300197826437,
+      "objective": 0.020770358289794736,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.00546309850945131,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.00546309850945131,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8"
+    },
+    {
+      "accepted": false,
+      "backtrack": 2,
+      "coefficient_values": [
+        0.0033410207328367384,
+        -0.0009088086946583918,
+        0.0029898523777486885,
+        -0.0023296598613680216,
+        -0.0018630335268724134
+      ],
+      "control_sha256": "ac7769e8a3caae5b476b6bc19d7c24654a56a246f0d84d9393d3f2c411e52134",
+      "gradient_max": 0.02154654632379494,
+      "gradient_norm": 0.030490855469751874,
+      "iteration": 2,
+      "label": "trial_2_2",
+      "maximum_absolute_flux": 0.06650207552722662,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 0.00017999907641014744,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": -1,
+      "minimum_signed_flux": -0.00017999907641014744,
+      "objective": 0.02076647572361122,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0027066685510658086,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0027066685510658086,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8"
+    },
+    {
+      "accepted": false,
+      "backtrack": 3,
+      "coefficient_values": [
+        0.0033474795023155715,
+        -0.0009383082482348152,
+        0.0029567282510454414,
+        -0.0023333389658203862,
+        -0.0018598900882762532
+      ],
+      "control_sha256": "c13de418aa367d0502843745f016b5849e291731237a0ea204d9ebab0368d896",
+      "gradient_max": 0.014065274786704057,
+      "gradient_norm": 0.019876147039660005,
+      "iteration": 2,
+      "label": "trial_2_3",
+      "maximum_absolute_flux": 0.0665674637681899,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 8.869859439336776e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": -1,
+      "minimum_signed_flux": -8.869859439336776e-05,
+      "objective": 0.020765293205057996,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.001332461676807244,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.001332461676807244,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8"
+    },
+    {
+      "accepted": false,
+      "backtrack": 4,
+      "coefficient_values": [
+        0.0033507088783942523,
+        -0.0009530579298239511,
+        0.0029401656893080033,
+        -0.0023351785031952284,
+        -0.0018583183535996195
+      ],
+      "control_sha256": "506069243dc484b38ca40aac2c77c09a5249c2ac097f11f5c8722959ddcbc334",
+      "gradient_max": 0.010400695116429281,
+      "gradient_norm": 0.014578978869255644,
+      "iteration": 2,
+      "label": "trial_2_4",
+      "maximum_absolute_flux": 0.06660015916655677,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 4.304748999520158e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": -1,
+      "minimum_signed_flux": -4.304748999520158e-05,
+      "objective": 0.020764891644939155,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0006463571639152756,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0006463571639152756,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8"
+    },
+    {
+      "accepted": true,
+      "backtrack": 5,
+      "coefficient_values": [
+        0.0033523235642659763,
+        -0.0009604327463801003,
+        0.002931884284652684,
+        -0.002336098268166422,
+        -0.0018575324824204246
+      ],
+      "control_sha256": "acbcbfa666a18309a2aaee5a41f9c84148aa2103222a7ba14fd9442a76437ee1",
+      "gradient_max": 0.00856813076531787,
+      "gradient_norm": 0.011937388507393327,
+      "iteration": 2,
+      "label": "trial_2_5",
+      "maximum_absolute_flux": 0.06661650718165356,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 2.022172400120703e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": -1,
+      "minimum_signed_flux": -2.022172400120703e-05,
+      "objective": 0.020764738290656882,
+      "policy_reason": "merit_switch_decrease",
+      "ratio": 0.00030355425189233234,
+      "ratio_absolute_difference": 0.0,
+      "rejection": null,
+      "reported_ratio": 0.00030355425189233234,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8"
+    },
+    {
+      "accepted": false,
+      "backtrack": 0,
+      "coefficient_values": [
+        0.0033588958181050006,
+        -0.0009926896427540361,
+        0.00289597310629495,
+        -0.002339886181963862,
+        -0.0018541402230720255
+      ],
+      "control_sha256": "cfb40f99e7db7455395ef03cda43fe87c0b54f9fed96b734ccf4cb4feced8edd",
+      "gradient_max": 0.007320708559968031,
+      "gradient_norm": 0.013182019669408079,
+      "iteration": 3,
+      "label": "trial_3_0",
+      "maximum_absolute_flux": 0.06668733306700453,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 7.896696729011929e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 7.896696729011929e-05,
+      "objective": 0.020768240106933546,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0011841374314785797,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0011841374314785797,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 1,
+      "coefficient_values": [
+        0.0033556096941829874,
+        -0.0009765612342651381,
+        0.0029139288875331478,
+        -0.0023379922303247034,
+        -0.0018558363587012066
+      ],
+      "control_sha256": "dab1372a0bc9cf7f9800ccc6994aafc82251151dba834949d2c447bb891b65a2",
+      "gradient_max": 0.0069224781725652435,
+      "gradient_norm": 0.012495358104206652,
+      "iteration": 3,
+      "label": "trial_3_1",
+      "maximum_absolute_flux": 0.06665191963383715,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 2.9372291763607797e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 2.9372291763607797e-05,
+      "objective": 0.02076592849055279,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.00044068185770146037,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.00044068185770146037,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 2,
+      "coefficient_values": [
+        0.00335396662997349,
+        -0.0009684970001652064,
+        0.002922906634255167,
+        -0.0023370452505599238,
+        -0.001856684422050236
+      ],
+      "control_sha256": "313bcde03b191416f442a76fe33e0cbb406cf5287d46dd12702e6b62963ec713",
+      "gradient_max": 0.006837007183418155,
+      "gradient_norm": 0.012166989783714319,
+      "iteration": 3,
+      "label": "trial_3_2",
+      "maximum_absolute_flux": 0.06663421328447271,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 4.575201035306176e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 4.575201035306176e-06,
+      "objective": 0.020764827702889992,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 6.86614399688921e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 6.86614399688921e-05,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": true,
+      "backtrack": 3,
+      "coefficient_values": [
+        0.0033531450973069395,
+        -0.0009644648757230588,
+        0.0029273954715129144,
+        -0.002336571759691697,
+        -0.0018571084526077697
+      ],
+      "control_sha256": "50a4c3da5ea723d98f32c1f60b1701998539e8d6a7f305bad5042194f349fef7",
+      "gradient_max": 0.007497085394917898,
+      "gradient_norm": 0.010445182577956567,
+      "iteration": 3,
+      "label": "trial_3_3",
+      "maximum_absolute_flux": 0.06662536020216372,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 7.823282241383595e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": false,
+      "minimum_sign": -1,
+      "minimum_signed_flux": -7.823282241383595e-06,
+      "objective": 0.020764668088834037,
+      "policy_reason": null,
+      "ratio": 0.00011742198792839736,
+      "ratio_absolute_difference": 0.0,
+      "rejection": null,
+      "reported_ratio": 0.00011742198792839736,
+      "signature_changed_from_preceding_accepted": false,
+      "signature_sha256": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8"
+    },
+    {
+      "accepted": false,
+      "backtrack": 0,
+      "coefficient_values": [
+        0.0033588958626273703,
+        -0.0009926895806239102,
+        0.002895973206398132,
+        -0.0023398862119072754,
+        -0.0018541401988936635
+      ],
+      "control_sha256": "e80dfbe8729295b6a306e927bf31735b414e150dec29f455254a643a9b67dcc0",
+      "gradient_max": 0.007320941319377464,
+      "gradient_norm": 0.013182367025772398,
+      "iteration": 4,
+      "label": "trial_4_0",
+      "maximum_absolute_flux": 0.066687331868786,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 7.896667156860777e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 7.896667156860777e-05,
+      "objective": 0.020768240093674648,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0011841330183067242,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0011841330183067242,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 1,
+      "coefficient_values": [
+        0.003356020482262431,
+        -0.0009785772586299122,
+        0.0029116844858871472,
+        -0.0023382289898268155,
+        -0.0018556243303095568
+      ],
+      "control_sha256": "d7ed6ae3aba129ea630eb4894f90ec2560b1b0396c4ebb54b27a7bbda199c46b",
+      "gradient_max": 0.006944053333121177,
+      "gradient_norm": 0.01257925719040176,
+      "iteration": 4,
+      "label": "trial_4_1",
+      "maximum_absolute_flux": 0.06665634566044604,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 3.5571442388139876e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 3.5571442388139876e-05,
+      "objective": 0.020766209412521993,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0005336542535551573,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0005336542535551573,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 2,
+      "coefficient_values": [
+        0.003354582790358259,
+        -0.000971521074735706,
+        0.0029195400155316957,
+        -0.002337400375765734,
+        -0.0018563663925988255
+      ],
+      "control_sha256": "44fca639282e0506ac003608c0142ad7f022a8a56f3fca457e55440583791d89",
+      "gradient_max": 0.006869158755868767,
+      "gradient_norm": 0.01228896160818614,
+      "iteration": 4,
+      "label": "trial_4_2",
+      "maximum_absolute_flux": 0.06664085283711245,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.387401675283055e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 1.387401675283055e-05,
+      "objective": 0.02076523619675255,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.00020819086434476237,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.00020819086434476237,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 3,
+      "coefficient_values": [
+        0.003353863943975962,
+        -0.0009679929771123267,
+        0.002923467752742566,
+        -0.0023369860679802908,
+        -0.0018567374228883947
+      ],
+      "control_sha256": "fd9b6b041ca66a2c08447fda0098023c5b6f61a5a264379964e5aeea4579c9b7",
+      "gradient_max": 0.00683171699015656,
+      "gradient_norm": 0.012146869874641987,
+      "iteration": 4,
+      "label": "trial_4_3",
+      "maximum_absolute_flux": 0.06663310649603559,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 3.025351394129322e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 3.025351394129322e-06,
+      "objective": 0.020764760120063522,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 4.54031269622604e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 4.54031269622604e-05,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": true,
+      "backtrack": 4,
+      "coefficient_values": [
+        0.0033535045206772875,
+        -0.0009662289268875712,
+        0.002925431614434348,
+        -0.002336778913898882,
+        -0.0018569229378193634
+      ],
+      "control_sha256": "14b169c3ccc1eb4667934b9f04cc6a680e9224b51a5c47107a3dc916b14ec0e7",
+      "gradient_max": 0.007028511996035328,
+      "gradient_norm": 0.009792352467288731,
+      "iteration": 4,
+      "label": "trial_4_4",
+      "maximum_absolute_flux": 0.06662923334319222,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 2.3989693929572092e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": false,
+      "minimum_sign": -1,
+      "minimum_signed_flux": -2.3989693929572092e-06,
+      "objective": 0.02076464031906399,
+      "policy_reason": null,
+      "ratio": 3.60047575604038e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": null,
+      "reported_ratio": 3.60047575604038e-05,
+      "signature_changed_from_preceding_accepted": false,
+      "signature_sha256": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8"
+    },
+    {
+      "accepted": false,
+      "backtrack": 0,
+      "coefficient_values": [
+        0.003358895880246362,
+        -0.0009926895560705218,
+        0.0028959732458771177,
+        -0.002339886223753136,
+        -0.0018541401893273353
+      ],
+      "control_sha256": "57cf704cef3562bf24b172aee053681338610d13c27c5609aa3077f463b24d21",
+      "gradient_max": 0.007321033395617705,
+      "gradient_norm": 0.013182504462773957,
+      "iteration": 5,
+      "label": "trial_5_0",
+      "maximum_absolute_flux": 0.06668733139523522,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 7.896655484752532e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 7.896655484752532e-05,
+      "objective": 0.020768240088445647,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0011841312764416217,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0011841312764416217,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 1,
+      "coefficient_values": [
+        0.0033562002024792783,
+        -0.000979459268271461,
+        0.0029107025592511105,
+        -0.002338332572365837,
+        -0.0018555315675799714
+      ],
+      "control_sha256": "cbfe6bbf3ad5b58d38bb754c7eab9675aa4736b032925eeb462c2229369a9623",
+      "gradient_max": 0.006953497071642782,
+      "gradient_norm": 0.012616164486304277,
+      "iteration": 5,
+      "label": "trial_5_1",
+      "maximum_absolute_flux": 0.06665828203979224,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 3.828357111210039e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 3.828357111210039e-05,
+      "objective": 0.020766333036606913,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0005743257992944774,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0005743257992944774,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 2,
+      "coefficient_values": [
+        0.0033548523620824445,
+        -0.0009728441042323949,
+        0.0029180671191979483,
+        -0.0023375557440170245,
+        -0.0018562272537016955
+      ],
+      "control_sha256": "8d0102831cae085ce12af5471f183ac58f5e4914ea7f70c3a3b78ad12fa7ae67",
+      "gradient_max": 0.006883240806512484,
+      "gradient_norm": 0.012342815893333692,
+      "iteration": 5,
+      "label": "trial_5_2",
+      "maximum_absolute_flux": 0.06664375760877825,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.7942245248401406e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 1.7942245248401406e-05,
+      "objective": 0.020765416534361026,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0002692261945031454,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0002692261945031454,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 3,
+      "coefficient_values": [
+        0.0033541784415058807,
+        -0.0009695365172175496,
+        0.002921749374915125,
+        -0.002337167329179083,
+        -0.0018565750960110833
+      ],
+      "control_sha256": "125e0200fdf85f996715ba1bc04aa3f631333614bf15cf2c16630b94c1897421",
+      "gradient_max": 0.006848117531724784,
+      "gradient_norm": 0.012208793948431365,
+      "iteration": 5,
+      "label": "trial_5_3",
+      "maximum_absolute_flux": 0.06663649545526193,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 7.771623999008881e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 7.771623999008881e-06,
+      "objective": 0.02076496753914496,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.00011662714171735749,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.00011662714171735749,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 4,
+      "coefficient_values": [
+        0.0033538414811230847,
+        -0.0009678827224662456,
+        0.002923590496700752,
+        -0.0023369731215942607,
+        -0.0018567490169778674
+      ],
+      "control_sha256": "7f6c2051eb5eeaeeb993e77cbd934c84470844a3654a3e7a7c8ca46a5375ac71",
+      "gradient_max": 0.0068305571059124725,
+      "gradient_norm": 0.012142472166419921,
+      "iteration": 5,
+      "label": "trial_5_4",
+      "maximum_absolute_flux": 0.06663286439404065,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 2.6863238176064175e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 2.6863238176064175e-06,
+      "objective": 0.02076474535549197,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 4.031529849475705e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 4.031529849475705e-05,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 5,
+      "coefficient_values": [
+        0.0033536730009080607,
+        -0.0009670558247802414,
+        0.0029245110560742133,
+        -0.0023368760177603903,
+        -0.0018568359774142776
+      ],
+      "control_sha256": "b679ca885bf8797df5c5933ddea1ba5b2d1dc818e7f6ada589ed19f16478664a",
+      "gradient_max": 0.006821777197262062,
+      "gradient_norm": 0.012109486927107798,
+      "iteration": 5,
+      "label": "trial_5_5",
+      "maximum_absolute_flux": 0.06663104886731916,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.4367634056620948e-07,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 1.4367634056620948e-07,
+      "objective": 0.020764634842177977,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 2.1562971468798098e-06,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 2.1562971468798098e-06,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": true,
+      "backtrack": 6,
+      "coefficient_values": [
+        0.003353588760794643,
+        -0.0009666423758597285,
+        0.002924971335380966,
+        -0.002336827465833091,
+        -0.0018568794576207359
+      ],
+      "control_sha256": "83d5ac11e48d2774eda0c461590cda8a3c50e146180c8297c4a076da2dd8103b",
+      "gradient_max": 0.006918691198160079,
+      "gradient_norm": 0.00963934662160724,
+      "iteration": 5,
+      "label": "trial_5_6",
+      "maximum_absolute_flux": 0.06663014110493129,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.1276467441825866e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": false,
+      "minimum_sign": -1,
+      "minimum_signed_flux": -1.1276467441825866e-06,
+      "objective": 0.02076463406970439,
+      "policy_reason": null,
+      "ratio": 1.692397352733701e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": null,
+      "reported_ratio": 1.692397352733701e-05,
+      "signature_changed_from_preceding_accepted": false,
+      "signature_sha256": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8"
+    },
+    {
+      "accepted": false,
+      "backtrack": 0,
+      "coefficient_values": [
+        0.003358895884212546,
+        -0.0009926895505468505,
+        0.00289597325475247,
+        -0.0023398862264193757,
+        -0.0018541401871743192
+      ],
+      "control_sha256": "8eb1ff8476862cd1c2e731e7972a940ce769070140ed706167995790a1f68b7e",
+      "gradient_max": 0.007321054115559672,
+      "gradient_norm": 0.013182535387313982,
+      "iteration": 6,
+      "label": "trial_6_0",
+      "maximum_absolute_flux": 0.06668733128869966,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 7.896652860023799e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 7.896652860023799e-05,
+      "objective": 0.02076824008727221,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0011841308847460067,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0011841308847460067,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 1,
+      "coefficient_values": [
+        0.0033562423244585223,
+        -0.0009796659891704487,
+        0.00291047242014945,
+        -0.002338356849556347,
+        -0.001855509826279882
+      ],
+      "control_sha256": "a09b3d2af2b48bc93b24294d18d808ca9edbd332068094018c7a4259aa76f283",
+      "gradient_max": 0.0069557109855829195,
+      "gradient_norm": 0.012624832301918614,
+      "iteration": 6,
+      "label": "trial_6_1",
+      "maximum_absolute_flux": 0.06665873587765198,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 3.891922620948701e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 3.891922620948701e-05,
+      "objective": 0.020766362074458023,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0005838578499436423,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0005838578499436423,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 2,
+      "coefficient_values": [
+        0.003354915543115122,
+        -0.0009731541889637408,
+        0.0029177219091135105,
+        -0.0023375921585519687,
+        -0.0018561946429212527
+      ],
+      "control_sha256": "c120b5ef1ab7f7c4ccedb48a0ecda33414e707ffbfd19cf907f9b6021567bcb4",
+      "gradient_max": 0.006886542878269531,
+      "gradient_norm": 0.012355480794383741,
+      "iteration": 6,
+      "label": "trial_6_2",
+      "maximum_absolute_flux": 0.06664443841115864,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.8895735855209775e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 1.8895735855209775e-05,
+      "objective": 0.020765458943763155,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.00028353057367868766,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.00028353057367868766,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 3,
+      "coefficient_values": [
+        0.003354252152076993,
+        -0.0009698982840185054,
+        0.0029213466300940165,
+        -0.002337209812406808,
+        -0.0018565370505137747
+      ],
+      "control_sha256": "bcd13967c219f71ed9048501a403f320f133373227fd0c58e3740e14b6e8504b",
+      "gradient_max": 0.006851963532064211,
+      "gradient_norm": 0.012223367577046645,
+      "iteration": 6,
+      "label": "trial_6_3",
+      "maximum_absolute_flux": 0.06663728973796895,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 8.884031061424935e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 8.884031061424935e-06,
+      "objective": 0.020765016347310462,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.00013331921355683445,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.00013331921355683445,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 4,
+      "coefficient_values": [
+        0.0033539204564663424,
+        -0.0009682703303401357,
+        0.0029231589847003984,
+        -0.0023370186391735146,
+        -0.0018567082541279562
+      ],
+      "control_sha256": "8e21568a03df27aefb6cbcec5664d1b6ad5e1b24aac6237a3f43258020ced53a",
+      "gradient_max": 0.006834675034858566,
+      "gradient_norm": 0.01215797642363072,
+      "iteration": 6,
+      "label": "trial_6_4",
+      "maximum_absolute_flux": 0.06663371541642577,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 3.878188782007949e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 3.878188782007949e-06,
+      "objective": 0.020764797291319845,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 5.8201598961896446e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 5.8201598961896446e-05,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 5,
+      "coefficient_values": [
+        0.003353754608638124,
+        -0.0009674563532001025,
+        0.0029240651605315603,
+        -0.0023369230525166935,
+        -0.0018567938558895218
+      ],
+      "control_sha256": "743d079fcefe39b936e6086e3fedc3e27f94875732cdbe8c53d135801c5df767",
+      "gradient_max": 0.006826031079264953,
+      "gradient_norm": 0.012125450402463026,
+      "iteration": 6,
+      "label": "trial_6_5",
+      "maximum_absolute_flux": 0.06663192825942177,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.375270174372098e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 1.375270174372098e-06,
+      "objective": 0.02076468832387697,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 2.0639807526170976e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 2.0639807526170976e-05,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 6,
+      "coefficient_values": [
+        0.003353671684718291,
+        -0.0009670493645549476,
+        0.0029245182480790014,
+        -0.00233687525917824,
+        -0.0018568366567589228
+      ],
+      "control_sha256": "d4c9a3dc99f5f6ce2c11fb943f6dd3f082cef7717588487d0408b2e1bcee2208",
+      "gradient_max": 0.006821709174044938,
+      "gradient_norm": 0.012109230185460337,
+      "iteration": 6,
+      "label": "trial_6_6",
+      "maximum_absolute_flux": 0.06663103468186225,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.238115039103871e-07,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 1.238115039103871e-07,
+      "objective": 0.020764633980286558,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 1.8581657106412912e-06,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 1.8581657106412912e-06,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": true,
+      "backtrack": 7,
+      "coefficient_values": [
+        0.0033536302227569438,
+        -0.0009668458702135948,
+        0.0029247447917606713,
+        -0.0023368513625065023,
+        -0.001856858057190778
+      ],
+      "control_sha256": "7c4a618e3e81cd36ca72d90670dfa10365ce8b722b52e071d696aef28c885b9b",
+      "gradient_max": 0.006864638849512662,
+      "gradient_norm": 0.009564039144916811,
+      "iteration": 6,
+      "label": "trial_6_7",
+      "maximum_absolute_flux": 0.06663058789331819,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 5.019176729410824e-07,
+      "minimum_face_sign_changed_from_preceding_accepted": false,
+      "minimum_sign": -1,
+      "minimum_signed_flux": -5.019176729410824e-07,
+      "objective": 0.020764631029980607,
+      "policy_reason": null,
+      "ratio": 7.532841729457641e-06,
+      "ratio_absolute_difference": 0.0,
+      "rejection": null,
+      "reported_ratio": 7.532841729457641e-06,
+      "signature_changed_from_preceding_accepted": false,
+      "signature_sha256": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8"
+    },
+    {
+      "accepted": false,
+      "backtrack": 0,
+      "coefficient_values": [
+        0.003358895886140147,
+        -0.0009926895478600893,
+        0.0028959732590672473,
+        -0.002339886227715703,
+        -0.0018541401861272649
+      ],
+      "control_sha256": "e093f6201218425b8f6d0f46eb7e9cc2a3f6e9b2a30b78f069f65200a919ef02",
+      "gradient_max": 0.007321064195577386,
+      "gradient_norm": 0.013182550435606925,
+      "iteration": 7,
+      "label": "trial_7_0",
+      "maximum_absolute_flux": 0.0666873312368933,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 7.896651583797279e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 7.896651583797279e-05,
+      "objective": 0.02076824008669853,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0011841306942912465,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0011841306942912465,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 1,
+      "coefficient_values": [
+        0.0033562630563730603,
+        -0.000979767734602498,
+        0.002910359148545095,
+        -0.00233836879848785,
+        -0.0018554991254809319
+      ],
+      "control_sha256": "6e3c522047a7ab6d83b755414a5cc99ca5eafce342955829ed1f5ca74af318cc",
+      "gradient_max": 0.0069568006920699334,
+      "gradient_norm": 0.01262910092087089,
+      "iteration": 7,
+      "label": "trial_7_1",
+      "maximum_absolute_flux": 0.06665895925093099,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 3.9232087718095096e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 3.9232087718095096e-05,
+      "objective": 0.020766376375382017,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0005885493586902524,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0005885493586902524,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 2,
+      "coefficient_values": [
+        0.0033549466400459426,
+        -0.0009733068087573259,
+        0.0029175520010114816,
+        -0.002337610081341091,
+        -0.0018561785922916799
+      ],
+      "control_sha256": "81123e614b3876b9f17eb2d58b35a691cc8a972d81742c881d1dceb68f61e4da",
+      "gradient_max": 0.006888168292362162,
+      "gradient_norm": 0.01236172019827918,
+      "iteration": 7,
+      "label": "trial_7_2",
+      "maximum_absolute_flux": 0.06664477349324678,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.936503198826829e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 1.936503198826829e-05,
+      "objective": 0.02076547983704425,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.00029057090261144905,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.00029057090261144905,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 3,
+      "coefficient_values": [
+        0.003354288431521655,
+        -0.0009700763410675133,
+        0.0029211484041102025,
+        -0.0023372307221347414,
+        -0.0018565183249802286
+      ],
+      "control_sha256": "e8470aadeed211973fdbb625fc1499fd9dda9485e80395286971433a382a974c",
+      "gradient_max": 0.006853856719382998,
+      "gradient_norm": 0.012230548818303369,
+      "iteration": 7,
+      "label": "trial_7_3",
+      "maximum_absolute_flux": 0.06663768067352126,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 9.431543874937123e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 9.431543874937123e-06,
+      "objective": 0.020765040397185554,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.00014153469597996956,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.00014153469597996956,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 4,
+      "coefficient_values": [
+        0.0033539593271693494,
+        -0.0009684611060354089,
+        0.0029229465998676526,
+        -0.0023370410423733537,
+        -0.0018566881911452587
+      ],
+      "control_sha256": "a959e52fc5f34a910cee03f45945a1f3ad420e50e9d997eb515151c956a0aff5",
+      "gradient_max": 0.006836702091094492,
+      "gradient_norm": 0.012165617083508442,
+      "iteration": 7,
+      "label": "trial_7_4",
+      "maximum_absolute_flux": 0.0666341342784742,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 4.464809777299933e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 4.464809777299933e-06,
+      "objective": 0.020764822884579735,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 6.70048440734716e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 6.70048440734716e-05,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 5,
+      "coefficient_values": [
+        0.0033537947749706586,
+        -0.0009676534882231332,
+        0.002923845696297364,
+        -0.0023369462024531106,
+        -0.001856773124182958
+      ],
+      "control_sha256": "75eb9a24704b9df27bd03b0fde495ab8c575e465da38c20882684c830dfa38ed",
+      "gradient_max": 0.006828125070080247,
+      "gradient_norm": 0.012133317817051351,
+      "iteration": 7,
+      "label": "trial_7_5",
+      "maximum_absolute_flux": 0.06663236108465916,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.981445220877384e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 1.981445220877384e-06,
+      "objective": 0.02076471468011932,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 2.973698047949819e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 2.973698047949819e-05,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 6,
+      "coefficient_values": [
+        0.0033537124988656792,
+        -0.0009672496792430117,
+        0.0029242952441498366,
+        -0.002336898782483102,
+        -0.0018568155906906031
+      ],
+      "control_sha256": "6ff92d4e98e1c222cc9bee946e5c787262ebc3d65bb385c7a3f2f97da6e7812e",
+      "gradient_max": 0.006823836635372318,
+      "gradient_norm": 0.012117210230840883,
+      "iteration": 7,
+      "label": "trial_7_6",
+      "maximum_absolute_flux": 0.06663147448867932,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 7.397635660953694e-07,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 7.397635660953694e-07,
+      "objective": 0.020764660715837928,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 1.1102314210697157e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 1.1102314210697157e-05,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 7,
+      "coefficient_values": [
+        0.003353671360811781,
+        -0.0009670477747344637,
+        0.002924520017985461,
+        -0.0023368750724956262,
+        -0.0018568368239416243
+      ],
+      "control_sha256": "54ccf5a97382267777badf7b5330ba879cc64900c5df01e9f63114bccbc9dc07",
+      "gradient_max": 0.006821692432629578,
+      "gradient_norm": 0.01210916699745999,
+      "iteration": 7,
+      "label": "trial_7_7",
+      "maximum_absolute_flux": 0.06663103119092142,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.1892289460135874e-07,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 1.1892289460135874e-07,
+      "objective": 0.020764633768195533,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 1.7847974506143042e-06,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 1.7847974506143042e-06,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": true,
+      "backtrack": 8,
+      "coefficient_values": [
+        0.00335365079178448,
+        -0.0009669468224755691,
+        0.002924632404880618,
+        -0.0023368632175012703,
+        -0.0018568474405664347
+      ],
+      "control_sha256": "785aed22f6e212860147cf9eabcc79407352807509e044139b52cdc2846b41ed",
+      "gradient_max": 0.006837823832765572,
+      "gradient_norm": 0.009526679598573473,
+      "iteration": 7,
+      "label": "trial_7_8",
+      "maximum_absolute_flux": 0.06663080954210049,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.9149740216294064e-07,
+      "minimum_face_sign_changed_from_preceding_accepted": false,
+      "minimum_sign": -1,
+      "minimum_signed_flux": -1.9149740216294064e-07,
+      "objective": 0.02076462953084046,
+      "policy_reason": null,
+      "ratio": 2.8740068367613566e-06,
+      "ratio_absolute_difference": 0.0,
+      "rejection": null,
+      "reported_ratio": 2.8740068367613566e-06,
+      "signature_changed_from_preceding_accepted": false,
+      "signature_sha256": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8"
+    },
+    {
+      "accepted": false,
+      "backtrack": 0,
+      "coefficient_values": [
+        0.0033588958870907366,
+        -0.0009926895465345235,
+        0.0028959732611941254,
+        -0.0023398862283540794,
+        -0.0018541401856108726
+      ],
+      "control_sha256": "75352907b9e25002035d085eb26b3a07c045ab254c438594a4303c6ff1edf6a9",
+      "gradient_max": 0.007321069161926795,
+      "gradient_norm": 0.013182557856497149,
+      "iteration": 8,
+      "label": "trial_8_0",
+      "maximum_absolute_flux": 0.06668733121134279,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 7.896650954506042e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 7.896650954506042e-05,
+      "objective": 0.02076824008641749,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0011841306003804973,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0011841306003804973,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 1,
+      "coefficient_values": [
+        0.003356273341347124,
+        -0.0009798182098726647,
+        0.0029103029552060558,
+        -0.002338374726278103,
+        -0.0018554938168807544
+      ],
+      "control_sha256": "2d81d73debdae7b39a8353c4c8475f261168cc090916e86acc22a568f03e7f2c",
+      "gradient_max": 0.0069573413010613865,
+      "gradient_norm": 0.012631219148562597,
+      "iteration": 8,
+      "label": "trial_8_1",
+      "maximum_absolute_flux": 0.06665907006500706,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 3.9387296361112836e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 3.9387296361112836e-05,
+      "objective": 0.020766383472147397,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.0005908767752490648,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.0005908767752490648,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 2,
+      "coefficient_values": [
+        0.0033549620670429944,
+        -0.0009733825224743788,
+        0.0029174677106604376,
+        -0.0023376189727270244,
+        -0.0018561706296719627
+      ],
+      "control_sha256": "2f8a00ed1489fbcfcd253ed092c6ed5c6712307015c62f758ef499cbe1abbdde",
+      "gradient_max": 0.006888974693824209,
+      "gradient_norm": 0.01236481696929144,
+      "iteration": 8,
+      "label": "trial_8_2",
+      "maximum_absolute_flux": 0.0666449397252949,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.9597846860942153e-05,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 1.9597846860942153e-05,
+      "objective": 0.020765490206945444,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.00029406353943334495,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.00029406353943334495,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 3,
+      "coefficient_values": [
+        0.0033543064295330125,
+        -0.000970164674044834,
+        0.0029210500654341695,
+        -0.0023372410953234487,
+        -0.0018565090353563336
+      ],
+      "control_sha256": "70fe0e0a08f9c3f93956daac7237115a7e8f47963b43cd45c74b91ef86d0f1c8",
+      "gradient_max": 0.006854795978397726,
+      "gradient_norm": 0.012234113408986457,
+      "iteration": 8,
+      "label": "trial_8_3",
+      "maximum_absolute_flux": 0.06663787461409168,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 9.703161550887046e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 9.703161550887046e-06,
+      "objective": 0.020765052334813426,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 0.00014561030955862977,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 0.00014561030955862977,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 4,
+      "coefficient_values": [
+        0.003353978610688562,
+        -0.0009685557486520159,
+        0.0029228412370744744,
+        -0.0023370521564646802,
+        -0.0018566782380206733
+      ],
+      "control_sha256": "32482b99711aa003899d6012e681d51b15586ef2a2b2cd1926921b9053b049c9",
+      "gradient_max": 0.006837707768842869,
+      "gradient_norm": 0.012169409925629539,
+      "iteration": 8,
+      "label": "trial_8_4",
+      "maximum_absolute_flux": 0.06663434207318941,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 4.755828776750737e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 4.755828776750737e-06,
+      "objective": 0.020764835588860525,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 7.137203773284141e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 7.137203773284141e-05,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 5,
+      "coefficient_values": [
+        0.0033538147012439744,
+        -0.0009677512856616648,
+        0.002923736821456963,
+        -0.002336957686996055,
+        -0.0018567628393083768
+      ],
+      "control_sha256": "70c90915c74d3883dfe28c72279f26b17f2ef7e991a3bac623b970bbb6444a2d",
+      "gradient_max": 0.006829163958765453,
+      "gradient_norm": 0.012137223338013883,
+      "iteration": 8,
+      "label": "trial_8_5",
+      "maximum_absolute_flux": 0.06663257580641761,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 2.282164862518754e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 2.282164862518754e-06,
+      "objective": 0.02076472776341747,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 3.424998711064313e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 3.424998711064313e-05,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 6,
+      "coefficient_values": [
+        0.0033537327465160906,
+        -0.0009673490540930748,
+        0.002924184613288663,
+        -0.0023369104522519323,
+        -0.0018568051399411114
+      ],
+      "control_sha256": "86f0d6f45d47cff74c794ffd7dbfcb6b823752572236f4c44ce52d320dc69ffc",
+      "gradient_max": 0.006824892124461343,
+      "gradient_norm": 0.012121171713837952,
+      "iteration": 8,
+      "label": "trial_8_6",
+      "maximum_absolute_flux": 0.06663169267395214,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.0453335239375e-06,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 1.0453335239375e-06,
+      "objective": 0.020764673987577344,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 1.5688233061294343e-05,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 1.5688233061294343e-05,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 7,
+      "coefficient_values": [
+        0.003353691769150751,
+        -0.0009671479382904351,
+        0.0029244085091146106,
+        -0.0023368868348774188,
+        -0.0018568262902546994
+      ],
+      "control_sha256": "aa53bc66388d082059720c83988326a62fa301c7c7ad6e21e45ed26d2b024b49",
+      "gradient_max": 0.006822756220449843,
+      "gradient_norm": 0.012113156369172299,
+      "iteration": 8,
+      "label": "trial_8_7",
+      "maximum_absolute_flux": 0.06663125110794955,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 4.2691800932262436e-07,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 4.2691800932262436e-07,
+      "objective": 0.020764647133879717,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 6.407173844461855e-06,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 6.407173844461855e-06,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": false,
+      "backtrack": 8,
+      "coefficient_values": [
+        0.0033536712804677323,
+        -0.0009670473803845304,
+        0.0029245204570051077,
+        -0.0023368750261895488,
+        -0.0018568368654107985
+      ],
+      "control_sha256": "f1c1f2da296b0f91848a0b756b356c1ba1689fb00650d73bbb14c24d9be2805e",
+      "gradient_max": 0.006821688274731925,
+      "gradient_norm": 0.01210915132325337,
+      "iteration": 8,
+      "label": "trial_8_8",
+      "maximum_absolute_flux": 0.06663103032500581,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 1.177102906847749e-07,
+      "minimum_face_sign_changed_from_preceding_accepted": true,
+      "minimum_sign": 1,
+      "minimum_signed_flux": 1.177102906847749e-07,
+      "objective": 0.020764633715583136,
+      "policy_reason": "merit_switch_refused",
+      "ratio": 1.7665986869874302e-06,
+      "ratio_absolute_difference": 0.0,
+      "rejection": "policy",
+      "reported_ratio": 1.7665986869874302e-06,
+      "signature_changed_from_preceding_accepted": true,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    {
+      "accepted": true,
+      "backtrack": 9,
+      "coefficient_values": [
+        0.0033536610361261346,
+        -0.0009669971014304317,
+        0.002924576430944736,
+        -0.002336869121845461,
+        -0.0018568421529886743
+      ],
+      "control_sha256": "e5a36af694e97ce67058ccace28f202f87157b07892d9520baa05edf1eae98ba",
+      "gradient_max": 0.006824468701446666,
+      "gradient_norm": 0.00950807279311709,
+      "iteration": 8,
+      "label": "trial_8_9",
+      "maximum_absolute_flux": 0.06663091993354833,
+      "minimizer_count_at_roundoff_scale": 1,
+      "minimizing_face": {
+        "index": [
+          2,
+          0
+        ],
+        "kind": "qy"
+      },
+      "minimum_absolute_flux": 3.689355896133173e-08,
+      "minimum_face_sign_changed_from_preceding_accepted": false,
+      "minimum_sign": -1,
+      "minimum_signed_flux": -3.689355896133173e-08,
+      "objective": 0.02076462878639504,
+      "policy_reason": null,
+      "ratio": 5.537002790615233e-07,
+      "ratio_absolute_difference": 0.0,
+      "rejection": null,
+      "reported_ratio": 5.537002790615233e-07,
+      "signature_changed_from_preceding_accepted": false,
+      "signature_sha256": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8"
+    }
+  ],
+  "input_after": {
+    "current_problem_identity": {
+      "fixed_problem_sha256": "838fcf77a43b209b53dfe62f6a1657d0f8eba5a41797e431451059f3f8d18158",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    },
+    "fixed_input_fields": {
+      "common_bias_std_dbz": 0.25,
+      "missing_indices": [
+        [
+          1,
+          1,
+          2
+        ],
+        [
+          2,
+          2,
+          3
+        ]
+      ],
+      "observation_counts": {
+        "censored": 0,
+        "missing": 2,
+        "qc_rejected": 0,
+        "valid": 58
+      },
+      "tensor_sha256": {
+        "direction": "f75710a114ba2fb0ad1013ccaa15729e7d69b05031ea1b3537a519be77611a38",
+        "missing_mask": "21257c511085d4ac7cf048aa8d526556286321fad5f9d4235c7d239ad785199a",
+        "observation_dbz": "fc89685ee7bb07f7c3dcd5eb45fc6a6bb90bf73dae5500a6453c563e33c08a12",
+        "parameters": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+        "valid_mask": "6d2c1c3e23427974a855012eb8885dbb00c357f53dc4e4ab38bc58864fe20aec",
+        "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+        "warm_start_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+        "whitener_mode": "2b9b699f1aa5d630bac602ec23f2889b53b79c539aef63018b440a310ae1fb72"
+      },
+      "verification_constructor": "tests.test_fv_research_partial_observation._problem: warm-start partial forecast dBZ + 0.1 * fixed pattern, then detach",
+      "warm_start_branch": {
+        "euler_stages": 54,
+        "minimum_scaled_face_flux_margin": 0.007752734889703382,
+        "minimum_scaled_slope_margin": 0.0007615693500034068,
+        "signature_sha256": "3c5e5433d3d74a8f840bdd28834b2a73c98edf3b3fc4b46c5ab89567b1e4c70d"
+      },
+      "warm_start_gradient_max": 1.083842990538571,
+      "warm_start_objective": 0.02127260121736458
+    },
+    "historical_manifest_sha256": "6d859284dbb737910e2a94252e37cf87322924cae2fa9e88381f9e29dd18a5a3",
+    "historical_preflight_sha256": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
+    "historical_problem_identity": {
+      "fixed_problem_sha256": "ffc5a82cb9e4cda7667378b1932c6703e61a6a0c2d16d37ca1c6268b2f860e48",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    }
+  },
+  "input_before": {
+    "current_problem_identity": {
+      "fixed_problem_sha256": "838fcf77a43b209b53dfe62f6a1657d0f8eba5a41797e431451059f3f8d18158",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    },
+    "fixed_input_fields": {
+      "common_bias_std_dbz": 0.25,
+      "missing_indices": [
+        [
+          1,
+          1,
+          2
+        ],
+        [
+          2,
+          2,
+          3
+        ]
+      ],
+      "observation_counts": {
+        "censored": 0,
+        "missing": 2,
+        "qc_rejected": 0,
+        "valid": 58
+      },
+      "tensor_sha256": {
+        "direction": "f75710a114ba2fb0ad1013ccaa15729e7d69b05031ea1b3537a519be77611a38",
+        "missing_mask": "21257c511085d4ac7cf048aa8d526556286321fad5f9d4235c7d239ad785199a",
+        "observation_dbz": "fc89685ee7bb07f7c3dcd5eb45fc6a6bb90bf73dae5500a6453c563e33c08a12",
+        "parameters": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+        "valid_mask": "6d2c1c3e23427974a855012eb8885dbb00c357f53dc4e4ab38bc58864fe20aec",
+        "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+        "warm_start_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+        "whitener_mode": "2b9b699f1aa5d630bac602ec23f2889b53b79c539aef63018b440a310ae1fb72"
+      },
+      "verification_constructor": "tests.test_fv_research_partial_observation._problem: warm-start partial forecast dBZ + 0.1 * fixed pattern, then detach",
+      "warm_start_branch": {
+        "euler_stages": 54,
+        "minimum_scaled_face_flux_margin": 0.007752734889703382,
+        "minimum_scaled_slope_margin": 0.0007615693500034068,
+        "signature_sha256": "3c5e5433d3d74a8f840bdd28834b2a73c98edf3b3fc4b46c5ab89567b1e4c70d"
+      },
+      "warm_start_gradient_max": 1.083842990538571,
+      "warm_start_objective": 0.02127260121736458
+    },
+    "historical_manifest_sha256": "6d859284dbb737910e2a94252e37cf87322924cae2fa9e88381f9e29dd18a5a3",
+    "historical_preflight_sha256": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
+    "historical_problem_identity": {
+      "fixed_problem_sha256": "ffc5a82cb9e4cda7667378b1932c6703e61a6a0c2d16d37ca1c6268b2f860e48",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    }
+  },
+  "maximum_ratio_absolute_difference": 0.0,
+  "minimum_face_counts": {
+    "qy:[1, 0]": 1,
+    "qy:[2, 0]": 52
+  },
+  "new_gn_root_adjoint_reanalysis_runs": 0,
+  "physical_validation": "not_performed",
+  "pid": 36538,
+  "plan_sha256": "56da745dad5e45ccbcbc960f22f4515e79fbf6918fef4a8633715af76ea9e5fa",
+  "rejected_same_min_face_sign_crossings": 43,
+  "response_validation": "not_performed",
+  "reviewed_probe_sha256": "681dbda0b148a08e6325e387c083dee46a7d8e5b187de4e5edcb8df34fd76e54",
+  "scope": "archived 52 trials and GN seed; current-source face-flux derivation only",
+  "source_after": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_partial_face_geometry.py": "681dbda0b148a08e6325e387c083dee46a7d8e5b187de4e5edcb8df34fd76e54",
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "758397e502b1f7821cc62fe9f1cf47b440cabdc4933596a3076ef762ad282f0e",
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7756da5561f67d47d1a813cc2cd720931b3ba29d132758e16e2628db6fe220c8",
+    "examples/weather_scenarios/fv_partial_sector_root_probe.py": "fddc3ddb20a3a961f73eb2d40dd379b25e87cd6109ca836476f45a1408350ccc",
+    "examples/weather_scenarios/fv_partial_sector_root_runner.py": "2bc6607a1bc4c369cd11edbd359d7a3754352dc7df2b7377944811161e37b18e",
+    "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+    "examples/weather_scenarios/fv_point_merit_root_probe.py": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+    "examples/weather_scenarios/fv_point_sector_policy.py": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d"
+  },
+  "source_before": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_partial_face_geometry.py": "681dbda0b148a08e6325e387c083dee46a7d8e5b187de4e5edcb8df34fd76e54",
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "758397e502b1f7821cc62fe9f1cf47b440cabdc4933596a3076ef762ad282f0e",
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7756da5561f67d47d1a813cc2cd720931b3ba29d132758e16e2628db6fe220c8",
+    "examples/weather_scenarios/fv_partial_sector_root_probe.py": "fddc3ddb20a3a961f73eb2d40dd379b25e87cd6109ca836476f45a1408350ccc",
+    "examples/weather_scenarios/fv_partial_sector_root_runner.py": "2bc6607a1bc4c369cd11edbd359d7a3754352dc7df2b7377944811161e37b18e",
+    "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+    "examples/weather_scenarios/fv_point_merit_root_probe.py": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+    "examples/weather_scenarios/fv_point_sector_policy.py": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d"
+  },
+  "status": "geometry_only"
+}

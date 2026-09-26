@@ -765,5 +765,16 @@
     "graphify": "code-only incremental update:7649 nodes,66980 edges,253 communities;no semantic LLM extraction",
     "record": "FV_PARTIAL_SEED_BRANCH_STATUS_RESULTS.md;PR177_195_REVIEW_RESOLUTION.md R4 subsection",
     "status": "seed-status edge closed; R4-R qualified original two-hole response still open"
+  },
+  "fv_partial_face_geometry": {
+    "baseline": "main f95d83d after PR210 seed-branch status repair",
+    "scope": "diagnostic-only replay of PR209 saved GN seed and52 trial controls using archived geometry-critical source hashes; two fixed-input preflights and one fixture build do FV forward/branch checks, but no new GN/Newton/adjoint/reanalysis",
+    "geometry": "53/53 production face-flux ratios exactly match archived54-stage ratios;52 unique minima qy[2,0],one rejected iteration2/backtrack0 minimum qy[1,0];no roundoff ties",
+    "accepted_path": "two accepted same-face sign crossings then six same-signature points approach qy[2,0]=0 from negative side;post-iteration2 absolute minimum flux decreases 2.0221724e-5 to3.6893559e-8 (factor548.11) while maximum absolute flux varies only0.0216percent",
+    "limits": "continuity implies a zero-qy[2,0] crossing on each of the first two accepted straight step chords,not localization or other branch-event certification;43 rejected sign-change chords were not accepted;geometric approach is not proof of merit-stall causation,physical activity,root absence,generalized stationarity,or classical local response;R4-R remains open",
+    "verification": "53 affected focused tests passed with18 existing warnings;basedpyright1.39.9 error-level0;GREEN/RED raw geometry and provenance review;full CPU/package CI not run",
+    "graphify": "code-only incremental update:7665 nodes,67006 edges,251 communities;no semantic LLM extraction",
+    "record": "FV_PARTIAL_FACE_GEOMETRY_PLAN.md,FV_PARTIAL_FACE_GEOMETRY_RESULTS.md,partial_face_geometry_attempt1/geometry.json",
+    "status": "face-margin geometry diagnostic closed; next root method requires a separately frozen plan and final classical stationary response gates"
   }
 }

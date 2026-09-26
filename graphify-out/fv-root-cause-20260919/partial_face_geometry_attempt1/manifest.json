@@ -1,0 +1,55 @@
+{
+  "archived_root_attempt_manifest_sha256": "d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd",
+  "base_commit": "f95d83df02c20ad36646a97e5a14aebf29f66c03",
+  "command": ".venv/bin/python examples/weather_scenarios/fv_partial_face_geometry.py --output graphify-out/fv-root-cause-20260919/partial_face_geometry_attempt1/geometry.json --expected-plan-sha256 56da745dad5e45ccbcbc960f22f4515e79fbf6918fef4a8633715af76ea9e5fa --expected-probe-sha256 681dbda0b148a08e6325e387c083dee46a7d8e5b187de4e5edcb8df34fd76e54",
+  "current_source_sha256": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_partial_face_geometry.py": "681dbda0b148a08e6325e387c083dee46a7d8e5b187de4e5edcb8df34fd76e54",
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "758397e502b1f7821cc62fe9f1cf47b440cabdc4933596a3076ef762ad282f0e",
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7756da5561f67d47d1a813cc2cd720931b3ba29d132758e16e2628db6fe220c8",
+    "examples/weather_scenarios/fv_partial_sector_root_probe.py": "fddc3ddb20a3a961f73eb2d40dd379b25e87cd6109ca836476f45a1408350ccc",
+    "examples/weather_scenarios/fv_partial_sector_root_runner.py": "2bc6607a1bc4c369cd11edbd359d7a3754352dc7df2b7377944811161e37b18e",
+    "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+    "examples/weather_scenarios/fv_point_merit_root_probe.py": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+    "examples/weather_scenarios/fv_point_sector_policy.py": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d"
+  },
+  "file_sha256": {
+    "examples/weather_scenarios/fv_partial_face_geometry.py": "681dbda0b148a08e6325e387c083dee46a7d8e5b187de4e5edcb8df34fd76e54",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "be5a4be9ac9dfc28fee961a5fa8895940bc01b68db7bd9e12dda363b3f01a90a",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_FACE_GEOMETRY_PLAN.md": "56da745dad5e45ccbcbc960f22f4515e79fbf6918fef4a8633715af76ea9e5fa",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_FACE_GEOMETRY_RESULTS.md": "2ea8e343be6b80cab5cdfe2589949ce1bf6411b15063254db4d45ef61120087a",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "33fd10f89036bfcf4a022728727642df7fed84e6205324b5c4ba64d1b3209dd7",
+    "graphify-out/fv-root-cause-20260919/fv_partial_face_geometry_graphify.log": "301fe3fc137c19fdcc6a4027dbb887ae67ba81fed47900070f019fd4f379f8d4",
+    "graphify-out/fv-root-cause-20260919/fv_partial_face_geometry_tests.log": "d922d19f7c7d4034d44ab865c6a6c2b4551b3efe661f991202dad6f279dc6479",
+    "graphify-out/fv-root-cause-20260919/fv_partial_face_geometry_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/partial_face_geometry_attempt1/geometry.json": "05123ff889554c602d04c4c42493fcf61bf6cdad3103112e2ae20052123f23cd",
+    "graphify-out/fv-root-cause-20260919/partial_sector_root_attempt1/manifest.json": "d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd",
+    "tests/test_fv_partial_face_geometry.py": "804fdb705e57fbd7c1dd39533ff70f13ac659eeae143c11722661a2df7dec7f6"
+  },
+  "graphify_snapshot": {
+    "communities": 251,
+    "edges": 67006,
+    "full_graph_committed": false,
+    "graph_json_sha256": "6327411fac0adebcb47b0750568e14c439948b1d85a9852130133c7d23639aaa",
+    "graph_report_sha256": "801140cc33338ce66597e3f84cbb2dc43a91364752ce22a30506776ac8c0e646",
+    "nodes": 7665
+  },
+  "reviewed_plan_sha256": "56da745dad5e45ccbcbc960f22f4515e79fbf6918fef4a8633715af76ea9e5fa",
+  "reviewed_probe_sha256": "681dbda0b148a08e6325e387c083dee46a7d8e5b187de4e5edcb8df34fd76e54",
+  "scope": "archived PR209 seed+52 trial face geometry; fixed-input FV preflight runs, no new GN/Newton/adjoint/reanalysis",
+  "verification": {
+    "basedpyright_1_39_9": "0 errors, 0 warnings, 0 notes",
+    "focused_pytest": "53 passed, 18 existing warnings",
+    "full_cpu_package_ci": "not_run"
+  }
+}
