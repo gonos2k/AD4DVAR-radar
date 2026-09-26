@@ -147,6 +147,9 @@ def test_parent_separates_execution_refusal_and_final_root(
 def test_unexpected_final_score_error_propagates_as_execution_failure(monkeypatch, tmp_path):
     problem, warm, p, direction = preflight.fixed_problem()
     prior = json.loads(probe.PRIOR.read_text())
+    # Isolate callback classification from the historical prior-source gate;
+    # current refiner source has legitimately changed since that archive.
+    monkeypatch.setattr(probe.sector, "_sources", lambda: prior["source_before"])
     row = [v for v in prior["trial_records"] if v["accepted"]][-1]
     seed = torch.tensor(row["candidate_control"], dtype=torch.float64)
     gradient = torch.func.grad(problem.objective, argnums=0)(seed, p)
