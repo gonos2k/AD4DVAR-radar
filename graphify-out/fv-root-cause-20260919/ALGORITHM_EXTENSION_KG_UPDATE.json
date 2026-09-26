@@ -811,5 +811,16 @@
     "graphify": "code-only incremental update:7771 nodes,67256 edges,264 communities;no semantic LLM extraction",
     "record": "FV_RESPONSE_JOB_SINGLEHOST_LOCK_PLAN.md,FV_RESPONSE_JOB_SINGLEHOST_LOCK_RESULTS.md;PR177_195_REVIEW_RESOLUTION.md R7",
     "status": "R7-P launch-exclusion subitem closed;R7-P durable recovery and production/general execution remain open"
+  },
+  "fv_response_job_reconciliation_triage": {
+    "baseline": "main 2d8b06d after PR214 same-host fixed-job duplicate-launch lock",
+    "scope": "fixed fv4x5 crash-artifact classification under the same POSIX local job lock;no guarded worker,retry,PID action,publication or lifecycle mutation",
+    "states": "no_job_artifacts means only no files observed;publication_candidate requires pub/raw/resource/terminal lifecycle full internal consistency but is not authoritative;anything incomplete/drifted/contradictory including missing lifecycle is needs_reconciliation",
+    "gates": "regular non-symlink files,absolute command output to same raw path,current worker/coordinator source/archive/input,fixed full worker branch/adjoint/resource validation,published raw SHA/PID/request/scope/finite response scalars,saved-only monotonic order,exact completed lifecycle with no cancellation/read/runner error",
+    "limits": "mutable coordinated artifacts can form a candidate;no authenticated attempt manifest/resource digest/boot identity/fsync;orphan worker possible;legacy relative-output PR206 copy remains unresolved;no recovered-success,queue or general service claim",
+    "verification": "69 affected focused tests passed;basedpyright1.39.9 error-level0;GREEN/RED code/contract review;no new guarded FV worker and no full CPU/package CI",
+    "graphify": "code-only incremental update:7807 nodes,67341 edges,267 communities;no semantic LLM extraction",
+    "record": "FV_RESPONSE_JOB_RECONCILIATION_TRIAGE_PLAN.md,FV_RESPONSE_JOB_RECONCILIATION_TRIAGE_RESULTS.md;PR177_195_REVIEW_RESOLUTION.md R7",
+    "status": "R7-P crash-artifact triage subitem closed;durable journal/recovery and production/general execution remain open"
   }
 }

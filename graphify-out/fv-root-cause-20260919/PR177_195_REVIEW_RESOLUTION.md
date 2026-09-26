@@ -21,7 +21,7 @@ reanalysis, and physical skill. Prior evidence remains in
 | R5-R-R | Qualified point-observation 3-hour stationary response | Find a strict long-horizon branch and stationary analysis, then full adjoint/VJP and signed endpoints without changing the time/score contract | Open research target; R5-F proves forward execution only |
 | R6 | General observation products remain unsupported | Bind product-defined footprint/coordinate, censoring/QC provenance and covariance semantics separately; do not infer physical measurements from prepared synthetic masks | Open; needs a declared product contract |
 | R7-L | Fixed-case response job lifecycle | Keep forward AD in separate workers; verify two-job cancellation, resource accounting, worker/diagnostic completion and atomic result publication | **Closed for two fixed fv4x5 research jobs.** One qualified response published after child exit; the other was cancelled and never published. See `FV_RESPONSE_JOB_LIFECYCLE_RESULTS.md` |
-| R7-P | Production concurrency and recovery | Add general request/input contracts, durable queue/recovery, full concurrent GN/refinement and supported in-process policy only if verified | **Open.** Same-host duplicate launch of one fixed research job is now excluded by a persistent OS lock; durable recovery and general service contracts remain unimplemented. See `FV_RESPONSE_JOB_SINGLEHOST_LOCK_RESULTS.md` |
+| R7-P | Production concurrency and recovery | Add general request/input contracts, durable queue/recovery, full concurrent GN/refinement and supported in-process policy only if verified | **Open.** Same-host duplicate launch is excluded and fixed-case crash artifacts can now be classified without publication or retry. The classifier is not durable recovery or an authenticated result; see `FV_RESPONSE_JOB_SINGLEHOST_LOCK_RESULTS.md` and `FV_RESPONSE_JOB_RECONCILIATION_TRIAGE_RESULTS.md` |
 | R8 | Independent physical performance, finite influence and learning | Use independent verification events and a predeclared finite-amplitude range; keep learned error/prior normalization and data splitting separate from local synthetic derivative checks | Open; current truth is same-operator synthetic |
 
 Do not relabel skipped CI jobs or focused tests as a full CPU/package
@@ -210,6 +210,14 @@ historical numerical reports; new attempts must have distinct records.
   prove one owner. Busy raises a distinct exception before a second
   worker starts. This is launch exclusion, not crash recovery
   (`FV_RESPONSE_JOB_SINGLEHOST_LOCK_RESULTS.md`).
+- [x] Add read-only triage under that lock for fixed `fv4x5` crash
+  artifacts: no observed artifacts, internally consistent but
+  unauthenticated publication candidate, or needs reconciliation.
+  Require a completed lifecycle, absolute worker output path,
+  current source/archive/input and full worker/resource gates.
+  Missing lifecycle or publication never triggers automatic publish,
+  retry, PID signal or a recovered-success claim
+  (`FV_RESPONSE_JOB_RECONCILIATION_TRIAGE_RESULTS.md`).
 - [ ] Production request types, durable restart/recovery, concurrent
   GN/refinement, generic FV inputs and whole-system memory limits remain
   separate from this research lifecycle evidence.

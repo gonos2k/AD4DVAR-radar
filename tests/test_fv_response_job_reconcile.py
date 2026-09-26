@@ -1,0 +1,294 @@
+"""Classification only for fixed response-job crash artifacts."""
+from __future__ import annotations
+
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import sys
+from threading import Event, Thread
+from typing import Any
+
+import pytest
+
+from examples.weather_scenarios import fv_response_job_lifecycle as jobs
+from examples.weather_scenarios import fv_response_job_reconcile as reconcile
+
+
+FIXTURE = (jobs.EVIDENCE / "response_job_lifecycle_attempt1/complete")
+
+
+def _json(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text())
+
+
+def _write(path: Path, value: dict[str, Any]) -> None:
+    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+
+
+def _make_job(directory: Path, *, lifecycle: bool = False) -> None:
+    directory.mkdir(parents=True)
+    for name in ("published.json", "worker.raw.json", "worker.resource.json"):
+        shutil.copyfile(FIXTURE / name, directory / name)
+    raw_path = directory / "worker.raw.json"
+    resource_path = directory / "worker.resource.json"
+    published_path = directory / "published.json"
+    resource = _json(resource_path)
+    resource["command"] = [
+        sys.executable,
+        str((jobs.ROOT / "examples/weather_scenarios/fv_process_response_worker.py").resolve()),
+        "--case", "fv4x5", "--output", str(raw_path.resolve()),
+    ]
+    _write(resource_path, resource)
+    published = _json(published_path)
+    published["worker_report_sha256"] = hashlib.sha256(raw_path.read_bytes()).hexdigest()
+    published["request_id"] = "request_1"
+    _write(published_path, published)
+    if lifecycle:
+        shutil.copyfile(FIXTURE / "lifecycle.json", directory / "lifecycle.json")
+        lifecycle_record = _json(directory / "lifecycle.json")
+        lifecycle_record["request_id"] = "request_1"
+        lifecycle_record["resource"] = resource
+        lifecycle_record["source_before"] = jobs._sources()
+        lifecycle_record["source_after"] = dict(lifecycle_record["source_before"])
+        lifecycle_record["archive_before"] = jobs._archives()
+        lifecycle_record["archive_after"] = dict(lifecycle_record["archive_before"])
+        _write(directory / "lifecycle.json", lifecycle_record)
+
+
+def _inspect(directory: Path):
+    return reconcile.inspect_fixed_job_after_restart(directory, "request_1")
+
+
+def test_missing_and_empty_job_report_no_observed_artifacts(tmp_path):
+    missing = reconcile.inspect_fixed_job_after_restart(tmp_path / "missing", "request_1")
+    empty_path = tmp_path / "empty"
+    empty_path.mkdir()
+    empty = reconcile.inspect_fixed_job_after_restart(empty_path, "request_1")
+    assert (missing["state"], missing["reason_code"]) == ("no_job_artifacts", "job_directory_missing")
+    assert (empty["state"], empty["reason_code"]) == ("no_job_artifacts", "empty_job_directory")
+
+
+def test_raw_resource_crash_window_without_publication_needs_reconciliation(tmp_path):
+    job_dir = tmp_path / "orphan"
+    job_dir.mkdir()
+    for name in ("worker.raw.json", "worker.resource.json"):
+        shutil.copyfile(FIXTURE / name, job_dir / name)
+    result = _inspect(job_dir)
+    assert result["state"] == "needs_reconciliation"
+    assert result["reason_code"] == "publication_missing"
+
+
+def test_publication_without_lifecycle_needs_reconciliation(tmp_path):
+    job_dir = tmp_path / "published"
+    _make_job(job_dir)
+    result = _inspect(job_dir)
+    assert result["state"] == "needs_reconciliation"
+    assert result["reason_code"] == "lifecycle_missing"
+
+
+def test_consistent_terminal_lifecycle_allows_candidate_and_is_idempotent(tmp_path):
+    job_dir = tmp_path / "published"
+    _make_job(job_dir, lifecycle=True)
+    before = {path.name: path.read_bytes() for path in job_dir.iterdir()}
+    first = _inspect(job_dir)
+    second = _inspect(job_dir)
+    after = {path.name: path.read_bytes() for path in job_dir.iterdir()}
+    assert first == second
+    assert first["state"] == "publication_candidate"
+    assert first["candidate_is_authoritative"] is False
+    assert "mutable lifecycle self-report" in first["candidate_limit"]
+    assert before == after
+
+
+@pytest.mark.parametrize("name", ["worker.raw.json", "worker.resource.json"])
+def test_missing_worker_record_is_not_recovered(tmp_path, name):
+    job_dir = tmp_path / "missing-record"
+    _make_job(job_dir)
+    (job_dir / name).unlink()
+    assert _inspect(job_dir)["state"] == "needs_reconciliation"
+
+
+def test_partial_raw_and_cancelled_without_publication_need_reconciliation(tmp_path):
+    partial = tmp_path / "partial"
+    partial.mkdir()
+    (partial / "worker.raw.json").write_text('{"status":"running"')
+    assert _inspect(partial)["reason_code"] == "publication_missing"
+
+    cancelled = tmp_path / "cancelled"
+    cancelled.mkdir()
+    shutil.copyfile(FIXTURE / "worker.raw.json", cancelled / "worker.raw.json")
+    resource = _json(FIXTURE / "worker.resource.json")
+    resource["resource_termination"] = "cancelled"
+    _write(cancelled / "worker.resource.json", resource)
+    assert _inspect(cancelled)["state"] == "needs_reconciliation"
+
+
+@pytest.mark.parametrize("tamper", ["sha", "pid", "request", "case", "scope", "input",
+                                    "response", "boolean_direct", "nan_direct",
+                                    "time", "source", "archive"])
+def test_contradictory_publication_or_worker_is_rejected(tmp_path, tamper):
+    job_dir = tmp_path / "tampered"
+    _make_job(job_dir)
+    published_path = job_dir / "published.json"
+    raw_path = job_dir / "worker.raw.json"
+    if tamper == "sha":
+        published = _json(published_path)
+        published["worker_report_sha256"] = "0" * 64
+        _write(published_path, published)
+    elif tamper == "pid":
+        published = _json(published_path)
+        published["worker_pid"] += 1
+        _write(published_path, published)
+    elif tamper == "request":
+        published = _json(published_path)
+        published["request_id"] = "other"
+        _write(published_path, published)
+    elif tamper == "case":
+        published = _json(published_path)
+        published["case_id"] = "fv8x10"
+        _write(published_path, published)
+    elif tamper == "scope":
+        published = _json(published_path)
+        published["scope"] = "different response scope"
+        _write(published_path, published)
+    elif tamper == "input":
+        published = _json(published_path)
+        published["input_identity"]["problem"] = "0" * 64
+        _write(published_path, published)
+    elif tamper == "response":
+        published = _json(published_path)
+        published["response_total"] += 1.0
+        _write(published_path, published)
+    elif tamper in ("boolean_direct", "nan_direct"):
+        published = _json(published_path)
+        published["response_direct"] = (
+            False if tamper == "boolean_direct" else float("nan"))
+        _write(published_path, published)
+    elif tamper == "time":
+        published = _json(published_path)
+        published["publication_decision_monotonic"] = published["worker_response_ended_monotonic"] - 1
+        _write(published_path, published)
+    else:
+        child = _json(raw_path)
+        child["source_after" if tamper == "source" else "archived_report_sha256"] = {}
+        _write(raw_path, child)
+        published = _json(published_path)
+        published["worker_report_sha256"] = hashlib.sha256(raw_path.read_bytes()).hexdigest()
+        _write(published_path, published)
+    assert _inspect(job_dir)["state"] == "needs_reconciliation"
+
+
+def test_temporary_unexpected_symlink_and_malformed_records_are_rejected(tmp_path):
+    job_dir = tmp_path / "job"
+    _make_job(job_dir, lifecycle=True)
+    (job_dir / "published.json.tmp").write_text("{}")
+    assert _inspect(job_dir)["reason_code"] == "unexpected_or_temporary_artifact"
+    (job_dir / "published.json.tmp").unlink()
+
+    raw = job_dir / "worker.raw.json"
+    backup = tmp_path / "worker.raw.saved"
+    raw.rename(backup)
+    raw.symlink_to(backup)
+    assert _inspect(job_dir)["reason_code"] == "worker_record_not_regular"
+
+    raw.unlink()
+    raw.write_text("not json")
+    assert _inspect(job_dir)["reason_code"] == "record_malformed"
+
+
+@pytest.mark.parametrize("field,value", [
+    ("execution_status", "cancelled"),
+    ("physical_validation", "passed"),
+    ("runner_error", "unexpected failure"),
+    ("raw_child_read_error", "malformed raw report"),
+])
+def test_lifecycle_contradiction_forces_reconciliation(tmp_path, field, value):
+    job_dir = tmp_path / "job"
+    _make_job(job_dir, lifecycle=True)
+    lifecycle = _json(job_dir / "lifecycle.json")
+    lifecycle[field] = value
+    _write(job_dir / "lifecycle.json", lifecycle)
+    assert _inspect(job_dir)["reason_code"] == "lifecycle_mismatch"
+
+
+def test_copied_legacy_relative_worker_command_is_unresolved(tmp_path):
+    job_dir = tmp_path / "copied"
+    job_dir.mkdir()
+    for name in ("published.json", "worker.raw.json", "worker.resource.json", "lifecycle.json"):
+        shutil.copyfile(FIXTURE / name, job_dir / name)
+    result = reconcile.inspect_fixed_job_after_restart(job_dir, "complete")
+    assert result["state"] == "needs_reconciliation"
+    assert result["reason_code"] == "worker_command_mismatch"
+
+
+def test_changed_resource_exit_is_unresolved_even_when_lifecycle_copy_agrees(tmp_path):
+    job_dir = tmp_path / "job"
+    _make_job(job_dir, lifecycle=True)
+    resource = _json(job_dir / "worker.resource.json")
+    resource["exit_code"] = 1
+    _write(job_dir / "worker.resource.json", resource)
+    lifecycle = _json(job_dir / "lifecycle.json")
+    lifecycle["resource"] = resource
+    _write(job_dir / "lifecycle.json", lifecycle)
+    assert _inspect(job_dir)["reason_code"] == "worker_validation_failed"
+
+
+def test_current_fixed_archive_drift_is_unresolved(monkeypatch, tmp_path):
+    job_dir = tmp_path / "job"
+    _make_job(job_dir, lifecycle=True)
+    monkeypatch.setattr(jobs, "_archives", lambda: {})
+    assert _inspect(job_dir)["reason_code"] == "archived_reference_drift"
+
+
+def test_lifecycle_source_snapshot_must_match_current_sources(tmp_path):
+    job_dir = tmp_path / "job"
+    _make_job(job_dir, lifecycle=True)
+    lifecycle = _json(job_dir / "lifecycle.json")
+    lifecycle["source_before"]["examples/weather_scenarios/fv_response_job_lifecycle.py"] = "0" * 64
+    lifecycle["source_after"] = dict(lifecycle["source_before"])
+    _write(job_dir / "lifecycle.json", lifecycle)
+    assert _inspect(job_dir)["reason_code"] == "lifecycle_mismatch"
+
+
+def test_two_inspectors_contend_on_shared_lock(tmp_path):
+    job_dir = tmp_path / "job"
+    _make_job(job_dir, lifecycle=True)
+    entered, release = Event(), Event()
+    outcomes = []
+
+    def inspect_while_locked():
+        with jobs._exclusive_job_launch(job_dir):
+            entered.set()
+            assert release.wait(5)
+
+    first = Thread(target=inspect_while_locked)
+    first.start()
+    assert entered.wait(5)
+    with pytest.raises(jobs.ResponseJobBusyError):
+        _inspect(job_dir)
+    release.set()
+    first.join(5)
+    assert not first.is_alive()
+    outcomes.append(_inspect(job_dir))
+    assert outcomes[0]["state"] == "publication_candidate"
+
+
+def test_parent_path_aliases_use_the_same_lock_and_classification(tmp_path):
+    parent = tmp_path / "real"
+    parent.mkdir()
+    alias = tmp_path / "alias"
+    alias.symlink_to(parent, target_is_directory=True)
+    job_dir = parent / "job"
+    _make_job(job_dir, lifecycle=True)
+    with jobs._exclusive_job_launch(job_dir):
+        with pytest.raises(jobs.ResponseJobBusyError):
+            reconcile.inspect_fixed_job_after_restart(alias / "job", "request_1")
+    assert reconcile.inspect_fixed_job_after_restart(alias / "job", "request_1")["state"] == "publication_candidate"
+
+
+def test_invalid_request_id_does_not_inspect_or_create_job_artifacts(tmp_path):
+    result = reconcile.inspect_fixed_job_after_restart(tmp_path / "not-created", "../bad")
+    assert result["state"] == "needs_reconciliation"
+    assert result["reason_code"] == "invalid_request_id"
+    assert not (tmp_path / "not-created").exists()
