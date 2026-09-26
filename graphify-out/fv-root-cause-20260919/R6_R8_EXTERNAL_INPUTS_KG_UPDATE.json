@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-27",
+  "scope": "PR177-195 R6/R8 external product and independent validation inputs",
+  "status": "open",
+  "claims": [
+    {
+      "subject": "R6 observation product support",
+      "claim": "Generic typed contracts bind supplied product, grid, timing, source, mask, and error identities; they do not establish the truth of product-specific decoding, calibration, QC, censoring, or covariance assumptions.",
+      "required_external_evidence": [
+        "Selected product and decoder versions with immutable native scans and a trust-root record authorizing the signer for the stated site/product/use scope",
+        "Calibrated dBZ semantics and explicit echo, confirmed-clear, and below-detection states",
+        "Grid/time identity and source-specific QC, censoring, and assignment evidence",
+        "Preregistered observation-error and covariance interpretation"
+      ],
+      "record": "FV_REAL_PRODUCT_AND_INDEPENDENT_VALIDATION_INPUTS.md"
+    },
+    {
+      "subject": "R8 independent physical validation",
+      "claim": "Same-operator synthetic derivative and learning checks do not establish independent physical forecast skill or finite-amplitude influence.",
+      "required_external_evidence": [
+        "Future targets and native target-source closure independent of candidate tuning, with signer authorization checked against an independently managed trust registry",
+        "Independent physical-event cohorts with track provenance and preregistered, versioned weather/range classifications before per-regime sample-size preflight",
+        "Paired parent and candidate runs on identical inputs, masks, domain, and scoring",
+        "Preregistered finite-amplitude endpoints, metrics, and event-level data splits"
+      ],
+      "record": "FV_REAL_PRODUCT_AND_INDEPENDENT_VALIDATION_INPUTS.md"
+    }
+  ],
+  "limits": "This records contract requirements, not obtained observations or physical-performance evidence."
+}
