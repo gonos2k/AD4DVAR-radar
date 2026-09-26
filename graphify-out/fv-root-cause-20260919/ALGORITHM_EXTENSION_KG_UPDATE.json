@@ -743,5 +743,17 @@
     "graphify": "code-only incremental update:7610 nodes,66878 edges,308 communities;no semantic LLM extraction",
     "verification": "ten read-only classification/mutation tests passed incl resource-sidecar and source/aggregate mismatches,error-level basedpyright0;16 original raw entries and pinned PR204 aggregate hash checked;no new FV solve or full CPU/package CI",
     "status": "R5-R-D current-input response support decision closed;R5-R-R qualified long-horizon branch/stationary adjoint/signed endpoints open"
+  },
+  "fv_partial_sector_root_attempt1": {
+    "baseline": "main 5ff7327 after PR208 exact point/3-hour support decision",
+    "scope": "one new current-source root-only exact two-hole collocated 4x5 FV input; historical fixed input tensors match but current problem/source digest differs; no adjoint or reanalysis",
+    "policy": "GN once; exact 26-column seed SPD; 54-stage positive core branch; same full signature uses Armijo; changed signature uses measured Phi=0.5||g||2^2 decrease above 128eps64 floor; max8 Newton/max16 backtracks/PCG104; unchanged final gmax<1e-10 and response margin>1e-4",
+    "execution": "parent completed bounded scientific refusal;child exit2 without resource termination;369.468s,1292 sampled RSS,peak357384192B under600s/sampled1GiB cap;source/input/plan/warm/p stable",
+    "numerical": "seed Hessian lambda_min1.0189732073166096/lambda_max4772.690094205241; eight accepted Newton corrections incl two signature switches,44 policy rejections among52 trials; eight29-iteration PCGs; last accepted gmax0.006824468701446666 and face margin5.537002790615233e-7; iteration budget exhausted",
+    "response": "not performed; no qualified root, final-root Hessian, adjoint, VJP, tangent or signed endpoints; physical validation not performed; root absence not proved",
+    "verification": "76 affected tests passed with18 existing warnings,pinned basedpyright1.39.9 0 errors;GREEN/RED prelaunch GO after fail-closed trace/residual/policy/callback regression fixes;full CPU/package CI not run",
+    "graphify": "code-only incremental update:7646 nodes,66971 edges,311 communities;no semantic LLM extraction",
+    "record": "FV_PARTIAL_SECTOR_ROOT_PLAN.md,FV_PARTIAL_SECTOR_ROOT_ATTEMPT1_RESULTS.md,partial_sector_root_attempt1/partial_sector_root.json,partial_sector_root_attempt1/partial_sector_root.run.json",
+    "status": "R4-D remains closed as current-policy refusal;R4-R qualified response remains open;new source-bound sector-aware policy refused after eight steps without issuing sensitivity"
   }
 }

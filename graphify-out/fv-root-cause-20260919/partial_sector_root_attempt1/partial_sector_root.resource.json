@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_sector_root_probe.py",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/partial_sector_root_attempt1/partial_sector_root.json"
+  ],
+  "child_pid": 44221,
+  "exit_code": 2,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 369.46807050006464,
+  "sampled_peak_rss_bytes": 357384192,
+  "rss_samples": 1292,
+  "wall_limit_seconds": 600,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

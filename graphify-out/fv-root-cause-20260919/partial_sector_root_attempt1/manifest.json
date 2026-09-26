@@ -1,0 +1,62 @@
+{
+  "accepted_newton_steps": 8,
+  "base_commit": "5ff732797e667cf6b7fd06b08ca6e4b172eb26b1",
+  "child_exit_code": 2,
+  "child_numerical_status": "root_refused",
+  "file_sha256": {
+    "examples/weather_scenarios/fv_partial_sector_root_probe.py": "738f47fd1c56f74345667fd74b6bc893363b740ba7b49b4152481cb28112bbd7",
+    "examples/weather_scenarios/fv_partial_sector_root_runner.py": "c35c281227c84e54617ea38db6febcb512a84be5cea67d3e310e2cf58f1c80ee",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "d57ed1a1c57d3346a3af460d88b816915defde94dde80708aa0e1ffbc999583a",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_SECTOR_ROOT_ATTEMPT1_RESULTS.md": "f446b910ed34f49e590929e44af8de8d6bd3851772c10ceebbd5630498fdbd2f",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_SECTOR_ROOT_PLAN.md": "a92b977ea481fb0abcc43a8bd45aa14ded45e2744450ed7a52023ba56aa24560",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "795b2b0b4d0ca0a5e47cdaff85c1cb77344f75b6586218bab97b357ba77c7d90",
+    "graphify-out/fv-root-cause-20260919/fv_partial_sector_final_graphify.log": "8ff09e4b28c1dc7dd6b3cd8a65c1bbd690cc65a1a536b7bddbace3581d0501cf",
+    "graphify-out/fv-root-cause-20260919/fv_partial_sector_final_graphify_snapshot.json": "2dcbd8bc8454b11b3a00cf0a7b4ecef5d8b7c31abdb638944db766e0d66cf260",
+    "graphify-out/fv-root-cause-20260919/fv_partial_sector_final_tests.log": "452b97e349faf3759c27f072008c8c53666e5eef05dd92fa251573edbe53b4b1",
+    "graphify-out/fv-root-cause-20260919/fv_partial_sector_final_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/partial_sector_root_attempt1/partial_sector_root.json": "fbd3ee4bc723f9074b789cf59a5a22040dee58f286ea8bdbc9a016a1bbce0f53",
+    "graphify-out/fv-root-cause-20260919/partial_sector_root_attempt1/partial_sector_root.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/partial_sector_root_attempt1/partial_sector_root.resource.json": "9283c7f506767d551329a44a774a670fd4ce2dae52b208b3a2858af7928484ca",
+    "graphify-out/fv-root-cause-20260919/partial_sector_root_attempt1/partial_sector_root.run.json": "da82df67df3559f058f806359cda970f29ae598232ee97b2b926f85e79c8c1c7",
+    "tests/test_fv_partial_sector_root.py": "9dbc872926934220c5140071525615412ed30e03dac80478c69ca631c1df4388",
+    "tests/test_fv_point_merit_root.py": "110d2ed6e5d8e0bd1dade5460359aae37aa1ae16c7a107c8237dc1f3d5c2b474"
+  },
+  "last_accepted_face_margin": 5.537002790615233e-07,
+  "last_accepted_gradient_max": 0.006824468701446666,
+  "parent_execution_status": "completed",
+  "physical_validation": "not_performed",
+  "response_validation": "not_performed",
+  "scope": "one current-source fixed two-hole collocated FV root-only attempt; no response",
+  "source_before_after_sha256": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "758397e502b1f7821cc62fe9f1cf47b440cabdc4933596a3076ef762ad282f0e",
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7756da5561f67d47d1a813cc2cd720931b3ba29d132758e16e2628db6fe220c8",
+    "examples/weather_scenarios/fv_partial_sector_root_probe.py": "738f47fd1c56f74345667fd74b6bc893363b740ba7b49b4152481cb28112bbd7",
+    "examples/weather_scenarios/fv_partial_sector_root_runner.py": "c35c281227c84e54617ea38db6febcb512a84be5cea67d3e310e2cf58f1c80ee",
+    "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+    "examples/weather_scenarios/fv_point_merit_root_probe.py": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+    "examples/weather_scenarios/fv_point_sector_policy.py": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d"
+  },
+  "verification": {
+    "affected_pytest": "76 passed, 18 existing torch.jit.script deprecation warnings",
+    "artifact_paths": {
+      "graphify_log": "graphify-out/fv-root-cause-20260919/fv_partial_sector_final_graphify.log",
+      "graphify_snapshot": "graphify-out/fv-root-cause-20260919/fv_partial_sector_final_graphify_snapshot.json",
+      "tests": "graphify-out/fv-root-cause-20260919/fv_partial_sector_final_tests.log",
+      "typecheck": "graphify-out/fv-root-cause-20260919/fv_partial_sector_final_typecheck.log"
+    },
+    "basedpyright_1_39_9": "0 errors, 0 warnings, 0 notes",
+    "full_cpu_package_ci": "not_run",
+    "graphify_code_refresh": "7646 nodes, 66971 edges, 311 communities"
+  }
+}

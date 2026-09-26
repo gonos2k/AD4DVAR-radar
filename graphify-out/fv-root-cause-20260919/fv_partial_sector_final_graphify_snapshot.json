@@ -1,0 +1,11 @@
+{
+  "command": "graphify update .",
+  "communities": 311,
+  "edges": 66971,
+  "final_graphify_log_sha256": "8ff09e4b28c1dc7dd6b3cd8a65c1bbd690cc65a1a536b7bddbace3581d0501cf",
+  "full_graph_and_report": "local Graphify cache; not committed in this PR",
+  "graph_json_sha256": "e3ea1d1baf90ec0b62adf602108fe3acef8fdc5c898d7ae2641069b8b8067e7b",
+  "graph_report_sha256": "8ebdc02ee12ae825e477b8266a265aebde2e136e8577f4ad27df8ba1166b6a8d",
+  "mode": "code-only incremental refresh; final rerun detected no topology change",
+  "nodes": 7646
+}
