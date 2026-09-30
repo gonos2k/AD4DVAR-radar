@@ -1,0 +1,63 @@
+{
+  "event_count": 2,
+  "execution_status": "completed",
+  "files_sha256": {
+    "examples/weather_scenarios/fv_partial_face_tangent_probe.py": "1ad1e6b05b28252572e5b68d6feb64fb66b0ffef07506d0e2dfc991fff86e367",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "858206b3f2ef82944ae620d0e0fda4c720dfd0b7a30e84f476ccf294d36fce35",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_FACE_EVENT_ATTEMPT1_EVIDENCE.json": "df72467af26217534a59435c9f689b337d2d2f96cf13c48c078b803af9f6bec4",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_FACE_TANGENT_ATTEMPT1_PR_BODY.md": "fd39a79d08a62398c2c4908f81c052894e0b3ccb04d6f75c749ccaaabb754913",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_FACE_TANGENT_ATTEMPT1_RESULTS.md": "a8b2c056c7c189e3fadd0dd2a2e489ac7a4dfefa5e89ba544816293ca2f3d432",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_FACE_TANGENT_PLAN.md": "1aac5f48f2dd02cf303131a7a42fbea1c8b69e87c0cc12943516b47434d9a900",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "bed76b44195eb33bd4663c88a91e5778a03644edada76af3a64316a5eef50e3d",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "c5db6870056344736452f9492a7fbb9ab8e64633f0023998490d45bf83ac1569",
+    "graphify-out/fv-root-cause-20260919/fv_partial_face_tangent_affected_tests.log": "8b57df227f1680adc8477a971c57c1ce756efdaada095f68785b5f8ad4c47a6c",
+    "graphify-out/fv-root-cause-20260919/fv_partial_face_tangent_graphify.log": "403c2c3b3e1d27a16a9c4a0f47a049c7c02bc9776b6cfba475f547270b870863",
+    "graphify-out/fv-root-cause-20260919/fv_partial_face_tangent_run_stdout.log": "9ae5e468121bb14cfe5054069cfc13d13b2b84f53e5e27bf4e80aa34e0fcc90a",
+    "graphify-out/fv-root-cause-20260919/fv_partial_face_tangent_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/partial_face_tangent_attempt1/partial_face_tangent.json": "587dfac6d3f87524be171f00543b5676a096e646a54a31bd0a71668ffb62a886",
+    "graphify-out/fv-root-cause-20260919/partial_face_tangent_attempt1/partial_face_tangent.log": "d4a1304ce876474a2bdd444374e78ad68652e19f15a064d64895c11a11bb06f8",
+    "graphify-out/fv-root-cause-20260919/partial_face_tangent_attempt1/partial_face_tangent.resource.json": "a2b7e613847ab347ce34b15811542b1bc9679944608630fef118356e095c4c64",
+    "graphify-out/fv-root-cause-20260919/partial_face_tangent_attempt1/partial_face_tangent.run.json": "ad71d7517b22f72d55f9754d76bf5d8a00c6bfb90c45db4570d7ea4b19d47eb2",
+    "graphify-out/fv-root-cause-20260919/partial_sector_root_attempt1/manifest.json": "d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd",
+    "tests/test_fv_partial_face_tangent_probe.py": "96596234068ecfab22f2a343a7163ea44a6eb279f158efe7f6e210b6be6a8bc7"
+  },
+  "limits": "Euclidean finite-offset event-plane projections; no constrained or Clarke stationarity,root,response,physical skill;R4-R open",
+  "numerical_status": "finite_offset_tangent_gradient_diagnostic_only",
+  "resource": {
+    "child_pid": 22415,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_face_tangent_probe.py",
+      "--child",
+      "--output",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/partial_face_tangent_attempt1/partial_face_tangent.json",
+      "--expected-plan-sha256",
+      "1aac5f48f2dd02cf303131a7a42fbea1c8b69e87c0cc12943516b47434d9a900",
+      "--expected-source-sha256",
+      "1ad1e6b05b28252572e5b68d6feb64fb66b0ffef07506d0e2dfc991fff86e367"
+    ],
+    "elapsed_seconds": 3.9801100839395076,
+    "exit_code": 0,
+    "monitor_error": null,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 15,
+    "sampled_peak_rss_bytes": 327598080,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 120
+  },
+  "sample_count": 8,
+  "sampled_hull_minimum_norm_range": [
+    0.009575342158706689,
+    0.0096020265717127
+  ],
+  "tangent_l2_range": [
+    0.009573295392593302,
+    0.009603121383817187
+  ],
+  "verification": {
+    "affected_tests_passed": 36,
+    "full_cpu_package_regression": "not_run",
+    "typecheck_errors": 0
+  }
+}

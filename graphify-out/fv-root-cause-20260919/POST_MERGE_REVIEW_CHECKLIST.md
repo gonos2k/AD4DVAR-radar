@@ -277,6 +277,12 @@ changes the numerical refiner, not the objective, observation contract or gates.
   all eight points failed the response face-margin gate. This narrows
   the numerical search question without closing the stationary-response
   item (`FV_PARTIAL_FACE_EVENT_ATTEMPT1_RESULTS.md`).
+- [x] A guarded finite-offset tangent diagnostic retains the original
+  eight margin-ineligible controls and finds a field-dominated tangent
+  residual and sampled gradient-hull distance about `0.0096`. The
+  qualified partial-observation response remains open; no event-point
+  objective derivative or Clarke certificate was issued
+  (`FV_PARTIAL_FACE_TANGENT_ATTEMPT1_RESULTS.md`).
 - [x] Bounded maintain/decay/growth fixed-branch classification and zero-face/
   flat forward-versus-response refusal (G4). See `FV_GROWTH_BRANCH_SCOPE.md`.
 - [x] At zero-flow control, prove every face of the supported 4×5/8×10

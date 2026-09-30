@@ -1,0 +1,2 @@
+Incremental code-only Graphify AST refresh of 2 tangent probe/test files; untouched graph records preserved, pre-update backup retained; no semantic extraction.
+Final graph.json parses: 8338 nodes, 210532 links.
