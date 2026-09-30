@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_face_tangent_probe.py",
+    "--child",
+    "--output",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/partial_face_tangent_attempt1/partial_face_tangent.json",
+    "--expected-plan-sha256",
+    "1aac5f48f2dd02cf303131a7a42fbea1c8b69e87c0cc12943516b47434d9a900",
+    "--expected-source-sha256",
+    "1ad1e6b05b28252572e5b68d6feb64fb66b0ffef07506d0e2dfc991fff86e367"
+  ],
+  "child_pid": 22415,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 3.9801100839395076,
+  "sampled_peak_rss_bytes": 327598080,
+  "rss_samples": 15,
+  "wall_limit_seconds": 120,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

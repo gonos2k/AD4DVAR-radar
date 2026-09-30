@@ -944,5 +944,17 @@
     "graphify": "incremental code-only AST refresh,parseable graph.json8294 nodes/210382 links,no semantic extraction",
     "record": "FV_PARTIAL_FACE_EVENT_PLAN.md,FV_PARTIAL_FACE_EVENT_ATTEMPT1_RESULTS.md,FV_PARTIAL_FACE_EVENT_ATTEMPT1_EVIDENCE.json,partial_face_event_attempt1",
     "status": "R4 face-event diagnostic closed at sampled local scope;R4-R qualified stationary response open"
+  },
+  "fv_partial_face_tangent_attempt1": {
+    "baseline": "main bd866fb after PR225 two-chord face-event diagnostic",
+    "scope": "one fixed 4x5 two-hole input; smooth face normals at two archived events, eight off-event objective gradients, Euclidean optimizer-control tangent projections and same-event sampled hulls; no root/response",
+    "identity": "plan1aac5f48f2dd02cf303131a7a42fbea1c8b69e87c0cc12943516b47434d9a900;caller-reviewed probe1ad1e6b05b28252572e5b68d6feb64fb66b0ffef07506d0e2dfc991fff86e367;runner6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d;PR209/225 source/raw/fixed-input stable",
+    "numbers": "flow-only normal norms0.172914748694/0.172914748246; tangent norms0.0095732954 to0.0096031214,field-dominated;sampled gradient segment minimum norms0.0095753422 to0.0096020266;near/far tangent changes8.7958414e-7 to9.0581989e-6",
+    "qualification": "all8 archived strict traces admitted54 stages but face margins below1e-4;off-event projections onto event tangent hyperplanes,not restricted-surface or Clarke/limit evidence;two events separate;R4-R open",
+    "execution": "guarded child exit0,parent completed,guard3.980110084s,child2.447996084s,15 sampled RSS peak327598080B under120s/sampled1GiB;source/input/evidence identities unchanged",
+    "verification": "36 affected local tests passed;basedpyright1.39.9 error-level0 diagnostics;GREEN/RED plan/code/raw audit;full CPU/package and physical validation not run",
+    "graphify": "two-file incremental code-only AST refresh preserves untouched graph records,8338 nodes/210532 links,no semantic extraction",
+    "record": "FV_PARTIAL_FACE_TANGENT_PLAN.md,FV_PARTIAL_FACE_TANGENT_ATTEMPT1_RESULTS.md,FV_PARTIAL_FACE_TANGENT_ATTEMPT1_EVIDENCE.json,partial_face_tangent_attempt1",
+    "status": "finite-offset tangent diagnostic completed;qualified stationary partial response still open"
   }
 }
