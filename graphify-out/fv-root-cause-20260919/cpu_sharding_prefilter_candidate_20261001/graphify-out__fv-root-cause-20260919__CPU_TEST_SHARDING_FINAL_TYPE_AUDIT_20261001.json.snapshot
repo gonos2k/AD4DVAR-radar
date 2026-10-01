@@ -1,0 +1,19 @@
+{
+  "mode": "exact byte copies outside hidden .github so both targets analyzed; no code execution in copies",
+  "source_sha256": {
+    ".github/scripts/run_cpu_test_shard.py": "800b5eb7949badbf9b3807e33b476c5d2fb7ad6e3f0f2d0231f68e0b7c0307f3",
+    "tests/test_cpu_test_sharding.py": "804d9e6e4d71851b03ef20c6b8a5aab03ed1f0c0280a28e873b2df7c579e5bd0"
+  },
+  "basedpyright_version": "1.39.9",
+  "pythonpath": "/Users/yhlee/ADVAR/.venv/bin/python",
+  "raw_exit_code": 1,
+  "policy": "same warning-only code1 allowance as check_basedpyright.py;errors fail",
+  "summary": {
+    "filesAnalyzed": 2,
+    "errorCount": 0,
+    "warningCount": 281,
+    "informationCount": 0,
+    "timeInSec": 0.498
+  },
+  "direct_hidden_path_check": "analyzed only1file; retained as partial,not2file evidence"
+}

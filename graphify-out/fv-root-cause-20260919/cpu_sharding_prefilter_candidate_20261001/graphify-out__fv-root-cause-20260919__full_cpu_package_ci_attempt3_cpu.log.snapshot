@@ -1,0 +1,406 @@
+﻿2026-10-01T04:10:11.8875113Z Current runner version: '2.337.0'
+2026-10-01T04:10:11.8900308Z ##[group]Runner Image Provisioner
+2026-10-01T04:10:11.8901587Z Hosted Compute Agent
+2026-10-01T04:10:11.8902298Z Version: 20260901.588
+2026-10-01T04:10:11.8902928Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+2026-10-01T04:10:11.8903750Z Build Date: 2026-09-01T19:56:44Z
+2026-10-01T04:10:11.8904443Z Worker ID: {3d9c87a6-fa56-48ae-a300-cf4a1d1393cf}
+2026-10-01T04:10:11.8905192Z Azure Region: eastus2
+2026-10-01T04:10:11.8905807Z ##[endgroup]
+2026-10-01T04:10:11.8907279Z ##[group]Operating System
+2026-10-01T04:10:11.8908020Z Ubuntu
+2026-10-01T04:10:11.8908609Z 24.04.5
+2026-10-01T04:10:11.8909146Z LTS
+2026-10-01T04:10:11.8909692Z ##[endgroup]
+2026-10-01T04:10:11.8910232Z ##[group]Runner Image
+2026-10-01T04:10:11.8910865Z Image: ubuntu-24.04
+2026-10-01T04:10:11.8911627Z Version: 20260927.320.1
+2026-10-01T04:10:11.8912948Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-01T04:10:11.8914565Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+2026-10-01T04:10:11.8915597Z ##[endgroup]
+2026-10-01T04:10:11.8916770Z ##[group]GITHUB_TOKEN Permissions
+2026-10-01T04:10:11.8918912Z Contents: read
+2026-10-01T04:10:11.8919570Z Metadata: read
+2026-10-01T04:10:11.8920121Z ##[endgroup]
+2026-10-01T04:10:11.8922936Z Secret source: Actions
+2026-10-01T04:10:11.8924341Z Cache mode: write
+2026-10-01T04:10:11.8925279Z Prepare workflow directory
+2026-10-01T04:10:11.9350505Z Prepare all required actions
+2026-10-01T04:10:11.9421566Z Getting action download info
+2026-10-01T04:10:12.1472988Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-01T04:10:12.2437532Z Download action repository 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1' (SHA:ece7cb06caefa5fff74198d8649806c4678c61a1)
+2026-10-01T04:10:12.4207321Z Complete job name: Python 3.12 CPU
+2026-10-01T04:10:12.4975614Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-10-01T04:10:12.4976686Z with:
+2026-10-01T04:10:12.4977140Z   repository: gonos2k/AD4DVAR-radar
+2026-10-01T04:10:12.4980810Z   token: ***
+2026-10-01T04:10:12.4981249Z   ssh-strict: true
+2026-10-01T04:10:12.4981970Z   ssh-user: git
+2026-10-01T04:10:12.4982415Z   persist-credentials: true
+2026-10-01T04:10:12.4982906Z   clean: true
+2026-10-01T04:10:12.4983345Z   sparse-checkout-cone-mode: true
+2026-10-01T04:10:12.4983864Z   fetch-depth: 1
+2026-10-01T04:10:12.4984298Z   fetch-tags: false
+2026-10-01T04:10:12.4984736Z   show-progress: true
+2026-10-01T04:10:12.4985178Z   lfs: false
+2026-10-01T04:10:12.4985585Z   submodules: false
+2026-10-01T04:10:12.4986036Z   set-safe-directory: true
+2026-10-01T04:10:12.4986537Z   allow-unsafe-pr-checkout: false
+2026-10-01T04:10:12.4987339Z ##[endgroup]
+2026-10-01T04:10:12.5990027Z Syncing repository: gonos2k/AD4DVAR-radar
+2026-10-01T04:10:12.5993308Z ##[group]Getting Git version info
+2026-10-01T04:10:12.5994623Z Working directory is '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+2026-10-01T04:10:12.5996398Z [command]/usr/bin/git version
+2026-10-01T04:10:12.6045268Z git version 2.55.0
+2026-10-01T04:10:12.6067066Z ##[endgroup]
+2026-10-01T04:10:12.6078624Z Temporarily overriding HOME='/home/runner/work/_temp/60706a97-7062-45f5-8a16-6b697183e9b2' before making global git config changes
+2026-10-01T04:10:12.6081023Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-01T04:10:12.6084467Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T04:10:12.6139420Z Deleting the contents of '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+2026-10-01T04:10:12.6143866Z ##[group]Determining repository object format
+2026-10-01T04:10:12.6145832Z ##[endgroup]
+2026-10-01T04:10:12.6147260Z ##[group]Initializing the repository
+2026-10-01T04:10:12.6149837Z [command]/usr/bin/git init /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T04:10:12.6302057Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-01T04:10:12.6303766Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-01T04:10:12.6305689Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-01T04:10:12.6307165Z hint: call:
+2026-10-01T04:10:12.6308052Z hint:
+2026-10-01T04:10:12.6309213Z hint: 	git config --global init.defaultBranch <name>
+2026-10-01T04:10:12.6310504Z hint:
+2026-10-01T04:10:12.6311907Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-01T04:10:12.6313778Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-01T04:10:12.6315399Z hint:
+2026-10-01T04:10:12.6316309Z hint: 	git branch -m <name>
+2026-10-01T04:10:12.6317310Z hint:
+2026-10-01T04:10:12.6318559Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-01T04:10:12.6320133Z Initialized empty Git repository in /home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/
+2026-10-01T04:10:12.6324205Z [command]/usr/bin/git remote add origin https://github.com/gonos2k/AD4DVAR-radar
+2026-10-01T04:10:12.6370731Z ##[endgroup]
+2026-10-01T04:10:12.6372262Z ##[group]Disabling automatic garbage collection
+2026-10-01T04:10:12.6373963Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-01T04:10:12.6410542Z ##[endgroup]
+2026-10-01T04:10:12.6412599Z ##[group]Setting up auth
+2026-10-01T04:10:12.6413540Z Removing SSH command configuration
+2026-10-01T04:10:12.6415440Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-01T04:10:12.6451421Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-01T04:10:12.6807399Z Removing HTTP extra header
+2026-10-01T04:10:12.6812685Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-01T04:10:12.6851129Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-01T04:10:12.7102742Z Removing includeIf entries pointing to credentials config files
+2026-10-01T04:10:12.7107779Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-01T04:10:12.7143346Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-01T04:10:12.7374012Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-760496cf-7bd6-47c7-b509-c64969ea179c.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-01T04:10:12.7415411Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path /home/runner/work/_temp/git-credentials-760496cf-7bd6-47c7-b509-c64969ea179c.config
+2026-10-01T04:10:12.7450320Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-760496cf-7bd6-47c7-b509-c64969ea179c.config
+2026-10-01T04:10:12.7489487Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-760496cf-7bd6-47c7-b509-c64969ea179c.config
+2026-10-01T04:10:12.7527258Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-760496cf-7bd6-47c7-b509-c64969ea179c.config
+2026-10-01T04:10:12.7560489Z ##[endgroup]
+2026-10-01T04:10:12.7562193Z ##[group]Fetching the repository
+2026-10-01T04:10:12.7569163Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +39156508f085970a6985b73047f37059178ae488:refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T04:10:14.0242631Z From https://github.com/gonos2k/AD4DVAR-radar
+2026-10-01T04:10:14.0244969Z  * [new ref]         39156508f085970a6985b73047f37059178ae488 -> origin/agent/full-cpu-package-regression
+2026-10-01T04:10:14.0254498Z [command]/usr/bin/git branch --list --remote origin/agent/full-cpu-package-regression
+2026-10-01T04:10:14.0286894Z   origin/agent/full-cpu-package-regression
+2026-10-01T04:10:14.0299128Z [command]/usr/bin/git rev-parse refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T04:10:14.0328200Z 39156508f085970a6985b73047f37059178ae488
+2026-10-01T04:10:14.0335385Z ##[endgroup]
+2026-10-01T04:10:14.0337808Z ##[group]Determining the checkout info
+2026-10-01T04:10:14.0348896Z ##[endgroup]
+2026-10-01T04:10:14.0349817Z [command]/usr/bin/git sparse-checkout disable
+2026-10-01T04:10:14.0399888Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-01T04:10:14.0436396Z ##[group]Checking out the ref
+2026-10-01T04:10:14.0440764Z [command]/usr/bin/git checkout --progress --force -B agent/full-cpu-package-regression refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T04:10:14.2323497Z Switched to a new branch 'agent/full-cpu-package-regression'
+2026-10-01T04:10:14.2327615Z branch 'agent/full-cpu-package-regression' set up to track 'origin/agent/full-cpu-package-regression'.
+2026-10-01T04:10:14.2350538Z ##[endgroup]
+2026-10-01T04:10:14.2401195Z [command]/usr/bin/git log -1 --format=%H
+2026-10-01T04:10:14.2430873Z 39156508f085970a6985b73047f37059178ae488
+2026-10-01T04:10:14.2802039Z ##[group]Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+2026-10-01T04:10:14.2803743Z with:
+2026-10-01T04:10:14.2804696Z   python-version: 3.12
+2026-10-01T04:10:14.2805750Z   cache: pip
+2026-10-01T04:10:14.2806951Z   cache-dependency-path: requirements/ci-py312-linux.lock
+2026-10-01T04:10:14.2808389Z   check-latest: false
+2026-10-01T04:10:14.2817070Z   token: ***
+2026-10-01T04:10:14.2818105Z   update-environment: true
+2026-10-01T04:10:14.2819247Z   allow-prereleases: false
+2026-10-01T04:10:14.2820380Z   freethreaded: false
+2026-10-01T04:10:14.2821555Z ##[endgroup]
+2026-10-01T04:10:14.4143552Z ##[group]Installed versions
+2026-10-01T04:10:14.4214672Z Successfully set up CPython (3.12.14)
+2026-10-01T04:10:14.4217547Z ##[endgroup]
+2026-10-01T04:10:14.4575178Z [command]/opt/hostedtoolcache/Python/3.12.14/x64/bin/pip cache dir
+2026-10-01T04:10:14.7818635Z /home/runner/.cache/pip
+2026-10-01T04:10:14.9003174Z Cache hit for restore-key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.14-pip-f7cee36fe32686215bbb9f8a086817e4840e974b74a211879070eaf02f04bcd8
+2026-10-01T04:10:15.9454993Z Received 239075328 of 287618844 (83.1%), 227.5 MBs/sec
+2026-10-01T04:10:16.1482986Z Received 287618844 of 287618844 (100.0%), 228.2 MBs/sec
+2026-10-01T04:10:16.1505880Z Cache Size: ~274 MB (287618844 B)
+2026-10-01T04:10:16.1569570Z [command]/usr/bin/tar -xf /home/runner/work/_temp/27e871b9-abe4-441e-b556-37cf91f0afb7/cache.tzst -P -C /home/runner/work/AD4DVAR-radar/AD4DVAR-radar --use-compress-program unzstd
+2026-10-01T04:10:16.5756669Z Cache restored successfully
+2026-10-01T04:10:16.5884326Z Cache restored from key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.14-pip-f7cee36fe32686215bbb9f8a086817e4840e974b74a211879070eaf02f04bcd8
+2026-10-01T04:10:16.6083469Z ##[group]Run python -I -m pip install \
+2026-10-01T04:10:16.6083893Z [36;1mpython -I -m pip install \[0m
+2026-10-01T04:10:16.6084211Z [36;1m  --require-hashes \[0m
+2026-10-01T04:10:16.6084499Z [36;1m  --only-binary=:all: \[0m
+2026-10-01T04:10:16.6084942Z [36;1m  --extra-index-url https://download.pytorch.org/whl/cpu \[0m
+2026-10-01T04:10:16.6085434Z [36;1m  --requirement requirements/ci-py312-linux.lock[0m
+2026-10-01T04:10:16.6349735Z shell: /usr/bin/bash -e {0}
+2026-10-01T04:10:16.6350032Z env:
+2026-10-01T04:10:16.6350324Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:16.6350805Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T04:10:16.6351624Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:16.6352338Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:16.6352759Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:16.6353218Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T04:10:16.6353582Z ##[endgroup]
+2026-10-01T04:10:17.1876931Z Looking in indexes: https://pypi.org/simple, https://download.pytorch.org/whl/cpu
+2026-10-01T04:10:17.4299854Z Collecting basedpyright==1.39.9 (from -r requirements/ci-py312-linux.lock (line 5))
+2026-10-01T04:10:17.4314183Z   Using cached basedpyright-1.39.9-py3-none-any.whl (13.4 MB)
+2026-10-01T04:10:17.5072619Z Collecting boolean-py==5.0 (from -r requirements/ci-py312-linux.lock (line 9))
+2026-10-01T04:10:17.5085718Z   Using cached boolean_py-5.0-py3-none-any.whl (26 kB)
+2026-10-01T04:10:17.5412027Z Collecting build==1.5.0 (from -r requirements/ci-py312-linux.lock (line 13))
+2026-10-01T04:10:17.5423418Z   Using cached build-1.5.0-py3-none-any.whl (26 kB)
+2026-10-01T04:10:17.5703689Z Collecting cachecontrol==0.14.4 (from -r requirements/ci-py312-linux.lock (line 17))
+2026-10-01T04:10:17.5721202Z   Using cached cachecontrol-0.14.4-py3-none-any.whl (22 kB)
+2026-10-01T04:10:17.5973277Z Collecting certifi==2026.7.22 (from -r requirements/ci-py312-linux.lock (line 21))
+2026-10-01T04:10:17.5984699Z   Using cached certifi-2026.7.22-py3-none-any.whl (136 kB)
+2026-10-01T04:10:17.7143315Z Collecting cffi==2.1.1 (from -r requirements/ci-py312-linux.lock (line 25))
+2026-10-01T04:10:17.7155397Z   Using cached cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+2026-10-01T04:10:17.8289628Z Collecting charset-normalizer==3.5.1 (from -r requirements/ci-py312-linux.lock (line 127))
+2026-10-01T04:10:17.8302090Z   Using cached charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (248 kB)
+2026-10-01T04:10:18.0091147Z Collecting cryptography==50.0.0 (from -r requirements/ci-py312-linux.lock (line 301))
+2026-10-01T04:10:18.0103987Z   Using cached cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+2026-10-01T04:10:18.0506646Z Collecting cyclonedx-python-lib==11.12.0 (from -r requirements/ci-py312-linux.lock (line 351))
+2026-10-01T04:10:18.0520060Z   Using cached cyclonedx_python_lib-11.12.0-py3-none-any.whl (529 kB)
+2026-10-01T04:10:18.0811474Z Collecting defusedxml==0.7.1 (from -r requirements/ci-py312-linux.lock (line 355))
+2026-10-01T04:10:18.0825769Z   Using cached defusedxml-0.7.1-py2.py3-none-any.whl (25 kB)
+2026-10-01T04:10:18.1152808Z Collecting filelock==3.32.3 (from -r requirements/ci-py312-linux.lock (line 359))
+2026-10-01T04:10:18.1164884Z   Using cached filelock-3.32.3-py3-none-any.whl (98 kB)
+2026-10-01T04:10:18.1460726Z Collecting fsspec==2026.7.0 (from -r requirements/ci-py312-linux.lock (line 367))
+2026-10-01T04:10:18.1473070Z   Using cached fsspec-2026.7.0-py3-none-any.whl (206 kB)
+2026-10-01T04:10:18.1700100Z Collecting idna==3.18 (from -r requirements/ci-py312-linux.lock (line 371))
+2026-10-01T04:10:18.1712102Z   Using cached idna-3.18-py3-none-any.whl (65 kB)
+2026-10-01T04:10:18.1951564Z Collecting iniconfig==2.3.0 (from -r requirements/ci-py312-linux.lock (line 375))
+2026-10-01T04:10:18.1963978Z   Using cached iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+2026-10-01T04:10:18.2122497Z Collecting jinja2==3.1.6 (from -r requirements/ci-py312-linux.lock (line 379))
+2026-10-01T04:10:18.2134812Z   Using cached jinja2-3.1.6-py3-none-any.whl (134 kB)
+2026-10-01T04:10:18.2375608Z Collecting license-expression==30.4.4 (from -r requirements/ci-py312-linux.lock (line 383))
+2026-10-01T04:10:18.2387404Z   Using cached license_expression-30.4.4-py3-none-any.whl (120 kB)
+2026-10-01T04:10:18.2663282Z Collecting markdown-it-py==4.2.0 (from -r requirements/ci-py312-linux.lock (line 387))
+2026-10-01T04:10:18.2675573Z   Using cached markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+2026-10-01T04:10:18.3271920Z Collecting markupsafe==3.0.3 (from -r requirements/ci-py312-linux.lock (line 391))
+2026-10-01T04:10:18.3284147Z   Using cached markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+2026-10-01T04:10:18.3697304Z Collecting mdurl==0.1.2 (from -r requirements/ci-py312-linux.lock (line 482))
+2026-10-01T04:10:18.3709630Z   Using cached mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+2026-10-01T04:10:18.3908454Z Collecting mpmath==1.3.0 (from -r requirements/ci-py312-linux.lock (line 486))
+2026-10-01T04:10:18.3920059Z   Using cached mpmath-1.3.0-py3-none-any.whl (536 kB)
+2026-10-01T04:10:18.4750090Z Collecting msgpack==1.2.1 (from -r requirements/ci-py312-linux.lock (line 490))
+2026-10-01T04:10:18.4762095Z   Using cached msgpack-1.2.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (419 kB)
+2026-10-01T04:10:18.5083020Z Collecting networkx==3.6.1 (from -r requirements/ci-py312-linux.lock (line 558))
+2026-10-01T04:10:18.5094821Z   Using cached networkx-3.6.1-py3-none-any.whl (2.1 MB)
+2026-10-01T04:10:18.5749501Z Collecting nodejs-wheel-binaries==24.16.0 (from -r requirements/ci-py312-linux.lock (line 562))
+2026-10-01T04:10:18.5761530Z   Using cached nodejs_wheel_binaries-24.16.0-py2.py3-none-manylinux_2_28_x86_64.whl (60.7 MB)
+2026-10-01T04:10:19.1006104Z Collecting numpy==2.2.6 (from -r requirements/ci-py312-linux.lock (line 573))
+2026-10-01T04:10:19.1020302Z   Using cached numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.5 MB)
+2026-10-01T04:10:19.1604167Z Collecting packageurl-python==0.17.6 (from -r requirements/ci-py312-linux.lock (line 632))
+2026-10-01T04:10:19.1616546Z   Using cached packageurl_python-0.17.6-py3-none-any.whl (36 kB)
+2026-10-01T04:10:19.1803792Z Collecting packaging==26.3 (from -r requirements/ci-py312-linux.lock (line 636))
+2026-10-01T04:10:19.1816192Z   Using cached packaging-26.3-py3-none-any.whl (129 kB)
+2026-10-01T04:10:19.1838187Z Requirement already satisfied: pip==26.2.1 in /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages (from -r requirements/ci-py312-linux.lock (line 645)) (26.2.1)
+2026-10-01T04:10:19.2095845Z Collecting pip-api==0.0.34 (from -r requirements/ci-py312-linux.lock (line 649))
+2026-10-01T04:10:19.2108268Z   Using cached pip_api-0.0.34-py3-none-any.whl (120 kB)
+2026-10-01T04:10:19.3936463Z Collecting pip-audit==2.10.1 (from -r requirements/ci-py312-linux.lock (line 653))
+2026-10-01T04:10:19.3949683Z   Using cached pip_audit-2.10.1-py3-none-any.whl (62 kB)
+2026-10-01T04:10:19.4339440Z Collecting pip-requirements-parser==32.0.1 (from -r requirements/ci-py312-linux.lock (line 657))
+2026-10-01T04:10:19.4351660Z   Using cached pip_requirements_parser-32.0.1-py3-none-any.whl (35 kB)
+2026-10-01T04:10:19.4632229Z Collecting platformdirs==4.11.3 (from -r requirements/ci-py312-linux.lock (line 661))
+2026-10-01T04:10:19.4644687Z   Using cached platformdirs-4.11.3-py3-none-any.whl (23 kB)
+2026-10-01T04:10:19.4878768Z Collecting pluggy==1.6.0 (from -r requirements/ci-py312-linux.lock (line 665))
+2026-10-01T04:10:19.4890857Z   Using cached pluggy-1.6.0-py3-none-any.whl (20 kB)
+2026-10-01T04:10:19.5160290Z Collecting py-serializable==2.1.0 (from -r requirements/ci-py312-linux.lock (line 669))
+2026-10-01T04:10:19.5172136Z   Using cached py_serializable-2.1.0-py3-none-any.whl (23 kB)
+2026-10-01T04:10:19.5408388Z Collecting pycparser==3.0 (from -r requirements/ci-py312-linux.lock (line 673))
+2026-10-01T04:10:19.5420319Z   Using cached pycparser-3.0-py3-none-any.whl (48 kB)
+2026-10-01T04:10:19.5830382Z Collecting pygments==2.20.0 (from -r requirements/ci-py312-linux.lock (line 677))
+2026-10-01T04:10:19.5842871Z   Using cached pygments-2.20.0-py3-none-any.whl (1.2 MB)
+2026-10-01T04:10:19.6239661Z Collecting pyparsing==3.3.2 (from -r requirements/ci-py312-linux.lock (line 683))
+2026-10-01T04:10:19.6252054Z   Using cached pyparsing-3.3.2-py3-none-any.whl (122 kB)
+2026-10-01T04:10:19.6467936Z Collecting pyproject-hooks==1.2.0 (from -r requirements/ci-py312-linux.lock (line 687))
+2026-10-01T04:10:19.6480092Z   Using cached pyproject_hooks-1.2.0-py3-none-any.whl (10 kB)
+2026-10-01T04:10:19.6893810Z Collecting pytest==9.1.1 (from -r requirements/ci-py312-linux.lock (line 691))
+2026-10-01T04:10:19.6906163Z   Using cached pytest-9.1.1-py3-none-any.whl (386 kB)
+2026-10-01T04:10:19.7050105Z Collecting requests==2.34.2 (from -r requirements/ci-py312-linux.lock (line 695))
+2026-10-01T04:10:19.7062116Z   Using cached requests-2.34.2-py3-none-any.whl (73 kB)
+2026-10-01T04:10:19.7534573Z Collecting rich==15.0.0 (from -r requirements/ci-py312-linux.lock (line 701))
+2026-10-01T04:10:19.7546749Z   Using cached rich-15.0.0-py3-none-any.whl (310 kB)
+2026-10-01T04:10:19.8108062Z Collecting setuptools==84.0.0 (from -r requirements/ci-py312-linux.lock (line 705))
+2026-10-01T04:10:19.8120570Z   Using cached setuptools-84.0.0-py3-none-any.whl (818 kB)
+2026-10-01T04:10:19.8673587Z Collecting sortedcontainers==2.4.0 (from -r requirements/ci-py312-linux.lock (line 711))
+2026-10-01T04:10:19.8686977Z   Using cached sortedcontainers-2.4.0-py2.py3-none-any.whl (29 kB)
+2026-10-01T04:10:19.8922932Z Collecting sympy==1.14.0 (from -r requirements/ci-py312-linux.lock (line 715))
+2026-10-01T04:10:19.8935048Z   Using cached sympy-1.14.0-py3-none-any.whl (6.3 MB)
+2026-10-01T04:10:19.9405902Z Collecting tomli==2.4.1 (from -r requirements/ci-py312-linux.lock (line 719))
+2026-10-01T04:10:19.9418537Z   Using cached tomli-2.4.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (253 kB)
+2026-10-01T04:10:19.9867866Z Collecting tomli-w==1.2.0 (from -r requirements/ci-py312-linux.lock (line 768))
+2026-10-01T04:10:19.9880058Z   Using cached tomli_w-1.2.0-py3-none-any.whl (6.7 kB)
+2026-10-01T04:10:20.1052188Z Collecting torch==2.13.0+cpu (from -r requirements/ci-py312-linux.lock (line 772))
+2026-10-01T04:10:20.1065116Z   Using cached torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl (191.8 MB)
+2026-10-01T04:10:20.3949756Z Collecting typing-extensions==4.16.0 (from -r requirements/ci-py312-linux.lock (line 807))
+2026-10-01T04:10:20.3961594Z   Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+2026-10-01T04:10:20.4081131Z Collecting urllib3==2.8.0 (from -r requirements/ci-py312-linux.lock (line 813))
+2026-10-01T04:10:20.4093399Z   Using cached urllib3-2.8.0-py3-none-any.whl (135 kB)
+2026-10-01T04:10:20.4556379Z Collecting wheel==0.46.3 (from -r requirements/ci-py312-linux.lock (line 817))
+2026-10-01T04:10:20.4568570Z   Using cached wheel-0.46.3-py3-none-any.whl (30 kB)
+2026-10-01T04:10:20.7667452Z Installing collected packages: sortedcontainers, mpmath, boolean-py, urllib3, typing-extensions, tomli-w, tomli, sympy, setuptools, pyproject-hooks, pyparsing, pygments, pycparser, pluggy, platformdirs, pip-api, packaging, packageurl-python, numpy, nodejs-wheel-binaries, networkx, msgpack, mdurl, markupsafe, license-expression, iniconfig, idna, fsspec, filelock, defusedxml, charset-normalizer, certifi, wheel, requests, pytest, py-serializable, pip-requirements-parser, markdown-it-py, jinja2, cffi, build, basedpyright, torch, rich, cyclonedx-python-lib, cryptography, cachecontrol, pip-audit
+2026-10-01T04:10:47.5199676Z 
+2026-10-01T04:10:47.5245308Z Successfully installed basedpyright-1.39.9 boolean-py-5.0 build-1.5.0 cachecontrol-0.14.4 certifi-2026.7.22 cffi-2.1.1 charset-normalizer-3.5.1 cryptography-50.0.0 cyclonedx-python-lib-11.12.0 defusedxml-0.7.1 filelock-3.32.3 fsspec-2026.7.0 idna-3.18 iniconfig-2.3.0 jinja2-3.1.6 license-expression-30.4.4 markdown-it-py-4.2.0 markupsafe-3.0.3 mdurl-0.1.2 mpmath-1.3.0 msgpack-1.2.1 networkx-3.6.1 nodejs-wheel-binaries-24.16.0 numpy-2.2.6 packageurl-python-0.17.6 packaging-26.3 pip-api-0.0.34 pip-audit-2.10.1 pip-requirements-parser-32.0.1 platformdirs-4.11.3 pluggy-1.6.0 py-serializable-2.1.0 pycparser-3.0 pygments-2.20.0 pyparsing-3.3.2 pyproject-hooks-1.2.0 pytest-9.1.1 requests-2.34.2 rich-15.0.0 setuptools-84.0.0 sortedcontainers-2.4.0 sympy-1.14.0 tomli-2.4.1 tomli-w-1.2.0 torch-2.13.0+cpu typing-extensions-4.16.0 urllib3-2.8.0 wheel-0.46.3
+2026-10-01T04:10:47.6475980Z ##[group]Run printf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py
+2026-10-01T04:10:47.6476878Z [36;1mprintf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py[0m
+2026-10-01T04:10:47.6477351Z [36;1mpython -I - <<'PY'[0m
+2026-10-01T04:10:47.6477600Z [36;1mimport site[0m
+2026-10-01T04:10:47.6477835Z [36;1mfrom pathlib import Path[0m
+2026-10-01T04:10:47.6478086Z [36;1m[0m
+2026-10-01T04:10:47.6478287Z [36;1mimport pip_audit[0m
+2026-10-01T04:10:47.6478517Z [36;1mimport torch[0m
+2026-10-01T04:10:47.6478721Z [36;1m[0m
+2026-10-01T04:10:47.6478964Z [36;1mmodule = Path(pip_audit.__file__).resolve()[0m
+2026-10-01T04:10:47.6479410Z [36;1mroots = tuple(Path(item).resolve() for item in site.getsitepackages())[0m
+2026-10-01T04:10:47.6479923Z [36;1massert any(root == module or root in module.parents for root in roots)[0m
+2026-10-01T04:10:47.6480328Z [36;1massert torch.version.cuda is None[0m
+2026-10-01T04:10:47.6480638Z [36;1mPY[0m
+2026-10-01T04:10:47.6480967Z [36;1mpython -I "$GITHUB_WORKSPACE/.github/scripts/check_dependency_locks.py"[0m
+2026-10-01T04:10:47.6481607Z [36;1mpython -I -m pip_audit \[0m
+2026-10-01T04:10:47.6481883Z [36;1m  --strict \[0m
+2026-10-01T04:10:47.6482111Z [36;1m  --disable-pip \[0m
+2026-10-01T04:10:47.6482350Z [36;1m  --no-deps \[0m
+2026-10-01T04:10:47.6482588Z [36;1m  --requirement "$LOCK_FILE"[0m
+2026-10-01T04:10:47.6548393Z shell: /usr/bin/bash -e {0}
+2026-10-01T04:10:47.6548652Z env:
+2026-10-01T04:10:47.6548934Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:47.6549399Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T04:10:47.6549851Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:47.6550247Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:47.6550632Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:47.6551042Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T04:10:47.6551710Z   LOCK_FILE: /home/runner/work/AD4DVAR-radar/AD4DVAR-radar/requirements/ci-py312-linux.lock
+2026-10-01T04:10:47.6552159Z ##[endgroup]
+2026-10-01T04:10:49.3674750Z dependency locks: 4 hashed Linux CPU closures are synchronized
+2026-10-01T04:10:49.9134379Z WARNING:pip_audit._cli:--no-deps is supported, but users are encouraged to fully hash their pinned dependencies
+2026-10-01T04:10:49.9136200Z WARNING:pip_audit._cli:Consider using a tool like `pip-compile`: https://pip-tools.readthedocs.io/en/latest/#using-hashes
+2026-10-01T04:10:50.4636772Z No known vulnerabilities found
+2026-10-01T04:10:50.5083880Z ##[group]Run python -I -m pip install \
+2026-10-01T04:10:50.5084261Z [36;1mpython -I -m pip install \[0m
+2026-10-01T04:10:50.5084556Z [36;1m  --no-build-isolation \[0m
+2026-10-01T04:10:50.5084820Z [36;1m  --no-deps \[0m
+2026-10-01T04:10:50.5085058Z [36;1m  --editable .[0m
+2026-10-01T04:10:50.5085300Z [36;1mpython -I -m pip check[0m
+2026-10-01T04:10:50.5148587Z shell: /usr/bin/bash -e {0}
+2026-10-01T04:10:50.5148847Z env:
+2026-10-01T04:10:50.5149130Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:50.5149575Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T04:10:50.5150045Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:50.5150441Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:50.5150831Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:50.5151219Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T04:10:50.5151949Z ##[endgroup]
+2026-10-01T04:10:50.8362920Z Obtaining file:///home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T04:10:50.8373783Z   Checking if build backend supports build_editable: started
+2026-10-01T04:10:51.0236431Z   Checking if build backend supports build_editable: finished with status 'done'
+2026-10-01T04:10:51.0248468Z   Preparing editable metadata (pyproject.toml): started
+2026-10-01T04:10:51.2536258Z   Preparing editable metadata (pyproject.toml): finished with status 'done'
+2026-10-01T04:10:51.2637165Z Building wheels for collected packages: advar-radar-nowcast
+2026-10-01T04:10:51.2644866Z   Building editable for advar-radar-nowcast (pyproject.toml): started
+2026-10-01T04:10:51.5450317Z   Building editable for advar-radar-nowcast (pyproject.toml): finished with status 'done'
+2026-10-01T04:10:51.5458879Z   Created wheel for advar-radar-nowcast: filename=advar_radar_nowcast-0.114.0-0.editable-py3-none-any.whl size=63186 sha256=2d8138f6dfd55964d0087bc8e954f9e3402f37a9e35d878ba4973525931da5f9
+2026-10-01T04:10:51.5460442Z   Stored in directory: /tmp/pip-ephem-wheel-cache-oh74azd8/wheels/1b/17/88/759e7a703f550adf36506436df8ea413a3c2e2eb8d99fc9f9a
+2026-10-01T04:10:51.5548746Z Successfully built advar-radar-nowcast
+2026-10-01T04:10:51.5685469Z Installing collected packages: advar-radar-nowcast
+2026-10-01T04:10:51.5869155Z Successfully installed advar-radar-nowcast-0.114.0
+2026-10-01T04:10:51.8799771Z No broken requirements found.
+2026-10-01T04:10:51.9059646Z ##[group]Run python -I .github/scripts/check_basedpyright.py
+2026-10-01T04:10:51.9060119Z [36;1mpython -I .github/scripts/check_basedpyright.py[0m
+2026-10-01T04:10:51.9124589Z shell: /usr/bin/bash -e {0}
+2026-10-01T04:10:51.9124843Z env:
+2026-10-01T04:10:51.9125123Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:51.9125573Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T04:10:51.9126010Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:51.9126393Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:51.9126785Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:10:51.9127170Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T04:10:51.9127496Z ##[endgroup]
+2026-10-01T04:11:07.7433555Z basedpyright: 0 errors, 8048 warnings, 0 notes
+2026-10-01T04:11:07.7563386Z ##[group]Run python -I -m pytest -q
+2026-10-01T04:11:07.7563883Z [36;1mpython -I -m pytest -q[0m
+2026-10-01T04:11:07.7632152Z shell: /usr/bin/bash -e {0}
+2026-10-01T04:11:07.7632444Z env:
+2026-10-01T04:11:07.7632730Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:11:07.7633189Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T04:11:07.7633624Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:11:07.7634020Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:11:07.7634404Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T04:11:07.7635288Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T04:11:07.7636049Z   OMP_NUM_THREADS: 1
+2026-10-01T04:11:07.7636421Z   MKL_NUM_THREADS: 1
+2026-10-01T04:11:07.7636770Z ##[endgroup]
+2026-10-01T04:14:05.3056456Z .................................ss............................ [  2%]
+2026-10-01T04:14:25.2523148Z ....................................... [  4%]
+2026-10-01T04:14:46.0754692Z .............................................................. [  7%]
+2026-10-01T04:14:50.7145651Z ........................................... [  9%]
+2026-10-01T04:14:51.7588475Z ........................................................................ [ 12%]
+2026-10-01T04:14:55.7032468Z ........................................................................ [ 15%]
+2026-10-01T04:15:03.5579833Z ...............................FF....................................... [ 18%]
+2026-10-01T04:35:56.0576962Z .................................FF..................................... [ 21%]
+2026-10-01T04:43:47.8270765Z .....F.................................................................. [ 24%]
+2026-10-01T04:49:01.1128256Z ...........................EEE.EEEEEEEEEEE.............FFFFF............ [ 28%]
+2026-10-01T05:12:53.3595907Z ..........F.................................FF......F..................F [ 31%]
+2026-10-01T05:13:04.3726151Z ........................................................................ [ 34%]
+2026-10-01T05:13:07.6698132Z ........................................................................ [ 37%]
+2026-10-01T05:14:04.0691755Z ..............F.............F........................................... [ 40%]
+2026-10-01T05:14:14.8563304Z ........................................................................ [ 43%]
+2026-10-01T05:15:15.0679741Z .........FF...................FF..................F........F............ [ 46%]
+2026-10-01T05:15:26.0942268Z .EEEEEEEEEEEEEE.....F.F.FFFFF.FF.....FF......FFFFFFFFFFFFFF............. [ 50%]
+2026-10-01T05:21:51.1167066Z ...FFFFFFFFFF.......................................F................... [ 53%]
+2026-10-01T05:21:56.8957610Z .................................................... [ 55%]
+2026-10-01T05:22:01.1216602Z ......................................... [ 57%]
+2026-10-01T05:22:21.0918678Z ...................................................................... [ 60%]
+2026-10-01T05:22:22.6564713Z ......................................................s...... [ 63%]
+2026-10-01T05:22:23.1306780Z ............................................. [ 65%]
+2026-10-01T05:22:23.9375587Z ................................ [ 66%]
+2026-10-01T05:22:48.8817862Z ..........................................................s.........ss.............................. [ 70%]
+2026-10-01T05:47:08.8824758Z ..................................................................... [ 73%]
+2026-10-01T06:10:24.3058242Z ##[error]The operation was canceled.
+2026-10-01T06:10:24.3188618Z Post job cleanup.
+2026-10-01T06:10:24.4102185Z [command]/usr/bin/git version
+2026-10-01T06:10:24.4115851Z git version 2.55.0
+2026-10-01T06:10:24.4238150Z Temporarily overriding HOME='/home/runner/work/_temp/28dd70a5-c11e-470a-9902-945fa106efe1' before making global git config changes
+2026-10-01T06:10:24.4253048Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-01T06:10:24.4254518Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T06:10:24.4258639Z Removing SSH command configuration
+2026-10-01T06:10:24.4259789Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-01T06:10:24.4318726Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-01T06:10:24.6239155Z Removing HTTP extra header
+2026-10-01T06:10:24.6240129Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-01T06:10:24.6243214Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-01T06:10:24.6245695Z Removing includeIf entries pointing to credentials config files
+2026-10-01T06:10:24.6246639Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-01T06:10:24.6247711Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+2026-10-01T06:10:24.6248723Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+2026-10-01T06:10:24.6249602Z includeif.gitdir:/github/workspace/.git.path
+2026-10-01T06:10:24.6250284Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-01T06:10:24.6252512Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+2026-10-01T06:10:24.6253871Z /home/runner/work/_temp/git-credentials-760496cf-7bd6-47c7-b509-c64969ea179c.config
+2026-10-01T06:10:24.6256397Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-760496cf\-7bd6\-47c7\-b509\-c64969ea179c\.config
+2026-10-01T06:10:24.6259207Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+2026-10-01T06:10:24.6260973Z /home/runner/work/_temp/git-credentials-760496cf-7bd6-47c7-b509-c64969ea179c.config
+2026-10-01T06:10:24.6264348Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-760496cf\-7bd6\-47c7\-b509\-c64969ea179c\.config
+2026-10-01T06:10:24.6266941Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-01T06:10:24.6268098Z /github/runner_temp/git-credentials-760496cf-7bd6-47c7-b509-c64969ea179c.config
+2026-10-01T06:10:24.6270360Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-760496cf\-7bd6\-47c7\-b509\-c64969ea179c\.config
+2026-10-01T06:10:24.6273004Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-01T06:10:24.6274215Z /github/runner_temp/git-credentials-760496cf-7bd6-47c7-b509-c64969ea179c.config
+2026-10-01T06:10:24.6276536Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-760496cf\-7bd6\-47c7\-b509\-c64969ea179c\.config
+2026-10-01T06:10:24.6279074Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-01T06:10:24.6281966Z Removing credentials config '/home/runner/work/_temp/git-credentials-760496cf-7bd6-47c7-b509-c64969ea179c.config'
+2026-10-01T06:10:24.6377122Z Cleaning up orphan processes
+2026-10-01T06:10:24.6612428Z Terminate orphan process: pid (2486) (python)

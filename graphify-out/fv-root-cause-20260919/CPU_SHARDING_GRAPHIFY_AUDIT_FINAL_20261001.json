@@ -1,0 +1,16 @@
+{
+  "mode": "bounded code-only refresh;no semantic extraction",
+  "source_files": [
+    ".github/scripts/run_cpu_test_shard.py",
+    "tests/test_cpu_test_sharding.py"
+  ],
+  "ast_nodes": 77,
+  "ast_edges": 222,
+  "after_nodes": 8456,
+  "after_edges": 210795,
+  "unrelated_node_metadata_unchanged": true,
+  "unrelated_link_metadata_unchanged": true,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "backup": "graphify-out/.graphify_cpu_shard_prereason_graph.json"
+}

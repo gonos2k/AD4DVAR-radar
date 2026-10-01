@@ -1,0 +1,2774 @@
+{
+  "nodes": [
+    {
+      "id": "scripts_run_cpu_test_shard",
+      "label": "run_cpu_test_shard.py",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_sharderror",
+      "label": "ShardError",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L31",
+      "_origin": "ast"
+    },
+    {
+      "id": "valueerror",
+      "label": "ValueError",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_canonical_json",
+      "label": "_canonical_json()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L35",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_sha256",
+      "label": "_sha256()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_file_sha256",
+      "label": "_file_sha256()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L44",
+      "_origin": "ast"
+    },
+    {
+      "id": "github_scripts_run_cpu_test_shard_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L44",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_sanitized_pytest_env",
+      "label": "_sanitized_pytest_env()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L48",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_write_json",
+      "label": "_write_json()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_filter_options",
+      "label": "_filter_options()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L62",
+      "_origin": "ast"
+    },
+    {
+      "id": "any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L62",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_inventory_digest",
+      "label": "inventory_digest()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L87",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_summarize_phases",
+      "label": "summarize_phases()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L93",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_module",
+      "label": "_module()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L144",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_partition_modules",
+      "label": "partition_modules()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L151",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_reconcile_shards",
+      "label": "reconcile_shards()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L189",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_source_record",
+      "label": "_source_record()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L337",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runtime_record",
+      "label": "_runtime_record()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L352",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_collectionplugin",
+      "label": "_CollectionPlugin",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L357",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_collectionplugin_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L358",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_collectionplugin_pytest_configure",
+      "label": ".pytest_configure()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L371",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_collectionplugin_pytest_collectreport",
+      "label": ".pytest_collectreport()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L384",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_collectionplugin_pytest_collection_finish",
+      "label": ".pytest_collection_finish()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L390",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_collectionplugin_pytest_deselected",
+      "label": ".pytest_deselected()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L393",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_collectionplugin_pytest_sessionfinish",
+      "label": ".pytest_sessionfinish()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L396",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_collectionplugin_record",
+      "label": "._record()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L399",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_collect_worker",
+      "label": "_collect_worker()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L422",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runplugin",
+      "label": "_RunPlugin",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L450",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runplugin_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L451",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runplugin_pytest_configure",
+      "label": ".pytest_configure()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L464",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runplugin_pytest_collectreport",
+      "label": ".pytest_collectreport()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L467",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runplugin_pytest_collection_finish",
+      "label": ".pytest_collection_finish()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L471",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runplugin_pytest_deselected",
+      "label": ".pytest_deselected()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L476",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runplugin_pytest_runtestloop",
+      "label": ".pytest_runtestloop()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L480",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runplugin_pytest_runtest_logreport",
+      "label": ".pytest_runtest_logreport()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L486",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runplugin_pytest_runtest_logstart",
+      "label": ".pytest_runtest_logstart()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L501",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runplugin_pytest_sessionfinish",
+      "label": ".pytest_sessionfinish()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L506",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runplugin_cases",
+      "label": ".cases()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L510",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runplugin_record",
+      "label": "._record()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L522",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_runplugin_persist",
+      "label": "._persist()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L561",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_run_worker",
+      "label": "_run_worker()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L567",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_launch",
+      "label": "_launch()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L586",
+      "_origin": "ast"
+    },
+    {
+      "id": "github_scripts_run_cpu_test_shard_py_completedprocess",
+      "label": "CompletedProcess",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L586",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_run_shard",
+      "label": "run_shard()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L592",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L681",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_rationale_32",
+      "label": "The inventory, shard assignment, or execution record is incomplete.",
+      "file_type": "rationale",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L32",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_rationale_94",
+      "label": "Validate a pytest lifecycle trace and derive its terminal summary.",
+      "file_type": "rationale",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L94",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_rationale_152",
+      "label": "Greedily balance whole test modules; preserve original order within shards.",
+      "file_type": "rationale",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L152",
+      "_origin": "ast"
+    },
+    {
+      "id": "scripts_run_cpu_test_shard_rationale_194",
+      "label": "Audit a complete set of shard artifacts without trusting their counts.",
+      "file_type": "rationale",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L194",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding",
+      "label": "test_cpu_test_sharding.py",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_nodeids",
+      "label": "_nodeids()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L23",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_complete_records",
+      "label": "_complete_records()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L28",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_greedy_partition_is_deterministic_balanced_and_module_ordered",
+      "label": "test_greedy_partition_is_deterministic_balanced_and_module_ordered()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L81",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_reconciliation_accepts_exact_partition_and_counts_skips",
+      "label": "test_reconciliation_accepts_exact_partition_and_counts_skips()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L99",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_reconciliation_rejects_missing_extra_or_duplicate_actual_nodeids",
+      "label": "test_reconciliation_rejects_missing_extra_or_duplicate_actual_nodeids()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L108",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_reconciliation_rejects_collection_failure_without_running_shards",
+      "label": "test_reconciliation_rejects_collection_failure_without_running_shards()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L121",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_reconciliation_rejects_incomplete_case_outcomes",
+      "label": "test_reconciliation_rejects_incomplete_case_outcomes()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L131",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_partition_refuses_empty_shards_and_duplicate_inventory",
+      "label": "test_partition_refuses_empty_shards_and_duplicate_inventory()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L147",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_terminal_outcome_keeps_phase_and_xfail_information",
+      "label": "test_terminal_outcome_keeps_phase_and_xfail_information()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L154",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_unexpected_collection_is_stopped_before_test_execution",
+      "label": "test_unexpected_collection_is_stopped_before_test_execution()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L172",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_phase_summary_requires_call_for_pass_and_teardown_for_terminal",
+      "label": "test_phase_summary_requires_call_for_pass_and_teardown_for_terminal()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L185",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_phase_summary_preserves_xfail_and_non_strict_xpass",
+      "label": "test_phase_summary_preserves_xfail_and_non_strict_xpass()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L208",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_phase_summary_preserves_xfail_raised_in_teardown",
+      "label": "test_phase_summary_preserves_xfail_raised_in_teardown()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L224",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_phase_summary_rejects_missing_skipped_reason",
+      "label": "test_phase_summary_rejects_missing_skipped_reason()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L234",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_reconciliation_rejects_forged_pass_without_call",
+      "label": "test_reconciliation_rejects_forged_pass_without_call()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L243",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_toy_repository",
+      "label": "_toy_repository()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L255",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L255",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_run_toy_shard",
+      "label": "_run_toy_shard()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L285",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_py_completedprocess",
+      "label": "CompletedProcess",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L285",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_cli_runs_isolated_collection_and_isolated_execution_with_exact_outcomes",
+      "label": "test_cli_runs_isolated_collection_and_isolated_execution_with_exact_outcomes()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L301",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_cli_failure_records_never_reconcile_as_complete",
+      "label": "test_cli_failure_records_never_reconcile_as_complete()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L370",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_cli_stops_before_execution_when_assigned_nodeids_differ",
+      "label": "test_cli_stops_before_execution_when_assigned_nodeids_differ()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L397",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_cli_sanitizes_inherited_pytest_addopts",
+      "label": "test_cli_sanitizes_inherited_pytest_addopts()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L438",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_direct_internal_workers_sanitize_inherited_pytest_addopts",
+      "label": "test_direct_internal_workers_sanitize_inherited_pytest_addopts()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L461",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_configured_collection_filters_fail_with_explicit_inventory_record",
+      "label": "test_configured_collection_filters_fail_with_explicit_inventory_record()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L505",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_test_collector_deselection_is_recorded_and_fails_inventory",
+      "label": "test_collector_deselection_is_recorded_and_fails_inventory()",
+      "file_type": "code",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L520",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_cpu_test_sharding_rationale_1",
+      "label": "Synthetic coverage checks for the complete CPU-test shard audit.",
+      "file_type": "rationale",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "importlib_metadata",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "os",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "os",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "platform",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "subprocess",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_sharderror",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_sharderror",
+      "target": "valueerror",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_canonical_json",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_sha256",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_file_sha256",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_file_sha256",
+      "target": "github_scripts_run_cpu_test_shard_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_sanitized_pytest_env",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_write_json",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_write_json",
+      "target": "github_scripts_run_cpu_test_shard_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_filter_options",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_filter_options",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_inventory_digest",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_summarize_phases",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_summarize_phases",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_module",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_partition_modules",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L151",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_partition_modules",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L151",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_reconcile_shards",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_reconcile_shards",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_reconcile_shards",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_reconcile_shards",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_reconcile_shards",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_source_record",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L337",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_source_record",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L337",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_runtime_record",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L352",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runtime_record",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L352",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_collectionplugin",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L357",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin",
+      "target": "scripts_run_cpu_test_shard_collectionplugin_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L358",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin_init",
+      "target": "github_scripts_run_cpu_test_shard_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L358",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin_init",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L358",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin_init",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L358",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin",
+      "target": "scripts_run_cpu_test_shard_collectionplugin_pytest_configure",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L371",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin_pytest_configure",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L371",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin",
+      "target": "scripts_run_cpu_test_shard_collectionplugin_pytest_collectreport",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L384",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin_pytest_collectreport",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L384",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin",
+      "target": "scripts_run_cpu_test_shard_collectionplugin_pytest_collection_finish",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L390",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin_pytest_collection_finish",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L390",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin",
+      "target": "scripts_run_cpu_test_shard_collectionplugin_pytest_deselected",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L393",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin_pytest_deselected",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L393",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin",
+      "target": "scripts_run_cpu_test_shard_collectionplugin_pytest_sessionfinish",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L396",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin_pytest_sessionfinish",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L396",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin",
+      "target": "scripts_run_cpu_test_shard_collectionplugin_record",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L399",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin_record",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L399",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_collect_worker",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L422",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collect_worker",
+      "target": "github_scripts_run_cpu_test_shard_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L422",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_runplugin",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L450",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin",
+      "target": "scripts_run_cpu_test_shard_runplugin_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L451",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_init",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L451",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_init",
+      "target": "github_scripts_run_cpu_test_shard_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L451",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin",
+      "target": "scripts_run_cpu_test_shard_runplugin_pytest_configure",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L464",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_pytest_configure",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L464",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin",
+      "target": "scripts_run_cpu_test_shard_runplugin_pytest_collectreport",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L467",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_pytest_collectreport",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L467",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin",
+      "target": "scripts_run_cpu_test_shard_runplugin_pytest_collection_finish",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L471",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_pytest_collection_finish",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L471",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin",
+      "target": "scripts_run_cpu_test_shard_runplugin_pytest_deselected",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L476",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_pytest_deselected",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L476",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin",
+      "target": "scripts_run_cpu_test_shard_runplugin_pytest_runtestloop",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L480",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_pytest_runtestloop",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L480",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin",
+      "target": "scripts_run_cpu_test_shard_runplugin_pytest_runtest_logreport",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L486",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_pytest_runtest_logreport",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L486",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin",
+      "target": "scripts_run_cpu_test_shard_runplugin_pytest_runtest_logstart",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L501",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin",
+      "target": "scripts_run_cpu_test_shard_runplugin_pytest_sessionfinish",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_pytest_sessionfinish",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin",
+      "target": "scripts_run_cpu_test_shard_runplugin_cases",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L510",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_cases",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L510",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin",
+      "target": "scripts_run_cpu_test_shard_runplugin_record",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L522",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_record",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L522",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin",
+      "target": "scripts_run_cpu_test_shard_runplugin_persist",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L561",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_run_worker",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L567",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_worker",
+      "target": "github_scripts_run_cpu_test_shard_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L567",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_worker",
+      "target": "github_scripts_run_cpu_test_shard_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L567",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_launch",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L586",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_launch",
+      "target": "github_scripts_run_cpu_test_shard_py_completedprocess",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L586",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_launch",
+      "target": "github_scripts_run_cpu_test_shard_py_completedprocess",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L586",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_run_shard",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L592",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_shard",
+      "target": "github_scripts_run_cpu_test_shard_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L592",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard",
+      "target": "scripts_run_cpu_test_shard_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L681",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_file_sha256",
+      "target": "scripts_run_cpu_test_shard_sha256",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_inventory_digest",
+      "target": "scripts_run_cpu_test_shard_sha256",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L89",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_inventory_digest",
+      "target": "scripts_run_cpu_test_shard_canonical_json",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L89",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_summarize_phases",
+      "target": "scripts_run_cpu_test_shard_sharderror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_module",
+      "target": "scripts_run_cpu_test_shard_sharderror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L147",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_partition_modules",
+      "target": "scripts_run_cpu_test_shard_sharderror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L154",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_partition_modules",
+      "target": "scripts_run_cpu_test_shard_module",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L160",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_reconcile_shards",
+      "target": "scripts_run_cpu_test_shard_inventory_digest",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L221",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_reconcile_shards",
+      "target": "scripts_run_cpu_test_shard_partition_modules",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L225",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_reconcile_shards",
+      "target": "scripts_run_cpu_test_shard_sha256",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L263",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_reconcile_shards",
+      "target": "scripts_run_cpu_test_shard_canonical_json",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L264",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_reconcile_shards",
+      "target": "scripts_run_cpu_test_shard_summarize_phases",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L310",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_source_record",
+      "target": "scripts_run_cpu_test_shard_file_sha256",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L349",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin_pytest_configure",
+      "target": "scripts_run_cpu_test_shard_filter_options",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L372",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin_pytest_configure",
+      "target": "scripts_run_cpu_test_shard_write_json",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L378",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin_pytest_configure",
+      "target": "scripts_run_cpu_test_shard_runplugin_record",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L378",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collectionplugin_record",
+      "target": "scripts_run_cpu_test_shard_inventory_digest",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L407",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collect_worker",
+      "target": "scripts_run_cpu_test_shard_source_record",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L423",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collect_worker",
+      "target": "scripts_run_cpu_test_shard_runtime_record",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L424",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collect_worker",
+      "target": "scripts_run_cpu_test_shard_collectionplugin",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L425",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collect_worker",
+      "target": "scripts_run_cpu_test_shard_write_json",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L426",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collect_worker",
+      "target": "scripts_run_cpu_test_shard_main",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L438",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_collect_worker",
+      "target": "scripts_run_cpu_test_shard_runplugin_record",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L444",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_pytest_configure",
+      "target": "scripts_run_cpu_test_shard_filter_options",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L465",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_pytest_runtest_logreport",
+      "target": "scripts_run_cpu_test_shard_runplugin_persist",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L499",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_pytest_runtest_logstart",
+      "target": "scripts_run_cpu_test_shard_runplugin_persist",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L504",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_pytest_sessionfinish",
+      "target": "scripts_run_cpu_test_shard_runplugin_persist",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L508",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_cases",
+      "target": "scripts_run_cpu_test_shard_summarize_phases",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L515",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_record",
+      "target": "scripts_run_cpu_test_shard_runplugin_cases",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L523",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_persist",
+      "target": "scripts_run_cpu_test_shard_write_json",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L562",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_runplugin_persist",
+      "target": "scripts_run_cpu_test_shard_runplugin_record",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L562",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_worker",
+      "target": "scripts_run_cpu_test_shard_runplugin",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L569",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_worker",
+      "target": "scripts_run_cpu_test_shard_runplugin_persist",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L570",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_worker",
+      "target": "scripts_run_cpu_test_shard_source_record",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L571",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_worker",
+      "target": "scripts_run_cpu_test_shard_runtime_record",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L572",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_worker",
+      "target": "scripts_run_cpu_test_shard_runplugin_record",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L573",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_worker",
+      "target": "scripts_run_cpu_test_shard_write_json",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L576",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_worker",
+      "target": "scripts_run_cpu_test_shard_main",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L578",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_launch",
+      "target": "github_scripts_run_cpu_test_shard_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L587",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_launch",
+      "target": "scripts_run_cpu_test_shard_sanitized_pytest_env",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L589",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_shard",
+      "target": "scripts_run_cpu_test_shard_sharderror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L595",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_shard",
+      "target": "github_scripts_run_cpu_test_shard_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L603",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_shard",
+      "target": "scripts_run_cpu_test_shard_sanitized_pytest_env",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L606",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_shard",
+      "target": "scripts_run_cpu_test_shard_write_json",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L626",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_shard",
+      "target": "scripts_run_cpu_test_shard_inventory_digest",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L632",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_shard",
+      "target": "scripts_run_cpu_test_shard_partition_modules",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L639",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_shard",
+      "target": "scripts_run_cpu_test_shard_sha256",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L655",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_shard",
+      "target": "scripts_run_cpu_test_shard_canonical_json",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L655",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_shard",
+      "target": "scripts_run_cpu_test_shard_launch",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L664",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_shard",
+      "target": "scripts_run_cpu_test_shard_source_record",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L668",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_run_shard",
+      "target": "scripts_run_cpu_test_shard_runtime_record",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L669",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_main",
+      "target": "scripts_run_cpu_test_shard_collect_worker",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L692",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_main",
+      "target": "scripts_run_cpu_test_shard_run_worker",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L694",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_main",
+      "target": "github_scripts_run_cpu_test_shard_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L694",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_main",
+      "target": "scripts_run_cpu_test_shard_run_shard",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L698",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_rationale_32",
+      "target": "scripts_run_cpu_test_shard_sharderror",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_rationale_94",
+      "target": "scripts_run_cpu_test_shard_summarize_phases",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_rationale_152",
+      "target": "scripts_run_cpu_test_shard_partition_modules",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "scripts_run_cpu_test_shard_rationale_194",
+      "target": "scripts_run_cpu_test_shard_reconcile_shards",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": ".github/scripts/run_cpu_test_shard.py",
+      "source_location": "L194",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "importlib_util",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "os",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "shutil",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "subprocess",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "types",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_nodeids",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_complete_records",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_greedy_partition_is_deterministic_balanced_and_module_ordered",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_reconciliation_accepts_exact_partition_and_counts_skips",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_reconciliation_rejects_missing_extra_or_duplicate_actual_nodeids",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_reconciliation_rejects_collection_failure_without_running_shards",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L121",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_reconciliation_rejects_incomplete_case_outcomes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_partition_refuses_empty_shards_and_duplicate_inventory",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L147",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_terminal_outcome_keeps_phase_and_xfail_information",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L154",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_unexpected_collection_is_stopped_before_test_execution",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L172",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_phase_summary_requires_call_for_pass_and_teardown_for_terminal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L185",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_phase_summary_preserves_xfail_and_non_strict_xpass",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L208",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_phase_summary_preserves_xfail_raised_in_teardown",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L224",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_phase_summary_rejects_missing_skipped_reason",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L234",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_reconciliation_rejects_forged_pass_without_call",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L243",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_toy_repository",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L255",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_toy_repository",
+      "target": "tests_test_cpu_test_sharding_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L255",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_toy_repository",
+      "target": "tests_test_cpu_test_sharding_py_path",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L255",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_run_toy_shard",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L285",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_run_toy_shard",
+      "target": "tests_test_cpu_test_sharding_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L285",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_run_toy_shard",
+      "target": "tests_test_cpu_test_sharding_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L285",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_run_toy_shard",
+      "target": "tests_test_cpu_test_sharding_py_completedprocess",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L285",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_run_toy_shard",
+      "target": "tests_test_cpu_test_sharding_py_completedprocess",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L285",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_cli_runs_isolated_collection_and_isolated_execution_with_exact_outcomes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L301",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_cli_runs_isolated_collection_and_isolated_execution_with_exact_outcomes",
+      "target": "tests_test_cpu_test_sharding_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L301",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_cli_failure_records_never_reconcile_as_complete",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L370",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_cli_failure_records_never_reconcile_as_complete",
+      "target": "tests_test_cpu_test_sharding_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L370",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_cli_stops_before_execution_when_assigned_nodeids_differ",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L397",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_cli_stops_before_execution_when_assigned_nodeids_differ",
+      "target": "tests_test_cpu_test_sharding_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L397",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_cli_sanitizes_inherited_pytest_addopts",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L438",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_cli_sanitizes_inherited_pytest_addopts",
+      "target": "tests_test_cpu_test_sharding_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L438",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_direct_internal_workers_sanitize_inherited_pytest_addopts",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L461",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_direct_internal_workers_sanitize_inherited_pytest_addopts",
+      "target": "tests_test_cpu_test_sharding_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L461",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_configured_collection_filters_fail_with_explicit_inventory_record",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L505",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_configured_collection_filters_fail_with_explicit_inventory_record",
+      "target": "tests_test_cpu_test_sharding_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L505",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding",
+      "target": "tests_test_cpu_test_sharding_test_collector_deselection_is_recorded_and_fails_inventory",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L520",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_collector_deselection_is_recorded_and_fails_inventory",
+      "target": "tests_test_cpu_test_sharding_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L520",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_greedy_partition_is_deterministic_balanced_and_module_ordered",
+      "target": "tests_test_cpu_test_sharding_nodeids",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L82",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_reconciliation_accepts_exact_partition_and_counts_skips",
+      "target": "tests_test_cpu_test_sharding_complete_records",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_reconciliation_accepts_exact_partition_and_counts_skips",
+      "target": "tests_test_cpu_test_sharding_nodeids",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_reconciliation_rejects_missing_extra_or_duplicate_actual_nodeids",
+      "target": "tests_test_cpu_test_sharding_complete_records",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_reconciliation_rejects_missing_extra_or_duplicate_actual_nodeids",
+      "target": "tests_test_cpu_test_sharding_nodeids",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_reconciliation_rejects_collection_failure_without_running_shards",
+      "target": "tests_test_cpu_test_sharding_complete_records",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L122",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_reconciliation_rejects_collection_failure_without_running_shards",
+      "target": "tests_test_cpu_test_sharding_nodeids",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L122",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_reconciliation_rejects_incomplete_case_outcomes",
+      "target": "tests_test_cpu_test_sharding_complete_records",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L132",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_reconciliation_rejects_incomplete_case_outcomes",
+      "target": "tests_test_cpu_test_sharding_nodeids",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L132",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_partition_refuses_empty_shards_and_duplicate_inventory",
+      "target": "tests_test_cpu_test_sharding_nodeids",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L149",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_terminal_outcome_keeps_phase_and_xfail_information",
+      "target": "tests_test_cpu_test_sharding_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_unexpected_collection_is_stopped_before_test_execution",
+      "target": "tests_test_cpu_test_sharding_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L176",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_reconciliation_rejects_forged_pass_without_call",
+      "target": "tests_test_cpu_test_sharding_complete_records",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L244",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_reconciliation_rejects_forged_pass_without_call",
+      "target": "tests_test_cpu_test_sharding_nodeids",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L244",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_cli_runs_isolated_collection_and_isolated_execution_with_exact_outcomes",
+      "target": "tests_test_cpu_test_sharding_toy_repository",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L304",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_cli_runs_isolated_collection_and_isolated_execution_with_exact_outcomes",
+      "target": "tests_test_cpu_test_sharding_run_toy_shard",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L337",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_cli_failure_records_never_reconcile_as_complete",
+      "target": "tests_test_cpu_test_sharding_toy_repository",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L374",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_cli_failure_records_never_reconcile_as_complete",
+      "target": "tests_test_cpu_test_sharding_run_toy_shard",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L376",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_cli_stops_before_execution_when_assigned_nodeids_differ",
+      "target": "tests_test_cpu_test_sharding_toy_repository",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L398",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_cli_sanitizes_inherited_pytest_addopts",
+      "target": "tests_test_cpu_test_sharding_toy_repository",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L441",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_cli_sanitizes_inherited_pytest_addopts",
+      "target": "tests_test_cpu_test_sharding_run_toy_shard",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L449",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_direct_internal_workers_sanitize_inherited_pytest_addopts",
+      "target": "tests_test_cpu_test_sharding_toy_repository",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L462",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_configured_collection_filters_fail_with_explicit_inventory_record",
+      "target": "tests_test_cpu_test_sharding_toy_repository",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L508",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_configured_collection_filters_fail_with_explicit_inventory_record",
+      "target": "tests_test_cpu_test_sharding_run_toy_shard",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L510",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_collector_deselection_is_recorded_and_fails_inventory",
+      "target": "tests_test_cpu_test_sharding_toy_repository",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L521",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_test_collector_deselection_is_recorded_and_fails_inventory",
+      "target": "tests_test_cpu_test_sharding_run_toy_shard",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L530",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_cpu_test_sharding_rationale_1",
+      "target": "tests_test_cpu_test_sharding",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_cpu_test_sharding.py",
+      "source_location": "L1",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

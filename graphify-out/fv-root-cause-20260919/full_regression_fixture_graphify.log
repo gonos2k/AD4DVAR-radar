@@ -1,0 +1,2 @@
+Incremental code-only AST refresh for two unit-fixture tests; unrelated node metadata and links retained; pre-update backup saved.
+Final graph.json parses: 8381 nodes, 210606 links; no semantic rebuild.
