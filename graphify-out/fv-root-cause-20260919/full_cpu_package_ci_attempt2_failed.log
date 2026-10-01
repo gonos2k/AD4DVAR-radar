@@ -1,0 +1,603 @@
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	﻿2026-10-01T04:04:00.9738122Z ##[group]Run python -I -m pytest -q
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:00.9738727Z [36;1mpython -I -m pytest -q[0m
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:00.9818256Z shell: /usr/bin/bash -e {0}
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:00.9818716Z env:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:00.9819343Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:00.9820921Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:00.9821693Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:00.9822615Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:00.9823307Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:00.9824001Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:00.9824624Z   OMP_NUM_THREADS: 1
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:00.9825010Z   MKL_NUM_THREADS: 1
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:00.9825383Z ##[endgroup]
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2607147Z 
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2607836Z ==================================== ERRORS ====================================
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2608848Z ________________ ERROR collecting tests/test_fv86_reanalysis.py ________________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2610090Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv86_reanalysis.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2611276Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2611977Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2612998Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2614016Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2614676Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2615245Z tests/test_fv86_reanalysis.py:9: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2616295Z     from examples.weather_scenarios import fv86_reanalysis_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2617070Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2617850Z ____________ ERROR collecting tests/test_fv_concurrent_response.py _____________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2619101Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_concurrent_response.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2620332Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2620990Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2621692Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2622916Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2623577Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2624182Z tests/test_fv_concurrent_response.py:10: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2624810Z     from examples.weather_scenarios import (
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2625399Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2626117Z ____________ ERROR collecting tests/test_fv_minmod_inverse_probe.py ____________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2627122Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_minmod_inverse_probe.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2627823Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2628178Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2628560Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2629087Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2629432Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2629747Z tests/test_fv_minmod_inverse_probe.py:9: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2630179Z     from examples.weather_scenarios import fv_multilead_research_case as multilead
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2630634Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2631055Z ___________ ERROR collecting tests/test_fv_partial_alternate_root.py ___________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2631750Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_partial_alternate_root.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2642980Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2643361Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2643762Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2644321Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2644687Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2645047Z tests/test_fv_partial_alternate_root.py:14: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2645509Z     from examples.weather_scenarios import fv_partial_alternate_root_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2645978Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2646394Z ________ ERROR collecting tests/test_fv_partial_alternate_seed_gate.py _________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2647125Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_partial_alternate_seed_gate.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2647807Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2648146Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2648524Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2649046Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2649398Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2649743Z tests/test_fv_partial_alternate_seed_gate.py:11: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2650193Z     from examples.weather_scenarios import fv_partial_alternate_seed_gate as gate
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2650626Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2651294Z __________ ERROR collecting tests/test_fv_partial_face_event_probe.py __________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2651983Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_partial_face_event_probe.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2652995Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2653335Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2653713Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2654228Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2654568Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2654898Z tests/test_fv_partial_face_event_probe.py:8: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2655337Z     from examples.weather_scenarios import fv_partial_face_event_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2655767Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2656184Z _________ ERROR collecting tests/test_fv_partial_face_event_runner.py __________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2656877Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_partial_face_event_runner.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2657547Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2657882Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2658369Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2658920Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2659256Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2659589Z tests/test_fv_partial_face_event_runner.py:11: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2660040Z     from examples.weather_scenarios import fv_partial_face_event_runner as runner
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2660473Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2660889Z ___________ ERROR collecting tests/test_fv_partial_face_geometry.py ____________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2661562Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_partial_face_geometry.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2662696Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2663040Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2663414Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2664035Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2664379Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2664699Z tests/test_fv_partial_face_geometry.py:9: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2665128Z     from examples.weather_scenarios import fv_partial_face_geometry as geometry
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2666292Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2667002Z _________ ERROR collecting tests/test_fv_partial_face_tangent_probe.py _________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2668205Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_partial_face_tangent_probe.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2669184Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2669533Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2669911Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2670437Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2670790Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2671134Z tests/test_fv_partial_face_tangent_probe.py:14: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2671583Z     from examples.weather_scenarios import fv_partial_face_tangent_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2672023Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2672633Z _______ ERROR collecting tests/test_fv_partial_field_correction_probe.py _______
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2673573Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_partial_field_correction_probe.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2674274Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2674627Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2674999Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2675525Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2675873Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2676220Z tests/test_fv_partial_field_correction_probe.py:12: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2676692Z     from examples.weather_scenarios import fv_partial_field_correction_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2677144Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2677565Z __________ ERROR collecting tests/test_fv_partial_policy_decision.py ___________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2678275Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_partial_policy_decision.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2678938Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2679282Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2679657Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2680173Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2680523Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2680864Z tests/test_fv_partial_policy_decision.py:9: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2681319Z     from examples.weather_scenarios import fv_partial_policy_decision as decision
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2681763Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2682375Z ________ ERROR collecting tests/test_fv_partial_reanalysis_preflight.py ________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2683270Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_partial_reanalysis_preflight.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2683954Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2684466Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2684842Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2685362Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2685716Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2686061Z tests/test_fv_partial_reanalysis_preflight.py:8: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2686538Z     from examples.weather_scenarios import fv_partial_reanalysis_preflight as preflight
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2686996Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2687405Z ____________ ERROR collecting tests/test_fv_partial_sector_root.py _____________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2688082Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_partial_sector_root.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2688723Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2689119Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2689485Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2689992Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2690330Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2690650Z tests/test_fv_partial_sector_root.py:13: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2691066Z     from examples.weather_scenarios import fv_partial_sector_root_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2691491Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2691901Z ________ ERROR collecting tests/test_fv_point_3h_first_branch_probe.py _________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2692897Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_3h_first_branch_probe.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2693744Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2694078Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2694468Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2694994Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2695342Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2695688Z tests/test_fv_point_3h_first_branch_probe.py:11: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2696156Z     from examples.weather_scenarios import fv_point_3h_first_branch_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2696604Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2697018Z ______________ ERROR collecting tests/test_fv_point_3h_forward.py ______________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2697673Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_3h_forward.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2698308Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2698647Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2699026Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2699539Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2699891Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2700196Z tests/test_fv_point_3h_forward.py:14: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2700631Z     from examples.weather_scenarios import fv_point_3h_forward_case as case_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2701063Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2701481Z ________ ERROR collecting tests/test_fv_point_3h_merit_continuation.py _________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2702319Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_3h_merit_continuation.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2702999Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2703328Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2703687Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2704890Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2705458Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2706041Z tests/test_fv_point_3h_merit_continuation.py:13: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2706836Z     from examples.weather_scenarios import fv_point_3h_merit_continuation as continuation
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2707324Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2707738Z _________ ERROR collecting tests/test_fv_point_3h_merit_step_probe.py __________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2708435Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_3h_merit_step_probe.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2709111Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2709441Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2709807Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2710331Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2710671Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2711000Z tests/test_fv_point_3h_merit_step_probe.py:9: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2711462Z     from examples.weather_scenarios import fv_point_3h_first_branch_probe as first_branch
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2711923Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2712497Z __________ ERROR collecting tests/test_fv_point_3h_response_policy.py __________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2713185Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_3h_response_policy.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2714483Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2714840Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2715220Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2715755Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2716106Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2716443Z tests/test_fv_point_3h_response_policy.py:10: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2716886Z     from examples.weather_scenarios import fv_point_3h_response_policy as policy
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2717327Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2717742Z ________ ERROR collecting tests/test_fv_point_3h_seed_hessian_probe.py _________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2718448Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_3h_seed_hessian_probe.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2719132Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2719468Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2719835Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2720357Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2720703Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2721049Z tests/test_fv_point_3h_seed_hessian_probe.py:11: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2721503Z     from examples.weather_scenarios import fv_point_3h_seed_hessian_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2721937Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2722503Z _________ ERROR collecting tests/test_fv_point_3h_seed_linear_probe.py _________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2723194Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_3h_seed_linear_probe.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2723903Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2724241Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2724606Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2725261Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2725601Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2725934Z tests/test_fv_point_3h_seed_linear_probe.py:11: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2726386Z     from examples.weather_scenarios import fv_point_3h_seed_linear_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2726824Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2727239Z _______ ERROR collecting tests/test_fv_point_3h_shifted_branch_probe.py ________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2727948Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_3h_shifted_branch_probe.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2728631Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2728963Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2729327Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2729851Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2730198Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2730546Z tests/test_fv_point_3h_shifted_branch_probe.py:12: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2731015Z     from examples.weather_scenarios import fv_point_3h_shifted_branch_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2731470Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2731883Z _____________ ERROR collecting tests/test_fv_point_basin_runner.py _____________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2732868Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_basin_runner.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2733521Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2734004Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2734380Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2734913Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2735269Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2735582Z tests/test_fv_point_basin_runner.py:9: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2735997Z     from examples.weather_scenarios import fv_point_basin_runner as runner
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2736414Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2736824Z _____________ ERROR collecting tests/test_fv_point_basin_search.py _____________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2737489Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_basin_search.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2738123Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2738462Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2738830Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2739350Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2739706Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2740021Z tests/test_fv_point_basin_search.py:6: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2740432Z     from examples.weather_scenarios.fv_point_basin_search import search_basin
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2740855Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2741266Z _________ ERROR collecting tests/test_fv_point_centered_prior_case.py __________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2741961Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_centered_prior_case.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2742754Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2743092Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2743459Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2743968Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2744445Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2744775Z tests/test_fv_point_centered_prior_case.py:8: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2745217Z     from examples.weather_scenarios.fv_point_centered_prior_case import make_case
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2745648Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2746060Z _______ ERROR collecting tests/test_fv_point_centered_prior_response.py ________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2746765Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_centered_prior_response.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2747444Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2747772Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2748140Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2748648Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2748987Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2749343Z tests/test_fv_point_centered_prior_response.py:12: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2749833Z     from examples.weather_scenarios import fv_point_centered_prior_response_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2750302Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2750710Z ___________ ERROR collecting tests/test_fv_point_core_strict_root.py ___________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2751387Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_core_strict_root.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2752031Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2752491Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2752995Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2753507Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2753843Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2754169Z tests/test_fv_point_core_strict_root.py:11: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2754614Z     from examples.weather_scenarios import fv_point_core_strict_root_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2755052Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2755457Z _______ ERROR collecting tests/test_fv_point_empty_centered_response.py ________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2756165Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_empty_centered_response.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2756835Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2757167Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2757527Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2758047Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2758395Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2758746Z tests/test_fv_point_empty_centered_response.py:10: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2759233Z     from examples.weather_scenarios import fv_point_empty_centered_response_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2759697Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2760091Z ______________ ERROR collecting tests/test_fv_point_empty_time.py ______________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2760734Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_empty_time.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2761354Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2761685Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2762055Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2762695Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2763032Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2763471Z tests/test_fv_point_empty_time.py:11: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2763870Z     from examples.weather_scenarios.fv_point_research_case import make_case
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2764283Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2764676Z ______________ ERROR collecting tests/test_fv_point_merit_root.py ______________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2765332Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_merit_root.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2765961Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2766291Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2766647Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2767157Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2767499Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2767803Z tests/test_fv_point_merit_root.py:13: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2768213Z     from examples.weather_scenarios import fv_point_merit_root_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2768634Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2769036Z _______________ ERROR collecting tests/test_fv_point_missing.py ________________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2769672Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_missing.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2770282Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2770609Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2770968Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2771605Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2771944Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2772573Z tests/test_fv_point_missing.py:9: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2773188Z     from examples.weather_scenarios.fv_point_research_case import make_case
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2773724Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2774442Z ______ ERROR collecting tests/test_fv_point_missing_centered_response.py _______
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2775287Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_missing_centered_response.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2776068Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2776586Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2777089Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2777726Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2778198Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2778655Z tests/test_fv_point_missing_centered_response.py:11: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2779335Z     from examples.weather_scenarios import fv_point_missing_centered_response_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2779916Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2780407Z ____________ ERROR collecting tests/test_fv_point_nominal_runner.py ____________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2781243Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_nominal_runner.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2782025Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2783092Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2783573Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2784168Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2784670Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2785079Z tests/test_fv_point_nominal_runner.py:9: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2785656Z     from examples.weather_scenarios import fv_point_nominal_runner as runner
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2786405Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2786893Z ___________ ERROR collecting tests/test_fv_point_original_policy.py ____________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2787726Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_original_policy.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2788500Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2789149Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2789632Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2790240Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2790774Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2791225Z tests/test_fv_point_original_policy.py:10: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2791774Z     from examples.weather_scenarios import fv_point_original_policy as policy
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2792501Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2793008Z _________ ERROR collecting tests/test_fv_point_qc_centered_response.py _________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2793844Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_qc_centered_response.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2794639Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2795130Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2795602Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2796208Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2796685Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2797299Z tests/test_fv_point_qc_centered_response.py:10: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2797847Z     from examples.weather_scenarios import fv_point_qc_centered_response_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2798473Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2798967Z ______________ ERROR collecting tests/test_fv_point_qc_status.py _______________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2799788Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_qc_status.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2800532Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2801141Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2801658Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2802545Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2803124Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2803590Z tests/test_fv_point_qc_status.py:8: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2804089Z     from examples.weather_scenarios.fv_point_research_case import make_case
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2804685Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2805197Z _________ ERROR collecting tests/test_fv_point_research_correlation.py _________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2806017Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_research_correlation.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2806821Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2807249Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2807746Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2808351Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2808854Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2809341Z tests/test_fv_point_research_correlation.py:10: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2809871Z     from examples.weather_scenarios.fv_point_research_case import make_case
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2810490Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2811150Z ___________ ERROR collecting tests/test_fv_point_research_problem.py ___________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2811902Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_research_problem.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2813153Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2813626Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2814153Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2814776Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2815233Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2815714Z tests/test_fv_point_research_problem.py:13: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2816202Z     from examples.weather_scenarios import fv_point_research_case
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2816704Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2817233Z __________ ERROR collecting tests/test_fv_point_response_preflight.py __________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2818079Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_response_preflight.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2818889Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2819323Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2819812Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2820435Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2820900Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2821372Z tests/test_fv_point_response_preflight.py:10: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2822305Z     from examples.weather_scenarios import fv_point_response_preflight as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2823104Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2823632Z ____________ ERROR collecting tests/test_fv_point_sector_policy.py _____________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2824444Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_sector_policy.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2825427Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2825851Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2826292Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2826988Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2827447Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2827893Z tests/test_fv_point_sector_policy.py:14: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2828438Z     from examples.weather_scenarios.fv_point_sector_policy import sector_trial_acceptance
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2828992Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2829549Z _____________ ERROR collecting tests/test_fv_point_sector_root.py ______________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2830331Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_sector_root.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2831129Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2831552Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2831985Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2832857Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2833319Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2833745Z tests/test_fv_point_sector_root.py:11: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2834259Z     from examples.weather_scenarios import fv_point_sector_root_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2834779Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2835381Z ___________ ERROR collecting tests/test_fv_point_terminal_newton.py ____________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2836143Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_point_terminal_newton.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2837086Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2837522Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2837970Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2838642Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2839073Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2839551Z tests/test_fv_point_terminal_newton.py:11: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2840093Z     from examples.weather_scenarios import fv_point_terminal_newton_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2840629Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2841201Z ______________ ERROR collecting tests/test_fv_process_response.py ______________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2841955Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_process_response.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2842835Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2843329Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2843782Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2844495Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2844922Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2845303Z tests/test_fv_process_response.py:17: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2845760Z     from examples.weather_scenarios import (
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2846166Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2846877Z ___________ ERROR collecting tests/test_fv_research_long_horizon.py ____________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2847653Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_research_long_horizon.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2848432Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2848911Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2849361Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2850016Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2850460Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2850868Z tests/test_fv_research_long_horizon.py:11: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2851429Z     from examples.weather_scenarios import fv_long_horizon_case as case_builder
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2851944Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2852937Z _____________ ERROR collecting tests/test_fv_research_multilead.py _____________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2853725Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_research_multilead.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2854469Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2854938Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2855390Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2856009Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2856494Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2856932Z tests/test_fv_research_multilead.py:9: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2857504Z     from examples.weather_scenarios import fv_multilead_research_case as case_builder
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2858074Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2858563Z ________ ERROR collecting tests/test_fv_research_partial_observation.py ________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2859427Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_research_partial_observation.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2860181Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2860790Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2861324Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2861908Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2862759Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2863216Z tests/test_fv_research_partial_observation.py:14: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2863889Z     from examples.weather_scenarios import fv_minmod_inverse_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2864432Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2864913Z ______________ ERROR collecting tests/test_fv_research_problem.py ______________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2865762Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_research_problem.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2866477Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2866945Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2867435Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2868020Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2868510Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2868903Z tests/test_fv_research_problem.py:13: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2869435Z     from examples.weather_scenarios import fv_minmod_matrix_free_probe as small
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2870036Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2870499Z ___________ ERROR collecting tests/test_fv_response_job_lifecycle.py ___________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2871409Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_response_job_lifecycle.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2872069Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2872659Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2873025Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2873535Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2873874Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2874196Z tests/test_fv_response_job_lifecycle.py:12: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2874626Z     from examples.weather_scenarios import fv_process_response_worker as worker
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2875053Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2875459Z ___________ ERROR collecting tests/test_fv_response_job_reconcile.py ___________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2876133Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_response_job_reconcile.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2876780Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2877109Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2877475Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2877979Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2878312Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2878630Z tests/test_fv_response_job_reconcile.py:15: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.2879045Z     from examples.weather_scenarios import fv_response_job_lifecycle as jobs
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4539994Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4541053Z ____________ ERROR collecting tests/test_fv_scaled_research_case.py ____________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4542539Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_scaled_research_case.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4543787Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4544340Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4544963Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4546294Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4546873Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4547400Z tests/test_fv_scaled_research_case.py:6: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4548084Z     from examples.weather_scenarios import fv_scaled_research_case as scaled
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4548654Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4549185Z _______________ ERROR collecting tests/test_fv_stage_observer.py _______________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4549987Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_stage_observer.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4550799Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4551220Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4551683Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4552629Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4553055Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4553432Z tests/test_fv_stage_observer.py:10: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4553915Z     from examples.weather_scenarios import fv_minmod_inverse_probe as probe
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4554428Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4554920Z _______________ ERROR collecting tests/test_fv_support_matrix.py _______________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4555723Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_support_matrix.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4556681Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4557094Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4557544Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4558185Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4558609Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4558983Z tests/test_fv_support_matrix.py:9: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4559362Z     from examples.weather_scenarios import fv_support_matrix as matrix
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4559756Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4560154Z ______________ ERROR collecting tests/test_fv_zero_face_scope.py _______________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4560800Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_fv_zero_face_scope.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4561423Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4561765Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4562513Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4563448Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4563822Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4564130Z tests/test_fv_zero_face_scope.py:9: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4564539Z     from examples.weather_scenarios import fv_minmod_inverse_probe as small
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4564962Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4565364Z _________________ ERROR collecting tests/test_pcg_observer.py __________________
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4565986Z ImportError while importing test module '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/tests/test_pcg_observer.py'.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4566601Z Hint: make sure your test modules/packages have valid Python names.
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4566937Z Traceback:
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4567317Z /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/importlib/__init__.py:90: in import_module
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4567828Z     return _bootstrap._gcd_import(name[level:], package, level)
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4568169Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4568648Z tests/test_pcg_observer.py:13: in <module>
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4569120Z     from examples.weather_scenarios import fv_partial_reanalysis_probe as partial_probe  # noqa: E402
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4569625Z     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4569988Z E   ModuleNotFoundError: No module named 'examples'
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4570345Z =========================== short test summary info ============================
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4570685Z ERROR tests/test_fv86_reanalysis.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4570964Z ERROR tests/test_fv_concurrent_response.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4571258Z ERROR tests/test_fv_minmod_inverse_probe.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4571564Z ERROR tests/test_fv_partial_alternate_root.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4571884Z ERROR tests/test_fv_partial_alternate_seed_gate.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4572536Z ERROR tests/test_fv_partial_face_event_probe.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4572869Z ERROR tests/test_fv_partial_face_event_runner.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4573185Z ERROR tests/test_fv_partial_face_geometry.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4573493Z ERROR tests/test_fv_partial_face_tangent_probe.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4573832Z ERROR tests/test_fv_partial_field_correction_probe.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4574187Z ERROR tests/test_fv_partial_policy_decision.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4574523Z ERROR tests/test_fv_partial_reanalysis_preflight.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4574846Z ERROR tests/test_fv_partial_sector_root.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4575158Z ERROR tests/test_fv_point_3h_first_branch_probe.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4575470Z ERROR tests/test_fv_point_3h_forward.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4575783Z ERROR tests/test_fv_point_3h_merit_continuation.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4576268Z ERROR tests/test_fv_point_3h_merit_step_probe.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4576587Z ERROR tests/test_fv_point_3h_response_policy.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4576906Z ERROR tests/test_fv_point_3h_seed_hessian_probe.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4577231Z ERROR tests/test_fv_point_3h_seed_linear_probe.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4577565Z ERROR tests/test_fv_point_3h_shifted_branch_probe.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4577879Z ERROR tests/test_fv_point_basin_runner.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4578153Z ERROR tests/test_fv_point_basin_search.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4578444Z ERROR tests/test_fv_point_centered_prior_case.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4578772Z ERROR tests/test_fv_point_centered_prior_response.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4579111Z ERROR tests/test_fv_point_core_strict_root.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4579444Z ERROR tests/test_fv_point_empty_centered_response.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4579759Z ERROR tests/test_fv_point_empty_time.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4580032Z ERROR tests/test_fv_point_merit_root.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4580304Z ERROR tests/test_fv_point_missing.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4580619Z ERROR tests/test_fv_point_missing_centered_response.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4580941Z ERROR tests/test_fv_point_nominal_runner.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4581244Z ERROR tests/test_fv_point_original_policy.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4581561Z ERROR tests/test_fv_point_qc_centered_response.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4581868Z ERROR tests/test_fv_point_qc_status.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4582378Z ERROR tests/test_fv_point_research_correlation.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4582723Z ERROR tests/test_fv_point_research_problem.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4583036Z ERROR tests/test_fv_point_response_preflight.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4583344Z ERROR tests/test_fv_point_sector_policy.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4583628Z ERROR tests/test_fv_point_sector_root.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4583916Z ERROR tests/test_fv_point_terminal_newton.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4584210Z ERROR tests/test_fv_process_response.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4584490Z ERROR tests/test_fv_research_long_horizon.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4584790Z ERROR tests/test_fv_research_multilead.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4585135Z ERROR tests/test_fv_research_partial_observation.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4585453Z ERROR tests/test_fv_research_problem.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4585739Z ERROR tests/test_fv_response_job_lifecycle.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4586220Z ERROR tests/test_fv_response_job_reconcile.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4586512Z ERROR tests/test_fv_scaled_research_case.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4586802Z ERROR tests/test_fv_stage_observer.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4587069Z ERROR tests/test_fv_support_matrix.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4587333Z ERROR tests/test_fv_zero_face_scope.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4587601Z ERROR tests/test_pcg_observer.py
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4587955Z !!!!!!!!!!!!!!!!!!! Interrupted: 53 errors during collection !!!!!!!!!!!!!!!!!!!
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.4588320Z 53 errors in 6.93s
+Python 3.12 CPU	Run CPU FP32 and FP64 tests	2026-10-01T04:04:08.9696211Z ##[error]Process completed with exit code 2.
