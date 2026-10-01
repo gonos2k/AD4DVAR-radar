@@ -1,0 +1,3 @@
+The manual CPU and package CI jobs fail their strict dependency audit before reaching tests or wheel/CLI verification: urllib3 2.7.0 has three reported vulnerabilities fixed in 2.8.0. Update only urllib3's version and verified release hashes in the two existing CI locks. All other pins, runtime locks, audit rules and workflow gates are preserved.
+
+The lock synchrony checker passes, PyPI wheel/source downloads match their advertised SHA256 values, and the upstream release identifies the fixes. The failed original run is retained separately. Full Linux CPU and package verification will be dispatched on this candidate; ordinary skipped PR jobs are not counted as success.

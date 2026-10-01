@@ -968,5 +968,13 @@
     "limits": "fieldstationary notfullroot;dynamicresidual remains,narrowface margin1.166xthreshold;no finalfullHessian,adjoint,VJP,reanalysis/physicalskill;R4-R open",
     "record": "FV_PARTIAL_FIELD_CORRECTION_PLAN.md,FV_PARTIAL_FIELD_CORRECTION_ATTEMPT1_RESULTS.md,FV_PARTIAL_FIELD_CORRECTION_ATTEMPT1_EVIDENCE.json,partial_field_correction_attempt1",
     "status": "block-stationary margin-supported handoff verified;full qualified response stillopen"
+  },
+  "full_cpu_package_regression_20261001": {
+    "baseline": "mainf7ee32b PR227;officialmanualCI36798315747",
+    "attempt1": "terminalfailure bothCPU/package strictpip-audit:urllib3 2.7.0 CVE2026-97687/8/9,fixed2.8;tests/build/offlineinstall/CLI not reached;UI passed",
+    "patch": "onlyurllib3 version/hash blocks in twoCIlocks,PyPIwheel/sdist actualhash verified;runtime locks and otherpins unchanged;no sharedvenv/uvlock changes;strictaudit retained",
+    "verification": "4closure synchrony checker passed;localcollect2281 only,machineMPSavailable notCPUexecution",
+    "record": "FULL_CPU_PACKAGE_REGRESSION_20261001_PLAN.md,FULL_CPU_PACKAGE_REGRESSION_20261001_FIX_PLAN.md,URLLIB3_280_RELEASE_VERIFICATION.json,full_cpu_package_ci_attempt1.json,full_cpu_package_ci_attempt1_failed.log",
+    "status": "V1 open;candidate officialfullCI rerun pending;research/physical/service items remainopen"
   }
 }
