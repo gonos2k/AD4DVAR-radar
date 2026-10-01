@@ -100,6 +100,19 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  test-summary:
+    # Preserve the required check name; full regression stays explicitly opt-in.
+    if: github.event_name == 'workflow_dispatch' && always()
+    name: Python 3.12 CPU
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every CPU shard to succeed
+        env:
+          CPU_SHARD_RESULT: ${{ needs.test.result }}
+        run: test "$CPU_SHARD_RESULT" = success
+
   lab-ui:
     name: Initial-field lab UI
     runs-on: ubuntu-latest

@@ -1,6 +1,7 @@
 """Current-source two-hole root search: fixed inputs and fail-closed gates."""
 
 from dataclasses import replace
+import copy
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -27,8 +28,41 @@ def _trial(**changes):
     return replace(base, **changes)
 
 
-def test_current_source_preflight_preserves_frozen_tensors_but_versions_identity():
+def _controlled_current_preflight() -> dict[str, Any]:
+    """A matching fixture record for the strict gate; not a live-host replay."""
+    current = copy.deepcopy(json.loads(probe.HISTORICAL_PREFLIGHT.read_text()))
+    current["problem_identity"]["fixed_problem_sha256"] = probe.CURRENT_PROBLEM_SHA256
+    return current
+
+
+def _stub_local_run_context(monkeypatch) -> None:
+    """Supply deterministic local data for orchestration tests, not archive evidence."""
+    identity = {
+        "current_problem_identity": {"fixed_problem_sha256": probe.CURRENT_PROBLEM_SHA256},
+        "fixture_scope": "synthetic current-host orchestration inputs",
+    }
+    warm = torch.zeros(1, dtype=torch.float64)
+    parameters = torch.ones(1, dtype=torch.float64)
+    problem = SimpleNamespace(
+        identity=identity["current_problem_identity"], observations=object(),
+        contract=lambda values: values,
+        objective=lambda control, values: 0.5 * (control - values).square().sum(),
+        score=lambda control, values: 0.5 * (control - values).square().sum(),
+    )
+    branch = {"euler_stages": 54, "choices": [0], "face_signs": [1],
+              "minimum_scaled_slope_margin": 0.2}
+    monkeypatch.setattr(probe, "_preflight_identity", lambda: identity)
+    monkeypatch.setattr(probe, "_problem", lambda: (problem, warm, parameters))
+    monkeypatch.setattr(
+        probe.preflight, "branch_with_face_margin",
+        lambda *_args: (branch, "synthetic local branch", 0.3),
+    )
+
+
+def test_current_source_preflight_accepts_matching_declared_fixture_fields(monkeypatch):
     assert probe._sha(probe.PLAN) == probe.PLAN_SHA256
+    current = _controlled_current_preflight()
+    monkeypatch.setattr(probe.preflight, "run", lambda: current)
     frozen = probe._preflight_identity()
     assert frozen["historical_problem_identity"]["fixed_problem_sha256"] == probe.HISTORICAL_PROBLEM_SHA256
     assert frozen["current_problem_identity"]["fixed_problem_sha256"] == probe.CURRENT_PROBLEM_SHA256
@@ -38,6 +72,15 @@ def test_current_source_preflight_preserves_frozen_tensors_but_versions_identity
     }
     assert frozen["fixed_input_fields"]["warm_start_branch"]["euler_stages"] == 54
     assert len(probe._sources()) == len(probe.SOURCE_PATHS)
+
+
+def test_current_source_preflight_rejects_declared_tensor_drift(monkeypatch):
+    current = _controlled_current_preflight()
+    current["tensor_sha256"]["verification"] = "0" * 64
+    monkeypatch.setattr(probe.preflight, "run", lambda: current)
+
+    with pytest.raises(ValueError, match="differs from declared fixed tensors"):
+        probe._preflight_identity()
 
 
 def test_changed_sector_gets_explicit_measured_merit_decision():
@@ -266,6 +309,7 @@ def test_parent_distinguishes_root_refusal_and_resource(
 def test_callback_failure_is_not_scientific_refusal(
     monkeypatch, tmp_path, error_type, expected_status,
 ):
+    _stub_local_run_context(monkeypatch)
     monkeypatch.setattr(probe.basin, "_hessian_audit", lambda *_: {
         "hvp_columns": 26, "symmetry_relative": 0.0,
         "lambda_min": 1.0, "lambda_max": 2.0, "lambda_ratio": 0.5,
@@ -348,6 +392,7 @@ def test_branch_error_has_explicit_seed_and_candidate_classification(
 
 
 def test_nonfinite_candidate_is_recorded_without_invalid_json(monkeypatch, tmp_path):
+    _stub_local_run_context(monkeypatch)
     monkeypatch.setattr(probe.basin, "_hessian_audit", lambda *_: {
         "hvp_columns": 26, "symmetry_relative": 0.0,
         "lambda_min": 1.0, "lambda_max": 2.0, "lambda_ratio": 0.5,

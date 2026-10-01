@@ -11,6 +11,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
+from advar.fv_point_research_problem import _fingerprint
 from examples.weather_scenarios import fv_point_3h_forward_case as case_module
 from examples.weather_scenarios import fv_point_3h_forward_probe as probe
 from examples.weather_scenarios import fv_point_3h_forward_runner as runner
@@ -50,7 +51,42 @@ def test_original_one_lead_layout_and_input_identity_stay_unchanged():
     assert problem.layout["forecast_time_seconds"] == 180.0
     assert problem.layout["euler_stages"] == 54
     saved = json.loads((probe.EVIDENCE / "point_sector_root_attempt1/point_sector_root.json").read_text())
-    assert preflight._input_identity(problem, warm, parameters, direction) == saved["input_before"]
+    current = preflight._input_identity(problem, warm, parameters, direction)
+    assert current["tensor_sha256"] == saved["input_before"]["tensor_sha256"]
+    assert current["problem_identity"]["scope"] == saved["input_before"]["problem_identity"]["scope"]
+    archived_sources = saved["source_before"]
+    current_sources = preflight._source_hashes()
+    for name in (
+        "examples/weather_scenarios/fv_point_research_case.py",
+        "examples/weather_scenarios/fv_minmod_inverse_probe.py",
+        "examples/weather_scenarios/fv_sensitivity_probe.py",
+        "src/advar/fv_point_sampler.py",
+        "src/advar/variational.py",
+        "src/advar/transport.py",
+        "src/advar/physics.py",
+        "src/advar/nowcast.py",
+    ):
+        assert current_sources[name] == archived_sources[name]
+    assert current["problem_identity"]["fixed_problem_sha256"] == _fingerprint({
+        "frozen": problem.frozen,
+        "observation_coordinates": problem.observation_coordinates,
+        "observation_operator": "point_dbz_bilinear_v1",
+        "observation_dbz": problem.observation_dbz,
+        "observation_std_dbz": problem.observation_std_dbz,
+        "quality_weight": problem.quality_weight,
+        "observation_correlation": problem.observation_correlation,
+        "observation_status": problem.observation_status,
+        "whitening_convention": "per_time_valid_principal_symmetric_standardized_correlation_v2",
+        "background_dbz": problem.background_dbz,
+        "background_pattern": problem.background_pattern,
+        "verification_dbz": problem.verification_dbz,
+        "future_boundary_echo": problem.future_boundary_echo,
+        "future_boundary_support": problem.future_boundary_support,
+        "source_sha256": problem.source_sha256,
+        "layout": problem.layout,
+        "support": problem.support,
+    })
+    assert replace(problem, verification_dbz=problem.verification_dbz + 0.01).identity != problem.identity
 
 
 def test_parent_rejects_incomplete_child_even_with_clean_resource(monkeypatch, tmp_path):

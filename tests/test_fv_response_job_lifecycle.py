@@ -1,5 +1,6 @@
 """A cancelled process cannot publish a partial FV local response."""
 
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
@@ -11,6 +12,15 @@ import pytest
 
 from examples.weather_scenarios import fv_process_response_worker as worker
 from examples.weather_scenarios import fv_response_job_lifecycle as jobs
+
+_SUPPORT_SPEC = importlib.util.spec_from_file_location(
+    "fv_response_test_support", Path(__file__).with_name("fv_response_test_support.py"),
+)
+assert _SUPPORT_SPEC is not None and _SUPPORT_SPEC.loader is not None
+_SUPPORT = importlib.util.module_from_spec(_SUPPORT_SPEC)
+_SUPPORT_SPEC.loader.exec_module(_SUPPORT)
+synthetic_job_identity = getattr(_SUPPORT, "synthetic_job_identity")
+synthetic_worker_report = getattr(_SUPPORT, "synthetic_worker_report")
 
 
 def test_same_directory_second_coordinator_is_busy_before_worker(monkeypatch, tmp_path):
@@ -93,25 +103,23 @@ def test_job_lock_releases_after_exception_and_rejects_symlinks(tmp_path):
             pass
 
 
-def _archived_child():
-    path = jobs.EVIDENCE / "process_response_attempt2/fv4x5.json"
-    child = json.loads(path.read_text())
-    identity, _ = jobs._identity()
-    child.update(
-        pid=123, executable=sys.executable,
-        source_before=worker._hashes(), source_after=worker._hashes(),
-        source_unchanged=True, inputs_unchanged=True,
-        input_identity=identity, input_identity_after=identity,
+@pytest.fixture
+def portable_job_identity(monkeypatch):
+    """Provide test-only current identity without rebuilding a native archive."""
+    identity, expected_total = synthetic_job_identity()
+    monkeypatch.setattr(jobs, "_identity", lambda: (identity, expected_total))
+    return identity, expected_total
+
+
+def _synthetic_child(identity, expected_total):
+    """Construct a test-only protocol record, not a historical child report."""
+    return synthetic_worker_report(
+        identity,
+        worker._hashes(),
+        jobs.shared.ARCHIVED,
+        expected_total,
+        pid=123,
     )
-    duration = child["response_ended_monotonic"] - child["response_started_monotonic"]
-    shift = time.monotonic() - duration - 2 - child["response_started_monotonic"]
-    child["response_started_monotonic"] += shift
-    child["response_ended_monotonic"] += shift
-    monitor = child["response"]["pcg_monitor"]
-    monitor["hvp_event_times"] = [value + shift for value in monitor["hvp_event_times"]]
-    monitor["hvp_intervals"] = [[start + shift, end + shift]
-                                for start, end in monitor["hvp_intervals"]]
-    return child
 
 
 def published_attempt_id(directory):
@@ -133,9 +141,9 @@ def test_cancellation_token_serializes_publication(tmp_path):
     assert isinstance(published["publication_decision_monotonic"], float)
 
 
-def test_legacy_worker_validation_does_not_require_attempt_metadata():
-    child = _archived_child()
-    identity, expected_total = jobs._identity()
+def test_legacy_worker_validation_does_not_require_attempt_metadata(portable_job_identity):
+    identity, expected_total = portable_job_identity
+    child = _synthetic_child(identity, expected_total)
     command = [sys.executable,
                str(jobs.ROOT / "examples/weather_scenarios/fv_process_response_worker.py"),
                "--case", "fv4x5", "--output", "/tmp/legacy-worker.raw.json"]
@@ -183,8 +191,11 @@ def test_cancellation_during_locked_publish_waits_and_cannot_retract(monkeypatch
     assert json.loads((tmp_path / "published.json").read_text())["value"] == 3
 
 
-def test_finished_worker_publishes_only_after_reap_and_validation(monkeypatch, tmp_path):
-    child = _archived_child()
+def test_finished_worker_publishes_only_after_reap_and_validation(
+    monkeypatch, tmp_path, portable_job_identity,
+):
+    identity, expected_total = portable_job_identity
+    child = _synthetic_child(identity, expected_total)
     events = []
     original_fsync_directory = jobs._fsync_directory
     def tracked_fsync(path):
@@ -203,6 +214,9 @@ def test_finished_worker_publishes_only_after_reap_and_validation(monkeypatch, t
         assert events[:2] == [("fsync_directory", tmp_path),
                               ("fsync_directory", manifest_path.parent)]
         events.append(("spawn", manifest_path.parent))
+        # This synthetic record exercises publication ordering. Production
+        # source/archive checks and the worker validator still run unchanged;
+        # the identity provider is explicitly test-only for this state test.
         child["attempt_id"] = manifest["attempt_id"]
         assert not cancel_requested()
         Path(command[-1]).write_text(json.dumps(child))
@@ -252,8 +266,9 @@ def test_parent_directory_fsync_failure_prevents_worker_launch(monkeypatch, tmp_
 
 @pytest.mark.parametrize("artifact", ["raw", "manifest", "resource"])
 def test_attempt_artifact_mutation_after_validation_blocks_publication(
-        monkeypatch, tmp_path, artifact):
-    child = _archived_child()
+        monkeypatch, tmp_path, artifact, portable_job_identity):
+    identity, expected_total = portable_job_identity
+    child = _synthetic_child(identity, expected_total)
     def fake_guard(command, *, wall_seconds, rss_bytes, report_path, log_path,
                    cancel_requested):
         child["attempt_id"] = command[command.index("--attempt-id") + 1]
@@ -287,7 +302,9 @@ def test_attempt_artifact_mutation_after_validation_blocks_publication(
     assert not (tmp_path / "mutated/published.json").exists()
 
 
-def test_attempt_manifest_commit_failure_prevents_worker_launch(monkeypatch, tmp_path):
+def test_attempt_manifest_commit_failure_prevents_worker_launch(
+    monkeypatch, tmp_path, portable_job_identity,
+):
     calls = []
     monkeypatch.setattr(jobs, "run_guarded", lambda *args, **kwargs: calls.append("spawn"))
     original = jobs._atomic_json
@@ -302,7 +319,9 @@ def test_attempt_manifest_commit_failure_prevents_worker_launch(monkeypatch, tmp
     assert not (tmp_path / "uncommitted/worker.raw.json").exists()
 
 
-def test_manifest_change_between_replace_and_snapshot_prevents_launch(monkeypatch, tmp_path):
+def test_manifest_change_between_replace_and_snapshot_prevents_launch(
+    monkeypatch, tmp_path, portable_job_identity,
+):
     calls = []
     monkeypatch.setattr(jobs, "run_guarded", lambda *args, **kwargs: calls.append("spawn"))
     original_snapshot = jobs._stable_file_snapshot
@@ -330,7 +349,9 @@ def test_publication_directory_fsync_failure_does_not_commit_token(monkeypatch, 
     assert token.cancel() is True
 
 
-def test_cancelled_worker_with_partial_report_never_publishes(monkeypatch, tmp_path):
+def test_cancelled_worker_with_partial_report_never_publishes(
+    monkeypatch, tmp_path, portable_job_identity,
+):
     token = jobs.CancellationToken()
     def fake_guard(command, *, wall_seconds, rss_bytes, report_path, log_path,
                    cancel_requested):
@@ -355,9 +376,12 @@ def test_cancelled_worker_with_partial_report_never_publishes(monkeypatch, tmp_p
     assert not (tmp_path / "cancel/published.json").exists()
 
 
-def test_late_cancellation_before_publication_wins(monkeypatch, tmp_path):
+def test_late_cancellation_before_publication_wins(
+    monkeypatch, tmp_path, portable_job_identity,
+):
     token = jobs.CancellationToken()
-    child = _archived_child()
+    identity, expected_total = portable_job_identity
+    child = _synthetic_child(identity, expected_total)
     def fake_guard(command, *, wall_seconds, rss_bytes, report_path, log_path,
                    cancel_requested):
         child["attempt_id"] = command[command.index("--attempt-id") + 1]

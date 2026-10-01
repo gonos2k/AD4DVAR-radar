@@ -15,6 +15,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = ROOT / "graphify-out/fv-root-cause-20260919"
+SOURCE_SNAPSHOT_REGISTRY = "fv_support_matrix_source_registry.json"
+SOURCE_SNAPSHOT_REGISTRY_SHA256 = "7d51555aa4265e64145e7cf8eb22309c6fa0e41698fbeebfc500b604f607e579"
 CASE_IDS = {
     "fv86_full_support": ("seed_a", "seed_b"),
     "point_missing_fixed_control": ("three_time_missing",),
@@ -38,7 +40,36 @@ def _load(name: str) -> dict[str, Any]:
     return value
 
 
-def _require_manifest(name: str, artifact: str) -> dict[str, Any]:
+def _source_snapshot_for(relative: str, fingerprint: str) -> Path | None:
+    registry_path = HERE / SOURCE_SNAPSHOT_REGISTRY
+    if not registry_path.is_file():
+        return None
+    if _hash(registry_path) != SOURCE_SNAPSHOT_REGISTRY_SHA256:
+        raise ValueError("source snapshot registry differs from its pinned hash")
+    registry = _load(SOURCE_SNAPSHOT_REGISTRY)
+    if registry.get("schema_version") != 1:
+        raise ValueError("unsupported source snapshot registry schema")
+    sources = registry.get("sources")
+    if not isinstance(sources, list):
+        raise ValueError("source snapshot registry has no source list")
+    for row in sources:
+        if not isinstance(row, dict):
+            raise ValueError("source snapshot registry entry must be an object")
+        if row.get("path") != relative or row.get("sha256") != fingerprint:
+            continue
+        snapshot = row.get("snapshot")
+        if not isinstance(snapshot, str):
+            raise ValueError("source snapshot registry entry has no snapshot path")
+        path = (HERE / snapshot).resolve()
+        if not path.is_relative_to(HERE.resolve()) or not path.is_file():
+            raise ValueError("historical source snapshot is missing or outside the evidence root")
+        if _hash(path) != fingerprint:
+            raise ValueError("historical source snapshot differs from its pinned hash")
+        return path
+    return None
+
+
+def _require_manifest(name: str, artifact: str) -> tuple[dict[str, Any], bool]:
     manifest = _load(name)
     hashes = manifest.get("sha256")
     if not isinstance(hashes, dict):
@@ -46,12 +77,17 @@ def _require_manifest(name: str, artifact: str) -> dict[str, Any]:
     expected = hashes.get(f"graphify-out/fv-root-cause-20260919/{artifact}")
     if expected != _hash(HERE / artifact):
         raise ValueError(f"{artifact} differs from its manifest")
+    current_source_match = True
     for relative, fingerprint in hashes.items():
         path = (ROOT / relative).resolve()
-        if (not path.is_relative_to(ROOT) or not path.is_file()
-                or _hash(path) != fingerprint):
+        if not path.is_relative_to(ROOT) or not path.is_file():
             raise ValueError(f"manifest source/evidence mismatch: {relative}")
-    return manifest
+        if _hash(path) == fingerprint:
+            continue
+        if _source_snapshot_for(relative, fingerprint) is None:
+            raise ValueError(f"manifest source/evidence mismatch: {relative}")
+        current_source_match = False
+    return manifest, current_source_match
 
 
 def _fv86_rows() -> list[dict[str, Any]]:
@@ -105,7 +141,9 @@ def _fv86_rows() -> list[dict[str, Any]]:
 
 
 def _point_rows() -> list[dict[str, Any]]:
-    _require_manifest("fv_point_missing_manifest.json", "fv_point_missing_metrics.json")
+    _, current_source_match = _require_manifest(
+        "fv_point_missing_manifest.json", "fv_point_missing_metrics.json"
+    )
     metrics = _load("fv_point_missing_metrics.json")
     if (metrics.get("euler_stages") != 54
             or metrics.get("detected_per_time") != [3, 3, 3]
@@ -117,13 +155,20 @@ def _point_rows() -> list[dict[str, Any]]:
         "branch": "pointwise_passed", "local_response_eligibility": "not_assessed",
         "response": "not_attempted",
         "response_validation": "not_performed", "physical_validation": "not_performed",
-        "resource": "not_measured", "proof_level": "manifest_sources_current_no_child_exit_record",
+        "resource": "not_measured",
+        "proof_level": (
+            "manifest_sources_current_no_child_exit_record"
+            if current_source_match else "historical_source_snapshot_bound_no_child_exit_record"
+        ),
+        "current_source_match": current_source_match,
         "failure_category": None, "evidence_sha256": _hash(HERE / "fv_point_missing_metrics.json"),
     }]
 
 
 def _long_rows() -> list[dict[str, Any]]:
-    _require_manifest("fv_long_horizon_manifest.json", "fv_long_horizon_metrics.json")
+    _, current_source_match = _require_manifest(
+        "fv_long_horizon_manifest.json", "fv_long_horizon_metrics.json"
+    )
     metrics = _load("fv_long_horizon_metrics.json")
     scenarios = metrics.get("scenarios")
     if metrics.get("execution_status") != "completed" or not isinstance(scenarios, dict):
@@ -144,7 +189,11 @@ def _long_rows() -> list[dict[str, Any]]:
             "local_response_eligibility": "refused_branch_under_current_policy",
             "response": "not_attempted", "response_validation": "not_performed",
             "physical_validation": "not_performed", "resource": "local_alarm_only",
-            "proof_level": "manifest_sources_current_no_child_exit_record",
+            "proof_level": (
+                "manifest_sources_current_no_child_exit_record"
+                if current_source_match else "historical_source_snapshot_bound_no_child_exit_record"
+            ),
+            "current_source_match": current_source_match,
             "failure_category": scenario["strict_branch_probe"].get("reason"),
             "evidence_sha256": _hash(HERE / "fv_long_horizon_metrics.json"),
         })

@@ -1,10 +1,14 @@
 """Protect cached tangent/adjoint reuse with the measured 26-control system."""
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
+from dataclasses import replace
+from typing import Any
 
 import pytest
 import torch
+from advar import variational as v
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location(
@@ -23,6 +27,115 @@ def system():
             {k: tensor(v['control_tangent']) for k, v in data['tangents'].items()},
             {k: tensor(v['cross_gradient']) for k, v in data['tangents'].items()},
             tensor(data['adjoint']['solution']), tensor(data['adjoint']['rhs']))
+
+
+def _synthetic_resume_checkpoint(path, *, selected_direction, pairs):
+    """Build a current-schema controller fixture without editing archived science."""
+    spatial_probe = PROBE._load_module(PROBE.PROBE, "fv_minmod_inverse_for_resume_test")
+    obs, frozen, boundary, support = spatial_probe.make_spatial_case()
+    saved = json.loads(PROBE.SAVED.read_text())
+    control = torch.tensor(saved["control"], dtype=torch.float64)
+    parameters = torch.cat((obs.dbz.flatten(), obs.dbz.new_tensor([0.02])))
+    directions = {
+        "observation_sine60": torch.cat((
+            torch.sin(torch.arange(obs.dbz.numel(), dtype=parameters.dtype)),
+            parameters.new_zeros(1),
+        )),
+        "theta": torch.cat((parameters.new_zeros(obs.dbz.numel()), parameters.new_ones(1))),
+    }
+    saved_sources = saved["source_sha256"]
+    current_identity = saved_sources
+    input_identity = {
+        "shape": list(frozen.initial_background_dbz.shape),
+        "controls": int(control.numel()),
+        "substeps_per_interval": 9,
+        "parameters_sha256": hashlib.sha256(parameters.numpy().tobytes()).hexdigest(),
+        "control_sha256": hashlib.sha256(control.numpy().tobytes()).hexdigest(),
+    }
+
+    # This synthetic positive-definite linear system exercises resume wiring only;
+    # score derivatives still come from the current fixed-input forecast.
+    size = control.numel()
+    hessian = torch.eye(size, dtype=torch.float64)
+    basis = torch.zeros(size, dtype=torch.float64)
+    basis[0] = 1.0
+    crosses = {name: basis * 1e-6 for name in directions}
+    tangents = {
+        name: {"parameter_direction": direction.tolist(),
+              "cross_gradient": crosses[name].tolist(),
+              "control_tangent": (-crosses[name]).tolist()}
+        for name, direction in directions.items()
+    }
+
+    pattern = torch.linspace(-0.2, 0.3, frozen.initial_background_dbz.numel(),
+                             dtype=obs.dbz.dtype).reshape_as(frozen.initial_background_dbz)
+
+    def contract(p):
+        y, theta = p[:-1].reshape_as(obs.dbz), p[-1]
+        return replace(frozen, initial_background_dbz=y[0] + theta * pattern)
+
+    def forecast(c, p):
+        return spatial_probe.echo_to_dbz(
+            v.forecast_fv_analysis(
+                c, contract(p), leads=1, boundary_start_interval=2,
+                boundary_echo=boundary, boundary_support=support,
+            ).frames_linear[-1], min_dbz=-10.0,
+        )
+
+    verification = forecast(control, parameters).detach() + 0.1 * pattern
+
+    def score(c, p):
+        return (forecast(c, p) - verification).square().mean()
+
+    rhs, direct = torch.func.grad(score, argnums=(0, 1))(control, parameters)
+    data = {
+        "nominal_control": control.tolist(),
+        "input_identity": input_identity,
+        "source_identity": {"saved": saved_sources, "core_exact": True,
+                            "fixture_probe_exact": True},
+        "saved_report_sha256": PROBE._hash(PROBE.SAVED),
+        "selected_direction": selected_direction,
+        "pairs": pairs,
+        "hessian": {"matrix": hessian.tolist()},
+        "tangents": tangents,
+        "adjoint": {"rhs": rhs.tolist(), "direct": direct.tolist(),
+                    "solution": rhs.tolist()},
+    }
+    data["cache_contract"] = PROBE._NUMERICAL_CACHE_CONTRACT
+    data["cache_payload_identity"] = PROBE._cache_payload_identity(
+        {"current": current_identity}, input_identity, directions
+    )
+    data["cache_payload_identity"]["saved_report_sha256"] = data["saved_report_sha256"]
+    data["linearization_sha256"] = PROBE._linearization_digest(data)
+    path.write_text(json.dumps(data))
+    return path
+
+
+def _install_archived_source_identity_for_controller_test(monkeypatch):
+    """Isolate resume orchestration from the separately tested archive gate."""
+    saved = json.loads(PROBE.SAVED.read_text())
+    trusted_identity = saved["source_sha256"]
+    original_hash = PROBE._hash
+    monkeypatch.setattr(PROBE, "MEASURED_PROBE", PROBE.PROBE)
+    def identity_hash(path):
+        if str(path) in trusted_identity:
+            return trusted_identity[str(path)]
+        if path == PROBE.MEASURED_PROBE:
+            return trusted_identity[str(PROBE.PROBE)]
+        return original_hash(path)
+
+    monkeypatch.setattr(PROBE, "_hash", identity_hash)
+    original_load = PROBE._load_module
+
+    def load(path, name):
+        module = original_load(path, name)
+        if path == PROBE.PROBE:
+            module._hash = identity_hash
+            branch = json.loads(PROBE.SAVED.read_text())["stationary_branch"]
+            module.inspect_branches = lambda *_args, **_kwargs: branch
+        return module
+
+    monkeypatch.setattr(PROBE, "_load_module", load)
 
 
 def test_measured_cached_linearization_is_resolved(system):
@@ -87,7 +200,7 @@ def test_cache_payload_binds_numerical_contract_and_rejects_mutation():
         "direction_names": ["observation_sine60", "theta"],
         "saved_report_sha256": "s",
     }
-    cache = {"cache_contract": expected["contract"], "cache_payload_identity": dict(expected)}
+    cache: dict[str, Any] = {"cache_contract": expected["contract"], "cache_payload_identity": dict(expected)}
     cache.update(hessian={"matrix": [[1.]]}, tangents={}, adjoint={"rhs": [1.], "direct": [2.], "solution": [1.]})
     cache["linearization_sha256"] = PROBE._linearization_digest(cache)
     assert PROBE._check_cache_payload(cache, expected, "untrusted") == "versioned"
@@ -105,6 +218,8 @@ def test_legacy_cache_requires_trusted_archive_and_producer():
     expected = {"saved_report_sha256": data["saved_report_sha256"]}
     trusted = PROBE._hash(path)
     assert PROBE._check_cache_payload(data, expected, trusted) == "legacy-anchored"
+    with pytest.raises(ValueError, match="legacy cache"):
+        PROBE._check_cache_payload(data, expected, "0" * 64)
     mutated = {**data, "producer_sha256": "0" * 64}
     with pytest.raises(ValueError, match="legacy cache"):
         PROBE._check_cache_payload(mutated, expected, trusted)
@@ -137,9 +252,11 @@ def test_direct_cache_rejects_changes_to_current_score(mutation):
 
 
 def test_calculation_identity_ignores_logging_but_detects_changed_equations(tmp_path):
-    source = Path(PROBE.__file__).read_text()
+    assert PROBE.__file__ is not None
+    source_path = Path(PROBE.__file__)
+    source = source_path.read_text()
     path = tmp_path / 'probe.py'
-    expected = PROBE._calculation_hash(Path(PROBE.__file__))
+    expected = PROBE._calculation_hash(source_path)
     path.write_text(source.replace('report["status"] = "running"', 'report["status"] = "starting"'))
     assert PROBE._calculation_hash(path) == expected
     path.write_text(source.replace('0.1 * pattern', '0.2 * pattern'))
@@ -168,9 +285,16 @@ def test_new_direction_clears_old_pairs_and_computes_its_cross(tmp_path, monkeyp
         return original_jvp(func, primals, tangents, **kwargs)
     monkeypatch.setattr(PROBE, '_load_module', load)
     monkeypatch.setattr(torch.func, 'jvp', jvp)
+    _install_archived_source_identity_for_controller_test(monkeypatch)
+    resume = _synthetic_resume_checkpoint(
+        tmp_path / "resume.json", selected_direction="observation_sine60",
+        pairs=[{"j": 2, "predictors_ok": True, "endpoints": [
+            {"same_local_branch": True}, {"same_local_branch": True},
+        ], "derivative_pass": True}],
+    )
     output = tmp_path / 'new.json'
     with pytest.raises(ReachedCorrector):
-        PROBE.run(output, resume=ROOT / 'graphify-out/fv-root-cause-20260919/minmod_local_path.json',
+        PROBE.run(output, resume=resume,
                   direction_name='middle_time_bias')
     data = json.loads(output.read_text())
     assert data['pairs'] == [] and data['resume_start_j'] == 0
@@ -191,10 +315,63 @@ def test_completed_direction_resume_validates_without_repeating_reanalysis(tmp_p
             module.polish = unexpected
         return module
     monkeypatch.setattr(PROBE, '_load_module', load)
-    source = ROOT / 'graphify-out/fv-root-cause-20260919/minmod_theta.json'
+    _install_archived_source_identity_for_controller_test(monkeypatch)
+    source = _synthetic_resume_checkpoint(
+        tmp_path / "theta.json", selected_direction="theta",
+        pairs=[{"j": j, "predictors_ok": True, "endpoints": [
+            {"same_local_branch": True}, {"same_local_branch": True},
+        ], "derivative_pass": True} for j in (0, 1)],
+    )
     result = PROBE.run(tmp_path / 'validated.json', resume=source, direction_name='theta')
     assert result['status'] == 'complete'
     assert result['pairs'] == json.loads(source.read_text())['pairs']
     assert 'metadata_correction' not in result
-    assert result['resume_provenance']['historical_metadata_correction']['old'] == 3
     assert result['cache_validation']['payload'] == 'versioned'
+
+
+def test_run_rejects_changed_core_source_identity(tmp_path, monkeypatch):
+    original_hash = PROBE._hash
+
+    def changed_hash(source):
+        if source == ROOT / "src/advar/transport.py":
+            return "0" * 64
+        return original_hash(source)
+
+    monkeypatch.setattr(PROBE, "_hash", changed_hash)
+    with pytest.raises(ValueError, match="core or measured fixture source identity mismatch"):
+        PROBE.run(tmp_path / "rejected.json")
+
+
+def test_run_rejects_changed_nominal_branch_signature(tmp_path, monkeypatch):
+    _install_archived_source_identity_for_controller_test(monkeypatch)
+    original_load = PROBE._load_module
+
+    def load(path, name):
+        module = original_load(path, name)
+        if path == PROBE.PROBE:
+            branch = json.loads(PROBE.SAVED.read_text())["stationary_branch"]
+            branch = {**branch, "choices": list(branch["choices"])}
+            branch["choices"][0] = "changed"
+            module.inspect_branches = lambda *_args, **_kwargs: branch
+        return module
+
+    monkeypatch.setattr(PROBE, "_load_module", load)
+    with pytest.raises(ValueError, match="saved/current nominal RK branch signature mismatch"):
+        PROBE.run(tmp_path / "rejected.json")
+
+
+def test_run_rejects_changed_measured_fixture_identity(tmp_path, monkeypatch):
+    _install_archived_source_identity_for_controller_test(monkeypatch)
+    measured_fixture = tmp_path / "measured_fixture.py"
+    measured_fixture.write_text(PROBE.PROBE.read_text())
+    monkeypatch.setattr(PROBE, "MEASURED_PROBE", measured_fixture)
+    original_hash = PROBE._hash
+
+    def changed_fixture_hash(source):
+        if source == measured_fixture:
+            return "0" * 64
+        return original_hash(source)
+
+    monkeypatch.setattr(PROBE, "_hash", changed_fixture_hash)
+    with pytest.raises(ValueError, match="core or measured fixture source identity mismatch"):
+        PROBE.run(tmp_path / "rejected.json")

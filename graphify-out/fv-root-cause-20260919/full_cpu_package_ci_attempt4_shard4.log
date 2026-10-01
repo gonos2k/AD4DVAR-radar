@@ -1,0 +1,1569 @@
+﻿2026-10-01T08:27:26.6794985Z Current runner version: '2.337.0'
+2026-10-01T08:27:26.6821561Z ##[group]Runner Image Provisioner
+2026-10-01T08:27:26.6822478Z Hosted Compute Agent
+2026-10-01T08:27:26.6823202Z Version: 20260828.587
+2026-10-01T08:27:26.6823883Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-10-01T08:27:26.6824674Z Build Date: 2026-08-28T16:44:25Z
+2026-10-01T08:27:26.6825390Z Worker ID: {0da7a1f5-d2e3-41d0-b053-37c277b66782}
+2026-10-01T08:27:26.6826120Z Azure Region: westus3
+2026-10-01T08:27:26.6827028Z ##[endgroup]
+2026-10-01T08:27:26.6828736Z ##[group]Operating System
+2026-10-01T08:27:26.6829380Z Ubuntu
+2026-10-01T08:27:26.6830053Z 24.04.5
+2026-10-01T08:27:26.6830574Z LTS
+2026-10-01T08:27:26.6831168Z ##[endgroup]
+2026-10-01T08:27:26.6831773Z ##[group]Runner Image
+2026-10-01T08:27:26.6832382Z Image: ubuntu-24.04
+2026-10-01T08:27:26.6833024Z Version: 20260920.314.1
+2026-10-01T08:27:26.6834319Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260920.314/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-01T08:27:26.6835967Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260920.314
+2026-10-01T08:27:26.6837384Z ##[endgroup]
+2026-10-01T08:27:26.6838586Z ##[group]GITHUB_TOKEN Permissions
+2026-10-01T08:27:26.6840846Z Contents: read
+2026-10-01T08:27:26.6841947Z Metadata: read
+2026-10-01T08:27:26.6842550Z ##[endgroup]
+2026-10-01T08:27:26.6844806Z Secret source: Actions
+2026-10-01T08:27:26.6845841Z Cache mode: write
+2026-10-01T08:27:26.6847087Z Prepare workflow directory
+2026-10-01T08:27:26.7251462Z Prepare all required actions
+2026-10-01T08:27:26.7298987Z Getting action download info
+2026-10-01T08:27:27.0534294Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-01T08:27:27.1568951Z Download action repository 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1' (SHA:ece7cb06caefa5fff74198d8649806c4678c61a1)
+2026-10-01T08:27:27.2522377Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-10-01T08:27:27.4412022Z Complete job name: Python 3.12 CPU shard 4
+2026-10-01T08:27:27.5187088Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-10-01T08:27:27.5188237Z with:
+2026-10-01T08:27:27.5188698Z   repository: gonos2k/AD4DVAR-radar
+2026-10-01T08:27:27.5192602Z   token: ***
+2026-10-01T08:27:27.5193043Z   ssh-strict: true
+2026-10-01T08:27:27.5193486Z   ssh-user: git
+2026-10-01T08:27:27.5193960Z   persist-credentials: true
+2026-10-01T08:27:27.5194459Z   clean: true
+2026-10-01T08:27:27.5194944Z   sparse-checkout-cone-mode: true
+2026-10-01T08:27:27.5195463Z   fetch-depth: 1
+2026-10-01T08:27:27.5195904Z   fetch-tags: false
+2026-10-01T08:27:27.5196727Z   show-progress: true
+2026-10-01T08:27:27.5197277Z   lfs: false
+2026-10-01T08:27:27.5197689Z   submodules: false
+2026-10-01T08:27:27.5198157Z   set-safe-directory: true
+2026-10-01T08:27:27.5198678Z   allow-unsafe-pr-checkout: false
+2026-10-01T08:27:27.5199560Z ##[endgroup]
+2026-10-01T08:27:27.6200109Z Syncing repository: gonos2k/AD4DVAR-radar
+2026-10-01T08:27:27.6202456Z ##[group]Getting Git version info
+2026-10-01T08:27:27.6203471Z Working directory is '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+2026-10-01T08:27:27.6205136Z [command]/usr/bin/git version
+2026-10-01T08:27:27.6319171Z git version 2.55.0
+2026-10-01T08:27:27.6348447Z ##[endgroup]
+2026-10-01T08:27:27.6358275Z Temporarily overriding HOME='/home/runner/work/_temp/8ab85e05-4d35-4061-9729-ac102426544e' before making global git config changes
+2026-10-01T08:27:27.6360763Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-01T08:27:27.6363202Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:27:27.6420200Z Deleting the contents of '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+2026-10-01T08:27:27.6423802Z ##[group]Determining repository object format
+2026-10-01T08:27:27.6425547Z ##[endgroup]
+2026-10-01T08:27:27.6426947Z ##[group]Initializing the repository
+2026-10-01T08:27:27.6431382Z [command]/usr/bin/git init /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:27:27.6577867Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-01T08:27:27.6580102Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-01T08:27:27.6582261Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-01T08:27:27.6583981Z hint: call:
+2026-10-01T08:27:27.6585164Z hint:
+2026-10-01T08:27:27.6586666Z hint: 	git config --global init.defaultBranch <name>
+2026-10-01T08:27:27.6588275Z hint:
+2026-10-01T08:27:27.6591398Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-01T08:27:27.6593487Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-01T08:27:27.6595049Z hint:
+2026-10-01T08:27:27.6596117Z hint: 	git branch -m <name>
+2026-10-01T08:27:27.6597301Z hint:
+2026-10-01T08:27:27.6598437Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-01T08:27:27.6600195Z Initialized empty Git repository in /home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/
+2026-10-01T08:27:27.6602888Z [command]/usr/bin/git remote add origin https://github.com/gonos2k/AD4DVAR-radar
+2026-10-01T08:27:27.6666017Z ##[endgroup]
+2026-10-01T08:27:27.6667561Z ##[group]Disabling automatic garbage collection
+2026-10-01T08:27:27.6670878Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-01T08:27:27.6714595Z ##[endgroup]
+2026-10-01T08:27:27.6717047Z ##[group]Setting up auth
+2026-10-01T08:27:27.6718615Z Removing SSH command configuration
+2026-10-01T08:27:27.6721378Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-01T08:27:27.6761988Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-01T08:27:27.7179454Z Removing HTTP extra header
+2026-10-01T08:27:27.7185625Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-01T08:27:27.7223147Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-01T08:27:27.7470920Z Removing includeIf entries pointing to credentials config files
+2026-10-01T08:27:27.7479437Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-01T08:27:27.7523702Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-01T08:27:27.7792670Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-622741ba-320e-46bf-86f9-e767781b58b5.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-01T08:27:27.7850068Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path /home/runner/work/_temp/git-credentials-622741ba-320e-46bf-86f9-e767781b58b5.config
+2026-10-01T08:27:27.7887928Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-622741ba-320e-46bf-86f9-e767781b58b5.config
+2026-10-01T08:27:27.7927818Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-622741ba-320e-46bf-86f9-e767781b58b5.config
+2026-10-01T08:27:27.7964610Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-622741ba-320e-46bf-86f9-e767781b58b5.config
+2026-10-01T08:27:27.7998004Z ##[endgroup]
+2026-10-01T08:27:27.7998765Z ##[group]Fetching the repository
+2026-10-01T08:27:27.8006529Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf:refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T08:27:30.1583184Z From https://github.com/gonos2k/AD4DVAR-radar
+2026-10-01T08:27:30.1587365Z  * [new ref]         a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf -> origin/agent/full-cpu-package-regression
+2026-10-01T08:27:30.1594188Z [command]/usr/bin/git branch --list --remote origin/agent/full-cpu-package-regression
+2026-10-01T08:27:30.1622873Z   origin/agent/full-cpu-package-regression
+2026-10-01T08:27:30.1631974Z [command]/usr/bin/git rev-parse refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T08:27:30.1659771Z a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf
+2026-10-01T08:27:30.1665909Z ##[endgroup]
+2026-10-01T08:27:30.1668350Z ##[group]Determining the checkout info
+2026-10-01T08:27:30.1671152Z ##[endgroup]
+2026-10-01T08:27:30.1672737Z [command]/usr/bin/git sparse-checkout disable
+2026-10-01T08:27:30.1731321Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-01T08:27:30.1768556Z ##[group]Checking out the ref
+2026-10-01T08:27:30.1773735Z [command]/usr/bin/git checkout --progress --force -B agent/full-cpu-package-regression refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T08:27:30.3761195Z Switched to a new branch 'agent/full-cpu-package-regression'
+2026-10-01T08:27:30.3766044Z branch 'agent/full-cpu-package-regression' set up to track 'origin/agent/full-cpu-package-regression'.
+2026-10-01T08:27:30.3790579Z ##[endgroup]
+2026-10-01T08:27:30.3843470Z [command]/usr/bin/git log -1 --format=%H
+2026-10-01T08:27:30.3874935Z a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf
+2026-10-01T08:27:30.4146587Z ##[group]Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+2026-10-01T08:27:30.4147142Z with:
+2026-10-01T08:27:30.4147400Z   python-version: 3.12
+2026-10-01T08:27:30.4147677Z   cache: pip
+2026-10-01T08:27:30.4148004Z   cache-dependency-path: requirements/ci-py312-linux.lock
+2026-10-01T08:27:30.4148427Z   check-latest: false
+2026-10-01T08:27:30.4151084Z   token: ***
+2026-10-01T08:27:30.4151370Z   update-environment: true
+2026-10-01T08:27:30.4151675Z   allow-prereleases: false
+2026-10-01T08:27:30.4214870Z   freethreaded: false
+2026-10-01T08:27:30.4215269Z ##[endgroup]
+2026-10-01T08:27:30.5509665Z ##[group]Installed versions
+2026-10-01T08:27:30.5615897Z Successfully set up CPython (3.12.14)
+2026-10-01T08:27:30.5616892Z ##[endgroup]
+2026-10-01T08:27:30.5948967Z [command]/opt/hostedtoolcache/Python/3.12.14/x64/bin/pip cache dir
+2026-10-01T08:27:31.6543262Z /home/runner/.cache/pip
+2026-10-01T08:27:31.8984800Z Cache hit for restore-key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.14-pip-f7cee36fe32686215bbb9f8a086817e4840e974b74a211879070eaf02f04bcd8
+2026-10-01T08:27:33.1188179Z Received 33554432 of 287618844 (11.7%), 32.0 MBs/sec
+2026-10-01T08:27:34.1237781Z Received 213909504 of 287618844 (74.4%), 101.9 MBs/sec
+2026-10-01T08:27:34.5956889Z Received 287618844 of 287618844 (100.0%), 111.0 MBs/sec
+2026-10-01T08:27:34.5957802Z Cache Size: ~274 MB (287618844 B)
+2026-10-01T08:27:34.6028443Z [command]/usr/bin/tar -xf /home/runner/work/_temp/055e364e-9596-4668-a4d6-0972d65772c4/cache.tzst -P -C /home/runner/work/AD4DVAR-radar/AD4DVAR-radar --use-compress-program unzstd
+2026-10-01T08:27:34.9997740Z Cache restored successfully
+2026-10-01T08:27:35.0439276Z Cache restored from key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.14-pip-f7cee36fe32686215bbb9f8a086817e4840e974b74a211879070eaf02f04bcd8
+2026-10-01T08:27:35.0906615Z ##[group]Run python -I -m pip install \
+2026-10-01T08:27:35.0907107Z [36;1mpython -I -m pip install \[0m
+2026-10-01T08:27:35.0907457Z [36;1m  --require-hashes \[0m
+2026-10-01T08:27:35.0907741Z [36;1m  --only-binary=:all: \[0m
+2026-10-01T08:27:35.0908201Z [36;1m  --extra-index-url https://download.pytorch.org/whl/cpu \[0m
+2026-10-01T08:27:35.0908716Z [36;1m  --requirement requirements/ci-py312-linux.lock[0m
+2026-10-01T08:27:35.1780101Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:27:35.1780846Z env:
+2026-10-01T08:27:35.1781178Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:35.1781698Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:27:35.1782218Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:35.1782674Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:35.1783126Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:35.1783647Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:27:35.1784064Z ##[endgroup]
+2026-10-01T08:27:36.0971406Z Looking in indexes: https://pypi.org/simple, https://download.pytorch.org/whl/cpu
+2026-10-01T08:27:36.3236776Z Collecting basedpyright==1.39.9 (from -r requirements/ci-py312-linux.lock (line 5))
+2026-10-01T08:27:36.3250405Z   Using cached basedpyright-1.39.9-py3-none-any.whl (13.4 MB)
+2026-10-01T08:27:36.4538172Z Collecting boolean-py==5.0 (from -r requirements/ci-py312-linux.lock (line 9))
+2026-10-01T08:27:36.4550780Z   Using cached boolean_py-5.0-py3-none-any.whl (26 kB)
+2026-10-01T08:27:36.5445417Z Collecting build==1.5.0 (from -r requirements/ci-py312-linux.lock (line 13))
+2026-10-01T08:27:36.5477268Z   Using cached build-1.5.0-py3-none-any.whl (26 kB)
+2026-10-01T08:27:36.6363787Z Collecting cachecontrol==0.14.4 (from -r requirements/ci-py312-linux.lock (line 17))
+2026-10-01T08:27:36.6376643Z   Using cached cachecontrol-0.14.4-py3-none-any.whl (22 kB)
+2026-10-01T08:27:36.6648581Z Collecting certifi==2026.7.22 (from -r requirements/ci-py312-linux.lock (line 21))
+2026-10-01T08:27:36.6660162Z   Using cached certifi-2026.7.22-py3-none-any.whl (136 kB)
+2026-10-01T08:27:36.9618419Z Collecting cffi==2.1.1 (from -r requirements/ci-py312-linux.lock (line 25))
+2026-10-01T08:27:36.9631980Z   Using cached cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+2026-10-01T08:27:37.0882950Z Collecting charset-normalizer==3.5.1 (from -r requirements/ci-py312-linux.lock (line 127))
+2026-10-01T08:27:37.0895901Z   Using cached charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (248 kB)
+2026-10-01T08:27:37.3307565Z Collecting cryptography==50.0.0 (from -r requirements/ci-py312-linux.lock (line 301))
+2026-10-01T08:27:37.3320848Z   Using cached cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+2026-10-01T08:27:37.4343822Z Collecting cyclonedx-python-lib==11.12.0 (from -r requirements/ci-py312-linux.lock (line 351))
+2026-10-01T08:27:37.4356348Z   Using cached cyclonedx_python_lib-11.12.0-py3-none-any.whl (529 kB)
+2026-10-01T08:27:37.6319694Z Collecting defusedxml==0.7.1 (from -r requirements/ci-py312-linux.lock (line 355))
+2026-10-01T08:27:37.6335130Z   Using cached defusedxml-0.7.1-py2.py3-none-any.whl (25 kB)
+2026-10-01T08:27:37.6808314Z Collecting filelock==3.32.3 (from -r requirements/ci-py312-linux.lock (line 359))
+2026-10-01T08:27:37.6819981Z   Using cached filelock-3.32.3-py3-none-any.whl (98 kB)
+2026-10-01T08:27:37.7189589Z Collecting fsspec==2026.7.0 (from -r requirements/ci-py312-linux.lock (line 367))
+2026-10-01T08:27:37.7202106Z   Using cached fsspec-2026.7.0-py3-none-any.whl (206 kB)
+2026-10-01T08:27:37.7614081Z Collecting idna==3.18 (from -r requirements/ci-py312-linux.lock (line 371))
+2026-10-01T08:27:37.7626141Z   Using cached idna-3.18-py3-none-any.whl (65 kB)
+2026-10-01T08:27:37.8507715Z Collecting iniconfig==2.3.0 (from -r requirements/ci-py312-linux.lock (line 375))
+2026-10-01T08:27:37.8520751Z   Using cached iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+2026-10-01T08:27:37.8770668Z Collecting jinja2==3.1.6 (from -r requirements/ci-py312-linux.lock (line 379))
+2026-10-01T08:27:37.8782200Z   Using cached jinja2-3.1.6-py3-none-any.whl (134 kB)
+2026-10-01T08:27:37.9681695Z Collecting license-expression==30.4.4 (from -r requirements/ci-py312-linux.lock (line 383))
+2026-10-01T08:27:37.9699335Z   Using cached license_expression-30.4.4-py3-none-any.whl (120 kB)
+2026-10-01T08:27:38.2258047Z Collecting markdown-it-py==4.2.0 (from -r requirements/ci-py312-linux.lock (line 387))
+2026-10-01T08:27:38.2271107Z   Using cached markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+2026-10-01T08:27:38.3009816Z Collecting markupsafe==3.0.3 (from -r requirements/ci-py312-linux.lock (line 391))
+2026-10-01T08:27:38.3021050Z   Using cached markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+2026-10-01T08:27:38.3857508Z Collecting mdurl==0.1.2 (from -r requirements/ci-py312-linux.lock (line 482))
+2026-10-01T08:27:38.3870688Z   Using cached mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+2026-10-01T08:27:38.4141329Z Collecting mpmath==1.3.0 (from -r requirements/ci-py312-linux.lock (line 486))
+2026-10-01T08:27:38.4153488Z   Using cached mpmath-1.3.0-py3-none-any.whl (536 kB)
+2026-10-01T08:27:38.6865584Z Collecting msgpack==1.2.1 (from -r requirements/ci-py312-linux.lock (line 490))
+2026-10-01T08:27:38.6879982Z   Using cached msgpack-1.2.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (419 kB)
+2026-10-01T08:27:38.7294030Z Collecting networkx==3.6.1 (from -r requirements/ci-py312-linux.lock (line 558))
+2026-10-01T08:27:38.7306452Z   Using cached networkx-3.6.1-py3-none-any.whl (2.1 MB)
+2026-10-01T08:27:38.8439769Z Collecting nodejs-wheel-binaries==24.16.0 (from -r requirements/ci-py312-linux.lock (line 562))
+2026-10-01T08:27:38.8453520Z   Using cached nodejs_wheel_binaries-24.16.0-py2.py3-none-manylinux_2_28_x86_64.whl (60.7 MB)
+2026-10-01T08:27:39.3983792Z Collecting numpy==2.2.6 (from -r requirements/ci-py312-linux.lock (line 573))
+2026-10-01T08:27:39.3998658Z   Using cached numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.5 MB)
+2026-10-01T08:27:39.5180403Z Collecting packageurl-python==0.17.6 (from -r requirements/ci-py312-linux.lock (line 632))
+2026-10-01T08:27:39.5193610Z   Using cached packageurl_python-0.17.6-py3-none-any.whl (36 kB)
+2026-10-01T08:27:39.5455968Z Collecting packaging==26.3 (from -r requirements/ci-py312-linux.lock (line 636))
+2026-10-01T08:27:39.5467949Z   Using cached packaging-26.3-py3-none-any.whl (129 kB)
+2026-10-01T08:27:39.5490943Z Requirement already satisfied: pip==26.2.1 in /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages (from -r requirements/ci-py312-linux.lock (line 645)) (26.2.1)
+2026-10-01T08:27:39.6361114Z Collecting pip-api==0.0.34 (from -r requirements/ci-py312-linux.lock (line 649))
+2026-10-01T08:27:39.6374986Z   Using cached pip_api-0.0.34-py3-none-any.whl (120 kB)
+2026-10-01T08:27:39.8458033Z Collecting pip-audit==2.10.1 (from -r requirements/ci-py312-linux.lock (line 653))
+2026-10-01T08:27:39.8470680Z   Using cached pip_audit-2.10.1-py3-none-any.whl (62 kB)
+2026-10-01T08:27:39.9344061Z Collecting pip-requirements-parser==32.0.1 (from -r requirements/ci-py312-linux.lock (line 657))
+2026-10-01T08:27:39.9356634Z   Using cached pip_requirements_parser-32.0.1-py3-none-any.whl (35 kB)
+2026-10-01T08:27:40.0653317Z Collecting platformdirs==4.11.3 (from -r requirements/ci-py312-linux.lock (line 661))
+2026-10-01T08:27:40.0665559Z   Using cached platformdirs-4.11.3-py3-none-any.whl (23 kB)
+2026-10-01T08:27:40.2630160Z Collecting pluggy==1.6.0 (from -r requirements/ci-py312-linux.lock (line 665))
+2026-10-01T08:27:40.2642772Z   Using cached pluggy-1.6.0-py3-none-any.whl (20 kB)
+2026-10-01T08:27:40.3519929Z Collecting py-serializable==2.1.0 (from -r requirements/ci-py312-linux.lock (line 669))
+2026-10-01T08:27:40.3532563Z   Using cached py_serializable-2.1.0-py3-none-any.whl (23 kB)
+2026-10-01T08:27:40.4398371Z Collecting pycparser==3.0 (from -r requirements/ci-py312-linux.lock (line 673))
+2026-10-01T08:27:40.4411730Z   Using cached pycparser-3.0-py3-none-any.whl (48 kB)
+2026-10-01T08:27:40.6509448Z Collecting pygments==2.20.0 (from -r requirements/ci-py312-linux.lock (line 677))
+2026-10-01T08:27:40.6521898Z   Using cached pygments-2.20.0-py3-none-any.whl (1.2 MB)
+2026-10-01T08:27:40.7509917Z Collecting pyparsing==3.3.2 (from -r requirements/ci-py312-linux.lock (line 683))
+2026-10-01T08:27:40.7522649Z   Using cached pyparsing-3.3.2-py3-none-any.whl (122 kB)
+2026-10-01T08:27:40.8377338Z Collecting pyproject-hooks==1.2.0 (from -r requirements/ci-py312-linux.lock (line 687))
+2026-10-01T08:27:40.8389859Z   Using cached pyproject_hooks-1.2.0-py3-none-any.whl (10 kB)
+2026-10-01T08:27:41.0561870Z Collecting pytest==9.1.1 (from -r requirements/ci-py312-linux.lock (line 691))
+2026-10-01T08:27:41.0574112Z   Using cached pytest-9.1.1-py3-none-any.whl (386 kB)
+2026-10-01T08:27:41.0895717Z Collecting requests==2.34.2 (from -r requirements/ci-py312-linux.lock (line 695))
+2026-10-01T08:27:41.0908790Z   Using cached requests-2.34.2-py3-none-any.whl (73 kB)
+2026-10-01T08:27:41.1958900Z Collecting rich==15.0.0 (from -r requirements/ci-py312-linux.lock (line 701))
+2026-10-01T08:27:41.1980460Z   Using cached rich-15.0.0-py3-none-any.whl (310 kB)
+2026-10-01T08:27:41.2780073Z Collecting setuptools==84.0.0 (from -r requirements/ci-py312-linux.lock (line 705))
+2026-10-01T08:27:41.2793258Z   Using cached setuptools-84.0.0-py3-none-any.whl (818 kB)
+2026-10-01T08:27:41.3951784Z Collecting sortedcontainers==2.4.0 (from -r requirements/ci-py312-linux.lock (line 711))
+2026-10-01T08:27:41.3964874Z   Using cached sortedcontainers-2.4.0-py2.py3-none-any.whl (29 kB)
+2026-10-01T08:27:41.4294942Z Collecting sympy==1.14.0 (from -r requirements/ci-py312-linux.lock (line 715))
+2026-10-01T08:27:41.4308250Z   Using cached sympy-1.14.0-py3-none-any.whl (6.3 MB)
+2026-10-01T08:27:41.5509471Z Collecting tomli==2.4.1 (from -r requirements/ci-py312-linux.lock (line 719))
+2026-10-01T08:27:41.5522577Z   Using cached tomli-2.4.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (253 kB)
+2026-10-01T08:27:41.6391883Z Collecting tomli-w==1.2.0 (from -r requirements/ci-py312-linux.lock (line 768))
+2026-10-01T08:27:41.6405806Z   Using cached tomli_w-1.2.0-py3-none-any.whl (6.7 kB)
+2026-10-01T08:27:41.7855534Z Collecting torch==2.13.0+cpu (from -r requirements/ci-py312-linux.lock (line 772))
+2026-10-01T08:27:41.8935215Z   Using cached torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl (191.8 MB)
+2026-10-01T08:27:42.1955431Z Collecting typing-extensions==4.16.0 (from -r requirements/ci-py312-linux.lock (line 807))
+2026-10-01T08:27:42.1968793Z   Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+2026-10-01T08:27:42.2308936Z Collecting urllib3==2.8.0 (from -r requirements/ci-py312-linux.lock (line 813))
+2026-10-01T08:27:42.2321730Z   Using cached urllib3-2.8.0-py3-none-any.whl (135 kB)
+2026-10-01T08:27:42.4421805Z Collecting wheel==0.46.3 (from -r requirements/ci-py312-linux.lock (line 817))
+2026-10-01T08:27:42.4436223Z   Using cached wheel-0.46.3-py3-none-any.whl (30 kB)
+2026-10-01T08:27:42.8930951Z Installing collected packages: sortedcontainers, mpmath, boolean-py, urllib3, typing-extensions, tomli-w, tomli, sympy, setuptools, pyproject-hooks, pyparsing, pygments, pycparser, pluggy, platformdirs, pip-api, packaging, packageurl-python, numpy, nodejs-wheel-binaries, networkx, msgpack, mdurl, markupsafe, license-expression, iniconfig, idna, fsspec, filelock, defusedxml, charset-normalizer, certifi, wheel, requests, pytest, py-serializable, pip-requirements-parser, markdown-it-py, jinja2, cffi, build, basedpyright, torch, rich, cyclonedx-python-lib, cryptography, cachecontrol, pip-audit
+2026-10-01T08:28:10.2613895Z 
+2026-10-01T08:28:10.2658966Z Successfully installed basedpyright-1.39.9 boolean-py-5.0 build-1.5.0 cachecontrol-0.14.4 certifi-2026.7.22 cffi-2.1.1 charset-normalizer-3.5.1 cryptography-50.0.0 cyclonedx-python-lib-11.12.0 defusedxml-0.7.1 filelock-3.32.3 fsspec-2026.7.0 idna-3.18 iniconfig-2.3.0 jinja2-3.1.6 license-expression-30.4.4 markdown-it-py-4.2.0 markupsafe-3.0.3 mdurl-0.1.2 mpmath-1.3.0 msgpack-1.2.1 networkx-3.6.1 nodejs-wheel-binaries-24.16.0 numpy-2.2.6 packageurl-python-0.17.6 packaging-26.3 pip-api-0.0.34 pip-audit-2.10.1 pip-requirements-parser-32.0.1 platformdirs-4.11.3 pluggy-1.6.0 py-serializable-2.1.0 pycparser-3.0 pygments-2.20.0 pyparsing-3.3.2 pyproject-hooks-1.2.0 pytest-9.1.1 requests-2.34.2 rich-15.0.0 setuptools-84.0.0 sortedcontainers-2.4.0 sympy-1.14.0 tomli-2.4.1 tomli-w-1.2.0 torch-2.13.0+cpu typing-extensions-4.16.0 urllib3-2.8.0 wheel-0.46.3
+2026-10-01T08:28:10.4388266Z ##[group]Run printf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py
+2026-10-01T08:28:10.4389005Z [36;1mprintf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py[0m
+2026-10-01T08:28:10.4389488Z [36;1mpython -I - <<'PY'[0m
+2026-10-01T08:28:10.4389738Z [36;1mimport site[0m
+2026-10-01T08:28:10.4389976Z [36;1mfrom pathlib import Path[0m
+2026-10-01T08:28:10.4390235Z [36;1m[0m
+2026-10-01T08:28:10.4390444Z [36;1mimport pip_audit[0m
+2026-10-01T08:28:10.4390691Z [36;1mimport torch[0m
+2026-10-01T08:28:10.4390899Z [36;1m[0m
+2026-10-01T08:28:10.4391133Z [36;1mmodule = Path(pip_audit.__file__).resolve()[0m
+2026-10-01T08:28:10.4391579Z [36;1mroots = tuple(Path(item).resolve() for item in site.getsitepackages())[0m
+2026-10-01T08:28:10.4392109Z [36;1massert any(root == module or root in module.parents for root in roots)[0m
+2026-10-01T08:28:10.4392541Z [36;1massert torch.version.cuda is None[0m
+2026-10-01T08:28:10.4392855Z [36;1mPY[0m
+2026-10-01T08:28:10.4393217Z [36;1mpython -I "$GITHUB_WORKSPACE/.github/scripts/check_dependency_locks.py"[0m
+2026-10-01T08:28:10.4393657Z [36;1mpython -I -m pip_audit \[0m
+2026-10-01T08:28:10.4393933Z [36;1m  --strict \[0m
+2026-10-01T08:28:10.4394173Z [36;1m  --disable-pip \[0m
+2026-10-01T08:28:10.4394419Z [36;1m  --no-deps \[0m
+2026-10-01T08:28:10.4394660Z [36;1m  --requirement "$LOCK_FILE"[0m
+2026-10-01T08:28:10.4461809Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:10.4462076Z env:
+2026-10-01T08:28:10.4462363Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:10.4462830Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:10.4463301Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:10.4463701Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:10.4464118Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:10.4464541Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:10.4465061Z   LOCK_FILE: /home/runner/work/AD4DVAR-radar/AD4DVAR-radar/requirements/ci-py312-linux.lock
+2026-10-01T08:28:10.4465509Z ##[endgroup]
+2026-10-01T08:28:12.5806851Z dependency locks: 4 hashed Linux CPU closures are synchronized
+2026-10-01T08:28:13.2495646Z WARNING:pip_audit._cli:--no-deps is supported, but users are encouraged to fully hash their pinned dependencies
+2026-10-01T08:28:13.2497863Z WARNING:pip_audit._cli:Consider using a tool like `pip-compile`: https://pip-tools.readthedocs.io/en/latest/#using-hashes
+2026-10-01T08:28:13.9351176Z No known vulnerabilities found
+2026-10-01T08:28:14.0010173Z ##[group]Run python -I -m pip install \
+2026-10-01T08:28:14.0010564Z [36;1mpython -I -m pip install \[0m
+2026-10-01T08:28:14.0010858Z [36;1m  --no-build-isolation \[0m
+2026-10-01T08:28:14.0011155Z [36;1m  --no-deps \[0m
+2026-10-01T08:28:14.0011390Z [36;1m  --editable .[0m
+2026-10-01T08:28:14.0011633Z [36;1mpython -I -m pip check[0m
+2026-10-01T08:28:14.0075238Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:14.0075503Z env:
+2026-10-01T08:28:14.0075784Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:14.0076400Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:14.0076880Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:14.0077297Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:14.0077715Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:14.0078112Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:14.0078489Z ##[endgroup]
+2026-10-01T08:28:14.3537133Z Obtaining file:///home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:28:14.3548828Z   Checking if build backend supports build_editable: started
+2026-10-01T08:28:14.5639747Z   Checking if build backend supports build_editable: finished with status 'done'
+2026-10-01T08:28:14.5648935Z   Preparing editable metadata (pyproject.toml): started
+2026-10-01T08:28:14.8215588Z   Preparing editable metadata (pyproject.toml): finished with status 'done'
+2026-10-01T08:28:14.8320979Z Building wheels for collected packages: advar-radar-nowcast
+2026-10-01T08:28:14.8329411Z   Building editable for advar-radar-nowcast (pyproject.toml): started
+2026-10-01T08:28:15.1153388Z   Building editable for advar-radar-nowcast (pyproject.toml): finished with status 'done'
+2026-10-01T08:28:15.1161711Z   Created wheel for advar-radar-nowcast: filename=advar_radar_nowcast-0.114.0-0.editable-py3-none-any.whl size=63186 sha256=1e91bf9861b11d292fc241a480e9fc6a85a7133c6bbde81a579cedcaa2f0f3cc
+2026-10-01T08:28:15.1163418Z   Stored in directory: /tmp/pip-ephem-wheel-cache-weum1ymp/wheels/1b/17/88/759e7a703f550adf36506436df8ea413a3c2e2eb8d99fc9f9a
+2026-10-01T08:28:15.1255128Z Successfully built advar-radar-nowcast
+2026-10-01T08:28:15.1368300Z Installing collected packages: advar-radar-nowcast
+2026-10-01T08:28:15.1479297Z Successfully installed advar-radar-nowcast-0.114.0
+2026-10-01T08:28:15.4517061Z No broken requirements found.
+2026-10-01T08:28:15.4842896Z ##[group]Run python -I .github/scripts/check_basedpyright.py
+2026-10-01T08:28:15.4843727Z [36;1mpython -I .github/scripts/check_basedpyright.py[0m
+2026-10-01T08:28:15.4910417Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:15.4910681Z env:
+2026-10-01T08:28:15.4910962Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:15.4911432Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:15.4911889Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:15.4912290Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:15.4912685Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:15.4913078Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:15.4913423Z ##[endgroup]
+2026-10-01T08:28:32.0356626Z basedpyright: 0 errors, 8048 warnings, 0 notes
+2026-10-01T08:28:32.0505666Z ##[group]Run python -I .github/scripts/run_cpu_test_shard.py \
+2026-10-01T08:28:32.0506741Z [36;1mpython -I .github/scripts/run_cpu_test_shard.py \[0m
+2026-10-01T08:28:32.0507334Z [36;1m  --shard-index 4 \[0m
+2026-10-01T08:28:32.0507749Z [36;1m  --shard-count 6 \[0m
+2026-10-01T08:28:32.0508245Z [36;1m  --record-dir "$RUNNER_TEMP/cpu-shard-records"[0m
+2026-10-01T08:28:32.0586742Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:32.0587341Z env:
+2026-10-01T08:28:32.0587917Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:32.0588771Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:32.0589542Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:32.0590241Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:32.0590885Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:32.0591537Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:32.0591925Z   OMP_NUM_THREADS: 1
+2026-10-01T08:28:32.0592276Z   MKL_NUM_THREADS: 1
+2026-10-01T08:28:32.0592541Z ##[endgroup]
+2026-10-01T08:28:39.8385712Z ============================= test session starts ==============================
+2026-10-01T08:28:39.8387213Z platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.12.14/x64/bin/python
+2026-10-01T08:28:39.8387929Z cachedir: .pytest_cache
+2026-10-01T08:28:39.8388376Z rootdir: /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:28:39.8388826Z configfile: pyproject.toml
+2026-10-01T08:28:42.6093808Z collecting ... collected 385 items
+2026-10-01T08:28:42.6094157Z 
+2026-10-01T08:28:58.9122258Z tests/test_a2_promotion.py::A2PromotionTests::test_automatic_ucb_does_not_construct_multiplier_samples PASSED [  0%]
+2026-10-01T08:30:18.8498010Z tests/test_a2_promotion.py::A2PromotionTests::test_automatic_ucb_is_invariant_to_unused_bootstrap_resolution PASSED [  0%]
+2026-10-01T08:30:18.8574448Z tests/test_a2_promotion.py::A2PromotionTests::test_disjoint_association_uses_chronology_and_time_gap_limit PASSED [  0%]
+2026-10-01T08:30:18.8647898Z tests/test_a2_promotion.py::A2PromotionTests::test_overlapping_tracks_are_symmetric_and_connected PASSED [  1%]
+2026-10-01T08:30:18.8741473Z tests/test_a2_promotion.py::A2PromotionTests::test_overlapping_tracks_are_symmetric_and_disconnected PASSED [  1%]
+2026-10-01T08:30:30.5197179Z tests/test_a5_derivatives.py::A5DerivativeTests::test_censored_observations_drive_frozen_p0_dynamics PASSED [  1%]
+2026-10-01T08:30:39.9790865Z tests/test_a5_derivatives.py::A5DerivativeTests::test_observation_removal_reinfers_exogenous_prior PASSED [  1%]
+2026-10-01T08:30:49.4220736Z tests/test_a5_derivatives.py::A5DerivativeTests::test_observation_removal_requires_and_preserves_source_history PASSED [  2%]
+2026-10-01T08:30:53.7972994Z tests/test_a5_derivatives.py::A5DerivativeTests::test_partial_radar_prior_keeps_identity_fallback_in_fsoi PASSED [  2%]
+2026-10-01T08:30:54.0691684Z tests/test_a5_resources.py::A5ResourceTests::test_skinny_grid_whitening_keeps_blocks_and_bounded_padding 
+2026-10-01T08:30:54.0720258Z tests/test_a5_resources.py::A5ResourceTests::test_skinny_grid_whitening_keeps_blocks_and_bounded_padding PASSED [  2%]
+2026-10-01T08:30:54.0814557Z tests/test_a5_variational.py::A5VariationalTests::test_exact_speed_boundary_exposes_inward_generalized_jvp PASSED [  2%]
+2026-10-01T08:30:54.0951064Z tests/test_a5_variational.py::A5VariationalTests::test_extreme_common_bias_tile_is_one_bounded_full_grid_tile PASSED [  3%]
+2026-10-01T08:30:54.1085697Z tests/test_a5_variational.py::A5VariationalTests::test_extreme_pixel_footprints_are_clipped_to_grid PASSED [  3%]
+2026-10-01T08:30:54.1429896Z tests/test_a5_variational.py::A5VariationalTests::test_extreme_pseudo_huber_delta_retains_quadratic_cost_and_gradient 
+2026-10-01T08:30:54.1458909Z tests/test_a5_variational.py::A5VariationalTests::test_extreme_pseudo_huber_delta_retains_quadratic_cost_and_gradient PASSED [  3%]
+2026-10-01T08:30:54.1523850Z tests/test_a5_variational.py::A5VariationalTests::test_physical_vector_scales_are_rejected_at_public_dtype_boundary PASSED [  3%]
+2026-10-01T08:30:54.1886866Z tests/test_a5_variational.py::A5VariationalTests::test_pseudo_huber_cost_and_irls_have_independent_value_oracles PASSED [  4%]
+2026-10-01T08:30:54.1941745Z tests/test_a5_variational.py::A5VariationalTests::test_subnormal_pseudo_huber_delta_is_rejected_at_public_dtype_boundary PASSED [  4%]
+2026-10-01T08:30:54.1997632Z tests/test_a5_variational.py::A5VariationalTests::test_vector_update_rejects_unrepresentable_limit_and_ratio PASSED [  4%]
+2026-10-01T08:30:54.2072051Z tests/test_finite_volume_transport.py::test_face_fluxes_cancel_discrete_divergence_and_preserve_gauge PASSED [  4%]
+2026-10-01T08:30:54.2127929Z tests/test_finite_volume_transport.py::test_face_fluxes_use_row_increase_as_positive_y_on_a_nonsquare_grid PASSED [  5%]
+2026-10-01T08:30:54.2236124Z tests/test_finite_volume_transport.py::test_ssprk2_matches_three_cell_upwind_oracle PASSED [  5%]
+2026-10-01T08:30:54.2315157Z tests/test_finite_volume_transport.py::test_cfl_one_is_admissible_when_requested_but_default_margin_rejects PASSED [  5%]
+2026-10-01T08:30:54.2414219Z tests/test_finite_volume_transport.py::test_cfl_multiple_requires_explicit_two_steps_and_matches_oracle PASSED [  5%]
+2026-10-01T08:30:54.2490465Z tests/test_finite_volume_transport.py::test_no_flow_growth_is_exact_and_source_quadrature_is_independent[-0.3] PASSED [  6%]
+2026-10-01T08:30:54.2567130Z tests/test_finite_volume_transport.py::test_no_flow_growth_is_exact_and_source_quadrature_is_independent[0.0] PASSED [  6%]
+2026-10-01T08:30:54.2644569Z tests/test_finite_volume_transport.py::test_no_flow_growth_is_exact_and_source_quadrature_is_independent[0.3] PASSED [  6%]
+2026-10-01T08:30:54.2755673Z tests/test_finite_volume_transport.py::test_unknown_clear_and_partial_inflow_support_are_separate_fields PASSED [  7%]
+2026-10-01T08:30:54.2831664Z tests/test_finite_volume_transport.py::test_time_varying_known_inflow_uses_start_and_end_traces_once PASSED [  7%]
+2026-10-01T08:30:54.2923843Z tests/test_finite_volume_transport.py::test_boundary_jump_is_applied_only_after_the_previous_interval_ends PASSED [  7%]
+2026-10-01T08:30:54.2998403Z tests/test_finite_volume_transport.py::test_physical_and_integrating_factor_inflow_budgets_use_stage_traces PASSED [  7%]
+2026-10-01T08:30:54.3075441Z tests/test_finite_volume_transport.py::test_r_budget_uses_nonunit_cell_area_and_local_growth_factor PASSED [  8%]
+2026-10-01T08:30:54.3176013Z tests/test_finite_volume_transport.py::test_no_flow_source_quadrature_has_cubic_local_error PASSED [  8%]
+2026-10-01T08:30:54.3271827Z tests/test_finite_volume_transport.py::test_boundary_budget_corners_and_sides_has_no_double_face_weight PASSED [  8%]
+2026-10-01T08:30:54.3353259Z tests/test_finite_volume_transport.py::test_transport_budget_matches_source_free_mass_change_with_full_outflow PASSED [  8%]
+2026-10-01T08:30:54.3436628Z tests/test_finite_volume_transport.py::test_positive_ssprk2_preserves_nonnegative_echo_across_supported_scales[1e-20-dtype0] PASSED [  9%]
+2026-10-01T08:30:54.3513261Z tests/test_finite_volume_transport.py::test_positive_ssprk2_preserves_nonnegative_echo_across_supported_scales[1e-20-dtype1] PASSED [  9%]
+2026-10-01T08:30:54.3591190Z tests/test_finite_volume_transport.py::test_positive_ssprk2_preserves_nonnegative_echo_across_supported_scales[1.0-dtype0] PASSED [  9%]
+2026-10-01T08:30:54.3667402Z tests/test_finite_volume_transport.py::test_positive_ssprk2_preserves_nonnegative_echo_across_supported_scales[1.0-dtype1] PASSED [  9%]
+2026-10-01T08:30:54.3745696Z tests/test_finite_volume_transport.py::test_positive_ssprk2_preserves_nonnegative_echo_across_supported_scales[1e+20-dtype0] PASSED [ 10%]
+2026-10-01T08:30:54.3827801Z tests/test_finite_volume_transport.py::test_positive_ssprk2_preserves_nonnegative_echo_across_supported_scales[1e+20-dtype1] PASSED [ 10%]
+2026-10-01T08:30:54.3922972Z tests/test_finite_volume_transport.py::test_known_constant_field_is_preserved_for_random_streamfunction[dtype0-11] PASSED [ 10%]
+2026-10-01T08:30:54.4019476Z tests/test_finite_volume_transport.py::test_known_constant_field_is_preserved_for_random_streamfunction[dtype1-8] PASSED [ 10%]
+2026-10-01T08:30:54.4113564Z tests/test_finite_volume_transport.py::test_known_constant_field_is_preserved_for_random_streamfunction[dtype2-13] PASSED [ 11%]
+2026-10-01T08:30:54.4214676Z tests/test_finite_volume_transport.py::test_known_constant_field_is_preserved_for_random_streamfunction[dtype3-17] PASSED [ 11%]
+2026-10-01T08:30:54.4348388Z tests/test_finite_volume_transport.py::test_zero_face_flux_has_the_two_one_sided_upwind_derivatives PASSED [ 11%]
+2026-10-01T08:30:54.5357025Z tests/test_finite_volume_transport.py::test_jvp_vjp_and_finite_difference_agree_away_from_sign_boundaries PASSED [ 11%]
+2026-10-01T08:30:54.5426055Z tests/test_finite_volume_transport.py::test_step_rejects_invalid_shapes_units_and_step_controls[<lambda>0] PASSED [ 12%]
+2026-10-01T08:30:54.5499209Z tests/test_finite_volume_transport.py::test_step_rejects_invalid_shapes_units_and_step_controls[<lambda>1] PASSED [ 12%]
+2026-10-01T08:30:54.5564183Z tests/test_finite_volume_transport.py::test_step_rejects_invalid_shapes_units_and_step_controls[<lambda>2] PASSED [ 12%]
+2026-10-01T08:30:54.5631433Z tests/test_finite_volume_transport.py::test_step_rejects_invalid_shapes_units_and_step_controls[<lambda>3] PASSED [ 12%]
+2026-10-01T08:30:54.5698233Z tests/test_finite_volume_transport.py::test_step_rejects_invalid_shapes_units_and_step_controls[<lambda>4] PASSED [ 13%]
+2026-10-01T08:30:54.5765585Z tests/test_finite_volume_transport.py::test_step_rejects_invalid_shapes_units_and_step_controls[<lambda>5] PASSED [ 13%]
+2026-10-01T08:30:54.5833652Z tests/test_finite_volume_transport.py::test_step_rejects_invalid_shapes_units_and_step_controls[<lambda>6] PASSED [ 13%]
+2026-10-01T08:30:54.5903285Z tests/test_finite_volume_transport.py::test_step_rejects_nonfinite_negative_or_mixed_dtype_inputs[echo_nan] PASSED [ 14%]
+2026-10-01T08:30:54.5970597Z tests/test_finite_volume_transport.py::test_step_rejects_nonfinite_negative_or_mixed_dtype_inputs[support_nan] PASSED [ 14%]
+2026-10-01T08:30:54.6039639Z tests/test_finite_volume_transport.py::test_step_rejects_nonfinite_negative_or_mixed_dtype_inputs[negative_echo] PASSED [ 14%]
+2026-10-01T08:30:54.6108045Z tests/test_finite_volume_transport.py::test_step_rejects_nonfinite_negative_or_mixed_dtype_inputs[support_gt_one] PASSED [ 14%]
+2026-10-01T08:30:54.6176918Z tests/test_finite_volume_transport.py::test_step_rejects_nonfinite_negative_or_mixed_dtype_inputs[qx_nan] PASSED [ 15%]
+2026-10-01T08:30:54.6253551Z tests/test_finite_volume_transport.py::test_step_rejects_nonfinite_negative_or_mixed_dtype_inputs[dtype] PASSED [ 15%]
+2026-10-01T08:30:54.6322083Z tests/test_finite_volume_transport.py::test_face_fluxes_reject_wrong_shape_and_nonfinite_psi[bad_psi0] PASSED [ 15%]
+2026-10-01T08:30:54.6391681Z tests/test_finite_volume_transport.py::test_face_fluxes_reject_wrong_shape_and_nonfinite_psi[bad_psi1] PASSED [ 15%]
+2026-10-01T08:30:54.6484127Z tests/test_finite_volume_transport.py::test_subnormal_face_flux_keeps_representable_echo_transfer[-1-dtype0-1e+30] PASSED [ 16%]
+2026-10-01T08:30:54.6576771Z tests/test_finite_volume_transport.py::test_subnormal_face_flux_keeps_representable_echo_transfer[-1-dtype1-1e+300] PASSED [ 16%]
+2026-10-01T08:30:54.6666686Z tests/test_finite_volume_transport.py::test_subnormal_face_flux_keeps_representable_echo_transfer[1-dtype0-1e+30] PASSED [ 16%]
+2026-10-01T08:30:54.6755908Z tests/test_finite_volume_transport.py::test_subnormal_face_flux_keeps_representable_echo_transfer[1-dtype1-1e+300] PASSED [ 16%]
+2026-10-01T08:30:54.6857034Z tests/test_finite_volume_transport.py::test_zero_flux_preserves_midpoint_generalized_derivative PASSED [ 17%]
+2026-10-01T08:30:54.6953137Z tests/test_finite_volume_transport.py::test_cfl_one_fp32_nonunit_area_uses_the_checked_coefficient PASSED [ 17%]
+2026-10-01T08:30:54.7546981Z tests/test_fv86_reanalysis.py::test_full_probe_varies_parameters_at_both_endpoints PASSED [ 17%]
+2026-10-01T08:30:54.7693324Z tests/test_fv86_reanalysis.py::test_bad_cached_derivatives_fail_before_tangent[direct] PASSED [ 17%]
+2026-10-01T08:30:54.7845513Z tests/test_fv86_reanalysis.py::test_bad_cached_derivatives_fail_before_tangent[adjoint] PASSED [ 18%]
+2026-10-01T08:30:54.7975227Z tests/test_fv86_reanalysis.py::test_bad_cached_derivatives_fail_before_tangent[rhs] PASSED [ 18%]
+2026-10-01T08:30:54.8131708Z tests/test_fv86_reanalysis.py::test_bad_cached_derivatives_fail_before_tangent[mixed] PASSED [ 18%]
+2026-10-01T08:30:54.8204218Z tests/test_fv86_reanalysis.py::test_pair_error_uses_declared_response_scale PASSED [ 18%]
+2026-10-01T08:30:54.8941773Z tests/test_fv86_reanalysis.py::test_refused_pairs_reset_consecutive_validation[0-3] PASSED [ 19%]
+2026-10-01T08:30:55.0042592Z tests/test_fv86_reanalysis.py::test_refused_pairs_reset_consecutive_validation[1-4] PASSED [ 19%]
+2026-10-01T08:30:55.0261859Z tests/test_fv_analysis_response.py::test_eligible_control_skips_refinement_and_returns_response PASSED [ 19%]
+2026-10-01T08:30:55.0353928Z tests/test_fv_analysis_response.py::test_nonstationary_without_refinement_is_ineligible_and_preserves_control PASSED [ 20%]
+2026-10-01T08:30:55.0436972Z tests/test_fv_analysis_response.py::test_initial_assessment_failure_never_invokes_refinement[branch] PASSED [ 20%]
+2026-10-01T08:30:55.0517275Z tests/test_fv_analysis_response.py::test_initial_assessment_failure_never_invokes_refinement[nonfinite] PASSED [ 20%]
+2026-10-01T08:30:55.0610148Z tests/test_fv_analysis_response.py::test_response_failure_never_returns_partial_response PASSED [ 20%]
+2026-10-01T08:30:55.0699937Z tests/test_fv_analysis_response.py::test_non_tensor_refiner_result_is_a_bounded_refusal PASSED [ 21%]
+2026-10-01T08:30:55.0788166Z tests/test_fv_analysis_response.py::test_failed_refinement_or_branch_change_returns_no_response[raises] PASSED [ 21%]
+2026-10-01T08:30:55.0880392Z tests/test_fv_analysis_response.py::test_failed_refinement_or_branch_change_returns_no_response[bad_control] PASSED [ 21%]
+2026-10-01T08:30:55.0974097Z tests/test_fv_analysis_response.py::test_failed_refinement_or_branch_change_returns_no_response[branch_change] PASSED [ 21%]
+2026-10-01T08:30:55.1203361Z tests/test_fv_analysis_response.py::test_explicit_refinement_enables_actual_response PASSED [ 22%]
+2026-10-01T08:30:55.1296038Z tests/test_fv_analysis_response.py::test_refiner_parameter_mutation_is_rejected_and_caller_parameter_is_preserved[False] PASSED [ 22%]
+2026-10-01T08:30:55.1387880Z tests/test_fv_analysis_response.py::test_refiner_parameter_mutation_is_rejected_and_caller_parameter_is_preserved[True] PASSED [ 22%]
+2026-10-01T08:30:55.1484670Z tests/test_fv_analysis_response.py::test_refiner_candidate_contract_is_checked_before_post_assessment[shape] PASSED [ 22%]
+2026-10-01T08:30:55.1576322Z tests/test_fv_analysis_response.py::test_refiner_candidate_contract_is_checked_before_post_assessment[dtype] PASSED [ 23%]
+2026-10-01T08:30:55.1669305Z tests/test_fv_analysis_response.py::test_refiner_candidate_contract_is_checked_before_post_assessment[device] PASSED [ 23%]
+2026-10-01T08:30:55.1999908Z tests/test_fv_analysis_response.py::test_matrix_free_refiner_integrates_or_refuses_without_partial_response[True] PASSED [ 23%]
+2026-10-01T08:30:55.2128522Z tests/test_fv_analysis_response.py::test_matrix_free_refiner_integrates_or_refuses_without_partial_response[False] PASSED [ 23%]
+2026-10-01T08:30:55.2244072Z tests/test_fv_comparison_publisher.py::test_archived_comparison_validates_independent_of_row_order PASSED [ 24%]
+2026-10-01T08:30:55.2419787Z tests/test_fv_comparison_publisher.py::test_donor_report_cannot_be_published_under_minmod_filename PASSED [ 24%]
+2026-10-01T08:30:55.2543722Z tests/test_fv_comparison_publisher.py::test_incompatible_global_conditions_are_rejected[domain_side_m-24000] PASSED [ 24%]
+2026-10-01T08:30:55.2664537Z tests/test_fv_comparison_publisher.py::test_incompatible_global_conditions_are_rejected[interval_seconds-300] PASSED [ 24%]
+2026-10-01T08:30:55.2791082Z tests/test_fv_comparison_publisher.py::test_incompatible_global_conditions_are_rejected[leads-17] PASSED [ 25%]
+2026-10-01T08:30:55.2920871Z tests/test_fv_comparison_publisher.py::test_incompatible_global_conditions_are_rejected[sizes-value3] PASSED [ 25%]
+2026-10-01T08:30:55.3040535Z tests/test_fv_comparison_publisher.py::test_incompatible_global_conditions_are_rejected[boundary_condition-periodic] PASSED [ 25%]
+2026-10-01T08:30:55.3159334Z tests/test_fv_comparison_publisher.py::test_incompatible_row_conditions_are_rejected[reconstruction-donorcell] PASSED [ 25%]
+2026-10-01T08:30:55.3282708Z tests/test_fv_comparison_publisher.py::test_incompatible_row_conditions_are_rejected[spacing_m-1.0] PASSED [ 26%]
+2026-10-01T08:30:55.3405223Z tests/test_fv_comparison_publisher.py::test_incompatible_row_conditions_are_rejected[echo_area_threshold-0.2] PASSED [ 26%]
+2026-10-01T08:30:55.3524525Z tests/test_fv_comparison_publisher.py::test_incompatible_row_conditions_are_rejected[substeps_per_lead-0] PASSED [ 26%]
+2026-10-01T08:30:55.3653651Z tests/test_fv_comparison_publisher.py::test_duplicate_case_grid_cannot_hide_missing_case PASSED [ 27%]
+2026-10-01T08:30:55.3778617Z tests/test_fv_comparison_publisher.py::test_changed_evaluation_time_is_rejected PASSED [ 27%]
+2026-10-01T08:30:55.3900345Z tests/test_fv_comparison_publisher.py::test_shared_wrong_source_hash_is_not_sufficient PASSED [ 27%]
+2026-10-01T08:30:55.4026192Z tests/test_fv_comparison_publisher.py::test_nonfinite_display_metric_is_rejected PASSED [ 27%]
+2026-10-01T08:30:55.4273334Z tests/test_fv_comparison_publisher.py::test_panel_cannot_bypass_scheme_validation PASSED [ 28%]
+2026-10-01T08:30:55.4414122Z tests/test_fv_comparison_publisher.py::test_joint_inverse_panel_preserves_local_scope[False] PASSED [ 28%]
+2026-10-01T08:30:55.4518705Z tests/test_fv_comparison_publisher.py::test_joint_inverse_panel_preserves_local_scope[True] PASSED [ 28%]
+2026-10-01T08:30:55.4612446Z tests/test_fv_comparison_publisher.py::test_joint_inverse_rejects_invalid_evidence[gradient_max-nan-gradient_max] PASSED [ 28%]
+2026-10-01T08:30:55.4704661Z tests/test_fv_comparison_publisher.py::test_joint_inverse_rejects_invalid_evidence[gradient_max-1e-06-gradient_max] PASSED [ 29%]
+2026-10-01T08:30:55.4799665Z tests/test_fv_comparison_publisher.py::test_joint_inverse_rejects_invalid_evidence[adjoint_relative_residual-inf-adjoint_relative_residual] PASSED [ 29%]
+2026-10-01T08:30:55.4893907Z tests/test_fv_comparison_publisher.py::test_joint_inverse_rejects_invalid_evidence[adjoint_relative_residual--1e-12-adjoint_relative_residual] PASSED [ 29%]
+2026-10-01T08:30:55.4988342Z tests/test_fv_comparison_publisher.py::test_joint_inverse_rejects_invalid_evidence[hessian_min_eigenvalue--1.0-Hessian] PASSED [ 29%]
+2026-10-01T08:30:55.5084731Z tests/test_fv_comparison_publisher.py::test_joint_inverse_rejects_invalid_evidence[source_sha256-value5-identity] PASSED [ 30%]
+2026-10-01T08:30:55.5192182Z tests/test_fv_comparison_publisher.py::test_joint_inverse_panel_rejects_mutated_numeric_or_source_evidence[zero_margin-branch margin] PASSED [ 30%]
+2026-10-01T08:30:55.5307713Z tests/test_fv_comparison_publisher.py::test_joint_inverse_panel_rejects_mutated_numeric_or_source_evidence[negative_error-reanalysis numbers] PASSED [ 30%]
+2026-10-01T08:30:55.5437840Z tests/test_fv_comparison_publisher.py::test_joint_inverse_panel_rejects_mutated_numeric_or_source_evidence[wrong_error-absolute_error] PASSED [ 30%]
+2026-10-01T08:30:55.5549275Z tests/test_fv_comparison_publisher.py::test_joint_inverse_panel_rejects_mutated_numeric_or_source_evidence[source_hash-identity] PASSED [ 31%]
+2026-10-01T08:30:55.5973158Z tests/test_fv_comparison_publisher.py::test_local_path_panel_uses_completed_archived_pairs PASSED [ 31%]
+2026-10-01T08:30:55.6561790Z tests/test_fv_comparison_publisher.py::test_local_path_panel_rejects_changed_evidence[gradient] PASSED [ 31%]
+2026-10-01T08:30:55.8637283Z tests/test_fv_comparison_publisher.py::test_local_path_panel_rejects_changed_evidence[finite_path] PASSED [ 31%]
+2026-10-01T08:30:55.9211428Z tests/test_fv_comparison_publisher.py::test_local_path_panel_rejects_changed_evidence[derivative] PASSED [ 32%]
+2026-10-01T08:30:55.9936706Z tests/test_fv_comparison_publisher.py::test_local_path_panel_rejects_changed_evidence[source] PASSED [ 32%]
+2026-10-01T08:30:56.0348615Z tests/test_fv_comparison_publisher.py::test_additional_directions_panel_uses_measured_results PASSED [ 32%]
+2026-10-01T08:30:56.0695547Z tests/test_fv_comparison_publisher.py::test_additional_direction_evidence_rejects_mutation[direct] PASSED [ 32%]
+2026-10-01T08:30:56.0961096Z tests/test_fv_comparison_publisher.py::test_additional_direction_evidence_rejects_mutation[direction] PASSED [ 33%]
+2026-10-01T08:30:56.1225628Z tests/test_fv_comparison_publisher.py::test_additional_direction_evidence_rejects_mutation[step] PASSED [ 33%]
+2026-10-01T08:30:56.1491880Z tests/test_fv_comparison_publisher.py::test_additional_direction_evidence_rejects_mutation[score] PASSED [ 33%]
+2026-10-01T08:30:56.1759614Z tests/test_fv_comparison_publisher.py::test_additional_direction_evidence_rejects_mutation[branch] PASSED [ 34%]
+2026-10-01T08:30:56.2021783Z tests/test_fv_comparison_publisher.py::test_additional_direction_evidence_rejects_mutation[gradient] PASSED [ 34%]
+2026-10-01T08:30:56.2291537Z tests/test_fv_comparison_publisher.py::test_additional_direction_evidence_rejects_mutation[error] PASSED [ 34%]
+2026-10-01T08:30:56.2409662Z tests/test_fv_comparison_publisher.py::test_matrix_free_panel_shows_separate_terms_and_scope PASSED [ 34%]
+2026-10-01T08:30:56.2544696Z tests/test_fv_comparison_publisher.py::test_matrix_free_panel_rejects_damaged_evidence[residual] PASSED [ 35%]
+2026-10-01T08:30:56.2675640Z tests/test_fv_comparison_publisher.py::test_matrix_free_panel_rejects_damaged_evidence[total] PASSED [ 35%]
+2026-10-01T08:30:56.2817093Z tests/test_fv_comparison_publisher.py::test_matrix_free_panel_rejects_damaged_evidence[source] PASSED [ 35%]
+2026-10-01T08:30:56.2950346Z tests/test_fv_comparison_publisher.py::test_matrix_free_panel_rejects_damaged_evidence[scope] PASSED [ 35%]
+2026-10-01T08:30:56.3084529Z tests/test_fv_comparison_publisher.py::test_matrix_free_panel_rejects_damaged_evidence[curvature] PASSED [ 36%]
+2026-10-01T08:30:56.3220227Z tests/test_fv_comparison_publisher.py::test_matrix_free_panel_rejects_damaged_evidence[mixed] PASSED [ 36%]
+2026-10-01T08:30:56.3386211Z tests/test_fv_comparison_publisher.py::test_parameter_vjp_panel_and_archive_guard PASSED [ 36%]
+2026-10-01T08:30:56.3732584Z tests/test_fv_comparison_publisher.py::test_gn_response_panel_and_evidence_identity PASSED [ 36%]
+2026-10-01T08:30:56.4097761Z tests/test_fv_comparison_publisher.py::test_current_gn_panel_and_identity PASSED [ 37%]
+2026-10-01T08:30:56.4598540Z tests/test_fv_comparison_publisher.py::test_matrix_free_refinement_panel_and_identity PASSED [ 37%]
+2026-10-01T08:30:56.4738819Z tests/test_fv_comparison_publisher.py::test_fv86_panel_rejects_changed_summary PASSED [ 37%]
+2026-10-01T08:30:56.4890100Z tests/test_fv_comparison_publisher.py::test_fv86_panel_rejects_changed_child_artifact PASSED [ 37%]
+2026-10-01T08:30:56.5034403Z tests/test_fv_comparison_publisher.py::test_fv86_status_summary_is_displayed_and_mutation_rejected PASSED [ 38%]
+2026-10-01T08:30:56.5200936Z tests/test_fv_comparison_publisher.py::test_fv86_reanalysis_panel_rejects_modified_resource PASSED [ 38%]
+2026-10-01T08:41:26.4848127Z tests/test_fv_learning_probe.py::test_exact_stationary_observation_scale_update_has_reanalysis_and_reload_evidence PASSED [ 38%]
+2026-10-01T08:41:26.5062285Z tests/test_fv_minmod_local_path_probe.py::test_measured_cached_linearization_is_resolved PASSED [ 38%]
+2026-10-01T08:41:26.5271366Z tests/test_fv_minmod_local_path_probe.py::test_corrupted_cached_linearization_is_rejected[tangent] PASSED [ 39%]
+2026-10-01T08:41:26.5478554Z tests/test_fv_minmod_local_path_probe.py::test_corrupted_cached_linearization_is_rejected[adjoint] PASSED [ 39%]
+2026-10-01T08:41:26.5692040Z tests/test_fv_minmod_local_path_probe.py::test_corrupted_cached_linearization_is_rejected[asymmetry] PASSED [ 39%]
+2026-10-01T08:41:26.5899624Z tests/test_fv_minmod_local_path_probe.py::test_corrupted_cached_linearization_is_rejected[nan] PASSED [ 40%]
+2026-10-01T08:41:26.6100806Z tests/test_fv_minmod_local_path_probe.py::test_resume_counts_structural_and_derivative_pairs_separately PASSED [ 40%]
+2026-10-01T08:41:26.6215756Z tests/test_fv_minmod_local_path_probe.py::test_cached_score_derivatives_require_scaled_finite_agreement PASSED [ 40%]
+2026-10-01T08:41:26.6339917Z tests/test_fv_minmod_local_path_probe.py::test_cached_parameter_direction_is_literal_and_typed PASSED [ 40%]
+2026-10-01T08:41:26.6452231Z tests/test_fv_minmod_local_path_probe.py::test_cache_payload_binds_numerical_contract_and_rejects_mutation PASSED [ 41%]
+2026-10-01T08:41:26.6894339Z tests/test_fv_minmod_local_path_probe.py::test_legacy_cache_requires_trusted_archive_and_producer PASSED [ 41%]
+2026-10-01T08:41:26.7018879Z tests/test_fv_minmod_local_path_probe.py::test_direct_cache_rejects_changes_to_current_score[direct] PASSED [ 41%]
+2026-10-01T08:41:26.7134910Z tests/test_fv_minmod_local_path_probe.py::test_direct_cache_rejects_changes_to_current_score[shape] PASSED [ 41%]
+2026-10-01T08:41:26.7252943Z tests/test_fv_minmod_local_path_probe.py::test_direct_cache_rejects_changes_to_current_score[tiny_component] PASSED [ 42%]
+2026-10-01T08:41:26.7376863Z tests/test_fv_minmod_local_path_probe.py::test_direct_cache_rejects_changes_to_current_score[verification] PASSED [ 42%]
+2026-10-01T08:41:26.7498175Z tests/test_fv_minmod_local_path_probe.py::test_direct_cache_rejects_changes_to_current_score[score] PASSED [ 42%]
+2026-10-01T08:41:26.7969495Z tests/test_fv_minmod_local_path_probe.py::test_calculation_identity_ignores_logging_but_detects_changed_equations PASSED [ 42%]
+2026-10-01T08:41:27.5994129Z tests/test_fv_minmod_local_path_probe.py::test_new_direction_clears_old_pairs_and_computes_its_cross FAILED [ 43%]
+2026-10-01T08:41:28.1924855Z tests/test_fv_minmod_local_path_probe.py::test_completed_direction_resume_validates_without_repeating_reanalysis FAILED [ 43%]
+2026-10-01T08:43:04.3239192Z tests/test_fv_observation_response.py::test_parameterized_background_matches_external_exact_oracle PASSED [ 43%]
+2026-10-01T08:45:26.4570432Z tests/test_fv_observation_response.py::test_parameterized_background_matches_polished_centered_reanalysis FAILED [ 43%]
+2026-10-01T08:45:26.4692251Z tests/test_fv_observation_response.py::test_parameterized_background_requires_exact_frozen_baseline PASSED [ 44%]
+2026-10-01T08:45:26.4809471Z tests/test_fv_observation_response.py::test_parameterized_background_keeps_typed_prior_gate PASSED [ 44%]
+2026-10-01T08:45:26.5515645Z tests/test_fv_observation_response.py::test_response_rejects_non_donorcell_before_stationarity PASSED [ 44%]
+2026-10-01T08:45:26.6223063Z tests/test_fv_observation_response.py::test_response_is_cpu_fp64_only PASSED [ 44%]
+2026-10-01T08:45:26.7481591Z tests/test_fv_observation_response.py::test_response_rejects_nonstationary_nonzero_dynamics PASSED [ 45%]
+2026-10-01T08:45:26.8197758Z tests/test_fv_observation_response.py::test_response_requires_the_declared_first_observation_background PASSED [ 45%]
+2026-10-01T08:45:26.8937687Z tests/test_fv_observation_response.py::test_response_rejects_missing_first_observation_background PASSED [ 45%]
+2026-10-01T08:45:26.9655106Z tests/test_fv_observation_response.py::test_response_rejects_invalid_metric_weights[metric_weight0-positive total] PASSED [ 45%]
+2026-10-01T08:45:27.0388265Z tests/test_fv_observation_response.py::test_response_rejects_invalid_metric_weights[metric_weight1-nonnegative] PASSED [ 46%]
+2026-10-01T08:45:27.1121201Z tests/test_fv_observation_response.py::test_response_rejects_an_exhausted_normal_product_budget PASSED [ 46%]
+2026-10-01T08:45:27.2020858Z tests/test_fv_observation_response.py::test_zero_flow_control_is_rejected_as_a_sensitive_face_tie PASSED [ 46%]
+2026-10-01T08:45:34.7140237Z tests/test_fv_observation_response.py::test_response_accepts_partial_future_boundary_support PASSED [ 47%]
+2026-10-01T08:45:34.7272850Z tests/test_fv_observation_response.py::test_response_rejects_support_outside_fixed_unit_interval PASSED [ 47%]
+2026-10-01T08:45:34.7618553Z tests/test_fv_observation_response.py::test_response_rejects_near_one_fractional_support PASSED [ 47%]
+2026-10-01T08:46:07.4740937Z tests/test_fv_observation_response.py::test_response_accepts_partial_outflow_analysis_support_with_missing_data PASSED [ 47%]
+2026-10-01T08:46:07.5094687Z tests/test_fv_observation_response.py::test_response_rejects_active_observations_outside_known_support PASSED [ 48%]
+2026-10-01T08:46:07.5839407Z tests/test_fv_observation_response.py::test_response_requires_fixed_verification_and_weight_tensors[verification_dbz] PASSED [ 48%]
+2026-10-01T08:46:07.6572701Z tests/test_fv_observation_response.py::test_response_requires_fixed_verification_and_weight_tensors[metric_weight] PASSED [ 48%]
+2026-10-01T08:46:07.7310387Z tests/test_fv_observation_response.py::test_response_requires_fixed_future_boundary_tensors PASSED [ 48%]
+2026-10-01T08:46:20.8138219Z tests/test_fv_observation_response.py::test_refined_response_ignores_finite_huge_verification_at_zero_weight PASSED [ 49%]
+2026-10-01T08:46:33.0831778Z tests/test_fv_observation_response.py::test_refined_response_is_invariant_to_uniform_weight_scaling PASSED [ 49%]
+2026-10-01T08:46:51.9414926Z tests/test_fv_observation_response.py::test_exact_robust_hessian_matches_dense_small_oracle PASSED [ 49%]
+2026-10-01T08:48:15.4642095Z tests/test_fv_observation_response.py::test_exact_response_matches_reanalysis_fd_with_missing_and_partial_support PASSED [ 49%]
+2026-10-01T08:48:15.7491699Z tests/test_fv_observation_response.py::test_exact_robust_hessian_allows_zero_score_response PASSED [ 50%]
+2026-10-01T08:48:15.9268411Z tests/test_fv_observation_response.py::test_exact_robust_hessian_rejects_negative_curvature PASSED [ 50%]
+2026-10-01T08:48:16.0206066Z tests/test_fv_observation_response.py::test_response_rejects_weight_range_that_underflows_normalization PASSED [ 50%]
+2026-10-01T08:48:16.0938209Z tests/test_fv_observation_response.py::test_response_rejects_observation_dtype_mismatch PASSED [ 50%]
+2026-10-01T08:48:16.1691629Z tests/test_fv_observation_response.py::test_response_rejects_narrow_observation_shape_without_broadcasting PASSED [ 51%]
+2026-10-01T08:48:16.2435476Z tests/test_fv_observation_response.py::test_parameterized_background_rejects_transform_join[-1] PASSED [ 51%]
+2026-10-01T08:48:16.3177468Z tests/test_fv_observation_response.py::test_parameterized_background_rejects_transform_join[0] PASSED [ 51%]
+2026-10-01T08:48:16.3931393Z tests/test_fv_observation_response.py::test_parameterized_background_rejects_transform_join[1] PASSED [ 51%]
+2026-10-01T08:48:16.4693027Z tests/test_fv_observation_response.py::test_initial_transform_open_branches_match_two_sided_derivatives[0.5] PASSED [ 52%]
+2026-10-01T08:48:16.5458224Z tests/test_fv_observation_response.py::test_initial_transform_open_branches_match_two_sided_derivatives[2.0] PASSED [ 52%]
+2026-10-01T08:48:16.6196143Z tests/test_fv_observation_response.py::test_first_observation_rejects_initial_transform_join PASSED [ 52%]
+2026-10-01T08:48:16.6995162Z tests/test_fv_observation_response.py::test_initial_transform_nonzero_control_mixed_derivative[0.5-0.0-1.0] PASSED [ 52%]
+2026-10-01T08:48:16.7792932Z tests/test_fv_observation_response.py::test_initial_transform_nonzero_control_mixed_derivative[0.5--10.0-4.0] PASSED [ 53%]
+2026-10-01T08:48:16.8585848Z tests/test_fv_observation_response.py::test_initial_transform_nonzero_control_mixed_derivative[2.0-0.0-1.0] PASSED [ 53%]
+2026-10-01T08:48:16.9383099Z tests/test_fv_observation_response.py::test_initial_transform_nonzero_control_mixed_derivative[2.0--10.0-4.0] PASSED [ 53%]
+2026-10-01T08:48:16.9527602Z tests/test_fv_original_cases.py::test_fixed_metric_keeps_persistence_on_full_domain PASSED [ 54%]
+2026-10-01T08:48:16.9666758Z tests/test_fv_original_cases.py::test_any_missing_candidate_is_unscored_and_marked PASSED [ 54%]
+2026-10-01T08:48:16.9811080Z tests/test_fv_original_cases.py::test_failed_metric_records_both_leads_with_fixed_domain PASSED [ 54%]
+2026-10-01T08:48:16.9950197Z tests/test_fv_original_cases.py::test_outer_budget_rejects_nonpositive_without_running_cases PASSED [ 54%]
+2026-10-01T08:48:17.0123143Z tests/test_fv_partial_field_correction_probe.py::test_reduced_gradient_hessian_and_fixed_dynamics_match_full_quadratic PASSED [ 55%]
+2026-10-01T08:48:17.0257053Z tests/test_fv_partial_field_correction_probe.py::test_objective_gate_preserves_armijo_when_j_does_not_increase PASSED [ 55%]
+2026-10-01T08:48:17.7496114Z tests/test_fv_partial_field_correction_probe.py::test_fake_guard_requires_reviewed_child_identity_and_resource_completion FAILED [ 55%]
+2026-10-01T08:48:18.4760242Z tests/test_fv_partial_field_correction_probe.py::test_fake_guard_rejects_invalid_resource_evidence[rss_samples-0] FAILED [ 55%]
+2026-10-01T08:48:19.1950347Z tests/test_fv_partial_field_correction_probe.py::test_fake_guard_rejects_invalid_resource_evidence[sampled_peak_rss_bytes-1073741825] FAILED [ 56%]
+2026-10-01T08:48:20.0565884Z tests/test_fv_partial_field_correction_probe.py::test_fake_guard_rejects_invalid_resource_evidence[elapsed_seconds-301.0] FAILED [ 56%]
+2026-10-01T08:48:20.7718504Z tests/test_fv_partial_field_correction_probe.py::test_parent_final_audit_recomputes_metrics_at_reported_control FAILED [ 56%]
+2026-10-01T08:48:27.2589089Z tests/test_fv_point_3h_forward.py::test_long_point_layout_schedule_and_external_background PASSED [ 56%]
+2026-10-01T08:48:33.7816998Z tests/test_fv_point_3h_forward.py::test_future_boundary_must_cover_all_18_leads PASSED [ 57%]
+2026-10-01T08:48:34.1770488Z tests/test_fv_point_3h_forward.py::test_original_one_lead_layout_and_input_identity_stay_unchanged FAILED [ 57%]
+2026-10-01T08:48:40.9654198Z tests/test_fv_point_3h_forward.py::test_parent_rejects_incomplete_child_even_with_clean_resource PASSED [ 57%]
+2026-10-01T08:48:41.0022971Z tests/test_fv_point_3h_forward.py::test_parent_accepts_complete_json_roundtrip_layout PASSED [ 57%]
+2026-10-01T08:48:44.0758386Z tests/test_fv_point_3h_forward.py::test_point_three_hour_clis_import_from_unrelated_cwd PASSED [ 58%]
+2026-10-01T08:48:44.0962189Z tests/test_fv_point_basin_search.py::test_spd_quadratic_reaches_a_small_gradient_with_true_objective_decrease PASSED [ 58%]
+2026-10-01T08:48:44.1165341Z tests/test_fv_point_basin_search.py::test_nonconvex_negative_curvature_start_can_reach_a_local_basin PASSED [ 58%]
+2026-10-01T08:48:44.1316993Z tests/test_fv_point_basin_search.py::test_accepted_sector_change_clears_local_curvature_history PASSED [ 58%]
+2026-10-01T08:48:44.1473806Z tests/test_fv_point_basin_search.py::test_no_strict_trial_is_a_refusal_not_a_stationary_result PASSED [ 59%]
+2026-10-01T08:48:44.1632381Z tests/test_fv_point_basin_search.py::test_finite_gradient_components_with_overflowed_norm_are_rejected PASSED [ 59%]
+2026-10-01T08:48:44.1790948Z tests/test_fv_point_basin_search.py::test_phase_budget_includes_initial_branch_and_gradient_evaluation PASSED [ 59%]
+2026-10-01T08:48:44.1977771Z tests/test_fv_point_basin_search.py::test_explicit_trial_budget_stops_a_nonaccepting_search PASSED [ 60%]
+2026-10-01T08:48:44.2132746Z tests/test_fv_point_basin_search.py::test_point_adapter_enforces_stage_and_both_margin_gates[54-0.0002-0.0003-True] PASSED [ 60%]
+2026-10-01T08:48:44.2279366Z tests/test_fv_point_basin_search.py::test_point_adapter_enforces_stage_and_both_margin_gates[53-0.0002-0.0003-False] PASSED [ 60%]
+2026-10-01T08:48:44.2422872Z tests/test_fv_point_basin_search.py::test_point_adapter_enforces_stage_and_both_margin_gates[54-5e-05-0.0003-False] PASSED [ 60%]
+2026-10-01T08:48:44.2569555Z tests/test_fv_point_basin_search.py::test_point_adapter_enforces_stage_and_both_margin_gates[54-0.0002-5e-05-False] PASSED [ 61%]
+2026-10-01T08:48:44.2715001Z tests/test_fv_point_basin_search.py::test_point_adapter_enforces_stage_and_both_margin_gates[54-nan-0.0003-False] PASSED [ 61%]
+2026-10-01T08:48:44.2860412Z tests/test_fv_point_basin_search.py::test_point_adapter_enforces_stage_and_both_margin_gates[54-0.0002-nan-False] PASSED [ 61%]
+2026-10-01T08:48:44.3056100Z tests/test_fv_point_basin_search.py::test_exact_hessian_gate_distinguishes_spd_and_weak_curvature[diagonal0-True] PASSED [ 61%]
+2026-10-01T08:48:44.3238180Z tests/test_fv_point_basin_search.py::test_exact_hessian_gate_distinguishes_spd_and_weak_curvature[diagonal1-False] PASSED [ 62%]
+2026-10-01T08:48:44.3431046Z tests/test_fv_point_basin_search.py::test_exact_hessian_gate_distinguishes_spd_and_weak_curvature[diagonal2-False] PASSED [ 62%]
+2026-10-01T08:48:44.3585502Z tests/test_fv_point_basin_search.py::test_warm_entry_reuses_finite_margin_gate PASSED [ 62%]
+2026-10-01T08:48:44.3737231Z tests/test_fv_point_basin_search.py::test_exploration_gate_is_pointwise_but_final_gate_keeps_robust_margin[5e-05-5e-05-True] PASSED [ 62%]
+2026-10-01T08:48:44.3895171Z tests/test_fv_point_basin_search.py::test_exploration_gate_is_pointwise_but_final_gate_keeps_robust_margin[nan-5e-05-False] PASSED [ 63%]
+2026-10-01T08:48:44.4064813Z tests/test_fv_point_basin_search.py::test_exploration_gate_is_pointwise_but_final_gate_keeps_robust_margin[5e-05-nan-False] PASSED [ 63%]
+2026-10-01T08:48:44.4217471Z tests/test_fv_point_basin_search.py::test_exploration_gate_is_pointwise_but_final_gate_keeps_robust_margin[0.0-5e-05-False] PASSED [ 63%]
+2026-10-01T08:48:45.2491382Z tests/test_fv_point_centered_prior_case.py::test_centered_prior_is_stationary_and_strict_at_declared_control PASSED [ 63%]
+2026-10-01T08:48:45.8532695Z tests/test_fv_point_centered_prior_case.py::test_centered_prior_changes_only_fixed_dynamics_prior_mean PASSED [ 64%]
+2026-10-01T08:48:46.4463297Z tests/test_fv_point_centered_prior_case.py::test_branch_check_rejects_wrong_nominal_signature PASSED [ 64%]
+2026-10-01T08:48:47.3304131Z tests/test_fv_point_missing_centered_response.py::test_missing_middle_point_is_inactive_but_time_and_state_remain PASSED [ 64%]
+2026-10-01T08:48:51.3291681Z tests/test_fv_point_missing_centered_response.py::test_missing_parameter_has_zero_objective_score_and_mixed_derivatives PASSED [ 64%]
+2026-10-01T08:48:51.3451136Z tests/test_fv_point_missing_centered_response.py::test_profile_wrappers_bind_plan_source_and_inactive_slot PASSED [ 65%]
+2026-10-01T08:48:51.9532818Z tests/test_fv_point_missing_centered_response.py::test_plan_distinguishes_missing_profile_from_full_profile PASSED [ 65%]
+2026-10-01T08:48:56.6009979Z tests/test_fv_point_missing_centered_response.py::test_direct_cli_wrappers_import_from_another_working_directory PASSED [ 65%]
+2026-10-01T08:49:00.0061069Z tests/test_fv_point_qc_status.py::test_qc_rows_are_inactive_but_have_a_distinct_fixed_identity PASSED [ 65%]
+2026-10-01T08:49:00.0414737Z tests/test_fv_point_qc_status.py::test_qc_requires_canonical_prepared_fill_and_explicit_status PASSED [ 66%]
+2026-10-01T08:49:00.5267683Z tests/test_fv_point_research_problem.py::test_point_problem_has_separate_state_observation_and_time_layout PASSED [ 66%]
+2026-10-01T08:49:01.1883249Z tests/test_fv_point_research_problem.py::test_point_values_do_not_redefine_the_fixed_state_grid_background PASSED [ 66%]
+2026-10-01T08:49:01.4393571Z tests/test_fv_point_research_problem.py::test_point_objective_data_gradient_matches_diagonal_pseudohuber PASSED [ 67%]
+2026-10-01T08:49:04.6478411Z tests/test_fv_point_research_problem.py::test_point_objective_keeps_control_and_data_mixed_derivatives PASSED [ 67%]
+2026-10-01T08:49:08.1110443Z tests/test_fv_point_research_problem.py::test_point_objective_hvp_matches_branch_stable_central_gradients PASSED [ 67%]
+2026-10-01T08:49:08.1530626Z tests/test_fv_point_research_problem.py::test_geometry_and_source_identity_are_bound PASSED [ 67%]
+2026-10-01T08:49:08.4424533Z tests/test_fv_point_research_problem.py::test_nominal_branch_can_be_explicitly_pinned_for_response_checks PASSED [ 68%]
+2026-10-01T08:49:08.4587648Z tests/test_fv_point_research_problem.py::test_point_objective_refuses_noncontract_parameter_vectors[float32] PASSED [ 68%]
+2026-10-01T08:49:08.4746975Z tests/test_fv_point_research_problem.py::test_point_objective_refuses_noncontract_parameter_vectors[integer] PASSED [ 68%]
+2026-10-01T08:49:08.4908152Z tests/test_fv_point_research_problem.py::test_point_objective_refuses_noncontract_parameter_vectors[nonfinite] PASSED [ 68%]
+2026-10-01T08:49:08.5068765Z tests/test_fv_point_research_problem.py::test_point_objective_refuses_noncontract_parameter_vectors[shape] PASSED [ 69%]
+2026-10-01T08:49:08.5261200Z tests/test_fv_point_research_problem.py::test_point_objective_refuses_values_outside_detected_contract PASSED [ 69%]
+2026-10-01T08:49:08.5462976Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[missing] PASSED [ 69%]
+2026-10-01T08:49:08.5621916Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[censored] PASSED [ 69%]
+2026-10-01T08:49:08.5780138Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[std] PASSED [ 70%]
+2026-10-01T08:49:08.5941948Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[minimum_std] PASSED [ 70%]
+2026-10-01T08:49:08.6100122Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[bias] PASSED [ 70%]
+2026-10-01T08:49:08.6261113Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[outside] PASSED [ 70%]
+2026-10-01T08:49:08.6442772Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[values_grad] PASSED [ 71%]
+2026-10-01T08:49:08.6604113Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[std_grad] PASSED [ 71%]
+2026-10-01T08:49:08.6766959Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[quality_grad] PASSED [ 71%]
+2026-10-01T08:49:08.6929536Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[background_grad] PASSED [ 71%]
+2026-10-01T08:49:08.7091954Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[verification_grad] PASSED [ 72%]
+2026-10-01T08:49:08.7321264Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[boundary_grad] PASSED [ 72%]
+2026-10-01T08:49:08.7562540Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[boundary_shape] PASSED [ 72%]
+2026-10-01T08:49:08.7779131Z tests/test_fv_point_research_problem.py::test_point_problem_refuses_unsupported_observation_contract[boundary_nonfinite] PASSED [ 72%]
+2026-10-01T08:49:09.0711432Z tests/test_fv_point_response_preflight.py::test_fixed_point_inputs_keep_correlation_and_middle_time_direction PASSED [ 73%]
+2026-10-01T08:49:09.0890924Z tests/test_fv_point_response_preflight.py::test_outer_runner_requires_resource_and_complete_child[None] PASSED [ 73%]
+2026-10-01T08:49:09.1065879Z tests/test_fv_point_response_preflight.py::test_outer_runner_requires_resource_and_complete_child[exit_code] PASSED [ 73%]
+2026-10-01T08:49:09.1241052Z tests/test_fv_point_response_preflight.py::test_outer_runner_requires_resource_and_complete_child[resource_termination] PASSED [ 74%]
+2026-10-01T08:49:09.1419169Z tests/test_fv_point_response_preflight.py::test_outer_runner_requires_resource_and_complete_child[monitor_error] PASSED [ 74%]
+2026-10-01T08:49:09.1597848Z tests/test_fv_point_response_preflight.py::test_outer_runner_requires_resource_and_complete_child[rss_samples] PASSED [ 74%]
+2026-10-01T08:49:09.1772969Z tests/test_fv_point_response_preflight.py::test_outer_runner_requires_resource_and_complete_child[peak_rss] PASSED [ 74%]
+2026-10-01T08:49:09.1951481Z tests/test_fv_point_response_preflight.py::test_outer_runner_requires_resource_and_complete_child[child_pid] PASSED [ 75%]
+2026-10-01T08:49:09.2127790Z tests/test_fv_point_response_preflight.py::test_outer_runner_requires_resource_and_complete_child[child_status] PASSED [ 75%]
+2026-10-01T08:49:09.2304419Z tests/test_fv_point_response_preflight.py::test_outer_runner_requires_resource_and_complete_child[signature] PASSED [ 75%]
+2026-10-01T08:49:09.2471549Z tests/test_fv_point_sector_policy.py::test_switch_requires_actual_objective_merit_and_max_gradient_decrease PASSED [ 75%]
+2026-10-01T08:49:09.2637041Z tests/test_fv_point_sector_policy.py::test_switch_rejects_roundoff_scale_and_nonfinite_merit PASSED [ 76%]
+2026-10-01T08:49:09.2802948Z tests/test_fv_point_sector_policy.py::test_same_signature_delegates_to_legacy_armijo PASSED [ 76%]
+2026-10-01T08:49:09.3082725Z tests/test_fv_point_sector_policy.py::test_default_and_none_hook_have_identical_quadratic_result_and_history PASSED [ 76%]
+2026-10-01T08:49:09.3440836Z tests/test_fv_point_sector_policy.py::test_accepted_switch_relinearizes_at_the_new_sector PASSED [ 76%]
+2026-10-01T08:49:09.3765430Z tests/test_fv_point_sector_policy.py::test_invalid_hook_result_and_hook_exception_fail_closed PASSED [ 77%]
+2026-10-01T08:49:09.3987412Z tests/test_fv_point_sector_policy.py::test_trial_observer_gets_a_copy_and_cannot_mutate_history PASSED [ 77%]
+2026-10-01T08:49:09.4385549Z tests/test_fv_point_sector_policy.py::test_switch_hook_uses_finite_endpoint_even_when_old_armijo_limit_is_zero PASSED [ 77%]
+2026-10-01T08:49:09.8250955Z tests/test_fv_point_sector_root.py::test_pinned_prior_control_branch_and_plan_are_current PASSED [ 77%]
+2026-10-01T08:49:09.8436023Z tests/test_fv_point_sector_root.py::test_runner_requires_status_resource_and_provenance[sector_root_margin_qualified-None-completed] PASSED [ 78%]
+2026-10-01T08:49:09.8624878Z tests/test_fv_point_sector_root.py::test_runner_requires_status_resource_and_provenance[sector_root_low_margin-None-completed] PASSED [ 78%]
+2026-10-01T08:49:09.8814270Z tests/test_fv_point_sector_root.py::test_runner_requires_status_resource_and_provenance[seed_curvature_refused-None-completed] PASSED [ 78%]
+2026-10-01T08:49:09.8996753Z tests/test_fv_point_sector_root.py::test_runner_requires_status_resource_and_provenance[sector_refused-None-completed] PASSED [ 78%]
+2026-10-01T08:49:09.9178664Z tests/test_fv_point_sector_root.py::test_runner_requires_status_resource_and_provenance[sector_refused-wrong_exit-failed] PASSED [ 79%]
+2026-10-01T08:49:09.9360854Z tests/test_fv_point_sector_root.py::test_runner_requires_status_resource_and_provenance[sector_refused-wall_overrun-failed] PASSED [ 79%]
+2026-10-01T08:49:09.9544750Z tests/test_fv_point_sector_root.py::test_runner_requires_status_resource_and_provenance[sector_root_margin_qualified-missing_final_curvature-failed] PASSED [ 79%]
+2026-10-01T08:49:09.9729840Z tests/test_fv_point_sector_root.py::test_runner_requires_status_resource_and_provenance[sector_root_margin_qualified-missing_final_trace-failed] PASSED [ 80%]
+2026-10-01T08:49:09.9916884Z tests/test_fv_point_sector_root.py::test_runner_requires_status_resource_and_provenance[sector_root_margin_qualified-wrong_final_control_hash-failed] PASSED [ 80%]
+2026-10-01T08:49:10.0104085Z tests/test_fv_point_sector_root.py::test_runner_requires_status_resource_and_provenance[sector_root_margin_qualified-wrong_plan_hash-failed] PASSED [ 80%]
+2026-10-01T08:49:10.0289541Z tests/test_fv_point_sector_root.py::test_runner_requires_status_resource_and_provenance[sector_root_low_margin-false_high_margin-failed] PASSED [ 80%]
+2026-10-01T08:49:10.2129473Z tests/test_fv_point_sector_root.py::test_probe_separates_numerical_refusal_from_callback_failure[RefinementNumericalRefusal-sector_refused] FAILED [ 81%]
+2026-10-01T08:49:10.2631368Z tests/test_fv_point_sector_root.py::test_probe_separates_numerical_refusal_from_callback_failure[RefinementCallbackError-running] FAILED [ 81%]
+2026-10-01T08:49:10.2960243Z tests/test_phase1_scenario_nowcast.py::Phase1NowcastScenarioTests::test_all_qc_rejected_input_is_unavailable_without_support PASSED [ 81%]
+2026-10-01T08:49:10.3176791Z tests/test_phase1_scenario_nowcast.py::Phase1NowcastScenarioTests::test_border_pulse_exits_without_wrap_for_all_eighteen_leads PASSED [ 81%]
+2026-10-01T08:49:10.3670672Z tests/test_phase1_scenario_nowcast.py::Phase1NowcastScenarioTests::test_clear_sky_is_observed_but_all_missing_is_unavailable PASSED [ 82%]
+2026-10-01T08:49:10.4917395Z tests/test_phase1_scenario_nowcast.py::Phase1NowcastScenarioTests::test_coherent_translation_and_conflicting_motion_are_bounded PASSED [ 82%]
+2026-10-01T08:49:10.5404180Z tests/test_phase1_scenario_nowcast.py::Phase1NowcastScenarioTests::test_mixed_missing_qc_and_background_preserve_source_semantics PASSED [ 82%]
+2026-10-01T08:49:10.6986776Z tests/test_phase1_scenario_nowcast.py::Phase1NowcastScenarioTests::test_nonfinite_values_are_missing_and_qc_rejection_is_distinct 
+2026-10-01T08:49:10.7087351Z tests/test_phase1_scenario_nowcast.py::Phase1NowcastScenarioTests::test_nonfinite_values_are_missing_and_qc_rejection_is_distinct PASSED [ 82%]
+2026-10-01T08:49:10.8293200Z tests/test_phase1_scenario_nowcast.py::Phase1NowcastScenarioTests::test_rotation_and_newcell_scenarios_are_bounded_model_limitations 
+2026-10-01T08:49:10.8393150Z tests/test_phase1_scenario_nowcast.py::Phase1NowcastScenarioTests::test_rotation_and_newcell_scenarios_are_bounded_model_limitations PASSED [ 83%]
+2026-10-01T08:49:10.8615388Z tests/test_phase1_scenario_numerics.py::test_skinny_grid_fractional_transport_matches_scatter_oracle[dtype0-shape0] PASSED [ 83%]
+2026-10-01T08:49:10.8805534Z tests/test_phase1_scenario_numerics.py::test_skinny_grid_fractional_transport_matches_scatter_oracle[dtype0-shape1] PASSED [ 83%]
+2026-10-01T08:49:10.8993625Z tests/test_phase1_scenario_numerics.py::test_skinny_grid_fractional_transport_matches_scatter_oracle[dtype1-shape0] PASSED [ 83%]
+2026-10-01T08:49:10.9180825Z tests/test_phase1_scenario_numerics.py::test_skinny_grid_fractional_transport_matches_scatter_oracle[dtype1-shape1] PASSED [ 84%]
+2026-10-01T08:49:10.9390812Z tests/test_phase1_scenario_numerics.py::test_skinny_grid_empty_overlap_accepts_massive_mixed_dtype_motion PASSED [ 84%]
+2026-10-01T08:49:10.9633588Z tests/test_phase1_scenario_numerics.py::test_near_integer_auto_branch_matches_frozen_ad_path[dtype0-below] PASSED [ 84%]
+2026-10-01T08:49:10.9877842Z tests/test_phase1_scenario_numerics.py::test_near_integer_auto_branch_matches_frozen_ad_path[dtype0-above] PASSED [ 84%]
+2026-10-01T08:49:11.0124748Z tests/test_phase1_scenario_numerics.py::test_near_integer_auto_branch_matches_frozen_ad_path[dtype1-below] PASSED [ 85%]
+2026-10-01T08:49:11.0366946Z tests/test_phase1_scenario_numerics.py::test_near_integer_auto_branch_matches_frozen_ad_path[dtype1-above] PASSED [ 85%]
+2026-10-01T08:49:11.0557026Z tests/test_phase1_scenario_numerics.py::test_pcg_diagonal_preconditioner_handles_dynamic_scale_residual[dtype0] PASSED [ 85%]
+2026-10-01T08:49:11.0745990Z tests/test_phase1_scenario_numerics.py::test_pcg_diagonal_preconditioner_handles_dynamic_scale_residual[dtype1] PASSED [ 85%]
+2026-10-01T08:49:11.0936946Z tests/test_phase1_scenario_numerics.py::test_extreme_scale_metrics_match_finite_scaled_oracle[dtype0] PASSED [ 86%]
+2026-10-01T08:49:11.1126863Z tests/test_phase1_scenario_numerics.py::test_extreme_scale_metrics_match_finite_scaled_oracle[dtype1] PASSED [ 86%]
+2026-10-01T08:49:38.2042671Z tests/test_prior_learning.py::test_mean_only_update_has_independent_fso_fd_and_reload_evidence[0.25] PASSED [ 86%]
+2026-10-01T08:50:32.6077793Z tests/test_prior_learning.py::test_existing_checkpoint_is_resumed PASSED [ 87%]
+2026-10-01T08:51:16.9667092Z tests/test_prior_learning.py::test_failed_candidate_does_not_replace_checkpoint PASSED [ 87%]
+2026-10-01T08:51:16.9853820Z tests/test_prior_learning.py::test_only_mean_offset_is_trainable PASSED  [ 87%]
+2026-10-01T08:51:17.1470210Z tests/test_review_ledger.py::LedgerReviewRegressionTests::test_available_all_nan_evidence_roundtrips_zero_gradient_snapshot PASSED [ 87%]
+2026-10-01T08:51:17.2945941Z tests/test_review_ledger.py::LedgerReviewRegressionTests::test_infinite_evidence_is_rejected_for_each_channel 
+2026-10-01T08:51:17.3054892Z tests/test_review_ledger.py::LedgerReviewRegressionTests::test_infinite_evidence_is_rejected_for_each_channel PASSED [ 88%]
+2026-10-01T08:51:17.5883987Z tests/test_review_ledger.py::LedgerReviewRegressionTests::test_producer_evidence_channels_reject_mixed_nan 
+2026-10-01T08:51:17.6000750Z tests/test_review_ledger.py::LedgerReviewRegressionTests::test_producer_evidence_channels_reject_mixed_nan PASSED [ 88%]
+2026-10-01T08:51:17.7123724Z tests/test_review_ledger.py::LedgerReviewRegressionTests::test_trust_components_outside_unit_interval_are_rejected 
+2026-10-01T08:51:17.7232502Z tests/test_review_ledger.py::LedgerReviewRegressionTests::test_trust_components_outside_unit_interval_are_rejected PASSED [ 88%]
+2026-10-01T08:51:17.7985585Z tests/test_review_ledger.py::LedgerReviewRegressionTests::test_trust_score_tiny_out_of_range_is_rejected 
+2026-10-01T08:51:17.8112972Z tests/test_review_ledger.py::LedgerReviewRegressionTests::test_trust_score_tiny_out_of_range_is_rejected PASSED [ 88%]
+2026-10-01T08:51:17.8895389Z tests/test_review_ledger.py::LedgerReviewRegressionTests::test_unavailable_nan_evidence_roundtrips PASSED [ 89%]
+2026-10-01T08:51:17.9207262Z tests/test_review_numerics.py::NumericalFollowupTests::test_companion_devices_are_checked_before_tensor_operations SKIPPED [ 89%]
+2026-10-01T08:51:17.9445114Z tests/test_review_numerics.py::NumericalFollowupTests::test_gauss_newton_representable_half_sum_and_gradient PASSED [ 89%]
+2026-10-01T08:51:17.9653354Z tests/test_review_numerics.py::NumericalFollowupTests::test_invalid_csi_threshold_is_rejected PASSED [ 89%]
+2026-10-01T08:51:17.9791187Z tests/test_review_numerics.py::NumericalFollowupTests::test_metrics_large_values_and_gradients 
+2026-10-01T08:51:17.9886261Z tests/test_review_numerics.py::NumericalFollowupTests::test_metrics_large_values_and_gradients PASSED [ 90%]
+2026-10-01T08:51:18.0325030Z tests/test_review_numerics.py::NumericalFollowupTests::test_metrics_ordinary_derivatives_and_zero_subgradient PASSED [ 90%]
+2026-10-01T08:51:18.0530887Z tests/test_review_numerics.py::NumericalFollowupTests::test_metrics_preserve_cancellation_and_small_values PASSED [ 90%]
+2026-10-01T08:51:18.0666529Z tests/test_review_numerics.py::NumericalFollowupTests::test_metrics_representable_result_after_overflowing_raw_difference 
+2026-10-01T08:51:18.0764019Z tests/test_review_numerics.py::NumericalFollowupTests::test_metrics_representable_result_after_overflowing_raw_difference PASSED [ 90%]
+2026-10-01T08:51:18.1000852Z tests/test_review_numerics.py::NumericalFollowupTests::test_narrow_normal_interval_values_and_endpoint_derivatives PASSED [ 91%]
+2026-10-01T08:51:18.1510291Z tests/test_review_numerics.py::NumericalFollowupTests::test_narrow_normal_parameter_derivatives PASSED [ 91%]
+2026-10-01T08:51:18.1728183Z tests/test_review_numerics.py::NumericalFollowupTests::test_truncated_gaussian_large_scale_has_finite_likelihood PASSED [ 91%]
+2026-10-01T08:51:18.1929970Z tests/test_review_numerics.py::NumericalFollowupTests::test_unsupported_precision_is_rejected_at_boundary PASSED [ 91%]
+2026-10-01T08:51:18.2227081Z tests/test_scenario_rigid_experiment.py::test_rigid_coordinates_mass_and_outflow[1--0.14] PASSED [ 92%]
+2026-10-01T08:51:18.2448027Z tests/test_scenario_rigid_experiment.py::test_rigid_coordinates_mass_and_outflow[1-0.0] PASSED [ 92%]
+2026-10-01T08:51:18.2664771Z tests/test_scenario_rigid_experiment.py::test_rigid_coordinates_mass_and_outflow[1-0.14] PASSED [ 92%]
+2026-10-01T08:51:18.2877515Z tests/test_scenario_rigid_experiment.py::test_rigid_coordinates_mass_and_outflow[6--0.14] PASSED [ 92%]
+2026-10-01T08:51:18.3102043Z tests/test_scenario_rigid_experiment.py::test_rigid_coordinates_mass_and_outflow[6-0.0] PASSED [ 93%]
+2026-10-01T08:51:18.3353245Z tests/test_scenario_rigid_experiment.py::test_rigid_coordinates_mass_and_outflow[6-0.14] PASSED [ 93%]
+2026-10-01T08:51:18.3594075Z tests/test_scenario_rigid_experiment.py::test_rigid_coordinates_mass_and_outflow[18--0.14] PASSED [ 93%]
+2026-10-01T08:51:18.3849384Z tests/test_scenario_rigid_experiment.py::test_rigid_coordinates_mass_and_outflow[18-0.0] PASSED [ 94%]
+2026-10-01T08:51:18.4089149Z tests/test_scenario_rigid_experiment.py::test_rigid_coordinates_mass_and_outflow[18-0.14] PASSED [ 94%]
+2026-10-01T08:51:18.4327658Z tests/test_scenario_rigid_experiment.py::test_rigid_preserves_interior_mass_and_identity PASSED [ 94%]
+2026-10-01T08:51:18.6167593Z tests/test_scenario_rigid_experiment.py::test_rigid_derivatives_within_cells_and_connected_outflow PASSED [ 94%]
+2026-10-01T08:51:18.6407504Z tests/test_scenario_rigid_experiment.py::test_fit_signed_rotation_translation_and_eighteen_lead_positions[-0.12] PASSED [ 95%]
+2026-10-01T08:51:18.6637837Z tests/test_scenario_rigid_experiment.py::test_fit_signed_rotation_translation_and_eighteen_lead_positions[0.11] PASSED [ 95%]
+2026-10-01T08:51:18.6843581Z tests/test_scenario_rigid_experiment.py::test_fit_pure_signed_rotation_without_translation[-0.16] PASSED [ 95%]
+2026-10-01T08:51:18.7048042Z tests/test_scenario_rigid_experiment.py::test_fit_pure_signed_rotation_without_translation[0.13] PASSED [ 95%]
+2026-10-01T08:51:18.7251770Z tests/test_scenario_rigid_experiment.py::test_constant_feature_rejects_unidentifiable_omega PASSED [ 96%]
+2026-10-01T08:51:18.7470695Z tests/test_transport_demo.py::test_display_coarsening_preserves_echo_integral PASSED [ 96%]
+2026-10-01T08:51:18.7742079Z tests/test_transport_demo.py::test_boundary_demo_distinguishes_unknown_clear_and_partial PASSED [ 96%]
+2026-10-01T08:51:18.7987806Z tests/test_transport_demo.py::test_learning_probe_does_not_report_success_when_copy_fails PASSED [ 96%]
+2026-10-01T08:51:18.8297720Z tests/test_transport_trajectory.py::test_one_cell_trajectory_matches_time_dependent_boundary_recurrence[False] PASSED [ 97%]
+2026-10-01T08:51:18.8620616Z tests/test_transport_trajectory.py::test_one_cell_trajectory_matches_time_dependent_boundary_recurrence[True] PASSED [ 97%]
+2026-10-01T08:51:18.9028010Z tests/test_transport_trajectory.py::test_shared_trajectory_matches_direct_steps[dtype0-donorcell] PASSED [ 97%]
+2026-10-01T08:51:18.9482705Z tests/test_transport_trajectory.py::test_shared_trajectory_matches_direct_steps[dtype0-minmod] PASSED [ 97%]
+2026-10-01T08:51:18.9860332Z tests/test_transport_trajectory.py::test_shared_trajectory_matches_direct_steps[dtype1-donorcell] PASSED [ 98%]
+2026-10-01T08:51:19.0278450Z tests/test_transport_trajectory.py::test_shared_trajectory_matches_direct_steps[dtype1-minmod] PASSED [ 98%]
+2026-10-01T08:51:19.0610832Z tests/test_transport_trajectory.py::test_forecast_continuation_uses_the_same_discrete_trajectory[donorcell] PASSED [ 98%]
+2026-10-01T08:51:19.0977542Z tests/test_transport_trajectory.py::test_forecast_continuation_uses_the_same_discrete_trajectory[minmod] PASSED [ 98%]
+2026-10-01T08:51:20.1992024Z tests/test_transport_trajectory.py::test_replay_value_jvp_vjp_and_mixed_second_derivative[2-donorcell] PASSED [ 99%]
+2026-10-01T08:51:21.5215251Z tests/test_transport_trajectory.py::test_replay_value_jvp_vjp_and_mixed_second_derivative[2-minmod] PASSED [ 99%]
+2026-10-01T08:51:26.2988388Z tests/test_transport_trajectory.py::test_replay_value_jvp_vjp_and_mixed_second_derivative[9-donorcell] PASSED [ 99%]
+2026-10-01T08:51:32.1184878Z tests/test_transport_trajectory.py::test_replay_value_jvp_vjp_and_mixed_second_derivative[9-minmod] PASSED [100%]
+2026-10-01T08:51:32.1185644Z 
+2026-10-01T08:51:32.1185912Z =================================== FAILURES ===================================
+2026-10-01T08:51:32.1187089Z __________ test_new_direction_clears_old_pairs_and_computes_its_cross __________
+2026-10-01T08:51:32.1187672Z 
+2026-10-01T08:51:32.1188109Z tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_new_direction_clears_old_0')
+2026-10-01T08:51:32.1189075Z monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fbc790256d0>
+2026-10-01T08:51:32.1189637Z 
+2026-10-01T08:51:32.1190091Z     def test_new_direction_clears_old_pairs_and_computes_its_cross(tmp_path, monkeypatch):
+2026-10-01T08:51:32.1191165Z         # Stop before optimization: exercise actual preparation/cache/JVP wiring.
+2026-10-01T08:51:32.1191919Z         class ReachedCorrector(BaseException):
+2026-10-01T08:51:32.1192413Z             pass
+2026-10-01T08:51:32.1192808Z         original_load = PROBE._load_module
+2026-10-01T08:51:32.1193287Z         observed = []
+2026-10-01T08:51:32.1193672Z         def load(path, name):
+2026-10-01T08:51:32.1194136Z             module = original_load(path, name)
+2026-10-01T08:51:32.1194642Z             if path == PROBE.ORACLE:
+2026-10-01T08:51:32.1195467Z                 def stop(objective, predictor, changed, **kwargs):
+2026-10-01T08:51:32.1196073Z                     observed.append(changed)
+2026-10-01T08:51:32.1196809Z                     raise ReachedCorrector
+2026-10-01T08:51:32.1197378Z                 module.polish = stop
+2026-10-01T08:51:32.1197857Z             return module
+2026-10-01T08:51:32.1198270Z         original_jvp = torch.func.jvp
+2026-10-01T08:51:32.1198724Z         directions = []
+2026-10-01T08:51:32.1199242Z         def jvp(func, primals, tangents, **kwargs):
+2026-10-01T08:51:32.1199779Z             if primals[0].shape == (61,):
+2026-10-01T08:51:32.1200303Z                 directions.append(tangents[0].clone())
+2026-10-01T08:51:32.1200932Z             return original_jvp(func, primals, tangents, **kwargs)
+2026-10-01T08:51:32.1201599Z         monkeypatch.setattr(PROBE, '_load_module', load)
+2026-10-01T08:51:32.1202218Z         monkeypatch.setattr(torch.func, 'jvp', jvp)
+2026-10-01T08:51:32.1202774Z         output = tmp_path / 'new.json'
+2026-10-01T08:51:32.1203277Z         with pytest.raises(ReachedCorrector):
+2026-10-01T08:51:32.1204106Z >           PROBE.run(output, resume=ROOT / 'graphify-out/fv-root-cause-20260919/minmod_local_path.json',
+2026-10-01T08:51:32.1204947Z                       direction_name='middle_time_bias')
+2026-10-01T08:51:32.1205156Z 
+2026-10-01T08:51:32.1205291Z tests/test_fv_minmod_local_path_probe.py:173: 
+2026-10-01T08:51:32.1205660Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-01T08:51:32.1205915Z 
+2026-10-01T08:51:32.1206203Z output = PosixPath('/tmp/pytest-of-runner/pytest-0/test_new_direction_clears_old_0/new.json')
+2026-10-01T08:51:32.1207226Z resume = PosixPath('/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/graphify-out/fv-root-cause-20260919/minmod_local_path.json')
+2026-10-01T08:51:32.1208017Z direction_name = 'middle_time_bias'
+2026-10-01T08:51:32.1208200Z 
+2026-10-01T08:51:32.1208528Z     def run(output: Path, *, resume: Path | None = None, direction_name: str = "observation_sine60") -> dict:
+2026-10-01T08:51:32.1209026Z         started = time.monotonic()
+2026-10-01T08:51:32.1209293Z         probe_path = PROBE
+2026-10-01T08:51:32.1209631Z         probe = _load_module(probe_path, "fv_minmod_inverse_for_local_path")
+2026-10-01T08:51:32.1210089Z         oracle = _load_module(ORACLE, "fv_dense_oracle_for_local_path")
+2026-10-01T08:51:32.1210783Z         saved = json.loads(SAVED.read_text())
+2026-10-01T08:51:32.1211406Z         obs, frozen, boundary, support = probe.make_spatial_case()
+2026-10-01T08:51:32.1212047Z         shape = frozen.initial_background_dbz.shape
+2026-10-01T08:51:32.1212607Z         if tuple(shape) != tuple(saved["shape"]):
+2026-10-01T08:51:32.1213309Z             raise ValueError("saved shape does not match current spatial fixture")
+2026-10-01T08:51:32.1214120Z         control = torch.tensor(saved["control"], dtype=torch.float64)
+2026-10-01T08:51:32.1214750Z         if control.numel() != int(saved["controls"]):
+2026-10-01T08:51:32.1215160Z             raise ValueError("saved control dimension does not match report")
+2026-10-01T08:51:32.1215699Z         pattern = torch.linspace(-0.2, 0.3, shape.numel(), dtype=obs.dbz.dtype).reshape(shape)
+2026-10-01T08:51:32.1216458Z         parameters = torch.cat((obs.dbz.flatten(), obs.dbz.new_tensor([0.02])))
+2026-10-01T08:51:32.1216979Z     
+2026-10-01T08:51:32.1217198Z         def contract(p: torch.Tensor):
+2026-10-01T08:51:32.1217513Z             y, theta = p[:-1].reshape_as(obs.dbz), p[-1]
+2026-10-01T08:51:32.1217931Z             return replace(frozen, initial_background_dbz=y[0] + theta * pattern)
+2026-10-01T08:51:32.1218388Z     
+2026-10-01T08:51:32.1218906Z         def objective(c: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+2026-10-01T08:51:32.1219556Z             return v.robust_objective(
+2026-10-01T08:51:32.1220143Z                 c, replace(obs, dbz=p[:-1].reshape_as(obs.dbz)), contract(p)
+2026-10-01T08:51:32.1220731Z             )
+2026-10-01T08:51:32.1221044Z     
+2026-10-01T08:51:32.1221692Z         def forecast(c: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+2026-10-01T08:51:32.1222330Z             return probe.echo_to_dbz(
+2026-10-01T08:51:32.1222649Z                 v.forecast_fv_analysis(
+2026-10-01T08:51:32.1222923Z                     c,
+2026-10-01T08:51:32.1223210Z                     contract(p),
+2026-10-01T08:51:32.1223484Z                     leads=1,
+2026-10-01T08:51:32.1223738Z                     boundary_start_interval=2,
+2026-10-01T08:51:32.1224030Z                     boundary_echo=boundary,
+2026-10-01T08:51:32.1224317Z                     boundary_support=support,
+2026-10-01T08:51:32.1224601Z                 ).frames_linear[-1],
+2026-10-01T08:51:32.1224867Z                 min_dbz=-10.0,
+2026-10-01T08:51:32.1225094Z             )
+2026-10-01T08:51:32.1225277Z     
+2026-10-01T08:51:32.1225481Z         gradient = torch.func.grad(objective)
+2026-10-01T08:51:32.1225773Z         current_hashes = {
+2026-10-01T08:51:32.1226017Z             str(path): _hash(path)
+2026-10-01T08:51:32.1226784Z             for path in (probe_path, ROOT / "src/advar/transport.py", ROOT / "src/advar/variational.py", ORACLE)
+2026-10-01T08:51:32.1227256Z         }
+2026-10-01T08:51:32.1227488Z         saved_hashes = saved.get("source_sha256", {})
+2026-10-01T08:51:32.1227942Z         # The archived producer has location-relative imports. Load today's module
+2026-10-01T08:51:32.1228453Z         # only after checking the reused fixture/tracer AST against that archive.
+2026-10-01T08:51:32.1228903Z         reused_names = {"make_spatial_case", "inspect_branches"}
+2026-10-01T08:51:32.1229247Z         def reused_functions(path):
+2026-10-01T08:51:32.1229646Z             return {node.name: ast.dump(node) for node in ast.parse(path.read_text()).body
+2026-10-01T08:51:32.1230169Z                     if isinstance(node, ast.FunctionDef) and node.name in reused_names}
+2026-10-01T08:51:32.1230836Z         fixture_exact = (reused_functions(PROBE) == reused_functions(MEASURED_PROBE)
+2026-10-01T08:51:32.1231423Z                          and _hash(MEASURED_PROBE) == saved_hashes.get(str(PROBE)))
+2026-10-01T08:51:32.1232350Z         core_paths = (ROOT / "src/advar/transport.py", ROOT / "src/advar/variational.py", ORACLE)
+2026-10-01T08:51:32.1233106Z         source_identity = {
+2026-10-01T08:51:32.1233514Z             "saved": saved_hashes,
+2026-10-01T08:51:32.1233963Z             "current": current_hashes,
+2026-10-01T08:51:32.1234661Z             "core_exact": all(_hash(path) == saved_hashes.get(str(path)) for path in core_paths),
+2026-10-01T08:51:32.1235382Z             "fixture_probe_exact": fixture_exact,
+2026-10-01T08:51:32.1235662Z         }
+2026-10-01T08:51:32.1235847Z     
+2026-10-01T08:51:32.1236106Z         nominal_objective = float(objective(control, parameters))
+2026-10-01T08:51:32.1236817Z         nominal_gradient = gradient(control, parameters)
+2026-10-01T08:51:32.1237212Z         nominal_forecast = forecast(control, parameters).detach()
+2026-10-01T08:51:32.1237686Z         nominal_branch = probe.inspect_branches(lambda: forecast(control, parameters))
+2026-10-01T08:51:32.1238142Z         saved_branch = saved.get("stationary_branch", {})
+2026-10-01T08:51:32.1238615Z         saved_branch_exact = _same_branch(nominal_branch, saved_branch) if saved_branch else False
+2026-10-01T08:51:32.1239102Z         report_time = time.monotonic()
+2026-10-01T08:51:32.1239372Z         report: dict = {
+2026-10-01T08:51:32.1239601Z             "status": "running",
+2026-10-01T08:51:32.1239858Z             "finite_path_certified": False,
+2026-10-01T08:51:32.1240169Z             "general_minmod_response_eligible": False,
+2026-10-01T08:51:32.1240630Z             "scope": "local predictor/corrector only; fixed minmod support/boundaries/precision",
+2026-10-01T08:51:32.1241074Z             "saved_report": str(SAVED),
+2026-10-01T08:51:32.1241357Z             "saved_report_sha256": _hash(SAVED),
+2026-10-01T08:51:32.1241678Z             "producer_sha256": _hash(Path(__file__)),
+2026-10-01T08:51:32.1242141Z             "derivative_relative_tolerance": 1e-4,
+2026-10-01T08:51:32.1242881Z             "source_identity": {**source_identity, "fixture_source_used": str(probe_path), "current_fixture_source": str(PROBE), "measured_fixture_available": MEASURED_PROBE.exists()},
+2026-10-01T08:51:32.1243592Z             "input_identity": {
+2026-10-01T08:51:32.1243844Z                 "shape": list(shape),
+2026-10-01T08:51:32.1244257Z                 "parameters_sha256": hashlib.sha256(parameters.numpy().tobytes()).hexdigest(),
+2026-10-01T08:51:32.1244796Z                 "control_sha256": hashlib.sha256(control.numpy().tobytes()).hexdigest(),
+2026-10-01T08:51:32.1245210Z                 "controls": int(control.numel()),
+2026-10-01T08:51:32.1245518Z                 "substeps_per_interval": 9,
+2026-10-01T08:51:32.1245841Z                 "saved_gradient_max": saved.get("gradient_max"),
+2026-10-01T08:51:32.1246240Z                 "current_gradient_max": float(nominal_gradient.abs().max()),
+2026-10-01T08:51:32.1246928Z                 "saved_objective": saved.get("objective"),
+2026-10-01T08:51:32.1247270Z                 "current_objective": nominal_objective,
+2026-10-01T08:51:32.1247711Z                 "objective_abs_difference": abs(nominal_objective - float(saved["objective"])),
+2026-10-01T08:51:32.1248167Z                 "saved_branch_exact": saved_branch_exact,
+2026-10-01T08:51:32.1248505Z                 "saved_branch_available": bool(saved_branch),
+2026-10-01T08:51:32.1248806Z             },
+2026-10-01T08:51:32.1249004Z             "direction": {
+2026-10-01T08:51:32.1249351Z                 "observation": "sin(arange(obs.dbz.numel())) with theta component zero",
+2026-10-01T08:51:32.1249791Z                 "observation_components": int(obs.dbz.numel()),
+2026-10-01T08:51:32.1250136Z                 "theta": "final parameter component",
+2026-10-01T08:51:32.1250409Z             },
+2026-10-01T08:51:32.1250625Z             "nominal_branch": nominal_branch,
+2026-10-01T08:51:32.1251059Z             "nominal_control": control.tolist(),
+2026-10-01T08:51:32.1251350Z             "hessian": {},
+2026-10-01T08:51:32.1251577Z             "tangents": {},
+2026-10-01T08:51:32.1251805Z             "pairs": [],
+2026-10-01T08:51:32.1252035Z             "elapsed_seconds": 0.0,
+2026-10-01T08:51:32.1252279Z         }
+2026-10-01T08:51:32.1252477Z         resume_data = None
+2026-10-01T08:51:32.1252702Z         resume_hash = None
+2026-10-01T08:51:32.1252924Z         resume_start_j = 0
+2026-10-01T08:51:32.1253152Z         if resume is not None:
+2026-10-01T08:51:32.1253434Z             resume_data = json.loads(resume.read_text())
+2026-10-01T08:51:32.1253739Z             resume_hash = _hash(resume)
+2026-10-01T08:51:32.1254183Z             stored_control = torch.tensor(resume_data.get("nominal_control", []), dtype=torch.float64)
+2026-10-01T08:51:32.1254673Z             if not torch.equal(stored_control, control):
+2026-10-01T08:51:32.1255095Z                 raise ValueError("resume nominal control differs from saved control")
+2026-10-01T08:51:32.1255745Z             if resume_data.get("input_identity", {}).get("parameters_sha256") != report["input_identity"]["parameters_sha256"]:
+2026-10-01T08:51:32.1256594Z >               raise ValueError("resume parameter tensor digest mismatch")
+2026-10-01T08:51:32.1257052Z E               ValueError: resume parameter tensor digest mismatch
+2026-10-01T08:51:32.1257301Z 
+2026-10-01T08:51:32.1257508Z examples/weather_scenarios/fv_minmod_local_path_probe.py:301: ValueError
+2026-10-01T08:51:32.1258022Z ____ test_completed_direction_resume_validates_without_repeating_reanalysis ____
+2026-10-01T08:51:32.1258343Z 
+2026-10-01T08:51:32.1258587Z tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_completed_direction_resum0')
+2026-10-01T08:51:32.1259137Z monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fbc793414f0>
+2026-10-01T08:51:32.1259440Z 
+2026-10-01T08:51:32.1259737Z     def test_completed_direction_resume_validates_without_repeating_reanalysis(tmp_path, monkeypatch):
+2026-10-01T08:51:32.1260237Z         original_load = PROBE._load_module
+2026-10-01T08:51:32.1260659Z         def load(path, name):
+2026-10-01T08:51:32.1260929Z             module = original_load(path, name)
+2026-10-01T08:51:32.1261221Z             if path == PROBE.ORACLE:
+2026-10-01T08:51:32.1261500Z                 def unexpected(*args, **kwargs):
+2026-10-01T08:51:32.1261887Z                     pytest.fail('completed direction must not repeat reanalysis')
+2026-10-01T08:51:32.1262267Z                 module.polish = unexpected
+2026-10-01T08:51:32.1262537Z             return module
+2026-10-01T08:51:32.1262811Z         monkeypatch.setattr(PROBE, '_load_module', load)
+2026-10-01T08:51:32.1263242Z         source = ROOT / 'graphify-out/fv-root-cause-20260919/minmod_theta.json'
+2026-10-01T08:51:32.1263772Z >       result = PROBE.run(tmp_path / 'validated.json', resume=source, direction_name='theta')
+2026-10-01T08:51:32.1264257Z                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-01T08:51:32.1264504Z 
+2026-10-01T08:51:32.1264632Z tests/test_fv_minmod_local_path_probe.py:195: 
+2026-10-01T08:51:32.1264983Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-01T08:51:32.1265221Z 
+2026-10-01T08:51:32.1265524Z output = PosixPath('/tmp/pytest-of-runner/pytest-0/test_completed_direction_resum0/validated.json')
+2026-10-01T08:51:32.1266470Z resume = PosixPath('/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/graphify-out/fv-root-cause-20260919/minmod_theta.json')
+2026-10-01T08:51:32.1267093Z direction_name = 'theta'
+2026-10-01T08:51:32.1267235Z 
+2026-10-01T08:51:32.1267530Z     def run(output: Path, *, resume: Path | None = None, direction_name: str = "observation_sine60") -> dict:
+2026-10-01T08:51:32.1268008Z         started = time.monotonic()
+2026-10-01T08:51:32.1268272Z         probe_path = PROBE
+2026-10-01T08:51:32.1268610Z         probe = _load_module(probe_path, "fv_minmod_inverse_for_local_path")
+2026-10-01T08:51:32.1269200Z         oracle = _load_module(ORACLE, "fv_dense_oracle_for_local_path")
+2026-10-01T08:51:32.1269578Z         saved = json.loads(SAVED.read_text())
+2026-10-01T08:51:32.1269930Z         obs, frozen, boundary, support = probe.make_spatial_case()
+2026-10-01T08:51:32.1270309Z         shape = frozen.initial_background_dbz.shape
+2026-10-01T08:51:32.1270634Z         if tuple(shape) != tuple(saved["shape"]):
+2026-10-01T08:51:32.1271040Z             raise ValueError("saved shape does not match current spatial fixture")
+2026-10-01T08:51:32.1271513Z         control = torch.tensor(saved["control"], dtype=torch.float64)
+2026-10-01T08:51:32.1271901Z         if control.numel() != int(saved["controls"]):
+2026-10-01T08:51:32.1272294Z             raise ValueError("saved control dimension does not match report")
+2026-10-01T08:51:32.1272820Z         pattern = torch.linspace(-0.2, 0.3, shape.numel(), dtype=obs.dbz.dtype).reshape(shape)
+2026-10-01T08:51:32.1273365Z         parameters = torch.cat((obs.dbz.flatten(), obs.dbz.new_tensor([0.02])))
+2026-10-01T08:51:32.1273744Z     
+2026-10-01T08:51:32.1273950Z         def contract(p: torch.Tensor):
+2026-10-01T08:51:32.1274258Z             y, theta = p[:-1].reshape_as(obs.dbz), p[-1]
+2026-10-01T08:51:32.1274694Z             return replace(frozen, initial_background_dbz=y[0] + theta * pattern)
+2026-10-01T08:51:32.1275069Z     
+2026-10-01T08:51:32.1275381Z         def objective(c: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+2026-10-01T08:51:32.1275758Z             return v.robust_objective(
+2026-10-01T08:51:32.1276103Z                 c, replace(obs, dbz=p[:-1].reshape_as(obs.dbz)), contract(p)
+2026-10-01T08:51:32.1276575Z             )
+2026-10-01T08:51:32.1276766Z     
+2026-10-01T08:51:32.1277037Z         def forecast(c: torch.Tensor, p: torch.Tensor) -> torch.Tensor:
+2026-10-01T08:51:32.1277399Z             return probe.echo_to_dbz(
+2026-10-01T08:51:32.1277664Z                 v.forecast_fv_analysis(
+2026-10-01T08:51:32.1277917Z                     c,
+2026-10-01T08:51:32.1278146Z                     contract(p),
+2026-10-01T08:51:32.1278385Z                     leads=1,
+2026-10-01T08:51:32.1278924Z                     boundary_start_interval=2,
+2026-10-01T08:51:32.1279464Z                     boundary_echo=boundary,
+2026-10-01T08:51:32.1279965Z                     boundary_support=support,
+2026-10-01T08:51:32.1280446Z                 ).frames_linear[-1],
+2026-10-01T08:51:32.1280883Z                 min_dbz=-10.0,
+2026-10-01T08:51:32.1281267Z             )
+2026-10-01T08:51:32.1281582Z     
+2026-10-01T08:51:32.1281925Z         gradient = torch.func.grad(objective)
+2026-10-01T08:51:32.1282408Z         current_hashes = {
+2026-10-01T08:51:32.1282810Z             str(path): _hash(path)
+2026-10-01T08:51:32.1283414Z             for path in (probe_path, ROOT / "src/advar/transport.py", ROOT / "src/advar/variational.py", ORACLE)
+2026-10-01T08:51:32.1283886Z         }
+2026-10-01T08:51:32.1284111Z         saved_hashes = saved.get("source_sha256", {})
+2026-10-01T08:51:32.1284541Z         # The archived producer has location-relative imports. Load today's module
+2026-10-01T08:51:32.1285055Z         # only after checking the reused fixture/tracer AST against that archive.
+2026-10-01T08:51:32.1285509Z         reused_names = {"make_spatial_case", "inspect_branches"}
+2026-10-01T08:51:32.1285855Z         def reused_functions(path):
+2026-10-01T08:51:32.1286390Z             return {node.name: ast.dump(node) for node in ast.parse(path.read_text()).body
+2026-10-01T08:51:32.1286929Z                     if isinstance(node, ast.FunctionDef) and node.name in reused_names}
+2026-10-01T08:51:32.1287439Z         fixture_exact = (reused_functions(PROBE) == reused_functions(MEASURED_PROBE)
+2026-10-01T08:51:32.1287923Z                          and _hash(MEASURED_PROBE) == saved_hashes.get(str(PROBE)))
+2026-10-01T08:51:32.1288448Z         core_paths = (ROOT / "src/advar/transport.py", ROOT / "src/advar/variational.py", ORACLE)
+2026-10-01T08:51:32.1288891Z         source_identity = {
+2026-10-01T08:51:32.1289290Z             "saved": saved_hashes,
+2026-10-01T08:51:32.1289549Z             "current": current_hashes,
+2026-10-01T08:51:32.1289960Z             "core_exact": all(_hash(path) == saved_hashes.get(str(path)) for path in core_paths),
+2026-10-01T08:51:32.1290408Z             "fixture_probe_exact": fixture_exact,
+2026-10-01T08:51:32.1290680Z         }
+2026-10-01T08:51:32.1290855Z     
+2026-10-01T08:51:32.1291116Z         nominal_objective = float(objective(control, parameters))
+2026-10-01T08:51:32.1291506Z         nominal_gradient = gradient(control, parameters)
+2026-10-01T08:51:32.1291887Z         nominal_forecast = forecast(control, parameters).detach()
+2026-10-01T08:51:32.1292356Z         nominal_branch = probe.inspect_branches(lambda: forecast(control, parameters))
+2026-10-01T08:51:32.1292810Z         saved_branch = saved.get("stationary_branch", {})
+2026-10-01T08:51:32.1293297Z         saved_branch_exact = _same_branch(nominal_branch, saved_branch) if saved_branch else False
+2026-10-01T08:51:32.1293763Z         report_time = time.monotonic()
+2026-10-01T08:51:32.1294026Z         report: dict = {
+2026-10-01T08:51:32.1294267Z             "status": "running",
+2026-10-01T08:51:32.1294523Z             "finite_path_certified": False,
+2026-10-01T08:51:32.1294840Z             "general_minmod_response_eligible": False,
+2026-10-01T08:51:32.1295297Z             "scope": "local predictor/corrector only; fixed minmod support/boundaries/precision",
+2026-10-01T08:51:32.1295745Z             "saved_report": str(SAVED),
+2026-10-01T08:51:32.1296025Z             "saved_report_sha256": _hash(SAVED),
+2026-10-01T08:51:32.1296468Z             "producer_sha256": _hash(Path(__file__)),
+2026-10-01T08:51:32.1296791Z             "derivative_relative_tolerance": 1e-4,
+2026-10-01T08:51:32.1297532Z             "source_identity": {**source_identity, "fixture_source_used": str(probe_path), "current_fixture_source": str(PROBE), "measured_fixture_available": MEASURED_PROBE.exists()},
+2026-10-01T08:51:32.1298237Z             "input_identity": {
+2026-10-01T08:51:32.1298495Z                 "shape": list(shape),
+2026-10-01T08:51:32.1299022Z                 "parameters_sha256": hashlib.sha256(parameters.numpy().tobytes()).hexdigest(),
+2026-10-01T08:51:32.1299569Z                 "control_sha256": hashlib.sha256(control.numpy().tobytes()).hexdigest(),
+2026-10-01T08:51:32.1299985Z                 "controls": int(control.numel()),
+2026-10-01T08:51:32.1300281Z                 "substeps_per_interval": 9,
+2026-10-01T08:51:32.1300605Z                 "saved_gradient_max": saved.get("gradient_max"),
+2026-10-01T08:51:32.1301013Z                 "current_gradient_max": float(nominal_gradient.abs().max()),
+2026-10-01T08:51:32.1301405Z                 "saved_objective": saved.get("objective"),
+2026-10-01T08:51:32.1301738Z                 "current_objective": nominal_objective,
+2026-10-01T08:51:32.1302178Z                 "objective_abs_difference": abs(nominal_objective - float(saved["objective"])),
+2026-10-01T08:51:32.1302640Z                 "saved_branch_exact": saved_branch_exact,
+2026-10-01T08:51:32.1302988Z                 "saved_branch_available": bool(saved_branch),
+2026-10-01T08:51:32.1303290Z             },
+2026-10-01T08:51:32.1303493Z             "direction": {
+2026-10-01T08:51:32.1303847Z                 "observation": "sin(arange(obs.dbz.numel())) with theta component zero",
+2026-10-01T08:51:32.1304290Z                 "observation_components": int(obs.dbz.numel()),
+2026-10-01T08:51:32.1304636Z                 "theta": "final parameter component",
+2026-10-01T08:51:32.1304916Z             },
+2026-10-01T08:51:32.1305141Z             "nominal_branch": nominal_branch,
+2026-10-01T08:51:32.1305443Z             "nominal_control": control.tolist(),
+2026-10-01T08:51:32.1305726Z             "hessian": {},
+2026-10-01T08:51:32.1305949Z             "tangents": {},
+2026-10-01T08:51:32.1306180Z             "pairs": [],
+2026-10-01T08:51:32.1306625Z             "elapsed_seconds": 0.0,
+2026-10-01T08:51:32.1306872Z         }
+2026-10-01T08:51:32.1307192Z         resume_data = None
+2026-10-01T08:51:32.1307420Z         resume_hash = None
+2026-10-01T08:51:32.1307642Z         resume_start_j = 0
+2026-10-01T08:51:32.1307874Z         if resume is not None:
+2026-10-01T08:51:32.1308150Z             resume_data = json.loads(resume.read_text())
+2026-10-01T08:51:32.1308462Z             resume_hash = _hash(resume)
+2026-10-01T08:51:32.1308911Z             stored_control = torch.tensor(resume_data.get("nominal_control", []), dtype=torch.float64)
+2026-10-01T08:51:32.1309408Z             if not torch.equal(stored_control, control):
+2026-10-01T08:51:32.1309831Z                 raise ValueError("resume nominal control differs from saved control")
+2026-10-01T08:51:32.1310477Z             if resume_data.get("input_identity", {}).get("parameters_sha256") != report["input_identity"]["parameters_sha256"]:
+2026-10-01T08:51:32.1311090Z >               raise ValueError("resume parameter tensor digest mismatch")
+2026-10-01T08:51:32.1311512Z E               ValueError: resume parameter tensor digest mismatch
+2026-10-01T08:51:32.1311769Z 
+2026-10-01T08:51:32.1311972Z examples/weather_scenarios/fv_minmod_local_path_probe.py:301: ValueError
+2026-10-01T08:51:32.1312490Z ______ test_parameterized_background_matches_polished_centered_reanalysis ______
+2026-10-01T08:51:32.1312807Z 
+2026-10-01T08:51:32.1313121Z parameterized_refined_case = (AnalysisObservations(dbz=tensor([[[18.0000, 21.0000, 19.0000, 23.0000, 20.0000],
+2026-10-01T08:51:32.1313936Z          [22.0000, 18.0000, 24.0000,..., 1.], dtype=torch.float64), tensor([1., 1., 1., 1., 1.], dtype=torch.float64)))), tensor(0.0200, dtype=torch.float64))
+2026-10-01T08:51:32.1314426Z 
+2026-10-01T08:51:32.1314700Z     def test_parameterized_background_matches_polished_centered_reanalysis(
+2026-10-01T08:51:32.1315101Z         parameterized_refined_case,
+2026-10-01T08:51:32.1315351Z     ):
+2026-10-01T08:51:32.1315531Z         (
+2026-10-01T08:51:32.1315721Z             observations,
+2026-10-01T08:51:32.1315941Z             frozen,
+2026-10-01T08:51:32.1316146Z             control,
+2026-10-01T08:51:32.1316504Z             boundary_echo,
+2026-10-01T08:51:32.1316740Z             boundary_support,
+2026-10-01T08:51:32.1317084Z             theta,
+2026-10-01T08:51:32.1317305Z         ) = parameterized_refined_case
+2026-10-01T08:51:32.1317605Z         kwargs = _parameterized_response_kwargs(
+2026-10-01T08:51:32.1317964Z             observations, boundary_echo, boundary_support, theta
+2026-10-01T08:51:32.1318280Z         )
+2026-10-01T08:51:32.1318520Z         response = compute_fv_observation_response(
+2026-10-01T08:51:32.1318842Z             control, observations, frozen, **kwargs
+2026-10-01T08:51:32.1319126Z         )
+2026-10-01T08:51:32.1319355Z         assert response.sensitivity_theta is not None
+2026-10-01T08:51:32.1319704Z         direction = torch.zeros_like(observations.dbz)
+2026-10-01T08:51:32.1320036Z         detected = observations.detected_mask
+2026-10-01T08:51:32.1320356Z         direction[detected] = torch.linspace(
+2026-10-01T08:51:32.1320946Z             -1.0, 1.0, int(detected.sum()), dtype=direction.dtype
+2026-10-01T08:51:32.1321452Z         )
+2026-10-01T08:51:32.1331423Z         direction = direction / torch.linalg.vector_norm(direction)
+2026-10-01T08:51:32.1332161Z         step = observations.dbz.new_tensor(1.0e-4)
+2026-10-01T08:51:32.1332624Z         plus_y = replace(observations, dbz=observations.dbz + step * direction)
+2026-10-01T08:51:32.1333161Z         minus_y = replace(observations, dbz=observations.dbz - step * direction)
+2026-10-01T08:51:32.1333565Z         centered_y = (
+2026-10-01T08:51:32.1333816Z             _polished_parameterized_score(
+2026-10-01T08:51:32.1334161Z                 plus_y, frozen, theta, boundary_echo, boundary_support
+2026-10-01T08:51:32.1334498Z             )
+2026-10-01T08:51:32.1334719Z             - _polished_parameterized_score(
+2026-10-01T08:51:32.1335086Z                 minus_y, frozen, theta, boundary_echo, boundary_support
+2026-10-01T08:51:32.1335420Z             )
+2026-10-01T08:51:32.1335610Z         ) / (2 * step)
+2026-10-01T08:51:32.1336018Z         centered_theta = (
+2026-10-01T08:51:32.1336431Z             _polished_parameterized_score(
+2026-10-01T08:51:32.1336838Z                 observations, frozen, theta + step, boundary_echo, boundary_support
+2026-10-01T08:51:32.1337215Z             )
+2026-10-01T08:51:32.1337435Z             - _polished_parameterized_score(
+2026-10-01T08:51:32.1337837Z                 observations, frozen, theta - step, boundary_echo, boundary_support
+2026-10-01T08:51:32.1338206Z             )
+2026-10-01T08:51:32.1338396Z         ) / (2 * step)
+2026-10-01T08:51:32.1338628Z         torch.testing.assert_close(
+2026-10-01T08:51:32.1338981Z             (response.sensitivity_dbz * direction).sum(),
+2026-10-01T08:51:32.1339292Z             centered_y,
+2026-10-01T08:51:32.1339508Z             rtol=1.0e-7,
+2026-10-01T08:51:32.1339731Z             atol=2.0e-9,
+2026-10-01T08:51:32.1339941Z         )
+2026-10-01T08:51:32.1340147Z >       torch.testing.assert_close(
+2026-10-01T08:51:32.1340451Z             response.sensitivity_theta.reshape(()),
+2026-10-01T08:51:32.1340751Z             centered_theta,
+2026-10-01T08:51:32.1340982Z             rtol=1.0e-7,
+2026-10-01T08:51:32.1341203Z             atol=2.0e-9,
+2026-10-01T08:51:32.1341406Z         )
+2026-10-01T08:51:32.1341637Z E       AssertionError: Scalars are not close!
+2026-10-01T08:51:32.1341919Z E       
+2026-10-01T08:51:32.1342183Z E       Expected -0.04978255162768619 but got -0.04978254428964135.
+2026-10-01T08:51:32.1342613Z E       Absolute difference: 7.3380448384341435e-09 (up to 2e-09 allowed)
+2026-10-01T08:51:32.1343055Z E       Relative difference: 1.4740194302039644e-07 (up to 1e-07 allowed)
+2026-10-01T08:51:32.1343325Z 
+2026-10-01T08:51:32.1343482Z tests/test_fv_observation_response.py:479: AssertionError
+2026-10-01T08:51:32.1343952Z ___ test_fake_guard_requires_reviewed_child_identity_and_resource_completion ___
+2026-10-01T08:51:32.1344273Z 
+2026-10-01T08:51:32.1344376Z archived_seed_vectors = None
+2026-10-01T08:51:32.1344538Z 
+2026-10-01T08:51:32.1344758Z     def test_fake_guard_requires_reviewed_child_identity_and_resource_completion(
+2026-10-01T08:51:32.1345297Z         archived_seed_vectors: None,
+2026-10-01T08:51:32.1345567Z     ) -> None:
+2026-10-01T08:51:32.1345804Z         command = ["python", "probe.py", "--child"]
+2026-10-01T08:51:32.1346113Z         source = {probe.SELF_PATH: "d" * 64}
+2026-10-01T08:51:32.1346661Z >       inputs = probe.prior._preflight_identity()
+2026-10-01T08:51:32.1346982Z                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-01T08:51:32.1347162Z 
+2026-10-01T08:51:32.1347306Z tests/test_fv_partial_field_correction_probe.py:151: 
+2026-10-01T08:51:32.1347672Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-01T08:51:32.1347915Z 
+2026-10-01T08:51:32.1348042Z     def _preflight_identity() -> dict[str, Any]:
+2026-10-01T08:51:32.1348409Z         if (_sha(HISTORICAL_PREFLIGHT) != HISTORICAL_PREFLIGHT_SHA256
+2026-10-01T08:51:32.1348841Z                 or _sha(HISTORICAL_MANIFEST) != HISTORICAL_MANIFEST_SHA256):
+2026-10-01T08:51:32.1349311Z             raise ValueError("historical two-hole preflight or manifest changed")
+2026-10-01T08:51:32.1349775Z         archived = json.loads(HISTORICAL_PREFLIGHT.read_text())
+2026-10-01T08:51:32.1350125Z         current = preflight.run()
+2026-10-01T08:51:32.1350534Z         if (archived["problem_identity"]["fixed_problem_sha256"] != HISTORICAL_PROBLEM_SHA256
+2026-10-01T08:51:32.1351107Z                 or current["problem_identity"]["fixed_problem_sha256"] != CURRENT_PROBLEM_SHA256
+2026-10-01T08:51:32.1351647Z                 or any(archived[name] != current[name] for name in COMPARED_PREFLIGHT_FIELDS)
+2026-10-01T08:51:32.1352088Z                 or current.get("status") != "preflight_only"
+2026-10-01T08:51:32.1352435Z                 or current.get("numerical_solver_runs") != 0):
+2026-10-01T08:51:32.1352917Z >           raise ValueError("current-source two-hole input differs from declared fixed tensors")
+2026-10-01T08:51:32.1353510Z E           ValueError: current-source two-hole input differs from declared fixed tensors
+2026-10-01T08:51:32.1353974Z 
+2026-10-01T08:51:32.1354192Z examples/weather_scenarios/fv_partial_sector_root_probe.py:105: ValueError
+2026-10-01T08:51:32.1354705Z _______ test_fake_guard_rejects_invalid_resource_evidence[rss_samples-0] _______
+2026-10-01T08:51:32.1355019Z 
+2026-10-01T08:51:32.1355175Z field = 'rss_samples', value = 0, archived_seed_vectors = None
+2026-10-01T08:51:32.1355421Z 
+2026-10-01T08:51:32.1355546Z     @pytest.mark.parametrize("field,value", [
+2026-10-01T08:51:32.1355837Z         ("rss_samples", 0),
+2026-10-01T08:51:32.1356087Z         ("sampled_peak_rss_bytes", 1024**3 + 1),
+2026-10-01T08:51:32.1356516Z         ("elapsed_seconds", 301.0),
+2026-10-01T08:51:32.1356760Z     ])
+2026-10-01T08:51:32.1356998Z     def test_fake_guard_rejects_invalid_resource_evidence(
+2026-10-01T08:51:32.1357380Z         field: str, value: object, archived_seed_vectors: None,
+2026-10-01T08:51:32.1357703Z     ) -> None:
+2026-10-01T08:51:32.1357937Z         command = ["python", "probe.py", "--child"]
+2026-10-01T08:51:32.1358246Z         source = {probe.SELF_PATH: "d" * 64}
+2026-10-01T08:51:32.1358558Z >       inputs = probe.prior._preflight_identity()
+2026-10-01T08:51:32.1358861Z                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-01T08:51:32.1359041Z 
+2026-10-01T08:51:32.1359185Z tests/test_fv_partial_field_correction_probe.py:240: 
+2026-10-01T08:51:32.1359545Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-01T08:51:32.1359789Z 
+2026-10-01T08:51:32.1359904Z     def _preflight_identity() -> dict[str, Any]:
+2026-10-01T08:51:32.1360272Z         if (_sha(HISTORICAL_PREFLIGHT) != HISTORICAL_PREFLIGHT_SHA256
+2026-10-01T08:51:32.1360690Z                 or _sha(HISTORICAL_MANIFEST) != HISTORICAL_MANIFEST_SHA256):
+2026-10-01T08:51:32.1361155Z             raise ValueError("historical two-hole preflight or manifest changed")
+2026-10-01T08:51:32.1361607Z         archived = json.loads(HISTORICAL_PREFLIGHT.read_text())
+2026-10-01T08:51:32.1361950Z         current = preflight.run()
+2026-10-01T08:51:32.1362471Z         if (archived["problem_identity"]["fixed_problem_sha256"] != HISTORICAL_PROBLEM_SHA256
+2026-10-01T08:51:32.1363034Z                 or current["problem_identity"]["fixed_problem_sha256"] != CURRENT_PROBLEM_SHA256
+2026-10-01T08:51:32.1363578Z                 or any(archived[name] != current[name] for name in COMPARED_PREFLIGHT_FIELDS)
+2026-10-01T08:51:32.1364016Z                 or current.get("status") != "preflight_only"
+2026-10-01T08:51:32.1364360Z                 or current.get("numerical_solver_runs") != 0):
+2026-10-01T08:51:32.1364832Z >           raise ValueError("current-source two-hole input differs from declared fixed tensors")
+2026-10-01T08:51:32.1365419Z E           ValueError: current-source two-hole input differs from declared fixed tensors
+2026-10-01T08:51:32.1365749Z 
+2026-10-01T08:51:32.1365959Z examples/weather_scenarios/fv_partial_sector_root_probe.py:105: ValueError
+2026-10-01T08:51:32.1366804Z _ test_fake_guard_rejects_invalid_resource_evidence[sampled_peak_rss_bytes-1073741825] _
+2026-10-01T08:51:32.1367163Z 
+2026-10-01T08:51:32.1367304Z field = 'sampled_peak_rss_bytes', value = 1073741825
+2026-10-01T08:51:32.1367618Z archived_seed_vectors = None
+2026-10-01T08:51:32.1367780Z 
+2026-10-01T08:51:32.1367902Z     @pytest.mark.parametrize("field,value", [
+2026-10-01T08:51:32.1368198Z         ("rss_samples", 0),
+2026-10-01T08:51:32.1368460Z         ("sampled_peak_rss_bytes", 1024**3 + 1),
+2026-10-01T08:51:32.1368748Z         ("elapsed_seconds", 301.0),
+2026-10-01T08:51:32.1368990Z     ])
+2026-10-01T08:51:32.1369231Z     def test_fake_guard_rejects_invalid_resource_evidence(
+2026-10-01T08:51:32.1369621Z         field: str, value: object, archived_seed_vectors: None,
+2026-10-01T08:51:32.1369942Z     ) -> None:
+2026-10-01T08:51:32.1370172Z         command = ["python", "probe.py", "--child"]
+2026-10-01T08:51:32.1370487Z         source = {probe.SELF_PATH: "d" * 64}
+2026-10-01T08:51:32.1370943Z >       inputs = probe.prior._preflight_identity()
+2026-10-01T08:51:32.1371246Z                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-01T08:51:32.1371431Z 
+2026-10-01T08:51:32.1371577Z tests/test_fv_partial_field_correction_probe.py:240: 
+2026-10-01T08:51:32.1371943Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-01T08:51:32.1372191Z 
+2026-10-01T08:51:32.1372315Z     def _preflight_identity() -> dict[str, Any]:
+2026-10-01T08:51:32.1372682Z         if (_sha(HISTORICAL_PREFLIGHT) != HISTORICAL_PREFLIGHT_SHA256
+2026-10-01T08:51:32.1373109Z                 or _sha(HISTORICAL_MANIFEST) != HISTORICAL_MANIFEST_SHA256):
+2026-10-01T08:51:32.1373575Z             raise ValueError("historical two-hole preflight or manifest changed")
+2026-10-01T08:51:32.1374034Z         archived = json.loads(HISTORICAL_PREFLIGHT.read_text())
+2026-10-01T08:51:32.1374382Z         current = preflight.run()
+2026-10-01T08:51:32.1374791Z         if (archived["problem_identity"]["fixed_problem_sha256"] != HISTORICAL_PROBLEM_SHA256
+2026-10-01T08:51:32.1375373Z                 or current["problem_identity"]["fixed_problem_sha256"] != CURRENT_PROBLEM_SHA256
+2026-10-01T08:51:32.1375918Z                 or any(archived[name] != current[name] for name in COMPARED_PREFLIGHT_FIELDS)
+2026-10-01T08:51:32.1376500Z                 or current.get("status") != "preflight_only"
+2026-10-01T08:51:32.1376852Z                 or current.get("numerical_solver_runs") != 0):
+2026-10-01T08:51:32.1377332Z >           raise ValueError("current-source two-hole input differs from declared fixed tensors")
+2026-10-01T08:51:32.1377912Z E           ValueError: current-source two-hole input differs from declared fixed tensors
+2026-10-01T08:51:32.1378246Z 
+2026-10-01T08:51:32.1378448Z examples/weather_scenarios/fv_partial_sector_root_probe.py:105: ValueError
+2026-10-01T08:51:32.1378966Z ___ test_fake_guard_rejects_invalid_resource_evidence[elapsed_seconds-301.0] ___
+2026-10-01T08:51:32.1379282Z 
+2026-10-01T08:51:32.1379468Z field = 'elapsed_seconds', value = 301.0, archived_seed_vectors = None
+2026-10-01T08:51:32.1379739Z 
+2026-10-01T08:51:32.1379980Z     @pytest.mark.parametrize("field,value", [
+2026-10-01T08:51:32.1380282Z         ("rss_samples", 0),
+2026-10-01T08:51:32.1380543Z         ("sampled_peak_rss_bytes", 1024**3 + 1),
+2026-10-01T08:51:32.1380828Z         ("elapsed_seconds", 301.0),
+2026-10-01T08:51:32.1381071Z     ])
+2026-10-01T08:51:32.1381310Z     def test_fake_guard_rejects_invalid_resource_evidence(
+2026-10-01T08:51:32.1381697Z         field: str, value: object, archived_seed_vectors: None,
+2026-10-01T08:51:32.1382019Z     ) -> None:
+2026-10-01T08:51:32.1382280Z         command = ["python", "probe.py", "--child"]
+2026-10-01T08:51:32.1382591Z         source = {probe.SELF_PATH: "d" * 64}
+2026-10-01T08:51:32.1382910Z >       inputs = probe.prior._preflight_identity()
+2026-10-01T08:51:32.1383211Z                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-01T08:51:32.1383392Z 
+2026-10-01T08:51:32.1383533Z tests/test_fv_partial_field_correction_probe.py:240: 
+2026-10-01T08:51:32.1383898Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-01T08:51:32.1384149Z 
+2026-10-01T08:51:32.1384271Z     def _preflight_identity() -> dict[str, Any]:
+2026-10-01T08:51:32.1384639Z         if (_sha(HISTORICAL_PREFLIGHT) != HISTORICAL_PREFLIGHT_SHA256
+2026-10-01T08:51:32.1385058Z                 or _sha(HISTORICAL_MANIFEST) != HISTORICAL_MANIFEST_SHA256):
+2026-10-01T08:51:32.1385528Z             raise ValueError("historical two-hole preflight or manifest changed")
+2026-10-01T08:51:32.1385976Z         archived = json.loads(HISTORICAL_PREFLIGHT.read_text())
+2026-10-01T08:51:32.1386531Z         current = preflight.run()
+2026-10-01T08:51:32.1386940Z         if (archived["problem_identity"]["fixed_problem_sha256"] != HISTORICAL_PROBLEM_SHA256
+2026-10-01T08:51:32.1387515Z                 or current["problem_identity"]["fixed_problem_sha256"] != CURRENT_PROBLEM_SHA256
+2026-10-01T08:51:32.1388055Z                 or any(archived[name] != current[name] for name in COMPARED_PREFLIGHT_FIELDS)
+2026-10-01T08:51:32.1388642Z                 or current.get("status") != "preflight_only"
+2026-10-01T08:51:32.1388993Z                 or current.get("numerical_solver_runs") != 0):
+2026-10-01T08:51:32.1389470Z >           raise ValueError("current-source two-hole input differs from declared fixed tensors")
+2026-10-01T08:51:32.1390053Z E           ValueError: current-source two-hole input differs from declared fixed tensors
+2026-10-01T08:51:32.1390388Z 
+2026-10-01T08:51:32.1390590Z examples/weather_scenarios/fv_partial_sector_root_probe.py:105: ValueError
+2026-10-01T08:51:32.1391099Z ________ test_parent_final_audit_recomputes_metrics_at_reported_control ________
+2026-10-01T08:51:32.1391404Z 
+2026-10-01T08:51:32.1391504Z archived_seed_vectors = None
+2026-10-01T08:51:32.1391664Z 
+2026-10-01T08:51:32.1391844Z     def test_parent_final_audit_recomputes_metrics_at_reported_control(
+2026-10-01T08:51:32.1392228Z         archived_seed_vectors: None,
+2026-10-01T08:51:32.1392484Z     ) -> None:
+2026-10-01T08:51:32.1392700Z         source = {probe.SELF_PATH: "d" * 64}
+2026-10-01T08:51:32.1393013Z >       inputs = probe.prior._preflight_identity()
+2026-10-01T08:51:32.1393316Z                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-01T08:51:32.1393497Z 
+2026-10-01T08:51:32.1393638Z tests/test_fv_partial_field_correction_probe.py:253: 
+2026-10-01T08:51:32.1393999Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-01T08:51:32.1394240Z 
+2026-10-01T08:51:32.1394354Z     def _preflight_identity() -> dict[str, Any]:
+2026-10-01T08:51:32.1394720Z         if (_sha(HISTORICAL_PREFLIGHT) != HISTORICAL_PREFLIGHT_SHA256
+2026-10-01T08:51:32.1395133Z                 or _sha(HISTORICAL_MANIFEST) != HISTORICAL_MANIFEST_SHA256):
+2026-10-01T08:51:32.1395592Z             raise ValueError("historical two-hole preflight or manifest changed")
+2026-10-01T08:51:32.1396039Z         archived = json.loads(HISTORICAL_PREFLIGHT.read_text())
+2026-10-01T08:51:32.1396514Z         current = preflight.run()
+2026-10-01T08:51:32.1397032Z         if (archived["problem_identity"]["fixed_problem_sha256"] != HISTORICAL_PROBLEM_SHA256
+2026-10-01T08:51:32.1397596Z                 or current["problem_identity"]["fixed_problem_sha256"] != CURRENT_PROBLEM_SHA256
+2026-10-01T08:51:32.1398130Z                 or any(archived[name] != current[name] for name in COMPARED_PREFLIGHT_FIELDS)
+2026-10-01T08:51:32.1398576Z                 or current.get("status") != "preflight_only"
+2026-10-01T08:51:32.1398925Z                 or current.get("numerical_solver_runs") != 0):
+2026-10-01T08:51:32.1399398Z >           raise ValueError("current-source two-hole input differs from declared fixed tensors")
+2026-10-01T08:51:32.1399979Z E           ValueError: current-source two-hole input differs from declared fixed tensors
+2026-10-01T08:51:32.1400308Z 
+2026-10-01T08:51:32.1400513Z examples/weather_scenarios/fv_partial_sector_root_probe.py:105: ValueError
+2026-10-01T08:51:32.1401020Z _______ test_original_one_lead_layout_and_input_identity_stay_unchanged ________
+2026-10-01T08:51:32.1401324Z 
+2026-10-01T08:51:32.1401513Z     def test_original_one_lead_layout_and_input_identity_stay_unchanged():
+2026-10-01T08:51:32.1401983Z         problem, warm, parameters, direction = preflight.fixed_problem()
+2026-10-01T08:51:32.1402422Z         assert problem.frozen.nowcast_config.forecast_steps == 1
+2026-10-01T08:51:32.1402828Z         assert problem.layout["forecast_time_seconds"] == 180.0
+2026-10-01T08:51:32.1403193Z         assert problem.layout["euler_stages"] == 54
+2026-10-01T08:51:32.1403706Z         saved = json.loads((probe.EVIDENCE / "point_sector_root_attempt1/point_sector_root.json").read_text())
+2026-10-01T08:51:32.1404391Z >       assert preflight._input_identity(problem, warm, parameters, direction) == saved["input_before"]
+2026-10-01T08:51:32.1410510Z E       AssertionError: assert {'problem_identity': {'fixed_problem_sha256': '92e835767cb303e04b72961e9647f7fd8cf73b5c64cac60c7ddcd5cffa22308f', 'scope': 'fixed point-observation identity; caller also binds code, control, parameters and branch'}, 'tensor_sha256': {'warm_control': 'b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5', 'parameters': '0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a', 'direction': '679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed', 'verification': 'b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9', 'observation_coordinates': '7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02', 'observation_correlation': '7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef'}} == {'problem_identity': {'fixed_problem_sha256': '3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5', 'scope': 'fixed point-observation identity; caller also binds code, control, parameters and branch'}, 'tensor_sha256': {'direction': '679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed', 'observation_coordinates': '7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02', 'observation_correlation': '7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef', 'parameters': '0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a', 'verification': 'b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9', 'warm_control': 'b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5'}}
+2026-10-01T08:51:32.1416519Z E         
+2026-10-01T08:51:32.1416712Z E         Common items:
+2026-10-01T08:51:32.1417159Z E         {'tensor_sha256': {'direction': '679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed',
+2026-10-01T08:51:32.1417877Z E                            'observation_coordinates': '7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02',
+2026-10-01T08:51:32.1418601Z E                            'observation_correlation': '7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef',
+2026-10-01T08:51:32.1419271Z E                            'parameters': '0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a',
+2026-10-01T08:51:32.1420062Z E                            'verification': 'b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9',
+2026-10-01T08:51:32.1420712Z E                            'warm_control': 'b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5'}}
+2026-10-01T08:51:32.1421166Z E         Differing items:
+2026-10-01T08:51:32.1422762Z E         {'problem_identity': {'fixed_problem_sha256': '92e835767cb303e04b72961e9647f7fd8cf73b5c64cac60c7ddcd5cffa22308f', 'scope': 'fixed point-observation identity; caller also binds code, control, parameters and branch'}} != {'problem_identity': {'fixed_problem_sha256': '3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5', 'scope': 'fixed point-observation identity; caller also binds code, control, parameters and branch'}}
+2026-10-01T08:51:32.1424367Z E         
+2026-10-01T08:51:32.1424556Z E         Full diff:
+2026-10-01T08:51:32.1424758Z E           {
+2026-10-01T08:51:32.1424968Z E               'problem_identity': {
+2026-10-01T08:51:32.1425443Z E         -         'fixed_problem_sha256': '3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5',
+2026-10-01T08:51:32.1426117Z E         +         'fixed_problem_sha256': '92e835767cb303e04b72961e9647f7fd8cf73b5c64cac60c7ddcd5cffa22308f',
+2026-10-01T08:51:32.1426972Z E                   'scope': 'fixed point-observation identity; caller also binds code, control, '
+2026-10-01T08:51:32.1427418Z E                   'parameters and branch',
+2026-10-01T08:51:32.1427685Z E               },
+2026-10-01T08:51:32.1427903Z E               'tensor_sha256': {
+2026-10-01T08:51:32.1428332Z E         +         'warm_control': 'b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5',
+2026-10-01T08:51:32.1428938Z E         +         'parameters': '0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a',
+2026-10-01T08:51:32.1429529Z E                   'direction': '679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed',
+2026-10-01T08:51:32.1430271Z E         +         'verification': 'b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9',
+2026-10-01T08:51:32.1430947Z E                   'observation_coordinates': '7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02',
+2026-10-01T08:51:32.1431644Z E                   'observation_correlation': '7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef',
+2026-10-01T08:51:32.1432282Z E         -         'parameters': '0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a',
+2026-10-01T08:51:32.1432887Z E         -         'verification': 'b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9',
+2026-10-01T08:51:32.1433498Z E         -         'warm_control': 'b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5',
+2026-10-01T08:51:32.1433929Z E               },
+2026-10-01T08:51:32.1434129Z E           }
+2026-10-01T08:51:32.1434239Z 
+2026-10-01T08:51:32.1434380Z tests/test_fv_point_3h_forward.py:53: AssertionError
+2026-10-01T08:51:32.1434937Z _ test_probe_separates_numerical_refusal_from_callback_failure[RefinementNumericalRefusal-sector_refused] _
+2026-10-01T08:51:32.1435374Z 
+2026-10-01T08:51:32.1435577Z monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fbc7ddf3fb0>
+2026-10-01T08:51:32.1436126Z tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_probe_separates_numerical0')
+2026-10-01T08:51:32.1436793Z error_type = <class 'advar.local_refinement.RefinementNumericalRefusal'>
+2026-10-01T08:51:32.1437184Z expected_status = 'sector_refused'
+2026-10-01T08:51:32.1437359Z 
+2026-10-01T08:51:32.1437524Z     @pytest.mark.parametrize("error_type,expected_status", [
+2026-10-01T08:51:32.1437910Z         (RefinementNumericalRefusal, "sector_refused"),
+2026-10-01T08:51:32.1438250Z         (RefinementCallbackError, "running"),
+2026-10-01T08:51:32.1438526Z     ])
+2026-10-01T08:51:32.1438842Z     def test_probe_separates_numerical_refusal_from_callback_failure(
+2026-10-01T08:51:32.1439257Z         monkeypatch, tmp_path, error_type, expected_status,
+2026-10-01T08:51:32.1439566Z     ):
+2026-10-01T08:51:32.1439940Z         monkeypatch.setattr(probe.basin_probe, "_hessian_audit",
+2026-10-01T08:51:32.1440312Z                             lambda *_: {"lambda_min": 1.0})
+2026-10-01T08:51:32.1440585Z     
+2026-10-01T08:51:32.1440774Z         def fail(*_args, **_kwargs):
+2026-10-01T08:51:32.1441055Z             raise error_type("injected sentinel")
+2026-10-01T08:51:32.1441336Z     
+2026-10-01T08:51:32.1441586Z         monkeypatch.setattr(probe, "refine_stationary", fail)
+2026-10-01T08:51:32.1441925Z         output = tmp_path / "result.json"
+2026-10-01T08:51:32.1442225Z         if error_type is RefinementCallbackError:
+2026-10-01T08:51:32.1442643Z             with pytest.raises(RefinementCallbackError, match="injected sentinel"):
+2026-10-01T08:51:32.1443050Z                 probe.run(output)
+2026-10-01T08:51:32.1443286Z         else:
+2026-10-01T08:51:32.1443492Z >           result = probe.run(output)
+2026-10-01T08:51:32.1443753Z                      ^^^^^^^^^^^^^^^^^
+2026-10-01T08:51:32.1443919Z 
+2026-10-01T08:51:32.1444030Z tests/test_fv_point_sector_root.py:170: 
+2026-10-01T08:51:32.1444358Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-01T08:51:32.1444604Z 
+2026-10-01T08:51:32.1444888Z output = PosixPath('/tmp/pytest-of-runner/pytest-0/test_probe_separates_numerical0/result.json')
+2026-10-01T08:51:32.1445277Z 
+2026-10-01T08:51:32.1445393Z     def run(output: Path) -> dict[str, Any]:
+2026-10-01T08:51:32.1445680Z         source_before = _sources()
+2026-10-01T08:51:32.1445943Z         plan_before = _sha(PLAN)
+2026-10-01T08:51:32.1446233Z         preflight_plan_before = _sha(preflight.PLAN)
+2026-10-01T08:51:32.1446696Z         previous_plan_before = _sha(previous.PLAN)
+2026-10-01T08:51:32.1447000Z         if plan_before != PLAN_SHA256:
+2026-10-01T08:51:32.1447325Z             raise ValueError("sector root declared plan changed")
+2026-10-01T08:51:32.1447663Z         if (_sha(PRIOR) != PRIOR_SHA256
+2026-10-01T08:51:32.1448209Z                 or _sha(previous.previous.PREFLIGHT) != previous.previous.PREFLIGHT_SHA256
+2026-10-01T08:51:32.1448767Z                 or _sha(previous.previous.ATTEMPT2) != previous.previous.ATTEMPT2_SHA256):
+2026-10-01T08:51:32.1449238Z             raise ValueError("sector root pinned report changed")
+2026-10-01T08:51:32.1449582Z         prior = json.loads(PRIOR.read_text())
+2026-10-01T08:51:32.1449995Z         pinned_preflight = json.loads(previous.previous.PREFLIGHT.read_text())
+2026-10-01T08:51:32.1450444Z         if (prior.get("numerical_status") != "root_refused"
+2026-10-01T08:51:32.1450822Z                 or prior.get("response_validation") != "not_performed"
+2026-10-01T08:51:32.1451269Z                 or prior.get("seed_control_sha256") != previous.previous.CONTROL_SHA256
+2026-10-01T08:51:32.1451762Z                 or pinned_preflight.get("plan_sha256") != preflight_plan_before
+2026-10-01T08:51:32.1452182Z                 or prior.get("plan_sha256") != previous_plan_before
+2026-10-01T08:51:32.1452570Z                 or prior.get("plan_sha256") != previous_plan_before):
+2026-10-01T08:51:32.1452985Z             raise ValueError("sector root prior status or plan changed")
+2026-10-01T08:51:32.1453437Z         # The additive trial hook intentionally changes this one source file;
+2026-10-01T08:51:32.1453924Z         # every other derivative-critical source must still match the prior run.
+2026-10-01T08:51:32.1454361Z         changed_source = "src/advar/local_refinement.py"
+2026-10-01T08:51:32.1454744Z         if any(prior["source_before"].get(name) != source_before[name]
+2026-10-01T08:51:32.1455172Z                for name in previous.SOURCE_PATHS if name != changed_source):
+2026-10-01T08:51:32.1455641Z >           raise ValueError("sector root unrelated source changed from prior run")
+2026-10-01T08:51:32.1456134Z E           ValueError: sector root unrelated source changed from prior run
+2026-10-01T08:51:32.1456534Z 
+2026-10-01T08:51:32.1456735Z examples/weather_scenarios/fv_point_sector_root_probe.py:71: ValueError
+2026-10-01T08:51:32.1457427Z _ test_probe_separates_numerical_refusal_from_callback_failure[RefinementCallbackError-running] _
+2026-10-01T08:51:32.1457826Z 
+2026-10-01T08:51:32.1458027Z monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fbc7a09dbe0>
+2026-10-01T08:51:32.1458569Z tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_probe_separates_numerical1')
+2026-10-01T08:51:32.1459101Z error_type = <class 'advar.local_refinement.RefinementCallbackError'>
+2026-10-01T08:51:32.1459477Z expected_status = 'running'
+2026-10-01T08:51:32.1459631Z 
+2026-10-01T08:51:32.1459788Z     @pytest.mark.parametrize("error_type,expected_status", [
+2026-10-01T08:51:32.1460176Z         (RefinementNumericalRefusal, "sector_refused"),
+2026-10-01T08:51:32.1460511Z         (RefinementCallbackError, "running"),
+2026-10-01T08:51:32.1460786Z     ])
+2026-10-01T08:51:32.1461064Z     def test_probe_separates_numerical_refusal_from_callback_failure(
+2026-10-01T08:51:32.1461477Z         monkeypatch, tmp_path, error_type, expected_status,
+2026-10-01T08:51:32.1461783Z     ):
+2026-10-01T08:51:32.1462044Z         monkeypatch.setattr(probe.basin_probe, "_hessian_audit",
+2026-10-01T08:51:32.1462409Z                             lambda *_: {"lambda_min": 1.0})
+2026-10-01T08:51:32.1462686Z     
+2026-10-01T08:51:32.1462878Z         def fail(*_args, **_kwargs):
+2026-10-01T08:51:32.1463170Z             raise error_type("injected sentinel")
+2026-10-01T08:51:32.1463443Z     
+2026-10-01T08:51:32.1463696Z         monkeypatch.setattr(probe, "refine_stationary", fail)
+2026-10-01T08:51:32.1464033Z         output = tmp_path / "result.json"
+2026-10-01T08:51:32.1464342Z         if error_type is RefinementCallbackError:
+2026-10-01T08:51:32.1464764Z             with pytest.raises(RefinementCallbackError, match="injected sentinel"):
+2026-10-01T08:51:32.1465168Z >               probe.run(output)
+2026-10-01T08:51:32.1465327Z 
+2026-10-01T08:51:32.1465438Z tests/test_fv_point_sector_root.py:168: 
+2026-10-01T08:51:32.1465883Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-10-01T08:51:32.1466127Z 
+2026-10-01T08:51:32.1466702Z output = PosixPath('/tmp/pytest-of-runner/pytest-0/test_probe_separates_numerical1/result.json')
+2026-10-01T08:51:32.1467112Z 
+2026-10-01T08:51:32.1467229Z     def run(output: Path) -> dict[str, Any]:
+2026-10-01T08:51:32.1467518Z         source_before = _sources()
+2026-10-01T08:51:32.1467782Z         plan_before = _sha(PLAN)
+2026-10-01T08:51:32.1468077Z         preflight_plan_before = _sha(preflight.PLAN)
+2026-10-01T08:51:32.1468413Z         previous_plan_before = _sha(previous.PLAN)
+2026-10-01T08:51:32.1468722Z         if plan_before != PLAN_SHA256:
+2026-10-01T08:51:32.1469051Z             raise ValueError("sector root declared plan changed")
+2026-10-01T08:51:32.1469394Z         if (_sha(PRIOR) != PRIOR_SHA256
+2026-10-01T08:51:32.1469806Z                 or _sha(previous.previous.PREFLIGHT) != previous.previous.PREFLIGHT_SHA256
+2026-10-01T08:51:32.1470360Z                 or _sha(previous.previous.ATTEMPT2) != previous.previous.ATTEMPT2_SHA256):
+2026-10-01T08:51:32.1470835Z             raise ValueError("sector root pinned report changed")
+2026-10-01T08:51:32.1471192Z         prior = json.loads(PRIOR.read_text())
+2026-10-01T08:51:32.1471598Z         pinned_preflight = json.loads(previous.previous.PREFLIGHT.read_text())
+2026-10-01T08:51:32.1472047Z         if (prior.get("numerical_status") != "root_refused"
+2026-10-01T08:51:32.1472422Z                 or prior.get("response_validation") != "not_performed"
+2026-10-01T08:51:32.1472871Z                 or prior.get("seed_control_sha256") != previous.previous.CONTROL_SHA256
+2026-10-01T08:51:32.1473358Z                 or pinned_preflight.get("plan_sha256") != preflight_plan_before
+2026-10-01T08:51:32.1473783Z                 or prior.get("plan_sha256") != previous_plan_before
+2026-10-01T08:51:32.1474165Z                 or prior.get("plan_sha256") != previous_plan_before):
+2026-10-01T08:51:32.1474568Z             raise ValueError("sector root prior status or plan changed")
+2026-10-01T08:51:32.1475148Z         # The additive trial hook intentionally changes this one source file;
+2026-10-01T08:51:32.1475641Z         # every other derivative-critical source must still match the prior run.
+2026-10-01T08:51:32.1476079Z         changed_source = "src/advar/local_refinement.py"
+2026-10-01T08:51:32.1476680Z         if any(prior["source_before"].get(name) != source_before[name]
+2026-10-01T08:51:32.1477110Z                for name in previous.SOURCE_PATHS if name != changed_source):
+2026-10-01T08:51:32.1477584Z >           raise ValueError("sector root unrelated source changed from prior run")
+2026-10-01T08:51:32.1478078Z E           ValueError: sector root unrelated source changed from prior run
+2026-10-01T08:51:32.1478358Z 
+2026-10-01T08:51:32.1478560Z examples/weather_scenarios/fv_point_sector_root_probe.py:71: ValueError
+2026-10-01T08:51:32.1478990Z =============================== warnings summary ===============================
+2026-10-01T08:51:32.1479348Z tests/test_a5_derivatives.py: 18 warnings
+2026-10-01T08:51:32.1480193Z   /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+2026-10-01T08:51:32.1481008Z     warnings.warn(
+2026-10-01T08:51:32.1481137Z 
+2026-10-01T08:51:32.1481342Z -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2026-10-01T08:51:32.1481790Z =========================== short test summary info ============================
+2026-10-01T08:51:32.1482547Z FAILED tests/test_fv_minmod_local_path_probe.py::test_new_direction_clears_old_pairs_and_computes_its_cross - ValueError: resume parameter tensor digest mismatch
+2026-10-01T08:51:32.1483672Z FAILED tests/test_fv_minmod_local_path_probe.py::test_completed_direction_resume_validates_without_repeating_reanalysis - ValueError: resume parameter tensor digest mismatch
+2026-10-01T08:51:32.1484793Z FAILED tests/test_fv_observation_response.py::test_parameterized_background_matches_polished_centered_reanalysis - AssertionError: Scalars are not close!
+2026-10-01T08:51:32.1485497Z 
+2026-10-01T08:51:32.1485645Z Expected -0.04978255162768619 but got -0.04978254428964135.
+2026-10-01T08:51:32.1486053Z Absolute difference: 7.3380448384341435e-09 (up to 2e-09 allowed)
+2026-10-01T08:51:32.1486607Z Relative difference: 1.4740194302039644e-07 (up to 1e-07 allowed)
+2026-10-01T08:51:32.1487520Z FAILED tests/test_fv_partial_field_correction_probe.py::test_fake_guard_requires_reviewed_child_identity_and_resource_completion - ValueError: current-source two-hole input differs from declared fixed tensors
+2026-10-01T08:51:32.1488903Z FAILED tests/test_fv_partial_field_correction_probe.py::test_fake_guard_rejects_invalid_resource_evidence[rss_samples-0] - ValueError: current-source two-hole input differs from declared fixed tensors
+2026-10-01T08:51:32.1490329Z FAILED tests/test_fv_partial_field_correction_probe.py::test_fake_guard_rejects_invalid_resource_evidence[sampled_peak_rss_bytes-1073741825] - ValueError: current-source two-hole input differs from declared fixed tensors
+2026-10-01T08:51:32.4267972Z FAILED tests/test_fv_partial_field_correction_probe.py::test_fake_guard_rejects_invalid_resource_evidence[elapsed_seconds-301.0] - ValueError: current-source two-hole input differs from declared fixed tensors
+2026-10-01T08:51:32.4270633Z FAILED tests/test_fv_partial_field_correction_probe.py::test_parent_final_audit_recomputes_metrics_at_reported_control - ValueError: current-source two-hole input differs from declared fixed tensors
+2026-10-01T08:51:32.4277905Z FAILED tests/test_fv_point_3h_forward.py::test_original_one_lead_layout_and_input_identity_stay_unchanged - AssertionError: assert {'problem_identity': {'fixed_problem_sha256': '92e835767cb303e04b72961e9647f7fd8cf73b5c64cac60c7ddcd5cffa22308f', 'scope': 'fixed point-observation identity; caller also binds code, control, parameters and branch'}, 'tensor_sha256': {'warm_control': 'b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5', 'parameters': '0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a', 'direction': '679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed', 'verification': 'b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9', 'observation_coordinates': '7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02', 'observation_correlation': '7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef'}} == {'problem_identity': {'fixed_problem_sha256': '3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5', 'scope': 'fixed point-observation identity; caller also binds code, control, parameters and branch'}, 'tensor_sha256': {'direction': '679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed', 'observation_coordinates': '7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02', 'observation_correlation': '7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef', 'parameters': '0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a', 'verification': 'b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9', 'warm_control': 'b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5'}}
+2026-10-01T08:51:32.4284020Z   
+2026-10-01T08:51:32.4284209Z   Common items:
+2026-10-01T08:51:32.4284638Z   {'tensor_sha256': {'direction': '679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed',
+2026-10-01T08:51:32.4285344Z                      'observation_coordinates': '7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02',
+2026-10-01T08:51:32.4286051Z                      'observation_correlation': '7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef',
+2026-10-01T08:51:32.4286880Z                      'parameters': '0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a',
+2026-10-01T08:51:32.4287505Z                      'verification': 'b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9',
+2026-10-01T08:51:32.4288284Z                      'warm_control': 'b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5'}}
+2026-10-01T08:51:32.4288739Z   Differing items:
+2026-10-01T08:51:32.4290318Z   {'problem_identity': {'fixed_problem_sha256': '92e835767cb303e04b72961e9647f7fd8cf73b5c64cac60c7ddcd5cffa22308f', 'scope': 'fixed point-observation identity; caller also binds code, control, parameters and branch'}} != {'problem_identity': {'fixed_problem_sha256': '3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5', 'scope': 'fixed point-observation identity; caller also binds code, control, parameters and branch'}}
+2026-10-01T08:51:32.4291915Z   
+2026-10-01T08:51:32.4292095Z   Full diff:
+2026-10-01T08:51:32.4292280Z     {
+2026-10-01T08:51:32.4292476Z         'problem_identity': {
+2026-10-01T08:51:32.4292951Z   -         'fixed_problem_sha256': '3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5',
+2026-10-01T08:51:32.4293618Z   +         'fixed_problem_sha256': '92e835767cb303e04b72961e9647f7fd8cf73b5c64cac60c7ddcd5cffa22308f',
+2026-10-01T08:51:32.4294232Z             'scope': 'fixed point-observation identity; caller also binds code, control, '
+2026-10-01T08:51:32.4294668Z             'parameters and branch',
+2026-10-01T08:51:32.4294915Z         },
+2026-10-01T08:51:32.4295115Z         'tensor_sha256': {
+2026-10-01T08:51:32.4295511Z   +         'warm_control': 'b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5',
+2026-10-01T08:51:32.4296096Z   +         'parameters': '0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a',
+2026-10-01T08:51:32.4296962Z             'direction': '679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed',
+2026-10-01T08:51:32.4297561Z   +         'verification': 'b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9',
+2026-10-01T08:51:32.4298210Z             'observation_coordinates': '7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02',
+2026-10-01T08:51:32.4298884Z             'observation_correlation': '7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef',
+2026-10-01T08:51:32.4299652Z   -         'parameters': '0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a',
+2026-10-01T08:51:32.4300250Z   -         'verification': 'b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9',
+2026-10-01T08:51:32.4300843Z   -         'warm_control': 'b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5',
+2026-10-01T08:51:32.4301259Z         },
+2026-10-01T08:51:32.4301435Z     }
+2026-10-01T08:51:32.4302251Z FAILED tests/test_fv_point_sector_root.py::test_probe_separates_numerical_refusal_from_callback_failure[RefinementNumericalRefusal-sector_refused] - ValueError: sector root unrelated source changed from prior run
+2026-10-01T08:51:32.4303723Z FAILED tests/test_fv_point_sector_root.py::test_probe_separates_numerical_refusal_from_callback_failure[RefinementCallbackError-running] - ValueError: sector root unrelated source changed from prior run
+2026-10-01T08:51:32.4304712Z = 11 failed, 373 passed, 1 skipped, 18 warnings, 34 subtests passed in 1372.29s (0:22:52) =
+2026-10-01T08:51:33.1679929Z ##[error]Process completed with exit code 1.
+2026-10-01T08:51:33.1765938Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-10-01T08:51:33.1766703Z with:
+2026-10-01T08:51:33.1767068Z   name: cpu-shard-4-a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf
+2026-10-01T08:51:33.1767477Z   path: /home/runner/work/_temp/cpu-shard-records
+2026-10-01T08:51:33.1767800Z   if-no-files-found: error
+2026-10-01T08:51:33.1768036Z   retention-days: 7
+2026-10-01T08:51:33.1768259Z   compression-level: 6
+2026-10-01T08:51:33.1768482Z   overwrite: false
+2026-10-01T08:51:33.1768703Z   include-hidden-files: false
+2026-10-01T08:51:33.1768945Z   archive: true
+2026-10-01T08:51:33.1769146Z env:
+2026-10-01T08:51:33.1769406Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:51:33.1769849Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:51:33.1770495Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:51:33.1770894Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:51:33.1771318Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:51:33.1771720Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:51:33.1772052Z ##[endgroup]
+2026-10-01T08:51:33.3196821Z With the provided path, there will be 5 files uploaded
+2026-10-01T08:51:33.3197857Z Artifact name is valid!
+2026-10-01T08:51:33.3198366Z Root directory input is valid!
+2026-10-01T08:51:33.6523944Z Uploading artifact: cpu-shard-4-a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf.zip
+2026-10-01T08:51:33.6599946Z Beginning upload of artifact content to blob storage
+2026-10-01T08:51:34.0930764Z Uploaded bytes 105217
+2026-10-01T08:51:34.1532479Z Finished uploading artifact content to blob storage!
+2026-10-01T08:51:34.1533975Z SHA256 digest of uploaded artifact is 822207d619a23de4c07e3f332eb233f49c745c72d63eeb2e63444f01ae6141df
+2026-10-01T08:51:34.1535436Z Finalizing artifact upload
+2026-10-01T08:51:34.5280880Z Artifact cpu-shard-4-a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf successfully finalized. Artifact ID 11149754417
+2026-10-01T08:51:34.5283202Z Artifact cpu-shard-4-a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf has been successfully uploaded! Final size is 105217 bytes. Artifact ID is 11149754417
+2026-10-01T08:51:34.5285402Z Artifact download URL: https://github.com/gonos2k/AD4DVAR-radar/actions/runs/36836402831/artifacts/11149754417
+2026-10-01T08:51:34.5472949Z Post job cleanup.
+2026-10-01T08:51:34.6308479Z [command]/usr/bin/git version
+2026-10-01T08:51:34.6365602Z git version 2.55.0
+2026-10-01T08:51:34.6436067Z Temporarily overriding HOME='/home/runner/work/_temp/24700d05-0d36-4977-891b-f40f61c80f5e' before making global git config changes
+2026-10-01T08:51:34.6437626Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-01T08:51:34.6443116Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:51:34.6478833Z Removing SSH command configuration
+2026-10-01T08:51:34.6487175Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-01T08:51:34.6527144Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-01T08:51:34.6787993Z Removing HTTP extra header
+2026-10-01T08:51:34.6794741Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-01T08:51:34.6836564Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-01T08:51:34.7111885Z Removing includeIf entries pointing to credentials config files
+2026-10-01T08:51:34.7120971Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-01T08:51:34.7158243Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+2026-10-01T08:51:34.7159693Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+2026-10-01T08:51:34.7160668Z includeif.gitdir:/github/workspace/.git.path
+2026-10-01T08:51:34.7161386Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-01T08:51:34.7171981Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+2026-10-01T08:51:34.7202912Z /home/runner/work/_temp/git-credentials-622741ba-320e-46bf-86f9-e767781b58b5.config
+2026-10-01T08:51:34.7214208Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-622741ba\-320e\-46bf\-86f9\-e767781b58b5\.config
+2026-10-01T08:51:34.7264673Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+2026-10-01T08:51:34.7294449Z /home/runner/work/_temp/git-credentials-622741ba-320e-46bf-86f9-e767781b58b5.config
+2026-10-01T08:51:34.7311398Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-622741ba\-320e\-46bf\-86f9\-e767781b58b5\.config
+2026-10-01T08:51:34.7353536Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-01T08:51:34.7380744Z /github/runner_temp/git-credentials-622741ba-320e-46bf-86f9-e767781b58b5.config
+2026-10-01T08:51:34.7390496Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-622741ba\-320e\-46bf\-86f9\-e767781b58b5\.config
+2026-10-01T08:51:34.7434115Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-01T08:51:34.7463194Z /github/runner_temp/git-credentials-622741ba-320e-46bf-86f9-e767781b58b5.config
+2026-10-01T08:51:34.7473395Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-622741ba\-320e\-46bf\-86f9\-e767781b58b5\.config
+2026-10-01T08:51:34.7520049Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-01T08:51:34.7767717Z Removing credentials config '/home/runner/work/_temp/git-credentials-622741ba-320e-46bf-86f9-e767781b58b5.config'
+2026-10-01T08:51:34.7933908Z Cleaning up orphan processes

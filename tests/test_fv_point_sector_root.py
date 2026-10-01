@@ -14,6 +14,28 @@ from examples.weather_scenarios import fv_point_response_preflight as preflight
 from advar.local_refinement import RefinementCallbackError, RefinementNumericalRefusal
 
 
+def _install_current_local_prior(monkeypatch, tmp_path: Path) -> None:
+    """Use a current-input controller fixture for exception-classification tests."""
+    problem, warm, parameters, direction = preflight.fixed_problem()
+    archived = json.loads(probe.PRIOR.read_text())
+    control = torch.tensor(archived["seed_control"], dtype=torch.float64)
+    gradient = torch.func.grad(problem.objective, argnums=0)(control, parameters)
+    prior = {
+        "numerical_status": "root_refused",
+        "response_validation": "not_performed",
+        "seed_control": control.tolist(),
+        "seed_control_sha256": probe.previous.previous.CONTROL_SHA256,
+        "seed_gradient": gradient.detach().tolist(),
+        "plan_sha256": probe.previous.PLAN_SHA256,
+        "source_before": probe._sources(),
+        "input_before": preflight._input_identity(problem, warm, parameters, direction),
+    }
+    path = tmp_path / "current_local_prior.json"
+    path.write_text(json.dumps(prior, sort_keys=True))
+    monkeypatch.setattr(probe, "PRIOR", path)
+    monkeypatch.setattr(probe, "PRIOR_SHA256", hashlib.sha256(path.read_bytes()).hexdigest())
+
+
 def test_pinned_prior_control_branch_and_plan_are_current():
     assert hashlib.sha256(probe.PLAN.read_bytes()).hexdigest() == probe.PLAN_SHA256
     assert hashlib.sha256(probe.PRIOR.read_bytes()).hexdigest() == probe.PRIOR_SHA256
@@ -155,6 +177,7 @@ def test_runner_requires_status_resource_and_provenance(
 def test_probe_separates_numerical_refusal_from_callback_failure(
     monkeypatch, tmp_path, error_type, expected_status,
 ):
+    _install_current_local_prior(monkeypatch, tmp_path)
     monkeypatch.setattr(probe.basin_probe, "_hessian_audit",
                         lambda *_: {"lambda_min": 1.0})
 
@@ -172,3 +195,17 @@ def test_probe_separates_numerical_refusal_from_callback_failure(
     saved = json.loads(output.read_text())
     assert saved["numerical_status"] == expected_status
     assert saved["response_validation"] == "not_performed"
+
+
+def test_probe_still_rejects_changed_source_against_current_local_prior(monkeypatch, tmp_path):
+    _install_current_local_prior(monkeypatch, tmp_path)
+    original_sources = probe._sources
+
+    def changed_sources():
+        sources = original_sources()
+        sources["src/advar/transport.py"] = "0" * 64
+        return sources
+
+    monkeypatch.setattr(probe, "_sources", changed_sources)
+    with pytest.raises(ValueError, match="unrelated source changed"):
+        probe.run(tmp_path / "rejected.json")

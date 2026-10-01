@@ -72,7 +72,8 @@ def _complete_records(nodeids: list[str], shard_count: int):
             "actual_nodeids": part["nodeids"],
             "cases": [{"nodeid": nodeid, "terminal": True,
                        "terminal_phase": "teardown", "outcome": outcome,
-                       "phase_reports": phases("skipped" if outcome == "skipped" else "passed")}
+                       "phase_reports": phases("skipped" if outcome == "skipped" else "passed"),
+                       "subtest_reports": [], "subtest_report_count": 0}
                       for nodeid, outcome in zip(part["nodeids"], outcomes, strict=True)],
         })
     return inventory, assignments, results
@@ -102,6 +103,30 @@ def test_reconciliation_accepts_exact_partition_and_counts_skips() -> None:
     assert result["status"] == "complete", result["errors"]
     assert result["node_count"] == 7
     assert result["terminal_outcome_counts"] == {"skipped": 2, "passed": 5}
+    assert result["subtest_outcome_counts"] == {}
+
+
+def test_subtest_summaries_preserve_context_skip_xfail_and_failure_details() -> None:
+    reports = [
+        {"phase": "call", "outcome": "passed",
+         "context": {"msg": "passed", "kwargs": {"case": "passed"}}},
+        {"phase": "call", "outcome": "skipped", "skip_reason": "expected skip",
+         "context": {"msg": None, "kwargs": {"case": "skipped"}}},
+        {"phase": "call", "outcome": "skipped", "wasxfail": "expected xfail",
+         "skip_reason": "expected xfail",
+         "context": {"msg": "xfail", "kwargs": {}}},
+        {"phase": "call", "outcome": "failed", "failure_traceback": "AssertionError",
+         "context": {"msg": None, "kwargs": {"case": "failed"}}},
+    ]
+
+    assert sharding.summarize_subtests(reports) == {
+        "passed": 1, "skipped": 1, "xfailed": 1, "failed": 1,
+    }
+    with pytest.raises(sharding.ShardError, match="skipped subtest lacks its reason"):
+        sharding.summarize_subtests([
+            {"phase": "call", "outcome": "skipped",
+             "context": {"msg": None, "kwargs": {}}},
+        ])
 
 
 @pytest.mark.parametrize("mutation", ["missing", "extra", "duplicate"])
@@ -141,6 +166,7 @@ def test_reconciliation_rejects_incomplete_case_outcomes(mutation: str) -> None:
     assert result["status"] == "incomplete"
     assert any("terminal outcomes" in error or "non-success outcome" in error
                or "summary differs" in error or "nonterminal case" in error
+               or "case outcome differs" in error
                for error in result["errors"])
 
 
@@ -355,6 +381,107 @@ def test_teardown_xfail(xfail_teardown):
                    for phase in case["phase_reports"]) for case in xfail_cases)
     assert inventory["source"]["commit"]
     assert assignment["inventory_sha256"] == result["inventory_sha256"]
+
+
+def test_cli_records_unittest_and_fixture_subtests_separately_from_parent_phases(
+    tmp_path: Path,
+) -> None:
+    repo = _toy_repository(tmp_path, """
+import unittest
+
+import pytest
+
+class TestUnitSubtests(unittest.TestCase):
+    def test_subtest_lifecycle(self):
+        with self.subTest("unit passed", case="passed"):
+            self.assertEqual(1, 1)
+        with self.subTest("unit skipped", case="skipped"):
+            self.skipTest("unit subtest skip")
+        with self.subTest("unit xfailed", case="xfailed"):
+            pytest.xfail("unit subtest xfail")
+
+def test_fixture_subtests(subtests):
+    with subtests.test("fixture passed", case="passed"):
+        assert 1 == 1
+    with subtests.test("fixture skipped", case="skipped"):
+        pytest.skip("fixture subtest skip")
+    with subtests.test("fixture xfailed", case="xfailed"):
+        pytest.xfail("fixture subtest xfail")
+""")
+    record_dir = tmp_path / "subtest-records"
+    completed = _run_toy_shard(repo, record_dir)
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+
+    inventory = json.loads((record_dir / "inventory.json").read_text())
+    assignment = json.loads((record_dir / "shard-00-assignment.json").read_text())
+    result = json.loads((record_dir / "shard-00-result.json").read_text())
+    audit = sharding.reconcile_shards(inventory, [assignment], [result])
+    assert audit["status"] == "complete", audit["errors"]
+    assert audit["terminal_outcome_counts"] == {"passed": 2}
+    assert audit["subtest_outcome_counts"] == {
+        "passed": 2, "skipped": 2, "xfailed": 2,
+    }
+
+    for case in result["cases"]:
+        assert [phase["phase"] for phase in case["phase_reports"]] == [
+            "setup", "call", "teardown",
+        ]
+        assert case["outcome"] == "passed"
+        assert case["subtest_report_count"] == 3
+        assert len(case["subtest_reports"]) == 3
+        assert all(report["phase"] == "call" for report in case["subtest_reports"])
+        by_message = {report["context"]["msg"]: report for report in case["subtest_reports"]}
+        assert by_message["unit passed" if "TestUnitSubtests" in case["nodeid"]
+                          else "fixture passed"]["outcome"] == "passed"
+        skipped = by_message["unit skipped" if "TestUnitSubtests" in case["nodeid"]
+                             else "fixture skipped"]
+        assert skipped["outcome"] == "skipped"
+        assert "subtest skip" in skipped["skip_reason"]
+        xfailed = by_message["unit xfailed" if "TestUnitSubtests" in case["nodeid"]
+                             else "fixture xfailed"]
+        assert xfailed["outcome"] == "skipped"
+        assert "wasxfail" in xfailed and "subtest xfail" in xfailed["skip_reason"]
+
+
+def test_cli_retains_failed_unittest_and_fixture_subtest_contexts(
+    tmp_path: Path,
+) -> None:
+    repo = _toy_repository(tmp_path, """
+import unittest
+
+class TestUnitSubtestFailure(unittest.TestCase):
+    def test_failed_subtest(self):
+        with self.subTest("unit failure", case="unit"):
+            self.assertEqual(1, 2)
+
+def test_fixture_subtest_failure(subtests):
+    with subtests.test("fixture failure", case="fixture"):
+        assert 1 == 2
+""")
+    record_dir = tmp_path / "failed-subtest-records"
+    completed = _run_toy_shard(repo, record_dir)
+    assert completed.returncode != 0
+
+    inventory = json.loads((record_dir / "inventory.json").read_text())
+    assignment = json.loads((record_dir / "shard-00-assignment.json").read_text())
+    result = json.loads((record_dir / "shard-00-result.json").read_text())
+    assert result["status"] == "failed"
+    assert len(result["cases"]) == 2
+    audit = sharding.reconcile_shards(inventory, [assignment], [result])
+    assert audit["status"] == "incomplete"
+    assert audit["terminal_outcome_counts"] == {"failed": 2}
+    assert audit["subtest_outcome_counts"] == {"failed": 2}
+    for case in result["cases"]:
+        assert [phase["phase"] for phase in case["phase_reports"]] == [
+            "setup", "call", "teardown",
+        ]
+        assert case["terminal"] is True
+        assert case["outcome"] == "failed"
+        assert case["subtest_report_count"] == 1
+        subtest = case["subtest_reports"][0]
+        assert subtest["outcome"] == "failed"
+        assert subtest["context"]["msg"] in {"unit failure", "fixture failure"}
+        assert subtest["failure_traceback"].strip()
 
 
 @pytest.mark.parametrize(

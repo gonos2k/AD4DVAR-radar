@@ -29,7 +29,11 @@ def test_multilead_layout_forecast_and_score_are_per_lead_mean(multilead_case):
     torch.testing.assert_close(forecasts[0], one.forecast(control, parameters), rtol=0, atol=0)
     per_lead_mse = (forecasts - problem.verification).square().flatten(1).mean(dim=1)
     expected = per_lead_mse.mean()
-    torch.testing.assert_close(problem.score(control, parameters), expected, rtol=0, atol=0)
+    # Equivalent nonnegative mean reductions can round differently by order.
+    reduction_roundoff = 2 * forecasts.numel() * torch.finfo(expected.dtype).eps
+    torch.testing.assert_close(
+        problem.score(control, parameters), expected, rtol=reduction_roundoff, atol=0,
+    )
 
     branch, _ = problem.branch_check(control, parameters)
     assert branch["euler_stages"] == 72

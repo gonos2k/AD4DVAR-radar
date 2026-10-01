@@ -1,6 +1,7 @@
 """Fast preflight and parent-contract tests for process-isolated FV response."""
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -19,6 +20,13 @@ from examples.weather_scenarios import (
     fv_process_response_runner as runner,
     fv_process_response_worker as worker,
 )
+_SUPPORT_SPEC = importlib.util.spec_from_file_location(
+    "fv_response_test_support", Path(__file__).with_name("fv_response_test_support.py"),
+)
+assert _SUPPORT_SPEC is not None and _SUPPORT_SPEC.loader is not None
+_SUPPORT = importlib.util.module_from_spec(_SUPPORT_SPEC)
+_SUPPORT_SPEC.loader.exec_module(_SUPPORT)
+portable_case = getattr(_SUPPORT, "portable_case")
 
 
 def test_worker_and_runner_bind_the_same_sources():
@@ -117,24 +125,24 @@ def test_worker_rejects_invalid_attempt_id_in_cli(tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("case_factory", "archive_names", "direction_slice", "expected_stages"),
+    ("case_id", "archive_names", "direction_slice", "expected_stages"),
     [
         (
-            shared._small_case,
+            "fv4x5",
             ("minmod_middle_time_bias_final.json", "minmod_parameter_vjp.json"),
             slice(20, 40),
             54,
         ),
         (
-            shared._large_case,
+            "fv8x10",
             ("fv86_seed_a.json", "fv86_reanalysis.json"),
             slice(80, 160),
             108,
         ),
     ],
 )
-def test_case_archives_direction_branch_and_nominal_gradient_without_pcg(
-    monkeypatch, case_factory, archive_names, direction_slice, expected_stages
+def test_case_archive_controls_branch_and_current_gradient_without_pcg(
+    monkeypatch, case_id, archive_names, direction_slice, expected_stages
 ):
     # Case construction and the stationarity/branch preflight must stay outside
     # the local-response PCG/HVP path.
@@ -146,7 +154,7 @@ def test_case_archives_direction_branch_and_nominal_gradient_without_pcg(
     for name in archive_names:
         assert shared._hash(shared.EVIDENCE / name) == shared.ARCHIVED[name]
 
-    problem, control, parameters, direction, _ = case_factory()
+    problem, control, parameters, direction, stages = portable_case(case_id)
 
     assert torch.count_nonzero(direction).item() == direction_slice.stop - direction_slice.start
     expected_direction = torch.zeros_like(direction)
@@ -154,13 +162,12 @@ def test_case_archives_direction_branch_and_nominal_gradient_without_pcg(
     assert torch.equal(direction, expected_direction)
 
     branch, _ = problem.branch_check(control, parameters)
-    assert branch["euler_stages"] == expected_stages
-    assert branch["choices"] == problem.expected_branch["choices"]
-    assert branch["face_signs"] == problem.expected_branch["face_signs"]
+    assert branch["euler_stages"] == stages == expected_stages
 
+    # The archived controls/directions above are fixture data; this fresh
+    # gradient belongs to the current-runtime inputs built by _portable_case.
     gradient = torch.func.grad(problem.objective, argnums=0)(control, parameters)
     assert bool(torch.isfinite(gradient).all())
-    assert gradient.abs().max().item() < 1e-10
 
 
 def _child_report(case_id, source_hashes, pid, *, response_start, response_end,

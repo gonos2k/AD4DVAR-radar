@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "path": "src/advar/fv_point_research_problem.py",
+      "sha256": "1a2a726280396189cb2dff753b689f9975fd704f6c42651da7300128615ecb18",
+      "snapshot": "source_snapshots/1a2a726280396189cb2dff753b689f9975fd704f6c42651da7300128615ecb18.py",
+      "source_commit": "662f5f3ff3e76ed2b48a44897e1a5ddf84ac7ce1"
+    },
+    {
+      "path": "tests/test_fv_point_missing.py",
+      "sha256": "29f1c59b2e461bb370f8a40078429119487654fd69f448072e06dcd6669b50a4",
+      "snapshot": "source_snapshots/29f1c59b2e461bb370f8a40078429119487654fd69f448072e06dcd6669b50a4.py",
+      "source_commit": "662f5f3ff3e76ed2b48a44897e1a5ddf84ac7ce1"
+    },
+    {
+      "path": "tests/test_fv_research_long_horizon.py",
+      "sha256": "aede35c0af1e59c97c4590c34873a8a3b196f3f58ff6657a64c84abb30cfad60",
+      "snapshot": "source_snapshots/aede35c0af1e59c97c4590c34873a8a3b196f3f58ff6657a64c84abb30cfad60.py",
+      "source_commit": "a3d953548e2e9fa5d54cb06643145a5d60130181"
+    }
+  ]
+}

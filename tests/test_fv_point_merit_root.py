@@ -15,6 +15,19 @@ from examples.weather_scenarios import fv_point_merit_root_runner as runner
 from examples.weather_scenarios import fv_point_response_preflight as preflight
 
 
+_MERIT_ROOT_SEED_CONTROL = (
+    -0.002575910622899729, -0.004970018308782862, -8.526476380752233e-05,
+    0.00019966082924655721, -3.9016958065336116e-08, -0.0012991977758926015,
+    -0.003681269062202051, -0.005443523795226334, -0.004134895737732996,
+    -0.00010703448101765398, 1.175109978009552e-05, -0.001713307538886371,
+    -0.00309319339352451, -0.006547644877281159, -0.0006810942610778155,
+    8.538169784797122e-12, -8.542792951090966e-08, -0.00016501287530734006,
+    -0.004644434857369081, -0.0003854503827691986, 0.0016797198450544252,
+    -0.0009327129626281612, 0.0027506824480648807, -0.006253019449946575,
+    -0.0038133122748276755, 0.03247870829117674,
+)
+
+
 def _trial(**changes):
     baseline = RefinementTrial(
         iteration=1, backtrack=0,
@@ -26,6 +39,34 @@ def _trial(**changes):
         step_scale=0.5, normalized_slope=-1.0, armijo_ratio=1.1,
     )
     return replace(baseline, **changes)
+
+
+def _install_current_local_prior(monkeypatch, tmp_path, problem, warm, parameters, direction):
+    """Build a current-input controller record around the pinned seed."""
+    seed = torch.tensor(_MERIT_ROOT_SEED_CONTROL, dtype=torch.float64)
+    assert preflight._tensor_sha(seed) == probe.SEED_SHA256
+    gradient = torch.func.grad(problem.objective, argnums=0)(seed, parameters)
+    source = probe.sector._sources()
+    identity = preflight._input_identity(problem, warm, parameters, direction)
+    trial_records = [
+        {"accepted": True, "iteration": iteration,
+         "candidate_control": seed.tolist(),
+         "gradient_max": float(gradient.abs().max())}
+        for iteration in range(1, 7)
+    ]
+    prior = {
+        "numerical_status": "sector_refused",
+        "response_validation": "not_performed",
+        "source_before": source,
+        "source_after": source,
+        "input_before": identity,
+        "input_after": identity,
+        "trial_records": trial_records,
+    }
+    path = tmp_path / "current_local_prior.json"
+    path.write_text(json.dumps(prior, sort_keys=True))
+    monkeypatch.setattr(probe, "PRIOR", path)
+    monkeypatch.setattr(probe, "PRIOR_SHA256", hashlib.sha256(path.read_bytes()).hexdigest())
 
 
 def test_changed_sector_uses_measured_merit_not_objective_or_max_gradient():
@@ -146,10 +187,8 @@ def test_parent_separates_execution_refusal_and_final_root(
 
 def test_unexpected_final_score_error_propagates_as_execution_failure(monkeypatch, tmp_path):
     problem, warm, p, direction = preflight.fixed_problem()
+    _install_current_local_prior(monkeypatch, tmp_path, problem, warm, p, direction)
     prior = json.loads(probe.PRIOR.read_text())
-    # Isolate callback classification from the historical prior-source gate;
-    # current refiner source has legitimately changed since that archive.
-    monkeypatch.setattr(probe.sector, "_sources", lambda: prior["source_before"])
     row = [v for v in prior["trial_records"] if v["accepted"]][-1]
     seed = torch.tensor(row["candidate_control"], dtype=torch.float64)
     gradient = torch.func.grad(problem.objective, argnums=0)(seed, p)

@@ -7,7 +7,6 @@ import hashlib
 from importlib.metadata import version
 import json
 import os
-import os
 from pathlib import Path
 import platform
 import subprocess
@@ -15,6 +14,7 @@ import sys
 from typing import Any
 
 import pytest
+from _pytest.subtests import SubtestReport
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -141,6 +141,57 @@ def summarize_phases(phase_reports: object) -> dict[str, Any]:
             "outcome": outcome}
 
 
+def summarize_subtests(reports: object) -> dict[str, int]:
+    """Validate independently reported subtests without treating them as phases."""
+    if not isinstance(reports, list):
+        raise ShardError("subtest reports must be a list")
+    counts: dict[str, int] = {}
+    for report in reports:
+        if not isinstance(report, dict) or report.get("phase") != "call" or report.get(
+                "outcome") not in {"passed", "failed", "skipped"}:
+            raise ShardError("subtest report has an unknown phase or outcome")
+        if set(report) - {
+                "phase", "outcome", "context", "wasxfail", "skip_reason",
+                "failure_traceback", "captured_sections"}:
+            raise ShardError("subtest report has unexpected fields")
+        context = report.get("context")
+        if (not isinstance(context, dict) or set(context) != {"msg", "kwargs"}
+                or (context["msg"] is not None and not isinstance(context["msg"], str))
+                or not isinstance(context["kwargs"], dict)
+                or not all(isinstance(key, str) and isinstance(value, str)
+                           for key, value in context["kwargs"].items())):
+            raise ShardError("subtest context is malformed")
+        if "wasxfail" in report and not isinstance(report["wasxfail"], str):
+            raise ShardError("subtest xfail reason must be text")
+        outcome = report["outcome"]
+        if outcome == "skipped":
+            if (not isinstance(report.get("skip_reason"), str)
+                    or not report["skip_reason"].strip()):
+                raise ShardError("skipped subtest lacks its reason")
+            if "wasxfail" in report:
+                outcome = "xfailed"
+        elif "skip_reason" in report:
+            raise ShardError("only skipped subtests may carry a skip reason")
+        elif outcome == "passed" and "wasxfail" in report:
+            outcome = "xpassed"
+        if outcome == "failed":
+            if (not isinstance(report.get("failure_traceback"), str)
+                    or not report["failure_traceback"].strip()):
+                raise ShardError("failed subtest lacks its traceback")
+        elif "failure_traceback" in report:
+            raise ShardError("only failed subtests may carry a traceback")
+        sections = report.get("captured_sections", [])
+        if (not isinstance(sections, list)
+                or any(not isinstance(section, dict)
+                       or set(section) != {"name", "content"}
+                       or not isinstance(section["name"], str)
+                       or not isinstance(section["content"], str)
+                       for section in sections)):
+            raise ShardError("subtest captured sections are malformed")
+        counts[outcome] = counts.get(outcome, 0) + 1
+    return counts
+
+
 def _module(nodeid: str) -> str:
     module, separator, _ = nodeid.partition("::")
     if not separator or not module:
@@ -247,6 +298,7 @@ def reconcile_shards(
 
     all_assigned: list[str] = []
     outcome_counts: dict[str, int] = {}
+    subtest_outcome_counts: dict[str, int] = {}
     for expected_assignment in expected:
         index = expected_assignment["shard_index"]
         assignment = by_assignment.get(index)
@@ -311,16 +363,34 @@ def reconcile_shards(
             except ShardError as error:
                 errors.append(f"invalid phase report in shard {index}: {error}")
                 continue
+            try:
+                subtest_counts = summarize_subtests(case.get("subtest_reports"))
+            except ShardError as error:
+                errors.append(f"invalid subtest report in shard {index}: {error}")
+                subtest_counts = {}
+            subtest_count = sum(subtest_counts.values())
+            if (type(case.get("subtest_report_count")) is not int
+                    or case["subtest_report_count"] != subtest_count):
+                errors.append(f"subtest count differs from reports in shard {index}")
             if any(case.get(key) != derived[key]
-                   for key in ("terminal", "terminal_phase", "outcome")):
+                   for key in ("terminal", "terminal_phase")):
                 errors.append(f"case summary differs from phase reports in shard {index}")
+            outcome = ("failed" if subtest_counts.get("failed", 0)
+                       else derived["outcome"])
+            if case.get("outcome") != outcome:
+                errors.append(f"case outcome differs from parent/subtest reports in shard {index}")
             if derived["terminal"] is not True:
                 errors.append(f"nonterminal case outcome in shard {index}")
-            outcome = derived["outcome"]
             if outcome not in {"passed", "skipped", "xfailed", "xpassed"}:
                 errors.append(f"non-success outcome in shard {index}: {outcome!r}")
+                if outcome == "failed":
+                    outcome_counts[outcome] = outcome_counts.get(outcome, 0) + 1
             else:
                 outcome_counts[outcome] = outcome_counts.get(outcome, 0) + 1
+            for subtest_outcome, count in subtest_counts.items():
+                subtest_outcome_counts[subtest_outcome] = (
+                    subtest_outcome_counts.get(subtest_outcome, 0) + count
+                )
 
     if len(all_assigned) != len(nodeids) or set(all_assigned) != set(nodeids):
         errors.append("shard assignments are not a disjoint full-inventory union")
@@ -331,6 +401,7 @@ def reconcile_shards(
         "shard_count": shard_count,
         "node_count": len(nodeids),
         "terminal_outcome_counts": outcome_counts,
+        "subtest_outcome_counts": subtest_outcome_counts,
     }
 
 
@@ -455,6 +526,7 @@ class _RunPlugin:
         self.actual: list[str] = []
         self.errors: list[dict[str, str]] = []
         self.reports: dict[str, list[dict[str, str]]] = {}
+        self.subtest_reports: dict[str, list[dict[str, Any]]] = {}
         self.session_exit_code: int | None = None
         self.selection_matches = False
         self.active_nodeid: str | None = None
@@ -484,6 +556,34 @@ class _RunPlugin:
         return None
 
     def pytest_runtest_logreport(self, report: Any) -> None:
+        if isinstance(report, SubtestReport):
+            row: dict[str, Any] = {
+                "phase": str(report.when),
+                "outcome": str(report.outcome),
+                "context": {
+                    "msg": report.context.msg,
+                    "kwargs": dict(report.context.kwargs),
+                },
+            }
+            wasxfail = getattr(report, "wasxfail", None)
+            if wasxfail is not None:
+                row["wasxfail"] = str(wasxfail)
+            if report.outcome == "skipped":
+                longrepr = report.longrepr
+                reason = longrepr[2] if isinstance(longrepr, tuple) and len(longrepr) >= 3 else longrepr
+                row["skip_reason"] = str(reason) if reason is not None else ""
+            if report.outcome == "failed":
+                row["failure_traceback"] = report.longreprtext
+            if report.sections:
+                row["captured_sections"] = [
+                    {"name": name, "content": content}
+                    for name, content in report.sections
+                ]
+            self.subtest_reports.setdefault(report.nodeid, []).append(row)
+            if report.outcome in {"failed", "skipped"}:
+                self._persist(terminal=False)
+            return
+
         row = {"phase": str(report.when), "outcome": str(report.outcome)}
         wasxfail = getattr(report, "wasxfail", None)
         if wasxfail is not None:
@@ -511,12 +611,20 @@ class _RunPlugin:
         result = []
         for nodeid in self.expected:
             phases = self.reports.get(nodeid, [])
+            subtests = self.subtest_reports.get(nodeid, [])
             try:
                 summary = summarize_phases(phases)
+                subtest_counts = summarize_subtests(subtests)
             except ShardError as error:
                 summary = {"terminal": False, "terminal_phase": None,
                            "outcome": "invalid", "phase_error": str(error)}
-            result.append({"nodeid": nodeid, **summary, "phase_reports": phases})
+            else:
+                if subtest_counts.get("failed", 0):
+                    summary["outcome"] = "failed"
+            result.append({
+                "nodeid": nodeid, **summary, "phase_reports": phases,
+                "subtest_reports": subtests, "subtest_report_count": len(subtests),
+            })
         return result
 
     def _record(self, *, terminal: bool, pytest_return_code: int | None = None) -> dict[str, Any]:

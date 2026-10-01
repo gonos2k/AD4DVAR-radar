@@ -59,8 +59,11 @@ def test_long_horizon_scores_are_mean_of_per_lead_spatial_mse(long_horizon_case)
 
     forecasts = problem.forecast(control, parameters)
     per_lead_mse = (forecasts - problem.verification).square().flatten(1).mean(1)
+    # The two equivalent nonnegative reductions need not be bit-identical.
+    reduction_roundoff = 2 * forecasts.numel() * torch.finfo(forecasts.dtype).eps
     torch.testing.assert_close(
-        problem.score(control, parameters), per_lead_mse.mean(), rtol=0, atol=0
+        problem.score(control, parameters), per_lead_mse.mean(),
+        rtol=reduction_roundoff, atol=0,
     )
 
     # Unequal lead offsets distinguish averaging the 18 lead scores from a
