@@ -1,0 +1,1103 @@
+{
+  "child": {
+    "archive_manifest_sha256": "959ab714de6f862a85fb0ee6ef8353fbfc45098916217a83a0d6acb7ef8f8fa5",
+    "branch_calls": [
+      {
+        "control_sha256": "125e0200fdf85f996715ba1bc04aa3f631333614bf15cf2c16630b94c1897421",
+        "euler_stages": 54,
+        "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+        "minimum_scaled_slope_margin": 0.0004060611332810128,
+        "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d",
+        "status": "positive_strict_branch"
+      },
+      {
+        "control_sha256": "125e0200fdf85f996715ba1bc04aa3f631333614bf15cf2c16630b94c1897421",
+        "euler_stages": 54,
+        "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+        "minimum_scaled_slope_margin": 0.0004060611332810128,
+        "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d",
+        "status": "positive_strict_branch"
+      },
+      {
+        "control_sha256": "594fa911da378f0f49d3ed0b06df1b413f8a09bcbbad29533e990b2d78fd7f9e",
+        "euler_stages": 54,
+        "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+        "minimum_scaled_slope_margin": 0.00040608748612331946,
+        "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d",
+        "status": "positive_strict_branch"
+      },
+      {
+        "control_sha256": "639b8c4f441c545aa587050f937abba51876015e30d5f674dbb148f24c343899",
+        "euler_stages": 54,
+        "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+        "minimum_scaled_slope_margin": 0.00040608748624138387,
+        "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d",
+        "status": "positive_strict_branch"
+      },
+      {
+        "control_sha256": "e61b460ec5cedda395fec37cd0db1098fde0155e2fb9dcf81f9fb8e75da5bc0e",
+        "euler_stages": 54,
+        "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+        "minimum_scaled_slope_margin": 0.00040608748618253484,
+        "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d",
+        "status": "positive_strict_branch"
+      },
+      {
+        "control_sha256": "a78d1b8e0cd8f997572f5e2a913f7023dcd6333c124ac4b7c9414358f8484e26",
+        "euler_stages": 54,
+        "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+        "minimum_scaled_slope_margin": 0.00040608748624064856,
+        "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d",
+        "status": "positive_strict_branch"
+      }
+    ],
+    "environment": {
+      "device": "CPU FP64",
+      "python": "3.12.13",
+      "torch": "2.13.0"
+    },
+    "execution_completion": "child_completed",
+    "final_branch": {
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+      "minimum_scaled_slope_margin": 0.00040608748624064856,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    "final_control": [
+      0.0017664928222495286,
+      0.0008520370486646672,
+      0.0005095373226338965,
+      0.0002955685804080073,
+      0.0008503571863323684,
+      0.001342524024508611,
+      -0.0005384339356051018,
+      -0.00042987647580803256,
+      -0.0004891564587107851,
+      0.0006995855765834549,
+      0.001479852238125385,
+      -0.0007226371180486566,
+      -0.0009867246816843247,
+      -0.001088352616625441,
+      -0.0009247899467105755,
+      -8.015329707073345e-05,
+      -0.000606676322981361,
+      -0.0012911157382276654,
+      -0.00191127224507232,
+      -0.0026456180060602987,
+      0.030501987157785092,
+      -0.01211979985433054,
+      0.04176354108639636,
+      -0.05849581157867682,
+      -0.0619650232075461,
+      0.022710409711402733
+    ],
+    "final_control_sha256": "a78d1b8e0cd8f997572f5e2a913f7023dcd6333c124ac4b7c9414358f8484e26",
+    "final_field_control": [
+      0.0017664928222495286,
+      0.0008520370486646672,
+      0.0005095373226338965,
+      0.0002955685804080073,
+      0.0008503571863323684,
+      0.001342524024508611,
+      -0.0005384339356051018,
+      -0.00042987647580803256,
+      -0.0004891564587107851,
+      0.0006995855765834549,
+      0.001479852238125385,
+      -0.0007226371180486566,
+      -0.0009867246816843247,
+      -0.001088352616625441,
+      -0.0009247899467105755,
+      -8.015329707073345e-05,
+      -0.000606676322981361,
+      -0.0012911157382276654,
+      -0.00191127224507232,
+      -0.0026456180060602987
+    ],
+    "final_fixed_dynamics_sha256": "eef96444c28caea190ad9c491542cc6c80f354df6e99932908692ccdb27a4c3e",
+    "final_full_gradient": {
+      "control_sha256": "a78d1b8e0cd8f997572f5e2a913f7023dcd6333c124ac4b7c9414358f8484e26",
+      "dynamics_components": [
+        3.686879971331186e-06,
+        -0.003499631172517193,
+        -0.006128402556589675,
+        -0.0008784049907372554,
+        -0.0026197628948153168,
+        4.110871123716442e-06
+      ],
+      "dynamics_l2": 0.0075788864409237254,
+      "field_inf": 7.032988341010293e-12,
+      "field_l2": 1.133348677288326e-11,
+      "full_inf": 0.006128402556589675,
+      "full_l2": 0.0075788864409237254
+    },
+    "final_gradient_audit": {
+      "control_sha256": "a78d1b8e0cd8f997572f5e2a913f7023dcd6333c124ac4b7c9414358f8484e26",
+      "dynamics_components": [
+        3.686879971331186e-06,
+        -0.003499631172517193,
+        -0.006128402556589675,
+        -0.0008784049907372554,
+        -0.0026197628948153168,
+        4.110871123716442e-06
+      ],
+      "dynamics_l2": 0.0075788864409237254,
+      "field_inf": 7.032988341010293e-12,
+      "field_l2": 1.133348677288326e-11,
+      "full_inf": 0.006128402556589675,
+      "full_l2": 0.0075788864409237254,
+      "stage": "final"
+    },
+    "final_objective": 0.020764957942635602,
+    "final_reduced_gradient_max": 7.032988341010293e-12,
+    "fixed_dynamics_byte_identical": true,
+    "fixed_dynamics_sha256": "eef96444c28caea190ad9c491542cc6c80f354df6e99932908692ccdb27a4c3e",
+    "full_stationarity": false,
+    "gradient_audits": [
+      {
+        "control_sha256": "125e0200fdf85f996715ba1bc04aa3f631333614bf15cf2c16630b94c1897421",
+        "dynamics_components": [
+          6.29057626631499e-06,
+          -0.003512450690757684,
+          -0.006166989990486087,
+          -0.0008850119266914161,
+          -0.002638589615308398,
+          -4.6541940272894905e-05
+        ],
+        "dynamics_l2": 0.007623429831100515,
+        "field_inf": 0.006848117531724784,
+        "field_l2": 0.009536140062181401,
+        "full_inf": 0.006848117531724784,
+        "full_l2": 0.012208793948431365,
+        "stage": "seed"
+      },
+      {
+        "backtrack": 0,
+        "control_sha256": "594fa911da378f0f49d3ed0b06df1b413f8a09bcbbad29533e990b2d78fd7f9e",
+        "dynamics_components": [
+          3.6868796590948383e-06,
+          -0.0034996311720695856,
+          -0.006128402556436048,
+          -0.0008784049901355631,
+          -0.00261976289480019,
+          4.1109016887981575e-06
+        ],
+        "dynamics_l2": 0.007578886440534274,
+        "field_inf": 2.0384545592298797e-10,
+        "field_l2": 2.284054187650614e-10,
+        "full_inf": 0.006128402556436048,
+        "full_l2": 0.0075788864405342765,
+        "iteration": 1,
+        "stage": "accepted"
+      },
+      {
+        "backtrack": 1,
+        "control_sha256": "e61b460ec5cedda395fec37cd0db1098fde0155e2fb9dcf81f9fb8e75da5bc0e",
+        "dynamics_components": [
+          3.686879825666456e-06,
+          -0.0034996311722594025,
+          -0.006128402556420859,
+          -0.0008784049903915805,
+          -0.002619762894556149,
+          4.110886366308353e-06
+        ],
+        "dynamics_l2": 0.0075788864405467275,
+        "field_inf": 1.0159386765011547e-10,
+        "field_l2": 1.1439833858543257e-10,
+        "full_inf": 0.006128402556420859,
+        "full_l2": 0.007578886440546728,
+        "iteration": 2,
+        "stage": "accepted"
+      },
+      {
+        "backtrack": 0,
+        "control_sha256": "a78d1b8e0cd8f997572f5e2a913f7023dcd6333c124ac4b7c9414358f8484e26",
+        "dynamics_components": [
+          3.686879971331186e-06,
+          -0.003499631172517193,
+          -0.006128402556589675,
+          -0.0008784049907372554,
+          -0.0026197628948153168,
+          4.110871123716442e-06
+        ],
+        "dynamics_l2": 0.0075788864409237254,
+        "field_inf": 7.032988341010293e-12,
+        "field_l2": 1.133348677288326e-11,
+        "full_inf": 0.006128402556589675,
+        "full_l2": 0.0075788864409237254,
+        "iteration": 3,
+        "stage": "accepted"
+      },
+      {
+        "control_sha256": "a78d1b8e0cd8f997572f5e2a913f7023dcd6333c124ac4b7c9414358f8484e26",
+        "dynamics_components": [
+          3.686879971331186e-06,
+          -0.003499631172517193,
+          -0.006128402556589675,
+          -0.0008784049907372554,
+          -0.0026197628948153168,
+          4.110871123716442e-06
+        ],
+        "dynamics_l2": 0.0075788864409237254,
+        "field_inf": 7.032988341010293e-12,
+        "field_l2": 1.133348677288326e-11,
+        "full_inf": 0.006128402556589675,
+        "full_l2": 0.0075788864409237254,
+        "stage": "final"
+      }
+    ],
+    "hvp_count": 39,
+    "hvp_count_scope": "refiner total; cross-checked with per-solve counts",
+    "input_after": {
+      "current_problem_identity": {
+        "fixed_problem_sha256": "838fcf77a43b209b53dfe62f6a1657d0f8eba5a41797e431451059f3f8d18158",
+        "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+      },
+      "fixed_input_fields": {
+        "common_bias_std_dbz": 0.25,
+        "missing_indices": [
+          [
+            1,
+            1,
+            2
+          ],
+          [
+            2,
+            2,
+            3
+          ]
+        ],
+        "observation_counts": {
+          "censored": 0,
+          "missing": 2,
+          "qc_rejected": 0,
+          "valid": 58
+        },
+        "tensor_sha256": {
+          "direction": "f75710a114ba2fb0ad1013ccaa15729e7d69b05031ea1b3537a519be77611a38",
+          "missing_mask": "21257c511085d4ac7cf048aa8d526556286321fad5f9d4235c7d239ad785199a",
+          "observation_dbz": "fc89685ee7bb07f7c3dcd5eb45fc6a6bb90bf73dae5500a6453c563e33c08a12",
+          "parameters": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+          "valid_mask": "6d2c1c3e23427974a855012eb8885dbb00c357f53dc4e4ab38bc58864fe20aec",
+          "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+          "warm_start_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+          "whitener_mode": "2b9b699f1aa5d630bac602ec23f2889b53b79c539aef63018b440a310ae1fb72"
+        },
+        "verification_constructor": "tests.test_fv_research_partial_observation._problem: warm-start partial forecast dBZ + 0.1 * fixed pattern, then detach",
+        "warm_start_branch": {
+          "euler_stages": 54,
+          "minimum_scaled_face_flux_margin": 0.007752734889703382,
+          "minimum_scaled_slope_margin": 0.0007615693500034068,
+          "signature_sha256": "3c5e5433d3d74a8f840bdd28834b2a73c98edf3b3fc4b46c5ab89567b1e4c70d"
+        },
+        "warm_start_gradient_max": 1.083842990538571,
+        "warm_start_objective": 0.02127260121736458
+      },
+      "historical_manifest_sha256": "6d859284dbb737910e2a94252e37cf87322924cae2fa9e88381f9e29dd18a5a3",
+      "historical_preflight_sha256": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
+      "historical_problem_identity": {
+        "fixed_problem_sha256": "ffc5a82cb9e4cda7667378b1932c6703e61a6a0c2d16d37ca1c6268b2f860e48",
+        "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+      }
+    },
+    "input_before": {
+      "current_problem_identity": {
+        "fixed_problem_sha256": "838fcf77a43b209b53dfe62f6a1657d0f8eba5a41797e431451059f3f8d18158",
+        "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+      },
+      "fixed_input_fields": {
+        "common_bias_std_dbz": 0.25,
+        "missing_indices": [
+          [
+            1,
+            1,
+            2
+          ],
+          [
+            2,
+            2,
+            3
+          ]
+        ],
+        "observation_counts": {
+          "censored": 0,
+          "missing": 2,
+          "qc_rejected": 0,
+          "valid": 58
+        },
+        "tensor_sha256": {
+          "direction": "f75710a114ba2fb0ad1013ccaa15729e7d69b05031ea1b3537a519be77611a38",
+          "missing_mask": "21257c511085d4ac7cf048aa8d526556286321fad5f9d4235c7d239ad785199a",
+          "observation_dbz": "fc89685ee7bb07f7c3dcd5eb45fc6a6bb90bf73dae5500a6453c563e33c08a12",
+          "parameters": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+          "valid_mask": "6d2c1c3e23427974a855012eb8885dbb00c357f53dc4e4ab38bc58864fe20aec",
+          "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+          "warm_start_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+          "whitener_mode": "2b9b699f1aa5d630bac602ec23f2889b53b79c539aef63018b440a310ae1fb72"
+        },
+        "verification_constructor": "tests.test_fv_research_partial_observation._problem: warm-start partial forecast dBZ + 0.1 * fixed pattern, then detach",
+        "warm_start_branch": {
+          "euler_stages": 54,
+          "minimum_scaled_face_flux_margin": 0.007752734889703382,
+          "minimum_scaled_slope_margin": 0.0007615693500034068,
+          "signature_sha256": "3c5e5433d3d74a8f840bdd28834b2a73c98edf3b3fc4b46c5ab89567b1e4c70d"
+        },
+        "warm_start_gradient_max": 1.083842990538571,
+        "warm_start_objective": 0.02127260121736458
+      },
+      "historical_manifest_sha256": "6d859284dbb737910e2a94252e37cf87322924cae2fa9e88381f9e29dd18a5a3",
+      "historical_preflight_sha256": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
+      "historical_problem_identity": {
+        "fixed_problem_sha256": "ffc5a82cb9e4cda7667378b1932c6703e61a6a0c2d16d37ca1c6268b2f860e48",
+        "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+      }
+    },
+    "iterations": 3,
+    "linear_solves": [
+      {
+        "audit_hvp_calls": 1,
+        "converged": true,
+        "iteration": 1,
+        "iterations": 10,
+        "max_iterations": 80,
+        "measured_hvp_calls": 12,
+        "pcg_hvp_calls": 11,
+        "refiner_true_residual_hvp_calls": 1,
+        "reported_relative_residual": 2.1883763211659512e-11,
+        "rtol": 1e-10,
+        "total_hvp_calls": 13,
+        "true_relative_residual": 2.188376321165951e-11
+      },
+      {
+        "audit_hvp_calls": 1,
+        "converged": true,
+        "iteration": 2,
+        "iterations": 10,
+        "max_iterations": 80,
+        "measured_hvp_calls": 12,
+        "pcg_hvp_calls": 11,
+        "refiner_true_residual_hvp_calls": 1,
+        "reported_relative_residual": 1.5846521971983778e-11,
+        "rtol": 1e-10,
+        "total_hvp_calls": 13,
+        "true_relative_residual": 1.5846521971983778e-11
+      },
+      {
+        "audit_hvp_calls": 1,
+        "converged": true,
+        "iteration": 3,
+        "iterations": 10,
+        "max_iterations": 80,
+        "measured_hvp_calls": 12,
+        "pcg_hvp_calls": 11,
+        "refiner_true_residual_hvp_calls": 1,
+        "reported_relative_residual": 1.3643209539276751e-11,
+        "rtol": 1e-10,
+        "total_hvp_calls": 13,
+        "true_relative_residual": 1.3643209539276753e-11
+      }
+    ],
+    "numerical_status": "block_stationary_candidate",
+    "parameters_sha256": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+    "parameters_sha256_after": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+    "pcg_and_observer_hvp_count": 36,
+    "phase": "finished",
+    "physical_validation": "not_performed",
+    "pid": 73009,
+    "plan_sha256": "391bfdbeb4f97af617dc00840700cadba36c36be8ed797e78026ba8cc3aed1f8",
+    "raw_unchanged": true,
+    "reduced_stationarity": true,
+    "refiner_reported_hvp_count": 39,
+    "refiner_reported_hvp_scope": "RefinementResult total",
+    "refusal": null,
+    "response_eligibility": "margin_supported_handoff",
+    "response_validation": "not_performed",
+    "reviewed_probe_sha256": "30c6c1177e0a001a37751aa4f0396cb616f2f2e1d0c76f5b47472246f0373c18",
+    "scope": "one fixed-dynamics 20-control field correction; no product GN, response, score, or perturbed reanalysis",
+    "seed_branch": {
+      "euler_stages": 54,
+      "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+      "minimum_scaled_slope_margin": 0.0004060611332810128,
+      "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+    },
+    "seed_control": [
+      0.0017662657927567371,
+      0.0008518653362342508,
+      0.0005093435373472086,
+      0.0002953690464301008,
+      0.0008501645476500381,
+      0.0013437027305888312,
+      -0.0005386430218006103,
+      -0.0004300728289587899,
+      -0.0004893860380906657,
+      0.0006994745364747299,
+      0.0014782034983512162,
+      -0.0007229307017940879,
+      -0.0009869479588144872,
+      -0.0010885147633302255,
+      -0.0009249536837647868,
+      -8.027751005143679e-05,
+      -0.0006068548405048853,
+      -0.0012913450312696713,
+      -0.001911512821403671,
+      -0.002645902748524137,
+      0.030501987157785092,
+      -0.01211979985433054,
+      0.04176354108639636,
+      -0.05849581157867682,
+      -0.0619650232075461,
+      0.022710409711402733
+    ],
+    "seed_control_sha256": "125e0200fdf85f996715ba1bc04aa3f631333614bf15cf2c16630b94c1897421",
+    "seed_field_control": [
+      0.0017662657927567371,
+      0.0008518653362342508,
+      0.0005093435373472086,
+      0.0002953690464301008,
+      0.0008501645476500381,
+      0.0013437027305888312,
+      -0.0005386430218006103,
+      -0.0004300728289587899,
+      -0.0004893860380906657,
+      0.0006994745364747299,
+      0.0014782034983512162,
+      -0.0007229307017940879,
+      -0.0009869479588144872,
+      -0.0010885147633302255,
+      -0.0009249536837647868,
+      -8.027751005143679e-05,
+      -0.0006068548405048853,
+      -0.0012913450312696713,
+      -0.001911512821403671,
+      -0.002645902748524137
+    ],
+    "seed_field_control_sha256": "f56e1a56ad1d9545f7c0fa0a4d64eb44877080988ff05d27f0ba6190c569d475",
+    "seed_field_gradient_max": 0.006848117531724784,
+    "seed_gradient": {
+      "control_sha256": "125e0200fdf85f996715ba1bc04aa3f631333614bf15cf2c16630b94c1897421",
+      "dynamics_components": [
+        6.29057626631499e-06,
+        -0.003512450690757684,
+        -0.006166989990486087,
+        -0.0008850119266914161,
+        -0.002638589615308398,
+        -4.6541940272894905e-05
+      ],
+      "dynamics_l2": 0.007623429831100515,
+      "field_inf": 0.006848117531724784,
+      "field_l2": 0.009536140062181401,
+      "full_inf": 0.006848117531724784,
+      "full_l2": 0.012208793948431365
+    },
+    "seed_objective": 0.02076496753914496,
+    "seed_raw_hashes_after": {
+      "partial_alternate_seed_attempt1/alternate_seed.json": "14ae79c97af18be76b758687a94bca783321ee98967f13c26f60f5938a0a78b6",
+      "partial_alternate_seed_attempt1/alternate_seed.log": "6fc6afd08c21b6d7561f934b8b7a7242ffdca92b0ed9d207082807dccdd0c5c9",
+      "partial_alternate_seed_attempt1/alternate_seed.resource.json": "eee3233ec1ef1a9e50d818330c24e68c901812bcc86f3b4e11c5a5b4bca69314",
+      "partial_alternate_seed_attempt1/alternate_seed.run.json": "beaa67921744adab8abbc3046d72f47a578f0e9d20436f5f0e912604d058ddae",
+      "partial_alternate_seed_attempt1/manifest.json": "959ab714de6f862a85fb0ee6ef8353fbfc45098916217a83a0d6acb7ef8f8fa5",
+      "partial_sector_root_attempt1/manifest.json": "d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd",
+      "partial_sector_root_attempt1/partial_sector_root.json": "fbd3ee4bc723f9074b789cf59a5a22040dee58f286ea8bdbc9a016a1bbce0f53",
+      "partial_sector_root_attempt1/partial_sector_root.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "partial_sector_root_attempt1/partial_sector_root.resource.json": "9283c7f506767d551329a44a774a670fd4ce2dae52b208b3a2858af7928484ca",
+      "partial_sector_root_attempt1/partial_sector_root.run.json": "da82df67df3559f058f806359cda970f29ae598232ee97b2b926f85e79c8c1c7"
+    },
+    "seed_raw_hashes_before": {
+      "partial_alternate_seed_attempt1/alternate_seed.json": "14ae79c97af18be76b758687a94bca783321ee98967f13c26f60f5938a0a78b6",
+      "partial_alternate_seed_attempt1/alternate_seed.log": "6fc6afd08c21b6d7561f934b8b7a7242ffdca92b0ed9d207082807dccdd0c5c9",
+      "partial_alternate_seed_attempt1/alternate_seed.resource.json": "eee3233ec1ef1a9e50d818330c24e68c901812bcc86f3b4e11c5a5b4bca69314",
+      "partial_alternate_seed_attempt1/alternate_seed.run.json": "beaa67921744adab8abbc3046d72f47a578f0e9d20436f5f0e912604d058ddae",
+      "partial_alternate_seed_attempt1/manifest.json": "959ab714de6f862a85fb0ee6ef8353fbfc45098916217a83a0d6acb7ef8f8fa5",
+      "partial_sector_root_attempt1/manifest.json": "d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd",
+      "partial_sector_root_attempt1/partial_sector_root.json": "fbd3ee4bc723f9074b789cf59a5a22040dee58f286ea8bdbc9a016a1bbce0f53",
+      "partial_sector_root_attempt1/partial_sector_root.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "partial_sector_root_attempt1/partial_sector_root.resource.json": "9283c7f506767d551329a44a774a670fd4ce2dae52b208b3a2858af7928484ca",
+      "partial_sector_root_attempt1/partial_sector_root.run.json": "da82df67df3559f058f806359cda970f29ae598232ee97b2b926f85e79c8c1c7"
+    },
+    "seed_signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d",
+    "shared_resource_runner_sha256": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "source_after": {
+      "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+      "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+      "examples/weather_scenarios/fv_partial_alternate_root_probe.py": "9956ab6382aeaccd03c8e25535af0af0826c9589df80087f972ddacbec2066b4",
+      "examples/weather_scenarios/fv_partial_alternate_root_runner.py": "dc0d5942c34da40ab7ed584b9e2640188e49d34d828c2e20d332d0e6da05b87d",
+      "examples/weather_scenarios/fv_partial_alternate_seed_gate.py": "443d7225b5322c9a2d9e89f22b1993d2c878f5c3e98186d6e7b9cf8a7d3dfff0",
+      "examples/weather_scenarios/fv_partial_alternate_seed_runner.py": "5c7cf933ffa0dfc4a2a51e4e35193580702e3671fa6d51323a335e9d0bfd5cd9",
+      "examples/weather_scenarios/fv_partial_field_correction_probe.py": "30c6c1177e0a001a37751aa4f0396cb616f2f2e1d0c76f5b47472246f0373c18",
+      "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "758397e502b1f7821cc62fe9f1cf47b440cabdc4933596a3076ef762ad282f0e",
+      "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7756da5561f67d47d1a813cc2cd720931b3ba29d132758e16e2628db6fe220c8",
+      "examples/weather_scenarios/fv_partial_sector_root_probe.py": "fddc3ddb20a3a961f73eb2d40dd379b25e87cd6109ca836476f45a1408350ccc",
+      "examples/weather_scenarios/fv_partial_sector_root_runner.py": "2bc6607a1bc4c369cd11edbd359d7a3754352dc7df2b7377944811161e37b18e",
+      "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+      "examples/weather_scenarios/fv_point_merit_root_probe.py": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+      "examples/weather_scenarios/fv_point_sector_policy.py": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+      "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+      "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+      "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+      "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+      "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+      "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+      "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+      "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+      "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d"
+    },
+    "source_before": {
+      "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+      "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+      "examples/weather_scenarios/fv_partial_alternate_root_probe.py": "9956ab6382aeaccd03c8e25535af0af0826c9589df80087f972ddacbec2066b4",
+      "examples/weather_scenarios/fv_partial_alternate_root_runner.py": "dc0d5942c34da40ab7ed584b9e2640188e49d34d828c2e20d332d0e6da05b87d",
+      "examples/weather_scenarios/fv_partial_alternate_seed_gate.py": "443d7225b5322c9a2d9e89f22b1993d2c878f5c3e98186d6e7b9cf8a7d3dfff0",
+      "examples/weather_scenarios/fv_partial_alternate_seed_runner.py": "5c7cf933ffa0dfc4a2a51e4e35193580702e3671fa6d51323a335e9d0bfd5cd9",
+      "examples/weather_scenarios/fv_partial_field_correction_probe.py": "30c6c1177e0a001a37751aa4f0396cb616f2f2e1d0c76f5b47472246f0373c18",
+      "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "758397e502b1f7821cc62fe9f1cf47b440cabdc4933596a3076ef762ad282f0e",
+      "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7756da5561f67d47d1a813cc2cd720931b3ba29d132758e16e2628db6fe220c8",
+      "examples/weather_scenarios/fv_partial_sector_root_probe.py": "fddc3ddb20a3a961f73eb2d40dd379b25e87cd6109ca836476f45a1408350ccc",
+      "examples/weather_scenarios/fv_partial_sector_root_runner.py": "2bc6607a1bc4c369cd11edbd359d7a3754352dc7df2b7377944811161e37b18e",
+      "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+      "examples/weather_scenarios/fv_point_merit_root_probe.py": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+      "examples/weather_scenarios/fv_point_sector_policy.py": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+      "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+      "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+      "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+      "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+      "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+      "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+      "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+      "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+      "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d"
+    },
+    "trial_records": [
+      {
+        "accepted": true,
+        "actual_objective_gate": {
+          "armijo_ratio": 2.3953954246068103e-08,
+          "candidate_objective": 0.020764957942635005,
+          "candidate_phi": 2.6084517660621534e-20,
+          "current_objective": 0.02076496753914496,
+          "current_phi": 4.546898364277055e-05,
+          "normalized_slope": -0.9999999999999999,
+          "objective_gate_passed": true,
+          "objective_increase": -9.596509954745702e-09,
+          "objective_roundoff_tolerance": 5.901758737293494e-16,
+          "phi_decrease": 4.546898364277052e-05
+        },
+        "armijo_limit": 0.9998999949995,
+        "armijo_ratio": 2.3953954246068103e-08,
+        "backtrack": 0,
+        "branch": {
+          "euler_stages": 54,
+          "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+          "minimum_scaled_slope_margin": 0.00040608748612331946,
+          "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+        },
+        "candidate_control": [
+          0.001766492822367624,
+          0.0008520370487839779,
+          0.0005095373227541052,
+          0.0002955685805271021,
+          0.0008503571864549022,
+          0.0013425240246430238,
+          -0.0005384339354806369,
+          -0.0004298764756868265,
+          -0.0004891564585892316,
+          0.0006995855767048646,
+          0.0014798522382614124,
+          -0.0007226371179236179,
+          -0.000986724681566883,
+          -0.0010883526164349657,
+          -0.0009247899465892245,
+          -8.015329695191816e-05,
+          -0.000606676322860956,
+          -0.0012911157381065414,
+          -0.0019112722449522767,
+          -0.002645618005933554,
+          0.030501987157785092,
+          -0.01211979985433054,
+          0.04176354108639636,
+          -0.05849581157867682,
+          -0.0619650232075461,
+          0.022710409711402733
+        ],
+        "candidate_control_sha256": "594fa911da378f0f49d3ed0b06df1b413f8a09bcbbad29533e990b2d78fd7f9e",
+        "gradient_blocks": {
+          "control_sha256": "594fa911da378f0f49d3ed0b06df1b413f8a09bcbbad29533e990b2d78fd7f9e",
+          "dynamics_components": [
+            3.6868796590948383e-06,
+            -0.0034996311720695856,
+            -0.006128402556436048,
+            -0.0008784049901355631,
+            -0.00261976289480019,
+            4.1109016887981575e-06
+          ],
+          "dynamics_l2": 0.007578886440534274,
+          "field_inf": 2.0384545592298797e-10,
+          "field_l2": 2.284054187650614e-10,
+          "full_inf": 0.006128402556436048,
+          "full_l2": 0.0075788864405342765
+        },
+        "gradient_max": 2.0384545592298797e-10,
+        "gradient_norm": 2.284054187650614e-10,
+        "hvp_count": 13,
+        "iteration": 1,
+        "linear_relative_residual": 2.188376321165951e-11,
+        "norm_ratio": 2.3951558730861746e-08,
+        "normalized_slope": -0.9999999999999999,
+        "objective": 0.020764957942635005,
+        "pcg_iterations": 10,
+        "pcg_relative_residual": 2.1883763211659512e-11,
+        "step_scale": 1.0
+      },
+      {
+        "acceptance_policy": "trial_acceptance",
+        "accepted": false,
+        "actual_objective_gate": {
+          "armijo_ratio": 0.062197924259602494,
+          "candidate_objective": 0.020764957942635637,
+          "candidate_phi": 1.0088990780147548e-22,
+          "current_objective": 0.020764957942635005,
+          "current_phi": 2.6084517660621534e-20,
+          "normalized_slope": -1.0000000000000013,
+          "objective_gate_passed": false,
+          "objective_increase": 6.314393452555578e-16,
+          "objective_roundoff_tolerance": 5.901756009801499e-16,
+          "phi_decrease": 2.598362775282006e-20
+        },
+        "armijo_limit": 0.9998999949995,
+        "armijo_ratio": 0.062197924259602494,
+        "backtrack": 0,
+        "branch": {
+          "euler_stages": 54,
+          "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+          "minimum_scaled_slope_margin": 0.00040608748624138387,
+          "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+        },
+        "candidate_control": [
+          0.0017664928222485884,
+          0.0008520370486651743,
+          0.0005095373226334536,
+          0.0002955685804081435,
+          0.0008503571863311259,
+          0.0013425240245077481,
+          -0.0005384339356045362,
+          -0.00042987647580864616,
+          -0.0004891564587112422,
+          0.0006995855765838154,
+          0.0014798522381259868,
+          -0.0007226371180496816,
+          -0.0009867246816836865,
+          -0.001088352616625732,
+          -0.0009247899467104305,
+          -8.015329707140498e-05,
+          -0.0006066763229823492,
+          -0.0012911157382276706,
+          -0.0019112722450724926,
+          -0.0026456180060595398,
+          0.030501987157785092,
+          -0.01211979985433054,
+          0.04176354108639636,
+          -0.05849581157867682,
+          -0.0619650232075461,
+          0.022710409711402733
+        ],
+        "candidate_control_sha256": "639b8c4f441c545aa587050f937abba51876015e30d5f674dbb148f24c343899",
+        "gradient_max": 5.754960310383472e-12,
+        "gradient_norm": 1.4204922231499579e-11,
+        "hvp_count": 26,
+        "iteration": 2,
+        "linear_relative_residual": 1.5846521971983778e-11,
+        "norm_ratio": 0.06219170415615581,
+        "normalized_slope": -1.0000000000000013,
+        "objective": 0.020764957942635637,
+        "pcg_iterations": 10,
+        "pcg_relative_residual": 1.5846521971983778e-11,
+        "policy_reason": "actual_objective_increase",
+        "rejection": "policy",
+        "step_scale": 1.0
+      },
+      {
+        "accepted": true,
+        "actual_objective_gate": {
+          "armijo_ratio": 0.5008815445358054,
+          "candidate_objective": 0.02076495794263503,
+          "candidate_phi": 6.5434899355536346e-21,
+          "current_objective": 0.020764957942635005,
+          "current_phi": 2.6084517660621534e-20,
+          "normalized_slope": -1.0000000000000013,
+          "objective_gate_passed": true,
+          "objective_increase": 2.42861286636753e-17,
+          "objective_roundoff_tolerance": 5.901756009801326e-16,
+          "phi_decrease": 1.95410277250679e-20
+        },
+        "armijo_limit": 0.9999499987499375,
+        "armijo_ratio": 0.5008815445358054,
+        "backtrack": 1,
+        "branch": {
+          "euler_stages": 54,
+          "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+          "minimum_scaled_slope_margin": 0.00040608748618253484,
+          "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+        },
+        "candidate_control": [
+          0.0017664928223081063,
+          0.0008520370487245761,
+          0.0005095373226937795,
+          0.0002955685804676228,
+          0.0008503571863930141,
+          0.001342524024575386,
+          -0.0005384339355425865,
+          -0.00042987647574773633,
+          -0.0004891564586502369,
+          0.00069958557664434,
+          0.0014798522381936996,
+          -0.0007226371179866497,
+          -0.0009867246816252847,
+          -0.0010883526165303488,
+          -0.0009247899466498275,
+          -8.015329701166158e-05,
+          -0.0006066763229216526,
+          -0.001291115738167106,
+          -0.0019112722450123846,
+          -0.0026456180059965468,
+          0.030501987157785092,
+          -0.01211979985433054,
+          0.04176354108639636,
+          -0.05849581157867682,
+          -0.0619650232075461,
+          0.022710409711402733
+        ],
+        "candidate_control_sha256": "e61b460ec5cedda395fec37cd0db1098fde0155e2fb9dcf81f9fb8e75da5bc0e",
+        "gradient_blocks": {
+          "control_sha256": "e61b460ec5cedda395fec37cd0db1098fde0155e2fb9dcf81f9fb8e75da5bc0e",
+          "dynamics_components": [
+            3.686879825666456e-06,
+            -0.0034996311722594025,
+            -0.006128402556420859,
+            -0.0008784049903915805,
+            -0.002619762894556149,
+            4.110886366308353e-06
+          ],
+          "dynamics_l2": 0.0075788864405467275,
+          "field_inf": 1.0159386765011547e-10,
+          "field_l2": 1.1439833858543257e-10,
+          "full_inf": 0.006128402556420859,
+          "full_l2": 0.007578886440546728
+        },
+        "gradient_max": 1.0159386765011547e-10,
+        "gradient_norm": 1.1439833858543257e-10,
+        "hvp_count": 26,
+        "iteration": 2,
+        "linear_relative_residual": 1.5846521971983778e-11,
+        "norm_ratio": 0.5008564998324453,
+        "normalized_slope": -1.0000000000000013,
+        "objective": 0.02076495794263503,
+        "pcg_iterations": 10,
+        "pcg_relative_residual": 1.5846521971983778e-11,
+        "step_scale": 0.5
+      },
+      {
+        "accepted": true,
+        "actual_objective_gate": {
+          "armijo_ratio": 0.0990802876313322,
+          "candidate_objective": 0.020764957942635602,
+          "candidate_phi": 6.42239612155599e-23,
+          "current_objective": 0.02076495794263503,
+          "current_phi": 6.5434899355536346e-21,
+          "normalized_slope": -1.000000000000001,
+          "objective_gate_passed": true,
+          "objective_increase": 5.724587470723463e-16,
+          "objective_roundoff_tolerance": 5.901756009801489e-16,
+          "phi_decrease": 6.4792659743380746e-21
+        },
+        "armijo_limit": 0.9998999949995,
+        "armijo_ratio": 0.0990802876313322,
+        "backtrack": 0,
+        "branch": {
+          "euler_stages": 54,
+          "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+          "minimum_scaled_slope_margin": 0.00040608748624064856,
+          "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+        },
+        "candidate_control": [
+          0.0017664928222495286,
+          0.0008520370486646672,
+          0.0005095373226338965,
+          0.0002955685804080073,
+          0.0008503571863323684,
+          0.001342524024508611,
+          -0.0005384339356051018,
+          -0.00042987647580803256,
+          -0.0004891564587107851,
+          0.0006995855765834549,
+          0.001479852238125385,
+          -0.0007226371180486566,
+          -0.0009867246816843247,
+          -0.001088352616625441,
+          -0.0009247899467105755,
+          -8.015329707073345e-05,
+          -0.000606676322981361,
+          -0.0012911157382276654,
+          -0.00191127224507232,
+          -0.0026456180060602987,
+          0.030501987157785092,
+          -0.01211979985433054,
+          0.04176354108639636,
+          -0.05849581157867682,
+          -0.0619650232075461,
+          0.022710409711402733
+        ],
+        "candidate_control_sha256": "a78d1b8e0cd8f997572f5e2a913f7023dcd6333c124ac4b7c9414358f8484e26",
+        "gradient_blocks": {
+          "control_sha256": "a78d1b8e0cd8f997572f5e2a913f7023dcd6333c124ac4b7c9414358f8484e26",
+          "dynamics_components": [
+            3.686879971331186e-06,
+            -0.003499631172517193,
+            -0.006128402556589675,
+            -0.0008784049907372554,
+            -0.0026197628948153168,
+            4.110871123716442e-06
+          ],
+          "dynamics_l2": 0.0075788864409237254,
+          "field_inf": 7.032988341010293e-12,
+          "field_l2": 1.133348677288326e-11,
+          "full_inf": 0.006128402556589675,
+          "full_l2": 0.0075788864409237254
+        },
+        "gradient_max": 7.032988341010293e-12,
+        "gradient_norm": 1.133348677288326e-11,
+        "hvp_count": 39,
+        "iteration": 3,
+        "linear_relative_residual": 1.3643209539276753e-11,
+        "norm_ratio": 0.09907037910711809,
+        "normalized_slope": -1.000000000000001,
+        "objective": 0.020764957942635602,
+        "pcg_iterations": 10,
+        "pcg_relative_residual": 1.3643209539276751e-11,
+        "step_scale": 1.0
+      }
+    ]
+  },
+  "execution_status": "completed",
+  "full_stationarity": false,
+  "input_after": {
+    "current_problem_identity": {
+      "fixed_problem_sha256": "838fcf77a43b209b53dfe62f6a1657d0f8eba5a41797e431451059f3f8d18158",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    },
+    "fixed_input_fields": {
+      "common_bias_std_dbz": 0.25,
+      "missing_indices": [
+        [
+          1,
+          1,
+          2
+        ],
+        [
+          2,
+          2,
+          3
+        ]
+      ],
+      "observation_counts": {
+        "censored": 0,
+        "missing": 2,
+        "qc_rejected": 0,
+        "valid": 58
+      },
+      "tensor_sha256": {
+        "direction": "f75710a114ba2fb0ad1013ccaa15729e7d69b05031ea1b3537a519be77611a38",
+        "missing_mask": "21257c511085d4ac7cf048aa8d526556286321fad5f9d4235c7d239ad785199a",
+        "observation_dbz": "fc89685ee7bb07f7c3dcd5eb45fc6a6bb90bf73dae5500a6453c563e33c08a12",
+        "parameters": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+        "valid_mask": "6d2c1c3e23427974a855012eb8885dbb00c357f53dc4e4ab38bc58864fe20aec",
+        "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+        "warm_start_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+        "whitener_mode": "2b9b699f1aa5d630bac602ec23f2889b53b79c539aef63018b440a310ae1fb72"
+      },
+      "verification_constructor": "tests.test_fv_research_partial_observation._problem: warm-start partial forecast dBZ + 0.1 * fixed pattern, then detach",
+      "warm_start_branch": {
+        "euler_stages": 54,
+        "minimum_scaled_face_flux_margin": 0.007752734889703382,
+        "minimum_scaled_slope_margin": 0.0007615693500034068,
+        "signature_sha256": "3c5e5433d3d74a8f840bdd28834b2a73c98edf3b3fc4b46c5ab89567b1e4c70d"
+      },
+      "warm_start_gradient_max": 1.083842990538571,
+      "warm_start_objective": 0.02127260121736458
+    },
+    "historical_manifest_sha256": "6d859284dbb737910e2a94252e37cf87322924cae2fa9e88381f9e29dd18a5a3",
+    "historical_preflight_sha256": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
+    "historical_problem_identity": {
+      "fixed_problem_sha256": "ffc5a82cb9e4cda7667378b1932c6703e61a6a0c2d16d37ca1c6268b2f860e48",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    }
+  },
+  "input_before": {
+    "current_problem_identity": {
+      "fixed_problem_sha256": "838fcf77a43b209b53dfe62f6a1657d0f8eba5a41797e431451059f3f8d18158",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    },
+    "fixed_input_fields": {
+      "common_bias_std_dbz": 0.25,
+      "missing_indices": [
+        [
+          1,
+          1,
+          2
+        ],
+        [
+          2,
+          2,
+          3
+        ]
+      ],
+      "observation_counts": {
+        "censored": 0,
+        "missing": 2,
+        "qc_rejected": 0,
+        "valid": 58
+      },
+      "tensor_sha256": {
+        "direction": "f75710a114ba2fb0ad1013ccaa15729e7d69b05031ea1b3537a519be77611a38",
+        "missing_mask": "21257c511085d4ac7cf048aa8d526556286321fad5f9d4235c7d239ad785199a",
+        "observation_dbz": "fc89685ee7bb07f7c3dcd5eb45fc6a6bb90bf73dae5500a6453c563e33c08a12",
+        "parameters": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+        "valid_mask": "6d2c1c3e23427974a855012eb8885dbb00c357f53dc4e4ab38bc58864fe20aec",
+        "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+        "warm_start_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+        "whitener_mode": "2b9b699f1aa5d630bac602ec23f2889b53b79c539aef63018b440a310ae1fb72"
+      },
+      "verification_constructor": "tests.test_fv_research_partial_observation._problem: warm-start partial forecast dBZ + 0.1 * fixed pattern, then detach",
+      "warm_start_branch": {
+        "euler_stages": 54,
+        "minimum_scaled_face_flux_margin": 0.007752734889703382,
+        "minimum_scaled_slope_margin": 0.0007615693500034068,
+        "signature_sha256": "3c5e5433d3d74a8f840bdd28834b2a73c98edf3b3fc4b46c5ab89567b1e4c70d"
+      },
+      "warm_start_gradient_max": 1.083842990538571,
+      "warm_start_objective": 0.02127260121736458
+    },
+    "historical_manifest_sha256": "6d859284dbb737910e2a94252e37cf87322924cae2fa9e88381f9e29dd18a5a3",
+    "historical_preflight_sha256": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
+    "historical_problem_identity": {
+      "fixed_problem_sha256": "ffc5a82cb9e4cda7667378b1932c6703e61a6a0c2d16d37ca1c6268b2f860e48",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    }
+  },
+  "numerical_status": "block_stationary_candidate",
+  "parent_final_audit": {
+    "checks": {
+      "final_branch_matches": true,
+      "final_control_hash_matches": true,
+      "fixed_dynamics_match_seed": true,
+      "full_gradient_matches": true,
+      "objective_matches": true,
+      "parameters_match_preflight": true,
+      "reduced_gradient_matches_full_field_block": true,
+      "response_eligibility_matches": true,
+      "seed_control_matches_archive": true,
+      "stationarity_flags_match": true
+    },
+    "elapsed_seconds": 0.6211642089765519,
+    "passed": true,
+    "scope": "one final J, reduced/full gradient, fixed-control, and 54-stage branch audit; no solver or PCG"
+  },
+  "parent_identity_unchanged": true,
+  "raw_hashes_after": {
+    "partial_alternate_seed_attempt1/alternate_seed.json": "14ae79c97af18be76b758687a94bca783321ee98967f13c26f60f5938a0a78b6",
+    "partial_alternate_seed_attempt1/alternate_seed.log": "6fc6afd08c21b6d7561f934b8b7a7242ffdca92b0ed9d207082807dccdd0c5c9",
+    "partial_alternate_seed_attempt1/alternate_seed.resource.json": "eee3233ec1ef1a9e50d818330c24e68c901812bcc86f3b4e11c5a5b4bca69314",
+    "partial_alternate_seed_attempt1/alternate_seed.run.json": "beaa67921744adab8abbc3046d72f47a578f0e9d20436f5f0e912604d058ddae",
+    "partial_alternate_seed_attempt1/manifest.json": "959ab714de6f862a85fb0ee6ef8353fbfc45098916217a83a0d6acb7ef8f8fa5",
+    "partial_sector_root_attempt1/manifest.json": "d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd",
+    "partial_sector_root_attempt1/partial_sector_root.json": "fbd3ee4bc723f9074b789cf59a5a22040dee58f286ea8bdbc9a016a1bbce0f53",
+    "partial_sector_root_attempt1/partial_sector_root.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "partial_sector_root_attempt1/partial_sector_root.resource.json": "9283c7f506767d551329a44a774a670fd4ce2dae52b208b3a2858af7928484ca",
+    "partial_sector_root_attempt1/partial_sector_root.run.json": "da82df67df3559f058f806359cda970f29ae598232ee97b2b926f85e79c8c1c7"
+  },
+  "raw_hashes_before": {
+    "partial_alternate_seed_attempt1/alternate_seed.json": "14ae79c97af18be76b758687a94bca783321ee98967f13c26f60f5938a0a78b6",
+    "partial_alternate_seed_attempt1/alternate_seed.log": "6fc6afd08c21b6d7561f934b8b7a7242ffdca92b0ed9d207082807dccdd0c5c9",
+    "partial_alternate_seed_attempt1/alternate_seed.resource.json": "eee3233ec1ef1a9e50d818330c24e68c901812bcc86f3b4e11c5a5b4bca69314",
+    "partial_alternate_seed_attempt1/alternate_seed.run.json": "beaa67921744adab8abbc3046d72f47a578f0e9d20436f5f0e912604d058ddae",
+    "partial_alternate_seed_attempt1/manifest.json": "959ab714de6f862a85fb0ee6ef8353fbfc45098916217a83a0d6acb7ef8f8fa5",
+    "partial_sector_root_attempt1/manifest.json": "d80362f8acbb0feb1c82d60d5e9cde61a4863564d7f8f64e49467ba39d12cddd",
+    "partial_sector_root_attempt1/partial_sector_root.json": "fbd3ee4bc723f9074b789cf59a5a22040dee58f286ea8bdbc9a016a1bbce0f53",
+    "partial_sector_root_attempt1/partial_sector_root.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "partial_sector_root_attempt1/partial_sector_root.resource.json": "9283c7f506767d551329a44a774a670fd4ce2dae52b208b3a2858af7928484ca",
+    "partial_sector_root_attempt1/partial_sector_root.run.json": "da82df67df3559f058f806359cda970f29ae598232ee97b2b926f85e79c8c1c7"
+  },
+  "reduced_stationarity": true,
+  "resource": {
+    "child_pid": 73009,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_field_correction_probe.py",
+      "--child",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/partial_field_correction_attempt1/field_correction.json",
+      "--expected-plan-sha256",
+      "391bfdbeb4f97af617dc00840700cadba36c36be8ed797e78026ba8cc3aed1f8",
+      "--expected-probe-sha256",
+      "30c6c1177e0a001a37751aa4f0396cb616f2f2e1d0c76f5b47472246f0373c18"
+    ],
+    "elapsed_seconds": 38.02494575001765,
+    "exit_code": 0,
+    "monitor_error": null,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 142,
+    "sampled_peak_rss_bytes": 347389952,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300
+  },
+  "response_eligibility": "margin_supported_handoff",
+  "source_after": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_partial_alternate_root_probe.py": "9956ab6382aeaccd03c8e25535af0af0826c9589df80087f972ddacbec2066b4",
+    "examples/weather_scenarios/fv_partial_alternate_root_runner.py": "dc0d5942c34da40ab7ed584b9e2640188e49d34d828c2e20d332d0e6da05b87d",
+    "examples/weather_scenarios/fv_partial_alternate_seed_gate.py": "443d7225b5322c9a2d9e89f22b1993d2c878f5c3e98186d6e7b9cf8a7d3dfff0",
+    "examples/weather_scenarios/fv_partial_alternate_seed_runner.py": "5c7cf933ffa0dfc4a2a51e4e35193580702e3671fa6d51323a335e9d0bfd5cd9",
+    "examples/weather_scenarios/fv_partial_field_correction_probe.py": "30c6c1177e0a001a37751aa4f0396cb616f2f2e1d0c76f5b47472246f0373c18",
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "758397e502b1f7821cc62fe9f1cf47b440cabdc4933596a3076ef762ad282f0e",
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7756da5561f67d47d1a813cc2cd720931b3ba29d132758e16e2628db6fe220c8",
+    "examples/weather_scenarios/fv_partial_sector_root_probe.py": "fddc3ddb20a3a961f73eb2d40dd379b25e87cd6109ca836476f45a1408350ccc",
+    "examples/weather_scenarios/fv_partial_sector_root_runner.py": "2bc6607a1bc4c369cd11edbd359d7a3754352dc7df2b7377944811161e37b18e",
+    "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+    "examples/weather_scenarios/fv_point_merit_root_probe.py": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+    "examples/weather_scenarios/fv_point_sector_policy.py": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d"
+  },
+  "source_before": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_partial_alternate_root_probe.py": "9956ab6382aeaccd03c8e25535af0af0826c9589df80087f972ddacbec2066b4",
+    "examples/weather_scenarios/fv_partial_alternate_root_runner.py": "dc0d5942c34da40ab7ed584b9e2640188e49d34d828c2e20d332d0e6da05b87d",
+    "examples/weather_scenarios/fv_partial_alternate_seed_gate.py": "443d7225b5322c9a2d9e89f22b1993d2c878f5c3e98186d6e7b9cf8a7d3dfff0",
+    "examples/weather_scenarios/fv_partial_alternate_seed_runner.py": "5c7cf933ffa0dfc4a2a51e4e35193580702e3671fa6d51323a335e9d0bfd5cd9",
+    "examples/weather_scenarios/fv_partial_field_correction_probe.py": "30c6c1177e0a001a37751aa4f0396cb616f2f2e1d0c76f5b47472246f0373c18",
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "758397e502b1f7821cc62fe9f1cf47b440cabdc4933596a3076ef762ad282f0e",
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7756da5561f67d47d1a813cc2cd720931b3ba29d132758e16e2628db6fe220c8",
+    "examples/weather_scenarios/fv_partial_sector_root_probe.py": "fddc3ddb20a3a961f73eb2d40dd379b25e87cd6109ca836476f45a1408350ccc",
+    "examples/weather_scenarios/fv_partial_sector_root_runner.py": "2bc6607a1bc4c369cd11edbd359d7a3754352dc7df2b7377944811161e37b18e",
+    "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+    "examples/weather_scenarios/fv_point_merit_root_probe.py": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+    "examples/weather_scenarios/fv_point_sector_policy.py": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d"
+  }
+}

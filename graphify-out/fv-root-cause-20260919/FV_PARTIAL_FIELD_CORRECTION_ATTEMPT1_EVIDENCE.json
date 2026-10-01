@@ -1,0 +1,81 @@
+{
+  "execution_status": "completed",
+  "field_gradient_inf": 7.032988341010293e-12,
+  "files_sha256": {
+    "examples/weather_scenarios/fv_partial_field_correction_probe.py": "30c6c1177e0a001a37751aa4f0396cb616f2f2e1d0c76f5b47472246f0373c18",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "f479195ac46826208b553909565d4314519b1c938973d08e05d9066d5d690a30",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_FACE_TANGENT_ATTEMPT1_EVIDENCE.json": "2de7ed91655b92d896147a4cea229e4af57554b8b21a9855f636f60b0bbd92e7",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_FIELD_CORRECTION_ATTEMPT1_PR_BODY.md": "cbfb08d1d6f04849c9a846d2e7c52d8288eb45e4cac5d5c9044d5ce1061ea9c8",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_FIELD_CORRECTION_ATTEMPT1_RESULTS.md": "919669adcfcaee7b154396a304b29b661f773a10be637a534d471c850ec5ac1b",
+    "graphify-out/fv-root-cause-20260919/FV_PARTIAL_FIELD_CORRECTION_PLAN.md": "391bfdbeb4f97af617dc00840700cadba36c36be8ed797e78026ba8cc3aed1f8",
+    "graphify-out/fv-root-cause-20260919/POST_MERGE_REVIEW_CHECKLIST.md": "dabbdb7127078a48bc18b4c0dbde6ffcbf88be3ec6960e8b1e51690f896c0a26",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "d49104a2ff371c3fa1f16c1bbb2cac1f28d4b27c0e30e911491ce913d39a8cd9",
+    "graphify-out/fv-root-cause-20260919/fv_partial_field_correction_affected_tests.log": "c774eb254b4ebbc33ed6b41697513ab8bac8091e3c9a9437f5eb2f645264c7eb",
+    "graphify-out/fv-root-cause-20260919/fv_partial_field_correction_graphify.log": "e140494b135ba44b58be35120a0c1179e18b06620f6f41fab1fd09bd0c753f01",
+    "graphify-out/fv-root-cause-20260919/fv_partial_field_correction_run_stdout.log": "e26721f0a2bbf1407732bf9c972a255a6daa843c2b1cd63ec137d63e56272e4c",
+    "graphify-out/fv-root-cause-20260919/fv_partial_field_correction_typecheck.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/partial_alternate_seed_attempt1/manifest.json": "959ab714de6f862a85fb0ee6ef8353fbfc45098916217a83a0d6acb7ef8f8fa5",
+    "graphify-out/fv-root-cause-20260919/partial_field_correction_attempt1/field_correction.json": "8ad5b5e3d56a074ad79a28fa0f23c0cbdae745c26efed5101cd826fe2d9442cf",
+    "graphify-out/fv-root-cause-20260919/partial_field_correction_attempt1/field_correction.log": "7b419b7c4606ae5176f7d5ad6dfacc4c9873789fbcd16ddd45b9416a9cc89512",
+    "graphify-out/fv-root-cause-20260919/partial_field_correction_attempt1/field_correction.resource.json": "c32e698f49a88b440898c7cf13f91bf8e1fa2ebc4f625b726ba848623225a6cc",
+    "graphify-out/fv-root-cause-20260919/partial_field_correction_attempt1/field_correction.run.json": "30e660ad211a090a81055b040de06cf691f57b5c1a2ec59269ccc1a03ddf709d",
+    "tests/test_fv_partial_field_correction_probe.py": "8b7aeeecdf283df23557ffbe5646801659ad003a1c001976dcfab3357d91ffa8"
+  },
+  "final_control_sha256": "a78d1b8e0cd8f997572f5e2a913f7023dcd6333c124ac4b7c9414358f8484e26",
+  "full_gradient_inf": 0.006128402556589675,
+  "full_stationarity": false,
+  "hvp_total": 39,
+  "limits": "fixed-dynamic block stationarity only;fullgradient dynamic residual remains;no fullroot/fullHessian/adjoint/VJP/reanalysis/physicalskill;R4-R open",
+  "newton_corrections": 3,
+  "numerical_status": "block_stationary_candidate",
+  "objective_decrease": 9.596509358000826e-09,
+  "parent_final_audit": {
+    "checks": {
+      "final_branch_matches": true,
+      "final_control_hash_matches": true,
+      "fixed_dynamics_match_seed": true,
+      "full_gradient_matches": true,
+      "objective_matches": true,
+      "parameters_match_preflight": true,
+      "reduced_gradient_matches_full_field_block": true,
+      "response_eligibility_matches": true,
+      "seed_control_matches_archive": true,
+      "stationarity_flags_match": true
+    },
+    "elapsed_seconds": 0.6211642089765519,
+    "passed": true,
+    "scope": "one final J, reduced/full gradient, fixed-control, and 54-stage branch audit; no solver or PCG"
+  },
+  "pcg_iterations": 30,
+  "reduced_stationarity": true,
+  "resource": {
+    "child_pid": 73009,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_field_correction_probe.py",
+      "--child",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/partial_field_correction_attempt1/field_correction.json",
+      "--expected-plan-sha256",
+      "391bfdbeb4f97af617dc00840700cadba36c36be8ed797e78026ba8cc3aed1f8",
+      "--expected-probe-sha256",
+      "30c6c1177e0a001a37751aa4f0396cb616f2f2e1d0c76f5b47472246f0373c18"
+    ],
+    "elapsed_seconds": 38.02494575001765,
+    "exit_code": 0,
+    "monitor_error": null,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 142,
+    "sampled_peak_rss_bytes": 347389952,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300
+  },
+  "trial_count": 4,
+  "verification": {
+    "affected_tests_passed": 54,
+    "existing_warnings": 18,
+    "full_cpu_package_regression": "not_run",
+    "typecheck_errors": 0
+  }
+}

@@ -956,5 +956,17 @@
     "graphify": "two-file incremental code-only AST refresh preserves untouched graph records,8338 nodes/210532 links,no semantic extraction",
     "record": "FV_PARTIAL_FACE_TANGENT_PLAN.md,FV_PARTIAL_FACE_TANGENT_ATTEMPT1_RESULTS.md,FV_PARTIAL_FACE_TANGENT_ATTEMPT1_EVIDENCE.json,partial_face_tangent_attempt1",
     "status": "finite-offset tangent diagnostic completed;qualified stationary partial response still open"
+  },
+  "fv_partial_field_correction_attempt1": {
+    "baseline": "main697b366 after PR226 field-dominated finite-offset tangent diagnostic",
+    "scope": "one preserved PR212 alternate seed,20-field correction at6 fixeddynamic controls;original J/prior/mask/data retained;no fulloptimizer/response",
+    "algorithm": "existing exactHVP NewtonPCG reduced J(cat(z,d),p),same54stagefullsignature,positive margins,exact face invariant,actualJ nonincrease roundoff and defaultPhiArmijo;8/16/80 caps",
+    "result": "3 accepted corrections/4trials;fieldginf7.032988341e-12,fullginf0.006128402557,dynamicL2.007578886441;J.02076496753914496 to.020764957942635602;finalcontrolSHAa78d1b8e0cd8f997572f5e2a913f7023dcd6333c124ac4b7c9414358f8484e26",
+    "branch": "seed signature50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d;face margin.00011662714171735749 unchanged;finalslopemargin.00040608748624064856;fixed6 byteidentical",
+    "cost": "3PCG solves10iterations each,39totalHVP incl3observeraudits+3refinerHs;true residualsmax2.18838e-11;guard38.02494575s,142RSSsamples peak347389952B under300s/sample1GiB;parentfinalaudit.621164s all10checks passed",
+    "verification": "54affected tests18existing warnings,errorlevelbasedpyright0;GREEN/RED plan/code/raw reviewed;graphify8381nodes210666links codeonly;fullCPU/package notrun",
+    "limits": "fieldstationary notfullroot;dynamicresidual remains,narrowface margin1.166xthreshold;no finalfullHessian,adjoint,VJP,reanalysis/physicalskill;R4-R open",
+    "record": "FV_PARTIAL_FIELD_CORRECTION_PLAN.md,FV_PARTIAL_FIELD_CORRECTION_ATTEMPT1_RESULTS.md,FV_PARTIAL_FIELD_CORRECTION_ATTEMPT1_EVIDENCE.json,partial_field_correction_attempt1",
+    "status": "block-stationary margin-supported handoff verified;full qualified response stillopen"
   }
 }

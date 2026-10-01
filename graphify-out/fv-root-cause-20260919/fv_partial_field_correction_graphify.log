@@ -1,0 +1,2 @@
+Incremental code-only Graphify AST refresh of 2 field correction probe/test files; untouched records preserved and pre-update backup retained; no semantic extraction.
+Final graph.json parses: 8381 nodes, 210666 links.

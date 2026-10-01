@@ -283,6 +283,11 @@ changes the numerical refiner, not the objective, observation contract or gates.
   qualified partial-observation response remains open; no event-point
   objective derivative or Clarke certificate was issued
   (`FV_PARTIAL_FACE_TANGENT_ATTEMPT1_RESULTS.md`).
+- [x] Fixed-dynamics initial-field correction reached `<1e-10`
+  projected stationarity at the unchanged alternate seed branch and
+  face margin. The full dynamic gradient still fails stationarity;
+  the qualified partial response remains open
+  (`FV_PARTIAL_FIELD_CORRECTION_ATTEMPT1_RESULTS.md`).
 - [x] Bounded maintain/decay/growth fixed-branch classification and zero-face/
   flat forward-versus-response refusal (G4). See `FV_GROWTH_BRANCH_SCOPE.md`.
 - [x] At zero-flow control, prove every face of the supported 4×5/8×10
