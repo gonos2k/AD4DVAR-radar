@@ -1,0 +1,25 @@
+{
+  "advisories": [
+    "https://github.com/urllib3/urllib3/security/advisories/GHSA-8988-9cw3-xx77",
+    "https://github.com/urllib3/urllib3/security/advisories/GHSA-vxq7-64xx-v4gw",
+    "https://github.com/urllib3/urllib3/security/advisories/GHSA-gh4c-6fx4-qh6g"
+  ],
+  "artifacts": [
+    {
+      "bytes": 135717,
+      "filename": "urllib3-2.8.0-py3-none-any.whl",
+      "sha256": "0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3",
+      "url": "https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl"
+    },
+    {
+      "bytes": 458972,
+      "filename": "urllib3-2.8.0.tar.gz",
+      "sha256": "63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63",
+      "url": "https://files.pythonhosted.org/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz"
+    }
+  ],
+  "metadata_url": "https://pypi.org/pypi/urllib3/2.8.0/json",
+  "requires_python": ">=3.10",
+  "upstream_changelog": "https://urllib3.readthedocs.io/en/stable/changelog.html",
+  "version": "2.8.0"
+}

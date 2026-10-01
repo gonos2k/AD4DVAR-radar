@@ -1,0 +1,988 @@
+﻿2026-10-01T08:27:26.7944394Z Current runner version: '2.337.0'
+2026-10-01T08:27:26.7979657Z ##[group]Runner Image Provisioner
+2026-10-01T08:27:26.7981066Z Hosted Compute Agent
+2026-10-01T08:27:26.7982509Z Version: 20260828.587
+2026-10-01T08:27:26.7983709Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-10-01T08:27:26.7984932Z Build Date: 2026-08-28T16:44:25Z
+2026-10-01T08:27:26.7986124Z Worker ID: {246fcd56-8ce5-4b24-a774-12bb5ccb4f0b}
+2026-10-01T08:27:26.7987534Z Azure Region: eastus
+2026-10-01T08:27:26.7988525Z ##[endgroup]
+2026-10-01T08:27:26.7991016Z ##[group]Operating System
+2026-10-01T08:27:26.7992311Z Ubuntu
+2026-10-01T08:27:26.7993115Z 24.04.5
+2026-10-01T08:27:26.7994122Z LTS
+2026-10-01T08:27:26.7995048Z ##[endgroup]
+2026-10-01T08:27:26.7995979Z ##[group]Runner Image
+2026-10-01T08:27:26.7997070Z Image: ubuntu-24.04
+2026-10-01T08:27:26.7997995Z Version: 20260920.314.1
+2026-10-01T08:27:26.8000800Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260920.314/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-01T08:27:26.8003884Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260920.314
+2026-10-01T08:27:26.8005553Z ##[endgroup]
+2026-10-01T08:27:26.8007443Z ##[group]GITHUB_TOKEN Permissions
+2026-10-01T08:27:26.8010434Z Contents: read
+2026-10-01T08:27:26.8011486Z Metadata: read
+2026-10-01T08:27:26.8012670Z ##[endgroup]
+2026-10-01T08:27:26.8015669Z Secret source: Actions
+2026-10-01T08:27:26.8017372Z Cache mode: write
+2026-10-01T08:27:26.8018820Z Prepare workflow directory
+2026-10-01T08:27:26.8573674Z Prepare all required actions
+2026-10-01T08:27:26.8644216Z Getting action download info
+2026-10-01T08:27:27.1381137Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-01T08:27:27.2594119Z Download action repository 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1' (SHA:ece7cb06caefa5fff74198d8649806c4678c61a1)
+2026-10-01T08:27:27.4339271Z Complete job name: Wheel and CLI smoke
+2026-10-01T08:27:27.5134443Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-10-01T08:27:27.5135515Z with:
+2026-10-01T08:27:27.5135956Z   repository: gonos2k/AD4DVAR-radar
+2026-10-01T08:27:27.5139986Z   token: ***
+2026-10-01T08:27:27.5140405Z   ssh-strict: true
+2026-10-01T08:27:27.5140835Z   ssh-user: git
+2026-10-01T08:27:27.5141279Z   persist-credentials: true
+2026-10-01T08:27:27.5141752Z   clean: true
+2026-10-01T08:27:27.5142397Z   sparse-checkout-cone-mode: true
+2026-10-01T08:27:27.5142904Z   fetch-depth: 1
+2026-10-01T08:27:27.5143322Z   fetch-tags: false
+2026-10-01T08:27:27.5143748Z   show-progress: true
+2026-10-01T08:27:27.5144173Z   lfs: false
+2026-10-01T08:27:27.5144566Z   submodules: false
+2026-10-01T08:27:27.5145002Z   set-safe-directory: true
+2026-10-01T08:27:27.5145499Z   allow-unsafe-pr-checkout: false
+2026-10-01T08:27:27.5146241Z env:
+2026-10-01T08:27:27.5146659Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-01T08:27:27.5147165Z ##[endgroup]
+2026-10-01T08:27:27.6156696Z Syncing repository: gonos2k/AD4DVAR-radar
+2026-10-01T08:27:27.6159663Z ##[group]Getting Git version info
+2026-10-01T08:27:27.6160910Z Working directory is '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+2026-10-01T08:27:27.6163202Z [command]/usr/bin/git version
+2026-10-01T08:27:27.6222839Z git version 2.55.0
+2026-10-01T08:27:27.6253376Z ##[endgroup]
+2026-10-01T08:27:27.6261747Z Temporarily overriding HOME='/home/runner/work/_temp/858c9614-4558-4aad-b3e6-d72bb0d98537' before making global git config changes
+2026-10-01T08:27:27.6264293Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-01T08:27:27.6268416Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:27:27.6326124Z Deleting the contents of '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+2026-10-01T08:27:27.6329690Z ##[group]Determining repository object format
+2026-10-01T08:27:27.6331532Z ##[endgroup]
+2026-10-01T08:27:27.6333166Z ##[group]Initializing the repository
+2026-10-01T08:27:27.6337615Z [command]/usr/bin/git init /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:27:27.6475754Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-01T08:27:27.6477052Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-01T08:27:27.6478095Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-01T08:27:27.6478907Z hint: call:
+2026-10-01T08:27:27.6479347Z hint:
+2026-10-01T08:27:27.6479902Z hint: 	git config --global init.defaultBranch <name>
+2026-10-01T08:27:27.6480561Z hint:
+2026-10-01T08:27:27.6481193Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-01T08:27:27.6482717Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-01T08:27:27.6483737Z hint:
+2026-10-01T08:27:27.6484256Z hint: 	git branch -m <name>
+2026-10-01T08:27:27.6484768Z hint:
+2026-10-01T08:27:27.6485443Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-01T08:27:27.6491618Z Initialized empty Git repository in /home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/
+2026-10-01T08:27:27.6506379Z [command]/usr/bin/git remote add origin https://github.com/gonos2k/AD4DVAR-radar
+2026-10-01T08:27:27.6576282Z ##[endgroup]
+2026-10-01T08:27:27.6578104Z ##[group]Disabling automatic garbage collection
+2026-10-01T08:27:27.6579925Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-01T08:27:27.6613414Z ##[endgroup]
+2026-10-01T08:27:27.6615036Z ##[group]Setting up auth
+2026-10-01T08:27:27.6616159Z Removing SSH command configuration
+2026-10-01T08:27:27.6620914Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-01T08:27:27.6660712Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-01T08:27:27.7055612Z Removing HTTP extra header
+2026-10-01T08:27:27.7062409Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-01T08:27:27.7098062Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-01T08:27:27.7317252Z Removing includeIf entries pointing to credentials config files
+2026-10-01T08:27:27.7323779Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-01T08:27:27.7360098Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-01T08:27:27.7605213Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-6aeca921-510c-4f6e-9dd9-707081380cce.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-01T08:27:27.7647001Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path /home/runner/work/_temp/git-credentials-6aeca921-510c-4f6e-9dd9-707081380cce.config
+2026-10-01T08:27:27.7682353Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-6aeca921-510c-4f6e-9dd9-707081380cce.config
+2026-10-01T08:27:27.7720124Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-6aeca921-510c-4f6e-9dd9-707081380cce.config
+2026-10-01T08:27:27.7758939Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-6aeca921-510c-4f6e-9dd9-707081380cce.config
+2026-10-01T08:27:27.7792224Z ##[endgroup]
+2026-10-01T08:27:27.7793593Z ##[group]Fetching the repository
+2026-10-01T08:27:27.7801010Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf:refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T08:27:29.1057001Z From https://github.com/gonos2k/AD4DVAR-radar
+2026-10-01T08:27:29.1058578Z  * [new ref]         a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf -> origin/agent/full-cpu-package-regression
+2026-10-01T08:27:29.1085124Z [command]/usr/bin/git branch --list --remote origin/agent/full-cpu-package-regression
+2026-10-01T08:27:29.1105628Z   origin/agent/full-cpu-package-regression
+2026-10-01T08:27:29.1116929Z [command]/usr/bin/git rev-parse refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T08:27:29.1146087Z a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf
+2026-10-01T08:27:29.1158117Z ##[endgroup]
+2026-10-01T08:27:29.1159420Z ##[group]Determining the checkout info
+2026-10-01T08:27:29.1160881Z ##[endgroup]
+2026-10-01T08:27:29.1163589Z [command]/usr/bin/git sparse-checkout disable
+2026-10-01T08:27:29.1239235Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-01T08:27:29.1278665Z ##[group]Checking out the ref
+2026-10-01T08:27:29.1283080Z [command]/usr/bin/git checkout --progress --force -B agent/full-cpu-package-regression refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T08:27:29.3274759Z Switched to a new branch 'agent/full-cpu-package-regression'
+2026-10-01T08:27:29.3296321Z branch 'agent/full-cpu-package-regression' set up to track 'origin/agent/full-cpu-package-regression'.
+2026-10-01T08:27:29.3316176Z ##[endgroup]
+2026-10-01T08:27:29.3364919Z [command]/usr/bin/git log -1 --format=%H
+2026-10-01T08:27:29.3396737Z a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf
+2026-10-01T08:27:29.3774109Z ##[group]Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+2026-10-01T08:27:29.3775924Z with:
+2026-10-01T08:27:29.3776818Z   python-version: 3.12
+2026-10-01T08:27:29.3777807Z   cache: pip
+2026-10-01T08:27:29.3779618Z   cache-dependency-path: requirements/ci-py312-linux.lock
+requirements/runtime-py312-linux.lock
+
+2026-10-01T08:27:29.3781987Z   check-latest: false
+2026-10-01T08:27:29.3793023Z   token: ***
+2026-10-01T08:27:29.3793985Z   update-environment: true
+2026-10-01T08:27:29.3795091Z   allow-prereleases: false
+2026-10-01T08:27:29.3796192Z   freethreaded: false
+2026-10-01T08:27:29.3797174Z env:
+2026-10-01T08:27:29.3798076Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-01T08:27:29.3799201Z ##[endgroup]
+2026-10-01T08:27:29.5167323Z ##[group]Installed versions
+2026-10-01T08:27:29.5260562Z Successfully set up CPython (3.12.14)
+2026-10-01T08:27:29.5263764Z ##[endgroup]
+2026-10-01T08:27:29.5648048Z [command]/opt/hostedtoolcache/Python/3.12.14/x64/bin/pip cache dir
+2026-10-01T08:27:29.8885063Z /home/runner/.cache/pip
+2026-10-01T08:27:29.9825779Z Cache hit for: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.14-pip-f7cee36fe32686215bbb9f8a086817e4840e974b74a211879070eaf02f04bcd8
+2026-10-01T08:27:31.0507808Z Received 260046848 of 287618844 (90.4%), 246.8 MBs/sec
+2026-10-01T08:27:31.1873273Z Received 287618844 of 287618844 (100.0%), 240.8 MBs/sec
+2026-10-01T08:27:31.1904191Z Cache Size: ~274 MB (287618844 B)
+2026-10-01T08:27:31.1965854Z [command]/usr/bin/tar -xf /home/runner/work/_temp/e3de9ce7-80d7-402a-88ad-39ceb20f0f90/cache.tzst -P -C /home/runner/work/AD4DVAR-radar/AD4DVAR-radar --use-compress-program unzstd
+2026-10-01T08:27:31.6111722Z Cache restored successfully
+2026-10-01T08:27:31.8277943Z Cache restored from key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.14-pip-f7cee36fe32686215bbb9f8a086817e4840e974b74a211879070eaf02f04bcd8
+2026-10-01T08:27:31.8476278Z ##[group]Run python -I .github/scripts/generate_metric_domain_evidence.py \
+2026-10-01T08:27:31.8476951Z [36;1mpython -I .github/scripts/generate_metric_domain_evidence.py \[0m
+2026-10-01T08:27:31.8477411Z [36;1m  --check-source-only[0m
+2026-10-01T08:27:31.9611507Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:27:31.9612133Z env:
+2026-10-01T08:27:31.9612431Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-01T08:27:31.9612881Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:31.9613495Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:27:31.9614363Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:31.9614884Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:31.9615394Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:31.9615933Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:27:31.9616368Z ##[endgroup]
+2026-10-01T08:27:32.0306971Z ceed652ab406b18b5f8550d2213ca0840ae224babe434d4ca1e1fec9ee7a0e62
+2026-10-01T08:27:32.0409470Z ##[group]Run env -u LD_LIBRARY_PATH \
+2026-10-01T08:27:32.0409848Z [36;1menv -u LD_LIBRARY_PATH \[0m
+2026-10-01T08:27:32.0410239Z [36;1m  python -I .github/scripts/generate_metric_domain_evidence.py \[0m
+2026-10-01T08:27:32.0410676Z [36;1m    --self-test-execution-environment[0m
+2026-10-01T08:27:32.0475579Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:27:32.0475850Z env:
+2026-10-01T08:27:32.0476074Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-01T08:27:32.0476449Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:32.0476947Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:27:32.0477434Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:32.0477875Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:32.0478297Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:32.0478721Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:27:32.0479107Z ##[endgroup]
+2026-10-01T08:27:33.3964201Z 04c8a340718d8115039b6e509917d313e2ff244d16dd4e27d2b4b8e5ac49a721
+2026-10-01T08:27:33.4083972Z ##[group]Run python -I -m pip install \
+2026-10-01T08:27:33.4084363Z [36;1mpython -I -m pip install \[0m
+2026-10-01T08:27:33.4084649Z [36;1m  --require-hashes \[0m
+2026-10-01T08:27:33.4084914Z [36;1m  --only-binary=:all: \[0m
+2026-10-01T08:27:33.4085295Z [36;1m  --extra-index-url https://download.pytorch.org/whl/cpu \[0m
+2026-10-01T08:27:33.4085764Z [36;1m  --requirement requirements/ci-py312-linux.lock[0m
+2026-10-01T08:27:33.4151593Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:27:33.4152086Z env:
+2026-10-01T08:27:33.4152303Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-01T08:27:33.4152633Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:33.4153083Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:27:33.4153522Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:33.4153903Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:33.4154319Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:33.4154702Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:27:33.4155030Z ##[endgroup]
+2026-10-01T08:27:34.2394038Z Looking in indexes: https://pypi.org/simple, https://download.pytorch.org/whl/cpu
+2026-10-01T08:27:34.3749500Z Collecting basedpyright==1.39.9 (from -r requirements/ci-py312-linux.lock (line 5))
+2026-10-01T08:27:34.3762273Z   Using cached basedpyright-1.39.9-py3-none-any.whl (13.4 MB)
+2026-10-01T08:27:34.4536576Z Collecting boolean-py==5.0 (from -r requirements/ci-py312-linux.lock (line 9))
+2026-10-01T08:27:34.4549024Z   Using cached boolean_py-5.0-py3-none-any.whl (26 kB)
+2026-10-01T08:27:34.4854178Z Collecting build==1.5.0 (from -r requirements/ci-py312-linux.lock (line 13))
+2026-10-01T08:27:34.4866444Z   Using cached build-1.5.0-py3-none-any.whl (26 kB)
+2026-10-01T08:27:34.5123206Z Collecting cachecontrol==0.14.4 (from -r requirements/ci-py312-linux.lock (line 17))
+2026-10-01T08:27:34.5135547Z   Using cached cachecontrol-0.14.4-py3-none-any.whl (22 kB)
+2026-10-01T08:27:34.5357825Z Collecting certifi==2026.7.22 (from -r requirements/ci-py312-linux.lock (line 21))
+2026-10-01T08:27:34.5370149Z   Using cached certifi-2026.7.22-py3-none-any.whl (136 kB)
+2026-10-01T08:27:34.6621052Z Collecting cffi==2.1.1 (from -r requirements/ci-py312-linux.lock (line 25))
+2026-10-01T08:27:34.6634530Z   Using cached cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+2026-10-01T08:27:34.7920735Z Collecting charset-normalizer==3.5.1 (from -r requirements/ci-py312-linux.lock (line 127))
+2026-10-01T08:27:34.7940088Z   Using cached charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (248 kB)
+2026-10-01T08:27:35.0161032Z Collecting cryptography==50.0.0 (from -r requirements/ci-py312-linux.lock (line 301))
+2026-10-01T08:27:35.0173966Z   Using cached cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+2026-10-01T08:27:35.0598035Z Collecting cyclonedx-python-lib==11.12.0 (from -r requirements/ci-py312-linux.lock (line 351))
+2026-10-01T08:27:35.0609849Z   Using cached cyclonedx_python_lib-11.12.0-py3-none-any.whl (529 kB)
+2026-10-01T08:27:35.0894287Z Collecting defusedxml==0.7.1 (from -r requirements/ci-py312-linux.lock (line 355))
+2026-10-01T08:27:35.0907534Z   Using cached defusedxml-0.7.1-py2.py3-none-any.whl (25 kB)
+2026-10-01T08:27:35.1368738Z Collecting filelock==3.32.3 (from -r requirements/ci-py312-linux.lock (line 359))
+2026-10-01T08:27:35.1380352Z   Using cached filelock-3.32.3-py3-none-any.whl (98 kB)
+2026-10-01T08:27:35.1697099Z Collecting fsspec==2026.7.0 (from -r requirements/ci-py312-linux.lock (line 367))
+2026-10-01T08:27:35.1709416Z   Using cached fsspec-2026.7.0-py3-none-any.whl (206 kB)
+2026-10-01T08:27:35.2063844Z Collecting idna==3.18 (from -r requirements/ci-py312-linux.lock (line 371))
+2026-10-01T08:27:35.2075195Z   Using cached idna-3.18-py3-none-any.whl (65 kB)
+2026-10-01T08:27:35.2383045Z Collecting iniconfig==2.3.0 (from -r requirements/ci-py312-linux.lock (line 375))
+2026-10-01T08:27:35.2395003Z   Using cached iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+2026-10-01T08:27:35.2580127Z Collecting jinja2==3.1.6 (from -r requirements/ci-py312-linux.lock (line 379))
+2026-10-01T08:27:35.2591534Z   Using cached jinja2-3.1.6-py3-none-any.whl (134 kB)
+2026-10-01T08:27:35.2874867Z Collecting license-expression==30.4.4 (from -r requirements/ci-py312-linux.lock (line 383))
+2026-10-01T08:27:35.2886412Z   Using cached license_expression-30.4.4-py3-none-any.whl (120 kB)
+2026-10-01T08:27:35.3160216Z Collecting markdown-it-py==4.2.0 (from -r requirements/ci-py312-linux.lock (line 387))
+2026-10-01T08:27:35.3171787Z   Using cached markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+2026-10-01T08:27:35.3828514Z Collecting markupsafe==3.0.3 (from -r requirements/ci-py312-linux.lock (line 391))
+2026-10-01T08:27:35.3840438Z   Using cached markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+2026-10-01T08:27:35.4116574Z Collecting mdurl==0.1.2 (from -r requirements/ci-py312-linux.lock (line 482))
+2026-10-01T08:27:35.4128862Z   Using cached mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+2026-10-01T08:27:35.4425810Z Collecting mpmath==1.3.0 (from -r requirements/ci-py312-linux.lock (line 486))
+2026-10-01T08:27:35.4437234Z   Using cached mpmath-1.3.0-py3-none-any.whl (536 kB)
+2026-10-01T08:27:35.5292650Z Collecting msgpack==1.2.1 (from -r requirements/ci-py312-linux.lock (line 490))
+2026-10-01T08:27:35.5306086Z   Using cached msgpack-1.2.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (419 kB)
+2026-10-01T08:27:35.5657953Z Collecting networkx==3.6.1 (from -r requirements/ci-py312-linux.lock (line 558))
+2026-10-01T08:27:35.5669856Z   Using cached networkx-3.6.1-py3-none-any.whl (2.1 MB)
+2026-10-01T08:27:35.6223458Z Collecting nodejs-wheel-binaries==24.16.0 (from -r requirements/ci-py312-linux.lock (line 562))
+2026-10-01T08:27:35.6235983Z   Using cached nodejs_wheel_binaries-24.16.0-py2.py3-none-manylinux_2_28_x86_64.whl (60.7 MB)
+2026-10-01T08:27:36.1597999Z Collecting numpy==2.2.6 (from -r requirements/ci-py312-linux.lock (line 573))
+2026-10-01T08:27:36.1611900Z   Using cached numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.5 MB)
+2026-10-01T08:27:36.2210408Z Collecting packageurl-python==0.17.6 (from -r requirements/ci-py312-linux.lock (line 632))
+2026-10-01T08:27:36.2222548Z   Using cached packageurl_python-0.17.6-py3-none-any.whl (36 kB)
+2026-10-01T08:27:36.2486312Z Collecting packaging==26.3 (from -r requirements/ci-py312-linux.lock (line 636))
+2026-10-01T08:27:36.2498449Z   Using cached packaging-26.3-py3-none-any.whl (129 kB)
+2026-10-01T08:27:36.2520259Z Requirement already satisfied: pip==26.2.1 in /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages (from -r requirements/ci-py312-linux.lock (line 645)) (26.2.1)
+2026-10-01T08:27:36.2785066Z Collecting pip-api==0.0.34 (from -r requirements/ci-py312-linux.lock (line 649))
+2026-10-01T08:27:36.2797590Z   Using cached pip_api-0.0.34-py3-none-any.whl (120 kB)
+2026-10-01T08:27:36.3141381Z Collecting pip-audit==2.10.1 (from -r requirements/ci-py312-linux.lock (line 653))
+2026-10-01T08:27:36.3154041Z   Using cached pip_audit-2.10.1-py3-none-any.whl (62 kB)
+2026-10-01T08:27:36.3489082Z Collecting pip-requirements-parser==32.0.1 (from -r requirements/ci-py312-linux.lock (line 657))
+2026-10-01T08:27:36.3501369Z   Using cached pip_requirements_parser-32.0.1-py3-none-any.whl (35 kB)
+2026-10-01T08:27:36.4041365Z Collecting platformdirs==4.11.3 (from -r requirements/ci-py312-linux.lock (line 661))
+2026-10-01T08:27:36.4053426Z   Using cached platformdirs-4.11.3-py3-none-any.whl (23 kB)
+2026-10-01T08:27:36.4350595Z Collecting pluggy==1.6.0 (from -r requirements/ci-py312-linux.lock (line 665))
+2026-10-01T08:27:36.4362247Z   Using cached pluggy-1.6.0-py3-none-any.whl (20 kB)
+2026-10-01T08:27:36.4708294Z Collecting py-serializable==2.1.0 (from -r requirements/ci-py312-linux.lock (line 669))
+2026-10-01T08:27:36.4720158Z   Using cached py_serializable-2.1.0-py3-none-any.whl (23 kB)
+2026-10-01T08:27:36.4964375Z Collecting pycparser==3.0 (from -r requirements/ci-py312-linux.lock (line 673))
+2026-10-01T08:27:36.4976111Z   Using cached pycparser-3.0-py3-none-any.whl (48 kB)
+2026-10-01T08:27:36.5314387Z Collecting pygments==2.20.0 (from -r requirements/ci-py312-linux.lock (line 677))
+2026-10-01T08:27:36.5326651Z   Using cached pygments-2.20.0-py3-none-any.whl (1.2 MB)
+2026-10-01T08:27:36.5689251Z Collecting pyparsing==3.3.2 (from -r requirements/ci-py312-linux.lock (line 683))
+2026-10-01T08:27:36.5701167Z   Using cached pyparsing-3.3.2-py3-none-any.whl (122 kB)
+2026-10-01T08:27:36.5944509Z Collecting pyproject-hooks==1.2.0 (from -r requirements/ci-py312-linux.lock (line 687))
+2026-10-01T08:27:36.5956931Z   Using cached pyproject_hooks-1.2.0-py3-none-any.whl (10 kB)
+2026-10-01T08:27:36.6330446Z Collecting pytest==9.1.1 (from -r requirements/ci-py312-linux.lock (line 691))
+2026-10-01T08:27:36.6342484Z   Using cached pytest-9.1.1-py3-none-any.whl (386 kB)
+2026-10-01T08:27:36.6605560Z Collecting requests==2.34.2 (from -r requirements/ci-py312-linux.lock (line 695))
+2026-10-01T08:27:36.6617598Z   Using cached requests-2.34.2-py3-none-any.whl (73 kB)
+2026-10-01T08:27:36.7025430Z Collecting rich==15.0.0 (from -r requirements/ci-py312-linux.lock (line 701))
+2026-10-01T08:27:36.7037431Z   Using cached rich-15.0.0-py3-none-any.whl (310 kB)
+2026-10-01T08:27:36.7770536Z Collecting setuptools==84.0.0 (from -r requirements/ci-py312-linux.lock (line 705))
+2026-10-01T08:27:36.7782799Z   Using cached setuptools-84.0.0-py3-none-any.whl (818 kB)
+2026-10-01T08:27:36.8340840Z Collecting sortedcontainers==2.4.0 (from -r requirements/ci-py312-linux.lock (line 711))
+2026-10-01T08:27:36.8352922Z   Using cached sortedcontainers-2.4.0-py2.py3-none-any.whl (29 kB)
+2026-10-01T08:27:36.8611975Z Collecting sympy==1.14.0 (from -r requirements/ci-py312-linux.lock (line 715))
+2026-10-01T08:27:36.8624924Z   Using cached sympy-1.14.0-py3-none-any.whl (6.3 MB)
+2026-10-01T08:27:36.9113141Z Collecting tomli==2.4.1 (from -r requirements/ci-py312-linux.lock (line 719))
+2026-10-01T08:27:36.9126103Z   Using cached tomli-2.4.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (253 kB)
+2026-10-01T08:27:36.9451065Z Collecting tomli-w==1.2.0 (from -r requirements/ci-py312-linux.lock (line 768))
+2026-10-01T08:27:36.9463968Z   Using cached tomli_w-1.2.0-py3-none-any.whl (6.7 kB)
+2026-10-01T08:27:37.0814604Z Collecting torch==2.13.0+cpu (from -r requirements/ci-py312-linux.lock (line 772))
+2026-10-01T08:27:37.2286218Z   Using cached torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl (191.8 MB)
+2026-10-01T08:27:37.5225513Z Collecting typing-extensions==4.16.0 (from -r requirements/ci-py312-linux.lock (line 807))
+2026-10-01T08:27:37.5238079Z   Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+2026-10-01T08:27:37.5464083Z Collecting urllib3==2.8.0 (from -r requirements/ci-py312-linux.lock (line 813))
+2026-10-01T08:27:37.5477062Z   Using cached urllib3-2.8.0-py3-none-any.whl (135 kB)
+2026-10-01T08:27:37.5833099Z Collecting wheel==0.46.3 (from -r requirements/ci-py312-linux.lock (line 817))
+2026-10-01T08:27:37.5845137Z   Using cached wheel-0.46.3-py3-none-any.whl (30 kB)
+2026-10-01T08:27:37.9056381Z Installing collected packages: sortedcontainers, mpmath, boolean-py, urllib3, typing-extensions, tomli-w, tomli, sympy, setuptools, pyproject-hooks, pyparsing, pygments, pycparser, pluggy, platformdirs, pip-api, packaging, packageurl-python, numpy, nodejs-wheel-binaries, networkx, msgpack, mdurl, markupsafe, license-expression, iniconfig, idna, fsspec, filelock, defusedxml, charset-normalizer, certifi, wheel, requests, pytest, py-serializable, pip-requirements-parser, markdown-it-py, jinja2, cffi, build, basedpyright, torch, rich, cyclonedx-python-lib, cryptography, cachecontrol, pip-audit
+2026-10-01T08:28:05.3194514Z 
+2026-10-01T08:28:05.3240618Z Successfully installed basedpyright-1.39.9 boolean-py-5.0 build-1.5.0 cachecontrol-0.14.4 certifi-2026.7.22 cffi-2.1.1 charset-normalizer-3.5.1 cryptography-50.0.0 cyclonedx-python-lib-11.12.0 defusedxml-0.7.1 filelock-3.32.3 fsspec-2026.7.0 idna-3.18 iniconfig-2.3.0 jinja2-3.1.6 license-expression-30.4.4 markdown-it-py-4.2.0 markupsafe-3.0.3 mdurl-0.1.2 mpmath-1.3.0 msgpack-1.2.1 networkx-3.6.1 nodejs-wheel-binaries-24.16.0 numpy-2.2.6 packageurl-python-0.17.6 packaging-26.3 pip-api-0.0.34 pip-audit-2.10.1 pip-requirements-parser-32.0.1 platformdirs-4.11.3 pluggy-1.6.0 py-serializable-2.1.0 pycparser-3.0 pygments-2.20.0 pyparsing-3.3.2 pyproject-hooks-1.2.0 pytest-9.1.1 requests-2.34.2 rich-15.0.0 setuptools-84.0.0 sortedcontainers-2.4.0 sympy-1.14.0 tomli-2.4.1 tomli-w-1.2.0 torch-2.13.0+cpu typing-extensions-4.16.0 urllib3-2.8.0 wheel-0.46.3
+2026-10-01T08:28:05.4568492Z ##[group]Run printf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py
+2026-10-01T08:28:05.4569249Z [36;1mprintf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py[0m
+2026-10-01T08:28:05.4569715Z [36;1mpython -I - <<'PY'[0m
+2026-10-01T08:28:05.4569957Z [36;1mimport site[0m
+2026-10-01T08:28:05.4570184Z [36;1mfrom pathlib import Path[0m
+2026-10-01T08:28:05.4570440Z [36;1m[0m
+2026-10-01T08:28:05.4570636Z [36;1mimport pip_audit[0m
+2026-10-01T08:28:05.4570872Z [36;1mimport torch[0m
+2026-10-01T08:28:05.4571077Z [36;1m[0m
+2026-10-01T08:28:05.4571324Z [36;1mmodule = Path(pip_audit.__file__).resolve()[0m
+2026-10-01T08:28:05.4571762Z [36;1mroots = tuple(Path(item).resolve() for item in site.getsitepackages())[0m
+2026-10-01T08:28:05.4572700Z [36;1massert any(root == module or root in module.parents for root in roots)[0m
+2026-10-01T08:28:05.4573120Z [36;1massert torch.version.cuda is None[0m
+2026-10-01T08:28:05.4573427Z [36;1mPY[0m
+2026-10-01T08:28:05.4573769Z [36;1mpython -I "$GITHUB_WORKSPACE/.github/scripts/check_dependency_locks.py"[0m
+2026-10-01T08:28:05.4574188Z [36;1mpython -I -m pip_audit \[0m
+2026-10-01T08:28:05.4574457Z [36;1m  --strict \[0m
+2026-10-01T08:28:05.4574683Z [36;1m  --disable-pip \[0m
+2026-10-01T08:28:05.4574917Z [36;1m  --no-deps \[0m
+2026-10-01T08:28:05.4575265Z [36;1m  --requirement "$GITHUB_WORKSPACE/requirements/ci-py312-linux.lock"[0m
+2026-10-01T08:28:05.4640868Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:05.4641130Z env:
+2026-10-01T08:28:05.4641342Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-01T08:28:05.4642001Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:05.4642470Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:05.4642906Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:05.4643295Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:05.4643697Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:05.4644089Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:05.4644420Z ##[endgroup]
+2026-10-01T08:28:07.3748156Z dependency locks: 4 hashed Linux CPU closures are synchronized
+2026-10-01T08:28:07.9211561Z WARNING:pip_audit._cli:--no-deps is supported, but users are encouraged to fully hash their pinned dependencies
+2026-10-01T08:28:07.9213663Z WARNING:pip_audit._cli:Consider using a tool like `pip-compile`: https://pip-tools.readthedocs.io/en/latest/#using-hashes
+2026-10-01T08:28:15.3651403Z No known vulnerabilities found
+2026-10-01T08:28:15.4214053Z ##[group]Run python -I -m build --no-isolation
+2026-10-01T08:28:15.4214439Z [36;1mpython -I -m build --no-isolation[0m
+2026-10-01T08:28:15.4277107Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:15.4277381Z env:
+2026-10-01T08:28:15.4277601Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-01T08:28:15.4277939Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:15.4278403Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:15.4278872Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:15.4279286Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:15.4279699Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:15.4280113Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:15.4280466Z ##[endgroup]
+2026-10-01T08:28:15.5040346Z * Getting build dependencies for sdist...
+2026-10-01T08:28:15.7296171Z running egg_info
+2026-10-01T08:28:15.7344592Z creating src/advar_radar_nowcast.egg-info
+2026-10-01T08:28:15.7346118Z writing src/advar_radar_nowcast.egg-info/PKG-INFO
+2026-10-01T08:28:15.7355049Z writing dependency_links to src/advar_radar_nowcast.egg-info/dependency_links.txt
+2026-10-01T08:28:15.7357788Z writing entry points to src/advar_radar_nowcast.egg-info/entry_points.txt
+2026-10-01T08:28:15.7359883Z writing requirements to src/advar_radar_nowcast.egg-info/requires.txt
+2026-10-01T08:28:15.7360878Z writing top-level names to src/advar_radar_nowcast.egg-info/top_level.txt
+2026-10-01T08:28:15.7362489Z writing manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+2026-10-01T08:28:15.7524116Z reading manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+2026-10-01T08:28:15.7545875Z writing manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+2026-10-01T08:28:15.8121427Z * Building sdist...
+2026-10-01T08:28:16.0177991Z running sdist
+2026-10-01T08:28:16.0179345Z running egg_info
+2026-10-01T08:28:16.0275127Z writing src/advar_radar_nowcast.egg-info/PKG-INFO
+2026-10-01T08:28:16.0283924Z writing dependency_links to src/advar_radar_nowcast.egg-info/dependency_links.txt
+2026-10-01T08:28:16.0286828Z writing entry points to src/advar_radar_nowcast.egg-info/entry_points.txt
+2026-10-01T08:28:16.0288960Z writing requirements to src/advar_radar_nowcast.egg-info/requires.txt
+2026-10-01T08:28:16.0290471Z writing top-level names to src/advar_radar_nowcast.egg-info/top_level.txt
+2026-10-01T08:28:16.0462363Z reading manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+2026-10-01T08:28:16.0515463Z writing manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+2026-10-01T08:28:16.0518375Z running check
+2026-10-01T08:28:16.0571377Z creating advar_radar_nowcast-0.114.0
+2026-10-01T08:28:16.0577182Z creating advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0579569Z creating advar_radar_nowcast-0.114.0/src/advar/data
+2026-10-01T08:28:16.0581481Z creating advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+2026-10-01T08:28:16.0583497Z creating advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0584522Z copying files to advar_radar_nowcast-0.114.0...
+2026-10-01T08:28:16.0585333Z copying README.md -> advar_radar_nowcast-0.114.0
+2026-10-01T08:28:16.0588529Z copying pyproject.toml -> advar_radar_nowcast-0.114.0
+2026-10-01T08:28:16.0590430Z copying src/advar/__init__.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0592371Z copying src/advar/_contract_registry.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0594406Z copying src/advar/_digest.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0596259Z copying src/advar/_input_derivation.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0598075Z copying src/advar/_learned_input.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0599884Z copying src/advar/_runtime.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0601853Z copying src/advar/acceptance.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0604349Z copying src/advar/action_artifacts.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0606054Z copying src/advar/action_contracts.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0607816Z copying src/advar/calibration.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0609805Z copying src/advar/cli.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0612099Z copying src/advar/diagnostics.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0614107Z copying src/advar/ensemble_sensitivity.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0616189Z copying src/advar/fv_point_research_problem.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0618122Z copying src/advar/fv_point_sampler.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0620279Z copying src/advar/fv_research_problem.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0622334Z copying src/advar/fv_sensitivity.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0624842Z copying src/advar/intervention.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0627729Z copying src/advar/ledger.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0636336Z copying src/advar/linearization_artifact.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0637849Z copying src/advar/local_refinement.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0639798Z copying src/advar/local_response.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0641854Z copying src/advar/matrix_free.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0643642Z copying src/advar/metrics.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0645511Z copying src/advar/nowcast.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0649463Z copying src/advar/physics.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0651314Z copying src/advar/promotion.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0660220Z copying src/advar/range_geometry.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0662227Z copying src/advar/run_artifact.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0664961Z copying src/advar/runtime_closure.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0666892Z copying src/advar/sensitivity.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0673269Z copying src/advar/transport.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0675330Z copying src/advar/variational.py -> advar_radar_nowcast-0.114.0/src/advar
+2026-10-01T08:28:16.0679724Z copying src/advar/data/epsg5179_metric_domain_evidence_v1.json -> advar_radar_nowcast-0.114.0/src/advar/data
+2026-10-01T08:28:16.0682053Z copying src/advar/data/epsg5179_metric_domain_evidence_v2.json -> advar_radar_nowcast-0.114.0/src/advar/data
+2026-10-01T08:28:16.0684510Z copying src/advar/data/epsg5179_metric_domain_evidence_v3.json -> advar_radar_nowcast-0.114.0/src/advar/data
+2026-10-01T08:28:16.0686778Z copying src/advar/data/epsg5179_metric_domain_evidence_v4.json -> advar_radar_nowcast-0.114.0/src/advar/data
+2026-10-01T08:28:16.0689182Z copying src/advar_radar_nowcast.egg-info/PKG-INFO -> advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+2026-10-01T08:28:16.0692196Z copying src/advar_radar_nowcast.egg-info/SOURCES.txt -> advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+2026-10-01T08:28:16.0694127Z copying src/advar_radar_nowcast.egg-info/dependency_links.txt -> advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+2026-10-01T08:28:16.0695939Z copying src/advar_radar_nowcast.egg-info/entry_points.txt -> advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+2026-10-01T08:28:16.0697926Z copying src/advar_radar_nowcast.egg-info/requires.txt -> advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+2026-10-01T08:28:16.0699657Z copying src/advar_radar_nowcast.egg-info/top_level.txt -> advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+2026-10-01T08:28:16.0701243Z copying tests/test_a2_artifacts.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0703472Z copying tests/test_a2_branch.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0705287Z copying tests/test_a2_cli_tools.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0707084Z copying tests/test_a2_fso.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0709002Z copying tests/test_a2_intervention.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0710780Z copying tests/test_a2_ledger_io.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0713029Z copying tests/test_a2_ledger_snapshot.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0714911Z copying tests/test_a2_numerics.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0716849Z copying tests/test_a2_numerics_cross.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0718663Z copying tests/test_a2_promotion.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0720575Z copying tests/test_a5_artifacts_intervention.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0722507Z copying tests/test_a5_derivatives.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0724668Z copying tests/test_a5_input_defaults.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0726484Z copying tests/test_a5_io_runtime.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0728356Z copying tests/test_a5_ledger_inputs.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0730227Z copying tests/test_a5_ledger_storage.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0732127Z copying tests/test_a5_loss_stats.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0734183Z copying tests/test_a5_offline_bounds.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0736034Z copying tests/test_a5_regression_oracles.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0737840Z copying tests/test_a5_resources.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0739613Z copying tests/test_a5_scoring.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0741518Z copying tests/test_a5_uncertainty_oracles.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0743682Z copying tests/test_a5_variational.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0745593Z copying tests/test_a5_verification.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0747573Z copying tests/test_acceptance.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0749458Z copying tests/test_affine_holdout.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0751401Z copying tests/test_async_observer_context.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0753528Z copying tests/test_calibration.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0755333Z copying tests/test_cli.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0757489Z copying tests/test_contract_registry.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0758965Z copying tests/test_cpu_test_sharding.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0760901Z copying tests/test_deployment_bundle.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0763095Z copying tests/test_ensemble_sensitivity.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0764772Z copying tests/test_finite_volume_transport.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0766542Z copying tests/test_full_transport_resource_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0768073Z copying tests/test_fv86_execution.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0769721Z copying tests/test_fv86_execution_status.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0771325Z copying tests/test_fv86_reanalysis.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0773664Z copying tests/test_fv_analysis_forecast.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0775028Z copying tests/test_fv_analysis_response.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0776662Z copying tests/test_fv_analytic_oracle.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0778308Z copying tests/test_fv_comparison_publisher.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0780004Z copying tests/test_fv_concurrent_response.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0781635Z copying tests/test_fv_control_domain.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0783842Z copying tests/test_fv_external_background_phase1.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0785318Z copying tests/test_fv_general_boundary.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0786959Z copying tests/test_fv_gn_response_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0788628Z copying tests/test_fv_grid_convergence_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0790240Z copying tests/test_fv_inverse_identifiability.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0792008Z copying tests/test_fv_learning_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0793767Z copying tests/test_fv_minmod_derivative_branches.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0795369Z copying tests/test_fv_minmod_inverse_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0797096Z copying tests/test_fv_minmod_joint_derivatives.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0798779Z copying tests/test_fv_minmod_local_path_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0800478Z copying tests/test_fv_minmod_matrix_free_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0802221Z copying tests/test_fv_neural_learning_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0803936Z copying tests/test_fv_neural_observation_path.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0805407Z copying tests/test_fv_numerical_range.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0807584Z copying tests/test_fv_observability.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0809222Z copying tests/test_fv_observation_response.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0811205Z copying tests/test_fv_original_cases.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0813001Z copying tests/test_fv_partial_alternate_root.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0815029Z copying tests/test_fv_partial_alternate_seed_gate.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0816583Z copying tests/test_fv_partial_face_event_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0818210Z copying tests/test_fv_partial_face_event_runner.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0819924Z copying tests/test_fv_partial_face_geometry.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0821549Z copying tests/test_fv_partial_face_tangent_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0823794Z copying tests/test_fv_partial_field_correction_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0825362Z copying tests/test_fv_partial_observation_preparation.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0826998Z copying tests/test_fv_partial_policy_decision.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0828691Z copying tests/test_fv_partial_reanalysis_preflight.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0830290Z copying tests/test_fv_partial_sector_root.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0832190Z copying tests/test_fv_persistent_learning_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0833992Z copying tests/test_fv_point_3h_first_branch_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0835896Z copying tests/test_fv_point_3h_forward.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0838066Z copying tests/test_fv_point_3h_merit_continuation.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0839650Z copying tests/test_fv_point_3h_merit_step_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0841699Z copying tests/test_fv_point_3h_response_policy.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0843881Z copying tests/test_fv_point_3h_seed_hessian_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0845910Z copying tests/test_fv_point_3h_seed_linear_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0847834Z copying tests/test_fv_point_3h_shifted_branch_probe.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0849838Z copying tests/test_fv_point_basin_runner.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0851694Z copying tests/test_fv_point_basin_search.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0853921Z copying tests/test_fv_point_centered_prior_case.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0855772Z copying tests/test_fv_point_centered_prior_response.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0857603Z copying tests/test_fv_point_core_strict_root.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0859484Z copying tests/test_fv_point_empty_centered_response.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0861309Z copying tests/test_fv_point_empty_time.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0863448Z copying tests/test_fv_point_merit_root.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0865390Z copying tests/test_fv_point_missing.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0867364Z copying tests/test_fv_point_missing_centered_response.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0869265Z copying tests/test_fv_point_nominal_runner.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0871116Z copying tests/test_fv_point_original_policy.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0873363Z copying tests/test_fv_point_qc_centered_response.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0875208Z copying tests/test_fv_point_qc_status.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0877172Z copying tests/test_fv_point_research_correlation.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0879090Z copying tests/test_fv_point_research_problem.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0881058Z copying tests/test_fv_point_response_preflight.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0883125Z copying tests/test_fv_point_sampler.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0884992Z copying tests/test_fv_point_sector_policy.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0886896Z copying tests/test_fv_point_sector_root.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0888867Z copying tests/test_fv_point_terminal_newton.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0890627Z copying tests/test_fv_process_response.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0892974Z copying tests/test_fv_research_long_horizon.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0894848Z copying tests/test_fv_research_multilead.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0897408Z copying tests/test_fv_research_partial_observation.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0899275Z copying tests/test_fv_research_problem.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0901209Z copying tests/test_fv_response_job_lifecycle.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0903446Z copying tests/test_fv_response_job_reconcile.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0905391Z copying tests/test_fv_rotation_demo.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0907480Z copying tests/test_fv_scaled_research_case.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0909149Z copying tests/test_fv_stage_observer.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0911068Z copying tests/test_fv_stationarity_verification.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0913179Z copying tests/test_fv_stationary_refinement.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0914988Z copying tests/test_fv_stationary_sensitivity.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0916885Z copying tests/test_fv_support_matrix.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0918769Z copying tests/test_fv_trajectory_contract.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0920631Z copying tests/test_fv_variational_residual.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0922829Z copying tests/test_fv_zero_face_scope.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0924699Z copying tests/test_holdout_evaluation.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0926554Z copying tests/test_initial_field_lab.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0928433Z copying tests/test_integrate_fv_demo.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0930233Z copying tests/test_ledger.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0933842Z copying tests/test_local_refinement.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0935746Z copying tests/test_local_response.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0937671Z copying tests/test_m0_linearity_weights.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0939519Z copying tests/test_matrix_free.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0941390Z copying tests/test_metrics.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0943532Z copying tests/test_motion_diagnostics.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0945409Z copying tests/test_muscl_experiment.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0947342Z copying tests/test_muscl_multistep.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0949336Z copying tests/test_nowcast.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0952862Z copying tests/test_numerical_review.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0954761Z copying tests/test_pcg.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0956771Z copying tests/test_pcg_observer.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0958770Z copying tests/test_phase1_learning_demonstration.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0960786Z copying tests/test_phase1_scenario_learning.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0962995Z copying tests/test_phase1_scenario_nowcast.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0964933Z copying tests/test_phase1_scenario_numerics.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0966977Z copying tests/test_phase1_theoretical_demonstration.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0968662Z copying tests/test_prior_learning.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0970646Z copying tests/test_prior_spatial_cotangent.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0972513Z copying tests/test_promotion.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0979892Z copying tests/test_recompute_contract.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0981783Z copying tests/test_recomputed_transport.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0983904Z copying tests/test_review_intervention.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0985762Z copying tests/test_review_ledger.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0987703Z copying tests/test_review_legacy_loaders.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0989610Z copying tests/test_review_numerics.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0991737Z copying tests/test_review_promotion_contracts.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0993895Z copying tests/test_review_promotion_statistics.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0995658Z copying tests/test_review_run_identity.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.0997516Z copying tests/test_run_artifact.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.1000123Z copying tests/test_runtime.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.1002068Z copying tests/test_runtime_closure.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.1004452Z copying tests/test_scenario_reaction_experiment.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.1006358Z copying tests/test_scenario_rigid_experiment.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.1008188Z copying tests/test_sensitivity.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.1011916Z copying tests/test_shift_zero.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.1014125Z copying tests/test_subpixel_motion_refinement.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.1015992Z copying tests/test_transport_demo.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.1017905Z copying tests/test_transport_numerical_diffusion.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.1019726Z copying tests/test_transport_trajectory.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.1021648Z copying tests/test_variational.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.1025334Z copying tests/test_weather_scenarios_demo.py -> advar_radar_nowcast-0.114.0/tests
+2026-10-01T08:28:16.1035091Z Writing advar_radar_nowcast-0.114.0/setup.cfg
+2026-10-01T08:28:16.1037592Z Creating tar archive
+2026-10-01T08:28:16.8595012Z removing 'advar_radar_nowcast-0.114.0' (and everything under it)
+2026-10-01T08:28:16.9717946Z * Building wheel from sdist
+2026-10-01T08:28:16.9721415Z * Getting build dependencies for wheel...
+2026-10-01T08:28:17.1791272Z running egg_info
+2026-10-01T08:28:17.1838058Z writing src/advar_radar_nowcast.egg-info/PKG-INFO
+2026-10-01T08:28:17.1848167Z writing dependency_links to src/advar_radar_nowcast.egg-info/dependency_links.txt
+2026-10-01T08:28:17.1851858Z writing entry points to src/advar_radar_nowcast.egg-info/entry_points.txt
+2026-10-01T08:28:17.1854874Z writing requirements to src/advar_radar_nowcast.egg-info/requires.txt
+2026-10-01T08:28:17.1856258Z writing top-level names to src/advar_radar_nowcast.egg-info/top_level.txt
+2026-10-01T08:28:17.2018722Z reading manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+2026-10-01T08:28:17.2069671Z writing manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+2026-10-01T08:28:17.2371903Z * Building wheel...
+2026-10-01T08:28:17.4343219Z running bdist_wheel
+2026-10-01T08:28:17.4563767Z running build
+2026-10-01T08:28:17.4564317Z running build_py
+2026-10-01T08:28:17.4612513Z creating build/lib/advar
+2026-10-01T08:28:17.4615860Z copying src/advar/action_artifacts.py -> build/lib/advar
+2026-10-01T08:28:17.4618062Z copying src/advar/acceptance.py -> build/lib/advar
+2026-10-01T08:28:17.4620509Z copying src/advar/cli.py -> build/lib/advar
+2026-10-01T08:28:17.4623329Z copying src/advar/physics.py -> build/lib/advar
+2026-10-01T08:28:17.4625629Z copying src/advar/ensemble_sensitivity.py -> build/lib/advar
+2026-10-01T08:28:17.4627716Z copying src/advar/transport.py -> build/lib/advar
+2026-10-01T08:28:17.4630216Z copying src/advar/metrics.py -> build/lib/advar
+2026-10-01T08:28:17.4632284Z copying src/advar/sensitivity.py -> build/lib/advar
+2026-10-01T08:28:17.4638854Z copying src/advar/fv_sensitivity.py -> build/lib/advar
+2026-10-01T08:28:17.4641201Z copying src/advar/_contract_registry.py -> build/lib/advar
+2026-10-01T08:28:17.4643583Z copying src/advar/_runtime.py -> build/lib/advar
+2026-10-01T08:28:17.4645706Z copying src/advar/run_artifact.py -> build/lib/advar
+2026-10-01T08:28:17.4648327Z copying src/advar/diagnostics.py -> build/lib/advar
+2026-10-01T08:28:17.4650617Z copying src/advar/nowcast.py -> build/lib/advar
+2026-10-01T08:28:17.4655071Z copying src/advar/calibration.py -> build/lib/advar
+2026-10-01T08:28:17.4657325Z copying src/advar/intervention.py -> build/lib/advar
+2026-10-01T08:28:17.4660242Z copying src/advar/linearization_artifact.py -> build/lib/advar
+2026-10-01T08:28:17.4662642Z copying src/advar/range_geometry.py -> build/lib/advar
+2026-10-01T08:28:17.4665256Z copying src/advar/fv_research_problem.py -> build/lib/advar
+2026-10-01T08:28:17.4667366Z copying src/advar/variational.py -> build/lib/advar
+2026-10-01T08:28:17.4671775Z copying src/advar/matrix_free.py -> build/lib/advar
+2026-10-01T08:28:17.4674291Z copying src/advar/action_contracts.py -> build/lib/advar
+2026-10-01T08:28:17.4676362Z copying src/advar/_digest.py -> build/lib/advar
+2026-10-01T08:28:17.4678385Z copying src/advar/fv_point_sampler.py -> build/lib/advar
+2026-10-01T08:28:17.4680399Z copying src/advar/local_response.py -> build/lib/advar
+2026-10-01T08:28:17.4682521Z copying src/advar/local_refinement.py -> build/lib/advar
+2026-10-01T08:28:17.4684907Z copying src/advar/promotion.py -> build/lib/advar
+2026-10-01T08:28:17.4693853Z copying src/advar/ledger.py -> build/lib/advar
+2026-10-01T08:28:17.4701533Z copying src/advar/__init__.py -> build/lib/advar
+2026-10-01T08:28:17.4704056Z copying src/advar/_learned_input.py -> build/lib/advar
+2026-10-01T08:28:17.4706143Z copying src/advar/fv_point_research_problem.py -> build/lib/advar
+2026-10-01T08:28:17.4708433Z copying src/advar/runtime_closure.py -> build/lib/advar
+2026-10-01T08:28:17.4710678Z copying src/advar/_input_derivation.py -> build/lib/advar
+2026-10-01T08:28:17.4713526Z running egg_info
+2026-10-01T08:28:17.4758460Z writing src/advar_radar_nowcast.egg-info/PKG-INFO
+2026-10-01T08:28:17.4767934Z writing dependency_links to src/advar_radar_nowcast.egg-info/dependency_links.txt
+2026-10-01T08:28:17.4771780Z writing entry points to src/advar_radar_nowcast.egg-info/entry_points.txt
+2026-10-01T08:28:17.4775250Z writing requirements to src/advar_radar_nowcast.egg-info/requires.txt
+2026-10-01T08:28:17.4777488Z writing top-level names to src/advar_radar_nowcast.egg-info/top_level.txt
+2026-10-01T08:28:17.4850898Z reading manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+2026-10-01T08:28:17.4902816Z writing manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+2026-10-01T08:28:17.4916251Z creating build/lib/advar/data
+2026-10-01T08:28:17.4917931Z copying src/advar/data/epsg5179_metric_domain_evidence_v2.json -> build/lib/advar/data
+2026-10-01T08:28:17.4920796Z copying src/advar/data/epsg5179_metric_domain_evidence_v3.json -> build/lib/advar/data
+2026-10-01T08:28:17.4923832Z copying src/advar/data/epsg5179_metric_domain_evidence_v4.json -> build/lib/advar/data
+2026-10-01T08:28:17.4926537Z copying src/advar/data/epsg5179_metric_domain_evidence_v1.json -> build/lib/advar/data
+2026-10-01T08:28:17.4935281Z warning: build_py: byte-compiling is disabled, skipping.
+2026-10-01T08:28:17.4935775Z 
+2026-10-01T08:28:17.5023381Z installing to build/bdist.linux-x86_64/wheel
+2026-10-01T08:28:17.5024274Z running install
+2026-10-01T08:28:17.5093206Z running install_lib
+2026-10-01T08:28:17.5137635Z creating build/bdist.linux-x86_64/wheel
+2026-10-01T08:28:17.5140822Z creating build/bdist.linux-x86_64/wheel/advar
+2026-10-01T08:28:17.5142667Z copying build/lib/advar/action_artifacts.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5144661Z copying build/lib/advar/acceptance.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5146381Z copying build/lib/advar/cli.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5148649Z copying build/lib/advar/physics.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5150344Z copying build/lib/advar/ensemble_sensitivity.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5152414Z copying build/lib/advar/transport.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5154725Z copying build/lib/advar/metrics.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5156186Z copying build/lib/advar/sensitivity.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5162415Z copying build/lib/advar/fv_sensitivity.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5164578Z copying build/lib/advar/_contract_registry.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5166078Z copying build/lib/advar/_runtime.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5168038Z copying build/lib/advar/run_artifact.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5170352Z copying build/lib/advar/diagnostics.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5172141Z copying build/lib/advar/nowcast.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5176466Z copying build/lib/advar/calibration.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5178794Z creating build/bdist.linux-x86_64/wheel/advar/data
+2026-10-01T08:28:17.5180606Z copying build/lib/advar/data/epsg5179_metric_domain_evidence_v2.json -> build/bdist.linux-x86_64/wheel/./advar/data
+2026-10-01T08:28:17.5182721Z copying build/lib/advar/data/epsg5179_metric_domain_evidence_v3.json -> build/bdist.linux-x86_64/wheel/./advar/data
+2026-10-01T08:28:17.5185089Z copying build/lib/advar/data/epsg5179_metric_domain_evidence_v4.json -> build/bdist.linux-x86_64/wheel/./advar/data
+2026-10-01T08:28:17.5187239Z copying build/lib/advar/data/epsg5179_metric_domain_evidence_v1.json -> build/bdist.linux-x86_64/wheel/./advar/data
+2026-10-01T08:28:17.5189018Z copying build/lib/advar/intervention.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5191701Z copying build/lib/advar/linearization_artifact.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5193859Z copying build/lib/advar/range_geometry.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5195646Z copying build/lib/advar/fv_research_problem.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5197380Z copying build/lib/advar/variational.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5201507Z copying build/lib/advar/matrix_free.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5203726Z copying build/lib/advar/action_contracts.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5205213Z copying build/lib/advar/_digest.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5206912Z copying build/lib/advar/fv_point_sampler.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5208562Z copying build/lib/advar/local_response.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5210268Z copying build/lib/advar/local_refinement.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5212145Z copying build/lib/advar/promotion.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5220948Z copying build/lib/advar/ledger.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5228837Z copying build/lib/advar/__init__.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5230503Z copying build/lib/advar/_learned_input.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5232391Z copying build/lib/advar/fv_point_research_problem.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5234432Z copying build/lib/advar/runtime_closure.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5236151Z copying build/lib/advar/_input_derivation.py -> build/bdist.linux-x86_64/wheel/./advar
+2026-10-01T08:28:17.5237533Z warning: install_lib: byte-compiling is disabled, skipping.
+2026-10-01T08:28:17.5237969Z 
+2026-10-01T08:28:17.5238132Z running install_egg_info
+2026-10-01T08:28:17.5283151Z Copying src/advar_radar_nowcast.egg-info to build/bdist.linux-x86_64/wheel/./advar_radar_nowcast-0.114.0-py3.12.egg-info
+2026-10-01T08:28:17.5292504Z running install_scripts
+2026-10-01T08:28:17.5303569Z creating build/bdist.linux-x86_64/wheel/advar_radar_nowcast-0.114.0.dist-info/WHEEL
+2026-10-01T08:28:17.5308199Z creating '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/dist/.tmp-tqy2hffc/advar_radar_nowcast-0.114.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+2026-10-01T08:28:17.5310925Z adding 'advar/__init__.py'
+2026-10-01T08:28:17.5314821Z adding 'advar/_contract_registry.py'
+2026-10-01T08:28:17.5317059Z adding 'advar/_digest.py'
+2026-10-01T08:28:17.5320111Z adding 'advar/_input_derivation.py'
+2026-10-01T08:28:17.5322464Z adding 'advar/_learned_input.py'
+2026-10-01T08:28:17.5326304Z adding 'advar/_runtime.py'
+2026-10-01T08:28:17.5331854Z adding 'advar/acceptance.py'
+2026-10-01T08:28:17.5334632Z adding 'advar/action_artifacts.py'
+2026-10-01T08:28:17.5336657Z adding 'advar/action_contracts.py'
+2026-10-01T08:28:17.5344154Z adding 'advar/calibration.py'
+2026-10-01T08:28:17.5356249Z adding 'advar/cli.py'
+2026-10-01T08:28:17.5359421Z adding 'advar/diagnostics.py'
+2026-10-01T08:28:17.5368862Z adding 'advar/ensemble_sensitivity.py'
+2026-10-01T08:28:17.5375431Z adding 'advar/fv_point_research_problem.py'
+2026-10-01T08:28:17.5377928Z adding 'advar/fv_point_sampler.py'
+2026-10-01T08:28:17.5382080Z adding 'advar/fv_research_problem.py'
+2026-10-01T08:28:17.5394306Z adding 'advar/fv_sensitivity.py'
+2026-10-01T08:28:17.5422239Z adding 'advar/intervention.py'
+2026-10-01T08:28:17.5640076Z adding 'advar/ledger.py'
+2026-10-01T08:28:17.5655852Z adding 'advar/linearization_artifact.py'
+2026-10-01T08:28:17.5661775Z adding 'advar/local_refinement.py'
+2026-10-01T08:28:17.5666341Z adding 'advar/local_response.py'
+2026-10-01T08:28:17.5672428Z adding 'advar/matrix_free.py'
+2026-10-01T08:28:17.5675544Z adding 'advar/metrics.py'
+2026-10-01T08:28:17.5760650Z adding 'advar/nowcast.py'
+2026-10-01T08:28:17.5766795Z adding 'advar/physics.py'
+2026-10-01T08:28:17.6013301Z adding 'advar/promotion.py'
+2026-10-01T08:28:17.6027907Z adding 'advar/range_geometry.py'
+2026-10-01T08:28:17.6048247Z adding 'advar/run_artifact.py'
+2026-10-01T08:28:17.6055256Z adding 'advar/runtime_closure.py'
+2026-10-01T08:28:17.6205939Z adding 'advar/sensitivity.py'
+2026-10-01T08:28:17.6222439Z adding 'advar/transport.py'
+2026-10-01T08:28:17.6316438Z adding 'advar/variational.py'
+2026-10-01T08:28:17.6331769Z adding 'advar/data/epsg5179_metric_domain_evidence_v1.json'
+2026-10-01T08:28:17.6345393Z adding 'advar/data/epsg5179_metric_domain_evidence_v2.json'
+2026-10-01T08:28:17.6359248Z adding 'advar/data/epsg5179_metric_domain_evidence_v3.json'
+2026-10-01T08:28:17.6373701Z adding 'advar/data/epsg5179_metric_domain_evidence_v4.json'
+2026-10-01T08:28:17.6445323Z adding 'advar_radar_nowcast-0.114.0.dist-info/METADATA'
+2026-10-01T08:28:17.6447998Z adding 'advar_radar_nowcast-0.114.0.dist-info/WHEEL'
+2026-10-01T08:28:17.6449321Z adding 'advar_radar_nowcast-0.114.0.dist-info/entry_points.txt'
+2026-10-01T08:28:17.6450822Z adding 'advar_radar_nowcast-0.114.0.dist-info/top_level.txt'
+2026-10-01T08:28:17.6454229Z adding 'advar_radar_nowcast-0.114.0.dist-info/RECORD'
+2026-10-01T08:28:17.6456191Z removing build/bdist.linux-x86_64/wheel
+2026-10-01T08:28:17.6784298Z Successfully built advar_radar_nowcast-0.114.0.tar.gz and advar_radar_nowcast-0.114.0-py3-none-any.whl
+2026-10-01T08:28:17.6995743Z ##[group]Run mkdir "$RUNNER_TEMP/runtime-wheelhouse"
+2026-10-01T08:28:17.6996540Z [36;1mmkdir "$RUNNER_TEMP/runtime-wheelhouse"[0m
+2026-10-01T08:28:17.6997166Z [36;1mpython -I -m pip download \[0m
+2026-10-01T08:28:17.6997679Z [36;1m  --require-hashes \[0m
+2026-10-01T08:28:17.6998151Z [36;1m  --only-binary=:all: \[0m
+2026-10-01T08:28:17.6998626Z [36;1m  --no-deps \[0m
+2026-10-01T08:28:17.6999251Z [36;1m  --extra-index-url https://download.pytorch.org/whl/cpu \[0m
+2026-10-01T08:28:17.7000091Z [36;1m  --requirement requirements/runtime-py312-linux.lock \[0m
+2026-10-01T08:28:17.7000819Z [36;1m  --dest "$RUNNER_TEMP/runtime-wheelhouse"[0m
+2026-10-01T08:28:17.7071291Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:17.7071563Z env:
+2026-10-01T08:28:17.7071774Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-01T08:28:17.7072393Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:17.7072897Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:17.7073335Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:17.7073724Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:17.7074117Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:17.7074501Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:17.7074825Z ##[endgroup]
+2026-10-01T08:28:18.0572012Z Looking in indexes: https://pypi.org/simple, https://download.pytorch.org/whl/cpu
+2026-10-01T08:28:18.2971275Z Collecting cffi==2.1.1 (from -r requirements/runtime-py312-linux.lock (line 5))
+2026-10-01T08:28:18.2986344Z   Using cached cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+2026-10-01T08:28:18.4869817Z Collecting cryptography==50.0.0 (from -r requirements/runtime-py312-linux.lock (line 107))
+2026-10-01T08:28:18.4883417Z   Using cached cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+2026-10-01T08:28:18.5191808Z Collecting filelock==3.32.3 (from -r requirements/runtime-py312-linux.lock (line 157))
+2026-10-01T08:28:18.5204245Z   Using cached filelock-3.32.3-py3-none-any.whl (98 kB)
+2026-10-01T08:28:18.5402507Z Collecting fsspec==2026.7.0 (from -r requirements/runtime-py312-linux.lock (line 164))
+2026-10-01T08:28:18.5414393Z   Using cached fsspec-2026.7.0-py3-none-any.whl (206 kB)
+2026-10-01T08:28:18.5650881Z Collecting jinja2==3.1.6 (from -r requirements/runtime-py312-linux.lock (line 168))
+2026-10-01T08:28:18.5662554Z   Using cached jinja2-3.1.6-py3-none-any.whl (134 kB)
+2026-10-01T08:28:18.6147109Z Collecting markupsafe==3.0.3 (from -r requirements/runtime-py312-linux.lock (line 172))
+2026-10-01T08:28:18.6160566Z   Using cached markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+2026-10-01T08:28:18.6267450Z Collecting mpmath==1.3.0 (from -r requirements/runtime-py312-linux.lock (line 263))
+2026-10-01T08:28:18.6279226Z   Using cached mpmath-1.3.0-py3-none-any.whl (536 kB)
+2026-10-01T08:28:18.6527872Z Collecting networkx==3.6.1 (from -r requirements/runtime-py312-linux.lock (line 267))
+2026-10-01T08:28:18.6540244Z   Using cached networkx-3.6.1-py3-none-any.whl (2.1 MB)
+2026-10-01T08:28:19.0988982Z Collecting numpy==2.2.6 (from -r requirements/runtime-py312-linux.lock (line 271))
+2026-10-01T08:28:19.1003644Z   Using cached numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.5 MB)
+2026-10-01T08:28:19.1559390Z Collecting pycparser==3.0 (from -r requirements/runtime-py312-linux.lock (line 330))
+2026-10-01T08:28:19.1571909Z   Using cached pycparser-3.0-py3-none-any.whl (48 kB)
+2026-10-01T08:28:19.2181268Z Collecting setuptools==84.0.0 (from -r requirements/runtime-py312-linux.lock (line 334))
+2026-10-01T08:28:19.2194916Z   Using cached setuptools-84.0.0-py3-none-any.whl (818 kB)
+2026-10-01T08:28:19.2417401Z Collecting sympy==1.14.0 (from -r requirements/runtime-py312-linux.lock (line 338))
+2026-10-01T08:28:19.2430376Z   Using cached sympy-1.14.0-py3-none-any.whl (6.3 MB)
+2026-10-01T08:28:19.3778123Z Collecting torch==2.13.0+cpu (from -r requirements/runtime-py312-linux.lock (line 342))
+2026-10-01T08:28:19.3791062Z   Using cached torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl (191.8 MB)
+2026-10-01T08:28:19.6633589Z Collecting typing-extensions==4.16.0 (from -r requirements/runtime-py312-linux.lock (line 377))
+2026-10-01T08:28:19.6645611Z   Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+2026-10-01T08:28:19.6702860Z Saved /home/runner/work/_temp/runtime-wheelhouse/cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+2026-10-01T08:28:19.6721653Z Saved /home/runner/work/_temp/runtime-wheelhouse/cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl
+2026-10-01T08:28:19.6726478Z Saved /home/runner/work/_temp/runtime-wheelhouse/filelock-3.32.3-py3-none-any.whl
+2026-10-01T08:28:19.6731069Z Saved /home/runner/work/_temp/runtime-wheelhouse/fsspec-2026.7.0-py3-none-any.whl
+2026-10-01T08:28:19.6735785Z Saved /home/runner/work/_temp/runtime-wheelhouse/jinja2-3.1.6-py3-none-any.whl
+2026-10-01T08:28:19.6740312Z Saved /home/runner/work/_temp/runtime-wheelhouse/markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+2026-10-01T08:28:19.6745882Z Saved /home/runner/work/_temp/runtime-wheelhouse/mpmath-1.3.0-py3-none-any.whl
+2026-10-01T08:28:19.6756360Z Saved /home/runner/work/_temp/runtime-wheelhouse/networkx-3.6.1-py3-none-any.whl
+2026-10-01T08:28:19.6809616Z Saved /home/runner/work/_temp/runtime-wheelhouse/numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+2026-10-01T08:28:19.6813927Z Saved /home/runner/work/_temp/runtime-wheelhouse/pycparser-3.0-py3-none-any.whl
+2026-10-01T08:28:19.6820302Z Saved /home/runner/work/_temp/runtime-wheelhouse/setuptools-84.0.0-py3-none-any.whl
+2026-10-01T08:28:19.6842839Z Saved /home/runner/work/_temp/runtime-wheelhouse/sympy-1.14.0-py3-none-any.whl
+2026-10-01T08:28:19.7407932Z Saved /home/runner/work/_temp/runtime-wheelhouse/torch-2.13.0+cpu-cp312-cp312-manylinux_2_28_x86_64.whl
+2026-10-01T08:28:19.7412080Z Saved /home/runner/work/_temp/runtime-wheelhouse/typing_extensions-4.16.0-py3-none-any.whl
+2026-10-01T08:28:19.7414014Z Successfully downloaded cffi cryptography filelock fsspec jinja2 markupsafe mpmath networkx numpy pycparser setuptools sympy torch typing-extensions
+2026-10-01T08:28:19.8245715Z ##[group]Run python -I -m venv --without-pip .wheel-venv
+2026-10-01T08:28:19.8246201Z [36;1mpython -I -m venv --without-pip .wheel-venv[0m
+2026-10-01T08:28:19.8246605Z [36;1mpython -I -m pip --python .wheel-venv/bin/python install \[0m
+2026-10-01T08:28:19.8246972Z [36;1m  --no-index \[0m
+2026-10-01T08:28:19.8247263Z [36;1m  --find-links "$RUNNER_TEMP/runtime-wheelhouse" \[0m
+2026-10-01T08:28:19.8247611Z [36;1m  --require-hashes \[0m
+2026-10-01T08:28:19.8247909Z [36;1m  --only-binary=:all: \[0m
+2026-10-01T08:28:19.8248222Z [36;1m  --no-compile \[0m
+2026-10-01T08:28:19.8248590Z [36;1m  --requirement requirements/runtime-py312-linux.lock[0m
+2026-10-01T08:28:19.8249053Z [36;1mpython -I -m pip --python .wheel-venv/bin/python install \[0m
+2026-10-01T08:28:19.8249457Z [36;1m  --no-index --no-deps --no-compile dist/*.whl[0m
+2026-10-01T08:28:19.8249867Z [36;1mpython -I -m pip --python .wheel-venv/bin/python check[0m
+2026-10-01T08:28:19.8250251Z [36;1mfind .wheel-venv -type f \[0m
+2026-10-01T08:28:19.8250590Z [36;1m  \( -name '*.pyc' -o -name '*.pyo' -o -name '*.pth' \) -delete[0m
+2026-10-01T08:28:19.8250972Z [36;1m.wheel-venv/bin/python -I -B - <<'PY'[0m
+2026-10-01T08:28:19.8251259Z [36;1mimport torch[0m
+2026-10-01T08:28:19.8251513Z [36;1m[0m
+2026-10-01T08:28:19.8251722Z [36;1massert torch.version.cuda is None[0m
+2026-10-01T08:28:19.8252165Z [36;1mPY[0m
+2026-10-01T08:28:19.8314920Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:19.8315174Z env:
+2026-10-01T08:28:19.8315386Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-01T08:28:19.8315719Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:19.8316332Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:19.8316766Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:19.8317145Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:19.8317527Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:19.8317930Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:19.8318256Z ##[endgroup]
+2026-10-01T08:28:20.3804376Z Looking in links: /home/runner/work/_temp/runtime-wheelhouse
+2026-10-01T08:28:20.3921702Z Processing /home/runner/work/_temp/runtime-wheelhouse/cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from -r requirements/runtime-py312-linux.lock (line 5))
+2026-10-01T08:28:20.3963080Z Processing /home/runner/work/_temp/runtime-wheelhouse/cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (from -r requirements/runtime-py312-linux.lock (line 107))
+2026-10-01T08:28:20.4084041Z Processing /home/runner/work/_temp/runtime-wheelhouse/filelock-3.32.3-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 157))
+2026-10-01T08:28:20.4109312Z Processing /home/runner/work/_temp/runtime-wheelhouse/fsspec-2026.7.0-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 164))
+2026-10-01T08:28:20.4303738Z Processing /home/runner/work/_temp/runtime-wheelhouse/jinja2-3.1.6-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 168))
+2026-10-01T08:28:20.4331140Z Processing /home/runner/work/_temp/runtime-wheelhouse/markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from -r requirements/runtime-py312-linux.lock (line 172))
+2026-10-01T08:28:20.4355100Z Processing /home/runner/work/_temp/runtime-wheelhouse/mpmath-1.3.0-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 263))
+2026-10-01T08:28:20.4399442Z Processing /home/runner/work/_temp/runtime-wheelhouse/networkx-3.6.1-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 267))
+2026-10-01T08:28:20.4535109Z Processing /home/runner/work/_temp/runtime-wheelhouse/numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r requirements/runtime-py312-linux.lock (line 271))
+2026-10-01T08:28:20.4937300Z Processing /home/runner/work/_temp/runtime-wheelhouse/pycparser-3.0-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 330))
+2026-10-01T08:28:20.4963359Z Processing /home/runner/work/_temp/runtime-wheelhouse/setuptools-84.0.0-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 334))
+2026-10-01T08:28:20.5086442Z Processing /home/runner/work/_temp/runtime-wheelhouse/sympy-1.14.0-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 338))
+2026-10-01T08:28:20.5316893Z Processing /home/runner/work/_temp/runtime-wheelhouse/torch-2.13.0+cpu-cp312-cp312-manylinux_2_28_x86_64.whl (from -r requirements/runtime-py312-linux.lock (line 342))
+2026-10-01T08:28:20.8815568Z Processing /home/runner/work/_temp/runtime-wheelhouse/typing_extensions-4.16.0-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 377))
+2026-10-01T08:28:21.0119514Z Installing collected packages: mpmath, typing-extensions, sympy, setuptools, pycparser, numpy, networkx, markupsafe, fsspec, filelock, jinja2, cffi, torch, cryptography
+2026-10-01T08:28:25.7584862Z 
+2026-10-01T08:28:25.7606429Z Successfully installed cffi-2.1.1 cryptography-50.0.0 filelock-3.32.3 fsspec-2026.7.0 jinja2-3.1.6 markupsafe-3.0.3 mpmath-1.3.0 networkx-3.6.1 numpy-2.2.6 pycparser-3.0 setuptools-84.0.0 sympy-1.14.0 torch-2.13.0+cpu typing-extensions-4.16.0
+2026-10-01T08:28:26.2975455Z Processing ./dist/advar_radar_nowcast-0.114.0-py3-none-any.whl
+2026-10-01T08:28:26.3219065Z Installing collected packages: advar-radar-nowcast
+2026-10-01T08:28:26.3460742Z Successfully installed advar-radar-nowcast-0.114.0
+2026-10-01T08:28:26.7860952Z No broken requirements found.
+2026-10-01T08:28:30.1133269Z ##[group]Run .wheel-venv/bin/python -I -B - <<'PY'
+2026-10-01T08:28:30.1133849Z [36;1m.wheel-venv/bin/python -I -B - <<'PY'[0m
+2026-10-01T08:28:30.1134164Z [36;1mimport os[0m
+2026-10-01T08:28:30.1134398Z [36;1mfrom pathlib import Path[0m
+2026-10-01T08:28:30.1134657Z [36;1m[0m
+2026-10-01T08:28:30.1134856Z [36;1mimport numpy as np[0m
+2026-10-01T08:28:30.1135089Z [36;1m[0m
+2026-10-01T08:28:30.1135322Z [36;1moutput = Path(os.environ["RUNNER_TEMP"])[0m
+2026-10-01T08:28:30.1135641Z [36;1my, x = np.meshgrid([0m
+2026-10-01T08:28:30.1135905Z [36;1m    np.arange(16, dtype=np.float32),[0m
+2026-10-01T08:28:30.1136207Z [36;1m    np.arange(16, dtype=np.float32),[0m
+2026-10-01T08:28:30.1136482Z [36;1m    indexing="ij",[0m
+2026-10-01T08:28:30.1136711Z [36;1m)[0m
+2026-10-01T08:28:30.1136917Z [36;1mframe = -10.0 + 45.0 * np.exp([0m
+2026-10-01T08:28:30.1137211Z [36;1m    -((y - 7.5) ** 2 + (x - 7.5) ** 2) / 12.0[0m
+2026-10-01T08:28:30.1137500Z [36;1m)[0m
+2026-10-01T08:28:30.1137849Z [36;1mnp.save(output / "three_frames.npy", np.stack((frame, frame, frame)))[0m
+2026-10-01T08:28:30.1138241Z [36;1mPY[0m
+2026-10-01T08:28:30.1201186Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:30.1201448Z env:
+2026-10-01T08:28:30.1201672Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-01T08:28:30.1202327Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:30.1202798Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:30.1203266Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:30.1203681Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:30.1204094Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:30.1204504Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:30.1204849Z ##[endgroup]
+2026-10-01T08:28:30.4119221Z ##[group]Run .wheel-venv/bin/advar-nowcast \
+2026-10-01T08:28:30.4119844Z [36;1m.wheel-venv/bin/advar-nowcast \[0m
+2026-10-01T08:28:30.4120401Z [36;1m  "$RUNNER_TEMP/three_frames.npy" \[0m
+2026-10-01T08:28:30.4120996Z [36;1m  "$RUNNER_TEMP/forecast.npz"[0m
+2026-10-01T08:28:30.4212595Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:30.4213031Z env:
+2026-10-01T08:28:30.4213384Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-01T08:28:30.4213970Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:30.4214650Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:30.4215113Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:30.4215516Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:30.4215915Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:30.4216306Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:30.4216824Z ##[endgroup]
+2026-10-01T08:28:33.7917233Z saved 18 frames to /home/runner/work/_temp/forecast.npz (motion dy=0.00, dx=-0.00 px/step)
+2026-10-01T08:28:34.0463654Z ##[group]Run .wheel-venv/bin/python -I -B - <<'PY'
+2026-10-01T08:28:34.0464126Z [36;1m.wheel-venv/bin/python -I -B - <<'PY'[0m
+2026-10-01T08:28:34.0464445Z [36;1mimport os[0m
+2026-10-01T08:28:34.0464678Z [36;1mfrom pathlib import Path[0m
+2026-10-01T08:28:34.0464928Z [36;1m[0m
+2026-10-01T08:28:34.0465127Z [36;1mimport numpy as np[0m
+2026-10-01T08:28:34.0465358Z [36;1m[0m
+2026-10-01T08:28:34.0465633Z [36;1mpath = Path(os.environ["RUNNER_TEMP"]) / "forecast.npz"[0m
+2026-10-01T08:28:34.0466039Z [36;1mwith np.load(path, allow_pickle=False) as result:[0m
+2026-10-01T08:28:34.0466484Z [36;1m    assert result["output_contract_version"].item() == "nowcast-npz-v76"[0m
+2026-10-01T08:28:34.0467029Z [36;1m    assert result["forecast_run_artifact_version"].item() == "forecast-run-v72"[0m
+2026-10-01T08:28:34.0467562Z [36;1m    assert result["operational_runtime_profile_digest"].item() == ""[0m
+2026-10-01T08:28:34.0468083Z [36;1m    assert not result["operational_calibration_manifest_present"].item()[0m
+2026-10-01T08:28:34.0468758Z [36;1m    assert result["operational_calibration_manifest_json"].item() == ""[0m
+2026-10-01T08:28:34.0469265Z [36;1m    assert result["operational_calibration_manifest_digest"].item() == ""[0m
+2026-10-01T08:28:34.0469787Z [36;1m    assert result["operational_calibration_approval_digest"].item() == ""[0m
+2026-10-01T08:28:34.0470291Z [36;1m    assert not result["operational_data_identity_present"].item()[0m
+2026-10-01T08:28:34.0470748Z [36;1m    assert result["operational_data_identity_json"].item() == ""[0m
+2026-10-01T08:28:34.0471204Z [36;1m    assert result["operational_data_identity_digest"].item() == ""[0m
+2026-10-01T08:28:34.0471618Z [36;1m    assert "state_path_source" in result[0m
+2026-10-01T08:28:34.0472349Z [36;1m    assert "minimum_growth_overlap_support" in result[0m
+2026-10-01T08:28:34.0472974Z [36;1m    assert "verified_source_support" in result[0m
+2026-10-01T08:28:34.0473439Z [36;1m    assert "local_motion_verified_support" in result[0m
+2026-10-01T08:28:34.0473814Z [36;1m    assert "local_growth_verified_support" in result[0m
+2026-10-01T08:28:34.0474196Z [36;1m    assert "local_dynamics_verified_support" in result[0m
+2026-10-01T08:28:34.0474574Z [36;1m    assert "path_verified_source_support" in result[0m
+2026-10-01T08:28:34.0474971Z [36;1m    assert "forecast_path_verified_support" in result[0m
+2026-10-01T08:28:34.0475334Z [36;1m    assert "forecast_verified_support" in result[0m
+2026-10-01T08:28:34.0475721Z [36;1m    assert "forecast_local_motion_verified_support" in result[0m
+2026-10-01T08:28:34.0476149Z [36;1m    assert "forecast_local_growth_verified_support" in result[0m
+2026-10-01T08:28:34.0476584Z [36;1m    assert "forecast_local_dynamics_verified_support" in result[0m
+2026-10-01T08:28:34.0476976Z [36;1m    assert "forecast_confidence" in result[0m
+2026-10-01T08:28:34.0477345Z [36;1m    assert "p1_velocity_saturation_uncertainty_mps" in result[0m
+2026-10-01T08:28:34.0477802Z [36;1m    assert "p1_log_growth_saturation_uncertainty_per_step" in result[0m
+2026-10-01T08:28:34.0478263Z [36;1m    assert "motion_evidence_uncertainty_multiplier" in result[0m
+2026-10-01T08:28:34.0478673Z [36;1m    assert "radar_dynamics_anchored_valid_mask" in result[0m
+2026-10-01T08:28:34.0479069Z [36;1m    assert "forecast_position_uncertainty_m" in result[0m
+2026-10-01T08:28:34.0479456Z [36;1m    assert "forecast_log_growth_uncertainty" in result[0m
+2026-10-01T08:28:34.0479817Z [36;1m    assert "radar_anchored_valid_mask" in result[0m
+2026-10-01T08:28:34.0480166Z [36;1m    assert "background_fallback_mask" in result[0m
+2026-10-01T08:28:34.0480507Z [36;1m    assert "observation_path_mode" in result[0m
+2026-10-01T08:28:34.0480847Z [36;1m    assert "background_path_mode" in result[0m
+2026-10-01T08:28:34.0481198Z [36;1m    assert result["forecast_dbz"].shape == (18, 16, 16)[0m
+2026-10-01T08:28:34.0481530Z [36;1m    assert np.array_equal([0m
+2026-10-01T08:28:34.0482283Z [36;1m        np.isfinite(result["forecast_dbz"]),[0m
+2026-10-01T08:28:34.0482641Z [36;1m        result["valid_mask"],[0m
+2026-10-01T08:28:34.0482905Z [36;1m    )[0m
+2026-10-01T08:28:34.0483169Z [36;1m    assert result["data_status"].item() == "OBSERVED"[0m
+2026-10-01T08:28:34.0483489Z [36;1mPY[0m
+2026-10-01T08:28:34.0545967Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:34.0546218Z env:
+2026-10-01T08:28:34.0546436Z   PYTHONDONTWRITEBYTECODE: 1
+2026-10-01T08:28:34.0546766Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:34.0547204Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:34.0547639Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:34.0548031Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:34.0548424Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:34.0548804Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:34.0549124Z ##[endgroup]
+2026-10-01T08:28:34.3591455Z Post job cleanup.
+2026-10-01T08:28:34.4838585Z Cache hit occurred on the primary key setup-python-Linux-x64-24.04-Ubuntu-python-3.12.14-pip-f7cee36fe32686215bbb9f8a086817e4840e974b74a211879070eaf02f04bcd8, not saving cache.
+2026-10-01T08:28:34.4983730Z Post job cleanup.
+2026-10-01T08:28:34.5856836Z [command]/usr/bin/git version
+2026-10-01T08:28:34.5900670Z git version 2.55.0
+2026-10-01T08:28:34.5947100Z Temporarily overriding HOME='/home/runner/work/_temp/8760a3a5-e6a1-4c71-b317-7a24101ce9c4' before making global git config changes
+2026-10-01T08:28:34.5948508Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-01T08:28:34.5952009Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:28:34.5987881Z Removing SSH command configuration
+2026-10-01T08:28:34.5995462Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-01T08:28:34.6031485Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-01T08:28:34.6279946Z Removing HTTP extra header
+2026-10-01T08:28:34.6287127Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-01T08:28:34.6322552Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-01T08:28:34.6615463Z Removing includeIf entries pointing to credentials config files
+2026-10-01T08:28:34.6624573Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-01T08:28:34.6711116Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+2026-10-01T08:28:34.6714180Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+2026-10-01T08:28:34.6715282Z includeif.gitdir:/github/workspace/.git.path
+2026-10-01T08:28:34.6716124Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-01T08:28:34.6726760Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+2026-10-01T08:28:34.6765237Z /home/runner/work/_temp/git-credentials-6aeca921-510c-4f6e-9dd9-707081380cce.config
+2026-10-01T08:28:34.6779570Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-6aeca921\-510c\-4f6e\-9dd9\-707081380cce\.config
+2026-10-01T08:28:34.6831412Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+2026-10-01T08:28:34.6867886Z /home/runner/work/_temp/git-credentials-6aeca921-510c-4f6e-9dd9-707081380cce.config
+2026-10-01T08:28:34.6880770Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-6aeca921\-510c\-4f6e\-9dd9\-707081380cce\.config
+2026-10-01T08:28:34.6946789Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-01T08:28:34.6980004Z /github/runner_temp/git-credentials-6aeca921-510c-4f6e-9dd9-707081380cce.config
+2026-10-01T08:28:34.6990076Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-6aeca921\-510c\-4f6e\-9dd9\-707081380cce\.config
+2026-10-01T08:28:34.7030306Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-01T08:28:34.7059872Z /github/runner_temp/git-credentials-6aeca921-510c-4f6e-9dd9-707081380cce.config
+2026-10-01T08:28:34.7070198Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-6aeca921\-510c\-4f6e\-9dd9\-707081380cce\.config
+2026-10-01T08:28:34.7115941Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-01T08:28:34.7360509Z Removing credentials config '/home/runner/work/_temp/git-credentials-6aeca921-510c-4f6e-9dd9-707081380cce.config'
+2026-10-01T08:28:34.7516746Z Cleaning up orphan processes

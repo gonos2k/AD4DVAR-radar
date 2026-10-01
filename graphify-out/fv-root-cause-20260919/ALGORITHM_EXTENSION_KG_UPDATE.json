@@ -968,5 +968,30 @@
     "limits": "fieldstationary notfullroot;dynamicresidual remains,narrowface margin1.166xthreshold;no finalfullHessian,adjoint,VJP,reanalysis/physicalskill;R4-R open",
     "record": "FV_PARTIAL_FIELD_CORRECTION_PLAN.md,FV_PARTIAL_FIELD_CORRECTION_ATTEMPT1_RESULTS.md,FV_PARTIAL_FIELD_CORRECTION_ATTEMPT1_EVIDENCE.json,partial_field_correction_attempt1",
     "status": "block-stationary margin-supported handoff verified;full qualified response stillopen"
+  },
+  "full_cpu_package_regression_20261001": {
+    "baseline": "mainf7ee32b PR227;officialmanualCI36798315747",
+    "attempt1": "terminalfailure bothCPU/package strictpip-audit:urllib3 2.7.0 CVE2026-97687/8/9,fixed2.8;tests/build/offlineinstall/CLI not reached;UI passed",
+    "patch": "onlyurllib3 version/hash blocks in twoCIlocks,PyPIwheel/sdist actualhash verified;runtime locks and otherpins unchanged;no sharedvenv/uvlock changes;strictaudit retained",
+    "verification": "4closure synchrony checker passed;localcollect2281 only,machineMPSavailable notCPUexecution",
+    "record": "RESEARCH_CI4_REPAIR_CHECKLIST_20261001.md,RESEARCH_CI4_REPAIR_EVIDENCE_20261001.json,RESEARCH_VALIDATION_POLICY_20261001.md",
+    "status": "fullLinux regression FAILED; localresearchrepairs verifiedscoped, no deploymentacceptance",
+    "attempt2": "36813275231 head aa56f65:strictaudit/typecheck/UI/fullWheelCLI passed;CPU collection53ModuleNotFoundexamples,no tests executed",
+    "path_fix": "pytest pythonpath=[.] explicit checkout import under-I;localreproduced53errors then exact2281baselineIDs collected;pip-audit/CLI processes unchanged",
+    "attempt3": "36813848349 exacthead39156508:WheelCLI/UI success;CPU cancelled at120min;officialannotation exceeded2h;rawoutputends73%,nofinalpytesttrace/counts",
+    "fixture_portability": "5syntheticfieldguard/audit tests providedhashboundarchivevectors andfreshlocalbranchmetrics;productionruntimegateunchanged,newdriftrejecttest;native29/simulatedmetadata29/type0;notpushedortestedinattempt3",
+    "shard_plan": "FULL_CPU_PACKAGE_REGRESSION_20261001_SHARD_PLAN.md",
+    "shard_candidate": "final e276/test2ecb;29protocoltests;types0errors343warnings;native2311IDs165modules partition386+5x385 exactunion; env/config filters and deselections rejected; rawskipreasons retained;currentevidencepinsverified",
+    "attempt4": "36836402831 heada9e321d:all6terminal, exactdisjointLinux2311IDs,87pytestfailure/errorcases,loggeralsoinvalidatedsubtests;package/UI passed",
+    "research_repairs": "affectedlocaltests/mathchecks; typedadjointprecision optionaltighteronly,default1e-10 unchanged; historicalsource snapshots/sourcebytecheck strict; no oldchildcertificate rebinding; subtests retainfailures",
+    "user_policy": "2026-10-01 research/notdeployment; no unnecessaryfullCI/WheelCLIrerun; preservefailedLinuxrun asfailed"
+  },
+  "r4_face_flux_chart_local_checkpoint_20261001": {
+    "commit": "a414a9b on local agent/r4-face-coordinate;notpushed/integrated",
+    "scope": "exact nonlinear qy[2,0] normalized coordinate;26slots retained;4x5 pinned PR227 vector",
+    "verification": "6focusedtests with analyticaltoyobjective AD chain,productioncoefficient/face primitives;types0;GREEN/REDGO;rawlogs+hashmanifest+boundedAST",
+    "limits": "noFVtrajectory/forecast,researchobjective,optimizer/root/response run;conservativeFP64domain;originalfullgradient criterion authoritative;R4-R open",
+    "record": "isolated /private/tmp/advar-r4-face-coordinate-20261001/graphify-out/fv-root-cause-20260919/R4_FACE_FLUX_COORDINATE_MANIFEST_20261001.json",
+    "next_design": "R4_ORIGINAL_TWO_HOLE_SIGNED_ETA_DESIGN_20261001.md;fourfixedeta25-coordinate slice solves;design only,not executed"
   }
 }

@@ -1,0 +1,296 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # Phase 1 uses focused local numerical checks; full tests are opt-in.
+    if: github.event_name == 'workflow_dispatch'
+    name: Python 3.12 CPU shard ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements/ci-py312-linux.lock
+
+      - name: Install the hashed Linux CPU closure
+        run: |
+          python -I -m pip install \
+            --require-hashes \
+            --only-binary=:all: \
+            --extra-index-url https://download.pytorch.org/whl/cpu \
+            --requirement requirements/ci-py312-linux.lock
+
+      - name: Verify and audit the locked closure in isolation
+        working-directory: ${{ runner.temp }}
+        env:
+          LOCK_FILE: ${{ github.workspace }}/requirements/ci-py312-linux.lock
+        run: |
+          printf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py
+          python -I - <<'PY'
+          import site
+          from pathlib import Path
+
+          import pip_audit
+          import torch
+
+          module = Path(pip_audit.__file__).resolve()
+          roots = tuple(Path(item).resolve() for item in site.getsitepackages())
+          assert any(root == module or root in module.parents for root in roots)
+          assert torch.version.cuda is None
+          PY
+          python -I "$GITHUB_WORKSPACE/.github/scripts/check_dependency_locks.py"
+          python -I -m pip_audit \
+            --strict \
+            --disable-pip \
+            --no-deps \
+            --requirement "$LOCK_FILE"
+
+      - name: Install the candidate package without resolving dependencies
+        run: |
+          python -I -m pip install \
+            --no-build-isolation \
+            --no-deps \
+            --editable .
+          python -I -m pip check
+
+      - name: Check product source types
+        run: python -I .github/scripts/check_basedpyright.py
+
+      - name: Run CPU FP32 and FP64 tests
+        env:
+          OMP_NUM_THREADS: "1"
+          MKL_NUM_THREADS: "1"
+        run: |
+          python -I .github/scripts/run_cpu_test_shard.py \
+            --shard-index ${{ matrix.shard }} \
+            --shard-count 6 \
+            --record-dir "$RUNNER_TEMP/cpu-shard-records"
+
+      - name: Preserve CPU test inventory and terminal results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cpu-shard-${{ matrix.shard }}-${{ github.sha }}
+          path: ${{ runner.temp }}/cpu-shard-records
+          if-no-files-found: error
+          retention-days: 7
+
+  lab-ui:
+    name: Initial-field lab UI
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24.13.1"
+
+      - name: Check lab JavaScript and state transitions
+        run: |
+          node --check examples/initial_field_lab/app.js
+          node --test tests/test_initial_field_lab_ui.cjs
+
+  package:
+    if: github.event_name == 'workflow_dispatch'
+    name: Wheel and CLI smoke
+    runs-on: ubuntu-latest
+    # This required job validates a reproducible scientific package. Operational
+    # bundle signing, host activation, and deployment authority are out of scope.
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements/ci-py312-linux.lock
+            requirements/runtime-py312-linux.lock
+
+      - name: Verify geodetic generator source binding
+        run: |
+          python -I .github/scripts/generate_metric_domain_evidence.py \
+            --check-source-only
+
+      - name: Exercise Linux geodetic execution-environment closure
+        run: |
+          env -u LD_LIBRARY_PATH \
+            python -I .github/scripts/generate_metric_domain_evidence.py \
+              --self-test-execution-environment
+
+      - name: Install the hashed build closure
+        run: |
+          python -I -m pip install \
+            --require-hashes \
+            --only-binary=:all: \
+            --extra-index-url https://download.pytorch.org/whl/cpu \
+            --requirement requirements/ci-py312-linux.lock
+
+      - name: Verify and audit the locked CPU package closure
+        working-directory: ${{ runner.temp }}
+        run: |
+          printf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py
+          python -I - <<'PY'
+          import site
+          from pathlib import Path
+
+          import pip_audit
+          import torch
+
+          module = Path(pip_audit.__file__).resolve()
+          roots = tuple(Path(item).resolve() for item in site.getsitepackages())
+          assert any(root == module or root in module.parents for root in roots)
+          assert torch.version.cuda is None
+          PY
+          python -I "$GITHUB_WORKSPACE/.github/scripts/check_dependency_locks.py"
+          python -I -m pip_audit \
+            --strict \
+            --disable-pip \
+            --no-deps \
+            --requirement "$GITHUB_WORKSPACE/requirements/ci-py312-linux.lock"
+
+      - name: Build source and wheel distributions
+        run: python -I -m build --no-isolation
+
+      - name: Materialize the exact Linux CPU wheelhouse
+        run: |
+          mkdir "$RUNNER_TEMP/runtime-wheelhouse"
+          python -I -m pip download \
+            --require-hashes \
+            --only-binary=:all: \
+            --no-deps \
+            --extra-index-url https://download.pytorch.org/whl/cpu \
+            --requirement requirements/runtime-py312-linux.lock \
+            --dest "$RUNNER_TEMP/runtime-wheelhouse"
+
+      - name: Install the built wheel offline in isolation
+        run: |
+          python -I -m venv --without-pip .wheel-venv
+          python -I -m pip --python .wheel-venv/bin/python install \
+            --no-index \
+            --find-links "$RUNNER_TEMP/runtime-wheelhouse" \
+            --require-hashes \
+            --only-binary=:all: \
+            --no-compile \
+            --requirement requirements/runtime-py312-linux.lock
+          python -I -m pip --python .wheel-venv/bin/python install \
+            --no-index --no-deps --no-compile dist/*.whl
+          python -I -m pip --python .wheel-venv/bin/python check
+          find .wheel-venv -type f \
+            \( -name '*.pyc' -o -name '*.pyo' -o -name '*.pth' \) -delete
+          .wheel-venv/bin/python -I -B - <<'PY'
+          import torch
+
+          assert torch.version.cuda is None
+          PY
+
+      - name: Generate CLI smoke input
+        run: |
+          .wheel-venv/bin/python -I -B - <<'PY'
+          import os
+          from pathlib import Path
+
+          import numpy as np
+
+          output = Path(os.environ["RUNNER_TEMP"])
+          y, x = np.meshgrid(
+              np.arange(16, dtype=np.float32),
+              np.arange(16, dtype=np.float32),
+              indexing="ij",
+          )
+          frame = -10.0 + 45.0 * np.exp(
+              -((y - 7.5) ** 2 + (x - 7.5) ** 2) / 12.0
+          )
+          np.save(output / "three_frames.npy", np.stack((frame, frame, frame)))
+          PY
+
+      - name: Run installed CLI
+        run: |
+          .wheel-venv/bin/advar-nowcast \
+            "$RUNNER_TEMP/three_frames.npy" \
+            "$RUNNER_TEMP/forecast.npz"
+
+      - name: Validate installed CLI output contract
+        run: |
+          .wheel-venv/bin/python -I -B - <<'PY'
+          import os
+          from pathlib import Path
+
+          import numpy as np
+
+          path = Path(os.environ["RUNNER_TEMP"]) / "forecast.npz"
+          with np.load(path, allow_pickle=False) as result:
+              assert result["output_contract_version"].item() == "nowcast-npz-v76"
+              assert result["forecast_run_artifact_version"].item() == "forecast-run-v72"
+              assert result["operational_runtime_profile_digest"].item() == ""
+              assert not result["operational_calibration_manifest_present"].item()
+              assert result["operational_calibration_manifest_json"].item() == ""
+              assert result["operational_calibration_manifest_digest"].item() == ""
+              assert result["operational_calibration_approval_digest"].item() == ""
+              assert not result["operational_data_identity_present"].item()
+              assert result["operational_data_identity_json"].item() == ""
+              assert result["operational_data_identity_digest"].item() == ""
+              assert "state_path_source" in result
+              assert "minimum_growth_overlap_support" in result
+              assert "verified_source_support" in result
+              assert "local_motion_verified_support" in result
+              assert "local_growth_verified_support" in result
+              assert "local_dynamics_verified_support" in result
+              assert "path_verified_source_support" in result
+              assert "forecast_path_verified_support" in result
+              assert "forecast_verified_support" in result
+              assert "forecast_local_motion_verified_support" in result
+              assert "forecast_local_growth_verified_support" in result
+              assert "forecast_local_dynamics_verified_support" in result
+              assert "forecast_confidence" in result
+              assert "p1_velocity_saturation_uncertainty_mps" in result
+              assert "p1_log_growth_saturation_uncertainty_per_step" in result
+              assert "motion_evidence_uncertainty_multiplier" in result
+              assert "radar_dynamics_anchored_valid_mask" in result
+              assert "forecast_position_uncertainty_m" in result
+              assert "forecast_log_growth_uncertainty" in result
+              assert "radar_anchored_valid_mask" in result
+              assert "background_fallback_mask" in result
+              assert "observation_path_mode" in result
+              assert "background_path_mode" in result
+              assert result["forecast_dbz"].shape == (18, 16, 16)
+              assert np.array_equal(
+                  np.isfinite(result["forecast_dbz"]),
+                  result["valid_mask"],
+              )
+              assert result["data_status"].item() == "OBSERVED"
+          PY

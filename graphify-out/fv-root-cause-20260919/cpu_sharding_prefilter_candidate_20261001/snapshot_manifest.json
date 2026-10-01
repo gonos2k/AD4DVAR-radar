@@ -1,0 +1,122 @@
+{
+  "scope": "superseded prefilter local candidate; NOT official CPU evidence",
+  "known_blocker": "inherited PYTEST_ADDOPTS could filter whole inventory; independent RED held launch",
+  "files": {
+    ".github/scripts/run_cpu_test_shard.py": {
+      "snapshot": ".github__scripts__run_cpu_test_shard.py.snapshot",
+      "sha256": "800b5eb7949badbf9b3807e33b476c5d2fb7ad6e3f0f2d0231f68e0b7c0307f3"
+    },
+    "tests/test_cpu_test_sharding.py": {
+      "snapshot": "tests__test_cpu_test_sharding.py.snapshot",
+      "sha256": "804d9e6e4d71851b03ef20c6b8a5aab03ed1f0c0280a28e873b2df7c579e5bd0"
+    },
+    "tests/test_fv_partial_alternate_root.py": {
+      "snapshot": "tests__test_fv_partial_alternate_root.py.snapshot",
+      "sha256": "17840e3dd5ed39fc06d8ec496a7bc6ca92725486a33687920740e589fa372a22"
+    },
+    "tests/test_fv_partial_field_correction_probe.py": {
+      "snapshot": "tests__test_fv_partial_field_correction_probe.py.snapshot",
+      "sha256": "e2d6017e61177b300f90389571dd02b518c9aaf58de619b09bc57dcf20590fd7"
+    },
+    ".github/workflows/ci.yml": {
+      "snapshot": ".github__workflows__ci.yml.snapshot",
+      "sha256": "c5e20f287769025d2d37af67478c59130d2447cb490a363879286679217fe2ce"
+    },
+    "pyproject.toml": {
+      "snapshot": "pyproject.toml.snapshot",
+      "sha256": "52faa9c0fc10ade42ec90d44b9e7296d9e2423f0f331667b734c9b9a9a02263f"
+    },
+    "requirements/ci-py310-linux.lock": {
+      "snapshot": "requirements__ci-py310-linux.lock.snapshot",
+      "sha256": "0a5fb4bbe5c3a480ec00d13458c75b684a66582bad2682a11a349e25edc4eeb5"
+    },
+    "requirements/ci-py312-linux.lock": {
+      "snapshot": "requirements__ci-py312-linux.lock.snapshot",
+      "sha256": "78b6f2a249d00c19d6e21028e025dd716a754e6dbacaf947a8fba11ad5b92718"
+    },
+    "graphify-out/fv-root-cause-20260919/CPU_TEST_SHARDING_FINAL_TESTS_20261001.log": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__CPU_TEST_SHARDING_FINAL_TESTS_20261001.log.snapshot",
+      "sha256": "4e67e85d39793073a89f09ff90345d4018a53fbd174aa7ead1628868ae6246d4"
+    },
+    "graphify-out/fv-root-cause-20260919/CPU_TEST_SHARDING_FINAL_TYPES_20261001.json": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__CPU_TEST_SHARDING_FINAL_TYPES_20261001.json.snapshot",
+      "sha256": "7d50cb8f8df12b2717a839a6bad21c3276eca7944457c3eb051deba8bcee9089"
+    },
+    "graphify-out/fv-root-cause-20260919/CPU_TEST_SHARDING_FINAL_TYPE_AUDIT_20261001.json": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__CPU_TEST_SHARDING_FINAL_TYPE_AUDIT_20261001.json.snapshot",
+      "sha256": "9ad91dbdddaf659e5f58193cdd6884ab5538810f1ea74184352828374fd0d3da"
+    },
+    "graphify-out/fv-root-cause-20260919/CPU_SHARD_LOCAL_FULL_INVENTORY_20261001.json": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__CPU_SHARD_LOCAL_FULL_INVENTORY_20261001.json.snapshot",
+      "sha256": "cceec1f17175192c6e1bd7e6b207c7128fdc22a5db99c16b4dad7400fc31240f"
+    },
+    "graphify-out/fv-root-cause-20260919/CPU_SHARD_LOCAL_FULL_COLLECTION_20261001.log": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__CPU_SHARD_LOCAL_FULL_COLLECTION_20261001.log.snapshot",
+      "sha256": "e9bac34a4774a2f3b2d6e4fd8fa6121b69fab9b9c46835e5bf684468aec0f969"
+    },
+    "graphify-out/fv-root-cause-20260919/CPU_SHARD_LOCAL_PARTITION_AUDIT_20261001.json": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__CPU_SHARD_LOCAL_PARTITION_AUDIT_20261001.json.snapshot",
+      "sha256": "195f1ec5a7a3b8b969986c1a416f3119e82bb1d123bc9c3e50537de1488544f1"
+    },
+    "graphify-out/fv-root-cause-20260919/CPU_SHARDING_CODE_AST_20261001.json": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__CPU_SHARDING_CODE_AST_20261001.json.snapshot",
+      "sha256": "cef8bd12f2bc03063739bbfc9e4787dcbc284ef76af2d4693cc56d6a69a7891b"
+    },
+    "graphify-out/fv-root-cause-20260919/CPU_SHARDING_GRAPHIFY_AUDIT_20261001.json": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__CPU_SHARDING_GRAPHIFY_AUDIT_20261001.json.snapshot",
+      "sha256": "11acb93c05468c6b54a591a5955cd20ca2ea13bbd83eed7a82e44ac31a2be0cb"
+    },
+    "graphify-out/fv-root-cause-20260919/full_cpu_shard_workflow_actionlint.log": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__full_cpu_shard_workflow_actionlint.log.snapshot",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "graphify-out/fv-root-cause-20260919/full_cpu_package_ci_attempt3.json": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__full_cpu_package_ci_attempt3.json.snapshot",
+      "sha256": "c51002344fd203af1d30df3a459749398639b329c9d91255e9b06bc516079de2"
+    },
+    "graphify-out/fv-root-cause-20260919/full_cpu_package_ci_attempt3_jobs.json": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__full_cpu_package_ci_attempt3_jobs.json.snapshot",
+      "sha256": "926cc40ef89c11c04632ab9f47118c042e50094373ec3fb46689ddec6b8a631b"
+    },
+    "graphify-out/fv-root-cause-20260919/full_cpu_package_ci_attempt3_annotations.json": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__full_cpu_package_ci_attempt3_annotations.json.snapshot",
+      "sha256": "c954d3b1737384511c9016f2a48d70dc5ec9df109e4e05a02c54290cb4cb60b8"
+    },
+    "graphify-out/fv-root-cause-20260919/full_cpu_package_ci_attempt3_cpu.log": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__full_cpu_package_ci_attempt3_cpu.log.snapshot",
+      "sha256": "c7e2090568dd140a7e435b8bb0e8ea77f1a5d3e75591fffc0cebe94d53889b32"
+    },
+    "graphify-out/fv-root-cause-20260919/full_cpu_package_ci_attempt3_package.log": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__full_cpu_package_ci_attempt3_package.log.snapshot",
+      "sha256": "8891835016ffa534280dbbef6be3b6dc351291a16ed5656649f5425d32f79386"
+    },
+    "graphify-out/fv-root-cause-20260919/FULL_CPU_PACKAGE_REGRESSION_20261001_SHARD_PLAN.md": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__FULL_CPU_PACKAGE_REGRESSION_20261001_SHARD_PLAN.md.snapshot",
+      "sha256": "94ee22b5bc512f1f3b2135dae4dc598cdf09c28a8c3b62b80d4557247c3bdf8f"
+    },
+    "graphify-out/fv-root-cause-20260919/FULL_CPU_PACKAGE_REGRESSION_20261001_SHARD_RESULTS.md": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__FULL_CPU_PACKAGE_REGRESSION_20261001_SHARD_RESULTS.md.snapshot",
+      "sha256": "da014ef14584198c37a016565bc2298f3b56412de3d11056217546ca140faeb8"
+    },
+    "graphify-out/fv-root-cause-20260919/ci_runtime_metadata_fixture_native_after.log": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__ci_runtime_metadata_fixture_native_after.log.snapshot",
+      "sha256": "2f304e83677d812945b34daf30001f5f4ee1ac2d3dc8b39fc19d187a919f7918"
+    },
+    "graphify-out/fv-root-cause-20260919/ci_runtime_metadata_fixture_simulated_after.log": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__ci_runtime_metadata_fixture_simulated_after.log.snapshot",
+      "sha256": "743630cbce9e8e6af7be56bf7020578f5ca9062468dc546676dabc896b1c58b2"
+    },
+    "graphify-out/fv-root-cause-20260919/ci_runtime_metadata_fixture_types.log": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__ci_runtime_metadata_fixture_types.log.snapshot",
+      "sha256": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c"
+    },
+    "graphify-out/fv-root-cause-20260919/full_regression_fixture_graphify.log": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__full_regression_fixture_graphify.log.snapshot",
+      "sha256": "cf8e83e9c10bfb15883a61add1b30bcdbfcae33d0aeac28902a1368c4ffe9fa8"
+    },
+    "graphify-out/fv-root-cause-20260919/FULL_CPU_PACKAGE_REGRESSION_20261001_SHARD_EVIDENCE.json": {
+      "snapshot": "graphify-out__fv-root-cause-20260919__FULL_CPU_PACKAGE_REGRESSION_20261001_SHARD_EVIDENCE.json.snapshot",
+      "sha256": "4a0ce3ec8c9dd11712e2f0ed333ebc8b456c5b9b61024108ccfcb8c331839823"
+    }
+  }
+}

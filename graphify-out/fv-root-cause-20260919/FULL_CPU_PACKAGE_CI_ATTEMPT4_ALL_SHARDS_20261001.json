@@ -1,0 +1,187 @@
+{
+  "run": 36836402831,
+  "head": "a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf",
+  "full_cpu_pass": false,
+  "all_six_execution_terminal": true,
+  "disjoint_full_inventory_union": true,
+  "linux_node_count": 2311,
+  "inventory_sha256": "3e9c5b847df1535436f75cbec464a23fd0e7b77448229f80181788e6856f5501",
+  "runtime": {
+    "pytest": "9.1.1",
+    "python": "3.12.14",
+    "torch": "2.13.0+cpu"
+  },
+  "official_pytest_failed_or_error_cases": 87,
+  "logger_limitation": "legitimate subtest call reports caused invalid classifications; preserved unmodified,fix local awaitingrerun",
+  "shards": [
+    {
+      "shard": 0,
+      "assigned": 386,
+      "terminal": true,
+      "pytest_return_code": 1,
+      "case_outcomes": {
+        "invalid": 17,
+        "passed": 365,
+        "skipped": 3,
+        "failed": 1
+      },
+      "pytest_failure_rows": [
+        "FAILED tests/test_fv_point_merit_root.py::test_unexpected_final_score_error_propagates_as_execution_failure - AssertionError: Regex pattern did not match."
+      ]
+    },
+    {
+      "shard": 1,
+      "assigned": 385,
+      "terminal": true,
+      "pytest_return_code": 1,
+      "case_outcomes": {
+        "passed": 356,
+        "invalid": 24,
+        "failed": 1,
+        "skipped": 4
+      },
+      "pytest_failure_rows": [
+        "FAILED tests/test_fv_point_empty_time.py::test_legacy_nonempty_identity_is_unchanged - AssertionError: assert '4acf88d79fe8ae9c14c762a3d547ba6eca55cc793917c2ff05d7cb03abef53c9' == 'dd8ec41e5c1a115fe58f4862462c39614234bf31b5065fc634711f864db06f0f'"
+      ]
+    },
+    {
+      "shard": 2,
+      "assigned": 385,
+      "terminal": true,
+      "pytest_return_code": 1,
+      "case_outcomes": {
+        "passed": 342,
+        "invalid": 17,
+        "failed": 26
+      },
+      "pytest_failure_rows": [
+        "FAILED tests/test_fv_concurrent_response.py::test_case_archives_direction_branch_and_nominal_gradient[_small_case-archive_names0-direction_slice0-54] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_concurrent_response.py::test_case_archives_direction_branch_and_nominal_gradient[_large_case-archive_names1-direction_slice1-108] - ValueError: 8x10 archived input/verification identity mismatch",
+        "FAILED tests/test_fv_research_multilead.py::test_multilead_layout_forecast_and_score_are_per_lead_mean - AssertionError: Scalars are not equal!",
+        "FAILED tests/test_fv_response_job_lifecycle.py::test_legacy_worker_validation_does_not_require_attempt_metadata - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_lifecycle.py::test_finished_worker_publishes_only_after_reap_and_validation - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_lifecycle.py::test_attempt_artifact_mutation_after_validation_blocks_publication[raw] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_lifecycle.py::test_attempt_artifact_mutation_after_validation_blocks_publication[manifest] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_lifecycle.py::test_attempt_artifact_mutation_after_validation_blocks_publication[resource] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_lifecycle.py::test_attempt_manifest_commit_failure_prevents_worker_launch - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_lifecycle.py::test_manifest_change_between_replace_and_snapshot_prevents_launch - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_lifecycle.py::test_cancelled_worker_with_partial_report_never_publishes - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_lifecycle.py::test_late_cancellation_before_publication_wins - ValueError: 4x5 archived stationary input identity mismatch",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_runner_launches_exact_guarded_command_and_records_completion - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_runner_distinguishes_child_exception_from_nonzero_exit[1-False-child_exception] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_runner_distinguishes_child_exception_from_nonzero_exit[2-True-child_nonzero_exit] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_runner_refuses_nonempty_or_archive_output_directory - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_runner_marks_source_drift_after_child_as_identity_changed - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_runner_rejects_forged_child[empty_chord] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_runner_rejects_forged_child[empty_sample] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_runner_rejects_forged_child[forged_margin] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_runner_rejects_forged_child[forged_comparison] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_runner_rejects_forged_child[forged_input] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_runner_rejects_forged_child[forged_face] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_runner_rejects_forged_child[forged_sample_hash] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_signature_validator_rejects_nonphysical_4x5_signature[shape] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "ERROR tests/test_fv_partial_face_event_runner.py::test_signature_validator_rejects_nonphysical_4x5_signature[sign_value] - ValueError: current-source two-hole input differs from declared fixed tensors"
+      ]
+    },
+    {
+      "shard": 3,
+      "assigned": 385,
+      "terminal": true,
+      "pytest_return_code": 1,
+      "case_outcomes": {
+        "passed": 349,
+        "invalid": 19,
+        "failed": 15,
+        "skipped": 2
+      },
+      "pytest_failure_rows": [
+        "FAILED tests/test_fv_research_long_horizon.py::test_long_horizon_scores_are_mean_of_per_lead_spatial_mse - AssertionError: Scalars are not equal!",
+        "ERROR tests/test_fv_research_problem.py::test_common_objective_score_and_derivatives_match_frozen_reference[4x5] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'",
+        "ERROR tests/test_fv_research_problem.py::test_common_layout_identity_and_branch_match[4x5] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'",
+        "ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[4x5-missing] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'",
+        "ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[4x5-boundary] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'",
+        "ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[4x5-operator] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'",
+        "ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[4x5-stage_signature] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'",
+        "ERROR tests/test_fv_research_problem.py::test_legacy_profile_wrappers_keep_fixed_control_count[4x5] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'",
+        "ERROR tests/test_fv_research_problem.py::test_common_objective_score_and_derivatives_match_frozen_reference[8x10] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'",
+        "ERROR tests/test_fv_research_problem.py::test_common_layout_identity_and_branch_match[8x10] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'",
+        "ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[8x10-missing] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'",
+        "ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[8x10-boundary] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'",
+        "ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[8x10-operator] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'",
+        "ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[8x10-stage_signature] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'",
+        "ERROR tests/test_fv_research_problem.py::test_legacy_profile_wrappers_keep_fixed_control_count[8x10] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'"
+      ]
+    },
+    {
+      "shard": 4,
+      "assigned": 385,
+      "terminal": true,
+      "pytest_return_code": 1,
+      "case_outcomes": {
+        "passed": 363,
+        "invalid": 10,
+        "failed": 11,
+        "skipped": 1
+      },
+      "pytest_failure_rows": [
+        "FAILED tests/test_fv_minmod_local_path_probe.py::test_new_direction_clears_old_pairs_and_computes_its_cross - ValueError: resume parameter tensor digest mismatch",
+        "FAILED tests/test_fv_minmod_local_path_probe.py::test_completed_direction_resume_validates_without_repeating_reanalysis - ValueError: resume parameter tensor digest mismatch",
+        "FAILED tests/test_fv_observation_response.py::test_parameterized_background_matches_polished_centered_reanalysis - AssertionError: Scalars are not close!",
+        "FAILED tests/test_fv_partial_field_correction_probe.py::test_fake_guard_requires_reviewed_child_identity_and_resource_completion - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "FAILED tests/test_fv_partial_field_correction_probe.py::test_fake_guard_rejects_invalid_resource_evidence[rss_samples-0] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "FAILED tests/test_fv_partial_field_correction_probe.py::test_fake_guard_rejects_invalid_resource_evidence[sampled_peak_rss_bytes-1073741825] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "FAILED tests/test_fv_partial_field_correction_probe.py::test_fake_guard_rejects_invalid_resource_evidence[elapsed_seconds-301.0] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "FAILED tests/test_fv_partial_field_correction_probe.py::test_parent_final_audit_recomputes_metrics_at_reported_control - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "FAILED tests/test_fv_point_3h_forward.py::test_original_one_lead_layout_and_input_identity_stay_unchanged - AssertionError: assert {'problem_identity': {'fixed_problem_sha256': '92e835767cb303e04b72961e9647f7fd8cf73b5c64cac60c7ddcd5cffa22308f', 'scope': 'fixed point-observation identity; caller also binds code, control, parameters and branch'}, 'tensor_sha256': {'warm_control': 'b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5', 'parameters': '0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a', 'direction': '679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed', 'verification': 'b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9', 'observation_coordinates': '7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02', 'observation_correlation': '7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef'}} == {'problem_identity': {'fixed_problem_sha256': '3de086e6436c21913899fcc7518fcf3eca62a42d552f94c6eb1e2b293665a6e5', 'scope': 'fixed point-observation identity; caller also binds code, control, parameters and branch'}, 'tensor_sha256': {'direction': '679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed', 'observation_coordinates': '7c63a1c24dae48b1abc2d4bc9ce6f0f0e936b9633a9a9259bf7d07f2078cad02', 'observation_correlation': '7c304612b1f9ef9392ffbd1a1a4b092343746a02dcf200b12a2866f34aaeeaef', 'parameters': '0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a', 'verification': 'b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9', 'warm_control': 'b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5'}}",
+        "FAILED tests/test_fv_point_sector_root.py::test_probe_separates_numerical_refusal_from_callback_failure[RefinementNumericalRefusal-sector_refused] - ValueError: sector root unrelated source changed from prior run",
+        "FAILED tests/test_fv_point_sector_root.py::test_probe_separates_numerical_refusal_from_callback_failure[RefinementCallbackError-running] - ValueError: sector root unrelated source changed from prior run"
+      ]
+    },
+    {
+      "shard": 5,
+      "assigned": 385,
+      "terminal": true,
+      "pytest_return_code": 1,
+      "case_outcomes": {
+        "passed": 338,
+        "invalid": 14,
+        "failed": 33
+      },
+      "pytest_failure_rows": [
+        "FAILED tests/test_fv_partial_sector_root.py::test_current_source_preflight_preserves_frozen_tensors_but_versions_identity - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "FAILED tests/test_fv_partial_sector_root.py::test_callback_failure_is_not_scientific_refusal[RefinementNumericalRefusal-root_refused] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "FAILED tests/test_fv_partial_sector_root.py::test_callback_failure_is_not_scientific_refusal[RefinementCallbackError-running] - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "FAILED tests/test_fv_partial_sector_root.py::test_nonfinite_candidate_is_recorded_without_invalid_json - ValueError: current-source two-hole input differs from declared fixed tensors",
+        "FAILED tests/test_fv_process_response.py::test_case_archives_direction_branch_and_nominal_gradient_without_pcg[_small_case-archive_names0-direction_slice0-54] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_process_response.py::test_case_archives_direction_branch_and_nominal_gradient_without_pcg[_large_case-archive_names1-direction_slice1-108] - ValueError: 8x10 archived input/verification identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_consistent_terminal_lifecycle_allows_candidate_and_is_idempotent - AssertionError: assert 'needs_reconciliation' == 'publication_candidate'",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_fully_bound_v2_artifacts_allow_only_unauthenticated_candidate - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_v2_binding_tampering_and_missing_chain_fail_closed[manifest] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_v2_binding_tampering_and_missing_chain_fail_closed[raw_id] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_v2_binding_tampering_and_missing_chain_fail_closed[resource_id] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_v2_binding_tampering_and_missing_chain_fail_closed[resource_digest] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_v2_binding_tampering_and_missing_chain_fail_closed[publication_digest] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_v2_binding_tampering_and_missing_chain_fail_closed[lifecycle_id] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_v2_binding_tampering_and_missing_chain_fail_closed[job_path] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_v2_binding_tampering_and_missing_chain_fail_closed[source_drift] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_v2_binding_tampering_and_missing_chain_fail_closed[input_drift] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_v2_binding_tampering_and_missing_chain_fail_closed[command] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_v2_copied_job_path_is_unresolved - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_v2_manifest_from_different_current_source_snapshot_is_unresolved - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_artifact_swap_after_snapshot_never_yields_candidate[worker.raw.json] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_artifact_swap_after_snapshot_never_yields_candidate[worker.resource.json] - ValueError: 4x5 archived stationary input identity mismatch",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_lifecycle_contradiction_forces_reconciliation[execution_status-cancelled] - AssertionError: assert 'current_reference_unavailable' == 'lifecycle_mismatch'",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_lifecycle_contradiction_forces_reconciliation[physical_validation-passed] - AssertionError: assert 'current_reference_unavailable' == 'lifecycle_mismatch'",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_lifecycle_contradiction_forces_reconciliation[runner_error-unexpected failure] - AssertionError: assert 'current_reference_unavailable' == 'lifecycle_mismatch'",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_lifecycle_contradiction_forces_reconciliation[raw_child_read_error-malformed raw report] - AssertionError: assert 'current_reference_unavailable' == 'lifecycle_mismatch'",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_copied_legacy_relative_worker_command_is_unresolved - AssertionError: assert 'current_reference_unavailable' == 'worker_command_mismatch'",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_changed_resource_exit_is_unresolved_even_when_lifecycle_copy_agrees - AssertionError: assert 'current_reference_unavailable' == 'worker_validation_failed'",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_current_fixed_archive_drift_is_unresolved - AssertionError: assert 'current_reference_unavailable' == 'archived_reference_drift'",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_lifecycle_source_snapshot_must_match_current_sources - AssertionError: assert 'current_reference_unavailable' == 'lifecycle_mismatch'",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_two_inspectors_contend_on_shared_lock - AssertionError: assert 'needs_reconciliation' == 'publication_candidate'",
+        "FAILED tests/test_fv_response_job_reconcile.py::test_parent_path_aliases_use_the_same_lock_and_classification - AssertionError: assert 'needs_reconciliation' == 'publication_candidate'",
+        "FAILED tests/test_fv_support_matrix.py::test_stratified_inventory_preserves_refusal_and_unmeasured_validation - ValueError: manifest source/evidence mismatch: src/advar/fv_point_research_problem.py"
+      ]
+    }
+  ]
+}

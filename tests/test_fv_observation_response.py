@@ -441,6 +441,9 @@ def test_parameterized_background_matches_polished_centered_reanalysis(
     kwargs = _parameterized_response_kwargs(
         observations, boundary_echo, boundary_support, theta
     )
+    # The theta derivative subtracts two O(87) terms; bound the adjoint error
+    # below the centered reanalysis error without changing the FD tolerance.
+    kwargs["adjoint_relative_tolerance"] = 1.0e-12
     response = compute_fv_observation_response(
         control, observations, frozen, **kwargs
     )
@@ -482,6 +485,25 @@ def test_parameterized_background_matches_polished_centered_reanalysis(
         rtol=1.0e-7,
         atol=2.0e-9,
     )
+
+
+def test_parameterized_background_honors_tighter_adjoint_tolerance(
+    parameterized_refined_case,
+):
+    observations, frozen, control, boundary_echo, boundary_support, theta = (
+        parameterized_refined_case
+    )
+    kwargs = _parameterized_response_kwargs(
+        observations, boundary_echo, boundary_support, theta
+    )
+    response = compute_fv_observation_response(
+        control,
+        observations,
+        frozen,
+        **{**kwargs, "adjoint_relative_tolerance": 1.0e-12},
+    )
+    assert response.adjoint_relative_residual <= 1.0e-12
+    assert response.normal_products <= kwargs["maximum_normal_products"]
 
 
 def test_parameterized_background_requires_exact_frozen_baseline(
@@ -620,6 +642,35 @@ def test_response_rejects_an_exhausted_normal_product_budget():
             observations,
             frozen,
             **{**kwargs, "maximum_normal_products": 0},
+        )
+
+
+@pytest.mark.parametrize(
+    "tolerance",
+    [
+        True,
+        False,
+        0.0,
+        -1.0e-12,
+        1.1e-10,
+        10**1000,
+        float("nan"),
+        float("inf"),
+        None,
+        "1e-12",
+    ],
+)
+def test_response_rejects_invalid_adjoint_relative_tolerance(tolerance):
+    observations, frozen, control, kwargs = _inputs()
+    with pytest.raises(
+        ValueError,
+        match="adjoint_relative_tolerance must be finite, positive, and at most 1e-10",
+    ):
+        compute_fv_observation_response(
+            control,
+            observations,
+            frozen,
+            **{**kwargs, "adjoint_relative_tolerance": tolerance},
         )
 
 

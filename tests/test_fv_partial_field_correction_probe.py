@@ -1,6 +1,8 @@
 """Contract checks for the fixed-dynamics field correction experiment."""
 from __future__ import annotations
 
+import copy
+import json
 import math
 from typing import Any
 
@@ -67,9 +69,12 @@ def test_objective_gate_preserves_armijo_when_j_does_not_increase() -> None:
 
 def _fake_child(source: dict[str, str], inputs: dict[str, Any]) -> dict[str, Any]:
     seed, control = probe.seed_probe._seed_evidence()
-    branch = seed["seed_branch"]
     dynamics_sha = probe._tensor_sha(control[20:])
     problem, _, parameters = probe._problem()
+    branch_raw, _, face_margin = probe.preflight.branch_with_face_margin(
+        problem, control, parameters,
+    )
+    branch = probe._branch_summary(branch_raw, face_margin)
     full_gradient = probe._gradient_audit(problem, control, parameters)
     reduced = probe._field_objective(problem.objective, control[20:])
     reduced_gradient = torch.func.grad(reduced, argnums=0)(control[:20], parameters)
@@ -116,6 +121,40 @@ def _fake_child(source: dict[str, str], inputs: dict[str, Any]) -> dict[str, Any
     }
 
 
+@pytest.fixture
+def archived_seed_vectors(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Supply a test vector, without certifying an old execution on this host.
+    # Production seed hashes/source/runtime validation stays in the loader tests.
+    control, _, _ = probe.seed_probe._archived_seed_control()
+    seed = json.loads((probe.seed_probe.SEED_ARCHIVE / "alternate_seed.json").read_text())
+    problem, initial_control, parameters = probe._problem()
+    mode = problem.frozen.observation_whitener.mode
+    assert mode is not None
+    host_input_identity = {
+        "current_problem_identity": problem.identity,
+        "fixture_scope": "host-local synthetic fake-child/audit input; not archived certification",
+        "fixed_input_fields": {
+            "tensor_sha256": {
+                "parameters": probe._tensor_sha(parameters),
+                "verification": probe._tensor_sha(problem.verification),
+                "observation_dbz": probe._tensor_sha(problem.observations.dbz),
+                "valid_mask": probe._tensor_sha(problem.observations.valid_mask),
+                "missing_mask": probe._tensor_sha(problem.observations.missing_mask),
+                "whitener_mode": probe._tensor_sha(mode),
+                "initial_control": probe._tensor_sha(initial_control),
+            },
+        },
+    }
+    monkeypatch.setattr(
+        probe.seed_probe, "_seed_evidence",
+        lambda: (copy.deepcopy(seed), control.clone()),
+    )
+    monkeypatch.setattr(probe, "_problem", lambda: (problem, initial_control, parameters))
+    monkeypatch.setattr(
+        probe.prior, "_preflight_identity", lambda: copy.deepcopy(host_input_identity),
+    )
+
+
 def _fake_resource(command: list[str]) -> dict[str, Any]:
     return {
         "command": command, "child_pid": 812, "exit_code": 2,
@@ -126,7 +165,9 @@ def _fake_resource(command: list[str]) -> dict[str, Any]:
     }
 
 
-def test_fake_guard_requires_reviewed_child_identity_and_resource_completion() -> None:
+def test_fake_guard_requires_reviewed_child_identity_and_resource_completion(
+    archived_seed_vectors: None,
+) -> None:
     command = ["python", "probe.py", "--child"]
     source = {probe.SELF_PATH: "d" * 64}
     inputs = probe.prior._preflight_identity()
@@ -213,7 +254,9 @@ def test_fake_guard_requires_reviewed_child_identity_and_resource_completion() -
     ("sampled_peak_rss_bytes", 1024**3 + 1),
     ("elapsed_seconds", 301.0),
 ])
-def test_fake_guard_rejects_invalid_resource_evidence(field: str, value: object) -> None:
+def test_fake_guard_rejects_invalid_resource_evidence(
+    field: str, value: object, archived_seed_vectors: None,
+) -> None:
     command = ["python", "probe.py", "--child"]
     source = {probe.SELF_PATH: "d" * 64}
     inputs = probe.prior._preflight_identity()
@@ -225,7 +268,9 @@ def test_fake_guard_rejects_invalid_resource_evidence(field: str, value: object)
     ) == "failed"
 
 
-def test_parent_final_audit_recomputes_metrics_at_reported_control() -> None:
+def test_parent_final_audit_recomputes_metrics_at_reported_control(
+    archived_seed_vectors: None,
+) -> None:
     source = {probe.SELF_PATH: "d" * 64}
     inputs = probe.prior._preflight_identity()
     child = _fake_child(source, inputs)

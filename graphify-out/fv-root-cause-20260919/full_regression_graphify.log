@@ -1,0 +1,2 @@
+Cached structural graph consulted for research-test imports from examples; configuration/dependency-only changes add no Python AST entities.
+Graph remains parseable: 8381 nodes, 210666 links; no full semantic rebuild.

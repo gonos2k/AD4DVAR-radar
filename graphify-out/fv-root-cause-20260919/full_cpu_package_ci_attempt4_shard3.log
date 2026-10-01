@@ -1,0 +1,1408 @@
+﻿2026-10-01T08:27:25.9024164Z Current runner version: '2.337.0'
+2026-10-01T08:27:25.9039224Z ##[group]Runner Image Provisioner
+2026-10-01T08:27:25.9039784Z Hosted Compute Agent
+2026-10-01T08:27:25.9040177Z Version: 20260901.588
+2026-10-01T08:27:25.9040541Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+2026-10-01T08:27:25.9040939Z Build Date: 2026-09-01T19:56:44Z
+2026-10-01T08:27:25.9041410Z Worker ID: {28f324d6-7864-4087-87ce-9e905494066d}
+2026-10-01T08:27:25.9041837Z Azure Region: centralus
+2026-10-01T08:27:25.9042195Z ##[endgroup]
+2026-10-01T08:27:25.9042968Z ##[group]Operating System
+2026-10-01T08:27:25.9043308Z Ubuntu
+2026-10-01T08:27:25.9043657Z 24.04.5
+2026-10-01T08:27:25.9044006Z LTS
+2026-10-01T08:27:25.9044455Z ##[endgroup]
+2026-10-01T08:27:25.9044780Z ##[group]Runner Image
+2026-10-01T08:27:25.9045120Z Image: ubuntu-24.04
+2026-10-01T08:27:25.9045537Z Version: 20260927.320.1
+2026-10-01T08:27:25.9046244Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-01T08:27:25.9047119Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+2026-10-01T08:27:25.9047652Z ##[endgroup]
+2026-10-01T08:27:25.9048357Z ##[group]GITHUB_TOKEN Permissions
+2026-10-01T08:27:25.9049802Z Contents: read
+2026-10-01T08:27:25.9050181Z Metadata: read
+2026-10-01T08:27:25.9050513Z ##[endgroup]
+2026-10-01T08:27:25.9051778Z Secret source: Actions
+2026-10-01T08:27:25.9052358Z Cache mode: write
+2026-10-01T08:27:25.9052809Z Prepare workflow directory
+2026-10-01T08:27:25.9246041Z Prepare all required actions
+2026-10-01T08:27:25.9276545Z Getting action download info
+2026-10-01T08:27:26.1522230Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-01T08:27:26.2239913Z Download action repository 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1' (SHA:ece7cb06caefa5fff74198d8649806c4678c61a1)
+2026-10-01T08:27:26.3023182Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-10-01T08:27:26.4543040Z Complete job name: Python 3.12 CPU shard 3
+2026-10-01T08:27:26.4979162Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-10-01T08:27:26.4979704Z with:
+2026-10-01T08:27:26.4979957Z   repository: gonos2k/AD4DVAR-radar
+2026-10-01T08:27:26.4982160Z   token: ***
+2026-10-01T08:27:26.4982398Z   ssh-strict: true
+2026-10-01T08:27:26.4982646Z   ssh-user: git
+2026-10-01T08:27:26.4982897Z   persist-credentials: true
+2026-10-01T08:27:26.4983170Z   clean: true
+2026-10-01T08:27:26.4983420Z   sparse-checkout-cone-mode: true
+2026-10-01T08:27:26.4983711Z   fetch-depth: 1
+2026-10-01T08:27:26.4983952Z   fetch-tags: false
+2026-10-01T08:27:26.4984201Z   show-progress: true
+2026-10-01T08:27:26.4984739Z   lfs: false
+2026-10-01T08:27:26.4984989Z   submodules: false
+2026-10-01T08:27:26.4985250Z   set-safe-directory: true
+2026-10-01T08:27:26.4985536Z   allow-unsafe-pr-checkout: false
+2026-10-01T08:27:26.4985950Z ##[endgroup]
+2026-10-01T08:27:26.5634198Z Syncing repository: gonos2k/AD4DVAR-radar
+2026-10-01T08:27:26.5636003Z ##[group]Getting Git version info
+2026-10-01T08:27:26.5636692Z Working directory is '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+2026-10-01T08:27:26.5637668Z [command]/usr/bin/git version
+2026-10-01T08:27:26.5675856Z git version 2.55.0
+2026-10-01T08:27:26.5694933Z ##[endgroup]
+2026-10-01T08:27:26.5700616Z Temporarily overriding HOME='/home/runner/work/_temp/ab2daafe-bed4-42c8-bab8-e89165898f2c' before making global git config changes
+2026-10-01T08:27:26.5702140Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-01T08:27:26.5703402Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:27:26.5744505Z Deleting the contents of '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+2026-10-01T08:27:26.5746437Z ##[group]Determining repository object format
+2026-10-01T08:27:26.5747554Z ##[endgroup]
+2026-10-01T08:27:26.5748322Z ##[group]Initializing the repository
+2026-10-01T08:27:26.5750075Z [command]/usr/bin/git init /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:27:26.5845701Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-01T08:27:26.5846714Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-01T08:27:26.5847494Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-01T08:27:26.5848021Z hint: call:
+2026-10-01T08:27:26.5848254Z hint:
+2026-10-01T08:27:26.5848612Z hint: 	git config --global init.defaultBranch <name>
+2026-10-01T08:27:26.5848965Z hint:
+2026-10-01T08:27:26.5849298Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-01T08:27:26.5849815Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-01T08:27:26.5850491Z hint:
+2026-10-01T08:27:26.5850778Z hint: 	git branch -m <name>
+2026-10-01T08:27:26.5851078Z hint:
+2026-10-01T08:27:26.5851547Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-01T08:27:26.5852355Z Initialized empty Git repository in /home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/
+2026-10-01T08:27:26.5857587Z [command]/usr/bin/git remote add origin https://github.com/gonos2k/AD4DVAR-radar
+2026-10-01T08:27:26.5900145Z ##[endgroup]
+2026-10-01T08:27:26.5900596Z ##[group]Disabling automatic garbage collection
+2026-10-01T08:27:26.5902525Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-01T08:27:26.5928901Z ##[endgroup]
+2026-10-01T08:27:26.5929533Z ##[group]Setting up auth
+2026-10-01T08:27:26.5930015Z Removing SSH command configuration
+2026-10-01T08:27:26.5932827Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-01T08:27:26.5960146Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-01T08:27:26.6235429Z Removing HTTP extra header
+2026-10-01T08:27:26.6239502Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-01T08:27:26.6266023Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-01T08:27:26.6427921Z Removing includeIf entries pointing to credentials config files
+2026-10-01T08:27:26.6431342Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-01T08:27:26.6458268Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-01T08:27:26.6627894Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-462151dd-105d-44d8-a411-d447c999156b.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-01T08:27:26.6655679Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path /home/runner/work/_temp/git-credentials-462151dd-105d-44d8-a411-d447c999156b.config
+2026-10-01T08:27:26.6681418Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-462151dd-105d-44d8-a411-d447c999156b.config
+2026-10-01T08:27:26.6710530Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-462151dd-105d-44d8-a411-d447c999156b.config
+2026-10-01T08:27:26.6737280Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-462151dd-105d-44d8-a411-d447c999156b.config
+2026-10-01T08:27:26.6761427Z ##[endgroup]
+2026-10-01T08:27:26.6761855Z ##[group]Fetching the repository
+2026-10-01T08:27:26.6765260Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf:refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T08:27:28.1738050Z From https://github.com/gonos2k/AD4DVAR-radar
+2026-10-01T08:27:28.1739464Z  * [new ref]         a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf -> origin/agent/full-cpu-package-regression
+2026-10-01T08:27:28.1744996Z [command]/usr/bin/git branch --list --remote origin/agent/full-cpu-package-regression
+2026-10-01T08:27:28.1767914Z   origin/agent/full-cpu-package-regression
+2026-10-01T08:27:28.1772783Z [command]/usr/bin/git rev-parse refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T08:27:28.1792393Z a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf
+2026-10-01T08:27:28.1794761Z ##[endgroup]
+2026-10-01T08:27:28.1795076Z ##[group]Determining the checkout info
+2026-10-01T08:27:28.1795670Z ##[endgroup]
+2026-10-01T08:27:28.1797857Z [command]/usr/bin/git sparse-checkout disable
+2026-10-01T08:27:28.1840871Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-01T08:27:28.1866518Z ##[group]Checking out the ref
+2026-10-01T08:27:28.1869078Z [command]/usr/bin/git checkout --progress --force -B agent/full-cpu-package-regression refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T08:27:28.3300466Z Switched to a new branch 'agent/full-cpu-package-regression'
+2026-10-01T08:27:28.3303275Z branch 'agent/full-cpu-package-regression' set up to track 'origin/agent/full-cpu-package-regression'.
+2026-10-01T08:27:28.3324566Z ##[endgroup]
+2026-10-01T08:27:28.3365929Z [command]/usr/bin/git log -1 --format=%H
+2026-10-01T08:27:28.3389753Z a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf
+2026-10-01T08:27:28.3581108Z ##[group]Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+2026-10-01T08:27:28.3581396Z with:
+2026-10-01T08:27:28.3581547Z   python-version: 3.12
+2026-10-01T08:27:28.3581707Z   cache: pip
+2026-10-01T08:27:28.3581900Z   cache-dependency-path: requirements/ci-py312-linux.lock
+2026-10-01T08:27:28.3582139Z   check-latest: false
+2026-10-01T08:27:28.3583688Z   token: ***
+2026-10-01T08:27:28.3583843Z   update-environment: true
+2026-10-01T08:27:28.3584019Z   allow-prereleases: false
+2026-10-01T08:27:28.3584189Z   freethreaded: false
+2026-10-01T08:27:28.3584460Z ##[endgroup]
+2026-10-01T08:27:28.4442284Z ##[group]Installed versions
+2026-10-01T08:27:28.4499183Z Successfully set up CPython (3.12.14)
+2026-10-01T08:27:28.4499705Z ##[endgroup]
+2026-10-01T08:27:28.4682473Z [command]/opt/hostedtoolcache/Python/3.12.14/x64/bin/pip cache dir
+2026-10-01T08:27:28.6862600Z /home/runner/.cache/pip
+2026-10-01T08:27:28.8576688Z Cache hit for restore-key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.14-pip-f7cee36fe32686215bbb9f8a086817e4840e974b74a211879070eaf02f04bcd8
+2026-10-01T08:27:30.0135625Z Received 109051904 of 287618844 (37.9%), 103.9 MBs/sec
+2026-10-01T08:27:31.0114474Z Received 209715200 of 287618844 (72.9%), 100.0 MBs/sec
+2026-10-01T08:27:31.5064190Z Received 287618844 of 287618844 (100.0%), 109.9 MBs/sec
+2026-10-01T08:27:31.5064660Z Cache Size: ~274 MB (287618844 B)
+2026-10-01T08:27:31.5107400Z [command]/usr/bin/tar -xf /home/runner/work/_temp/a1a3316e-e2ae-4fab-bb40-7c28b3224714/cache.tzst -P -C /home/runner/work/AD4DVAR-radar/AD4DVAR-radar --use-compress-program unzstd
+2026-10-01T08:27:31.7724686Z Cache restored successfully
+2026-10-01T08:27:31.7835576Z Cache restored from key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.14-pip-f7cee36fe32686215bbb9f8a086817e4840e974b74a211879070eaf02f04bcd8
+2026-10-01T08:27:31.7992034Z ##[group]Run python -I -m pip install \
+2026-10-01T08:27:31.7992266Z [36;1mpython -I -m pip install \[0m
+2026-10-01T08:27:31.7992419Z [36;1m  --require-hashes \[0m
+2026-10-01T08:27:31.7992562Z [36;1m  --only-binary=:all: \[0m
+2026-10-01T08:27:31.7992796Z [36;1m  --extra-index-url https://download.pytorch.org/whl/cpu \[0m
+2026-10-01T08:27:31.7993049Z [36;1m  --requirement requirements/ci-py312-linux.lock[0m
+2026-10-01T08:27:31.8212197Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:27:31.8212524Z env:
+2026-10-01T08:27:31.8212680Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:31.8212924Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:27:31.8213161Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:31.8213366Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:31.8213576Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:31.8213822Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:27:31.8214000Z ##[endgroup]
+2026-10-01T08:27:32.2297137Z Looking in indexes: https://pypi.org/simple, https://download.pytorch.org/whl/cpu
+2026-10-01T08:27:32.6016567Z Collecting basedpyright==1.39.9 (from -r requirements/ci-py312-linux.lock (line 5))
+2026-10-01T08:27:32.6025302Z   Using cached basedpyright-1.39.9-py3-none-any.whl (13.4 MB)
+2026-10-01T08:27:32.6969935Z Collecting boolean-py==5.0 (from -r requirements/ci-py312-linux.lock (line 9))
+2026-10-01T08:27:32.6977726Z   Using cached boolean_py-5.0-py3-none-any.whl (26 kB)
+2026-10-01T08:27:32.7760152Z Collecting build==1.5.0 (from -r requirements/ci-py312-linux.lock (line 13))
+2026-10-01T08:27:32.7767933Z   Using cached build-1.5.0-py3-none-any.whl (26 kB)
+2026-10-01T08:27:32.8473504Z Collecting cachecontrol==0.14.4 (from -r requirements/ci-py312-linux.lock (line 17))
+2026-10-01T08:27:32.8480887Z   Using cached cachecontrol-0.14.4-py3-none-any.whl (22 kB)
+2026-10-01T08:27:32.8800855Z Collecting certifi==2026.7.22 (from -r requirements/ci-py312-linux.lock (line 21))
+2026-10-01T08:27:32.8808007Z   Using cached certifi-2026.7.22-py3-none-any.whl (136 kB)
+2026-10-01T08:27:32.9915855Z Collecting cffi==2.1.1 (from -r requirements/ci-py312-linux.lock (line 25))
+2026-10-01T08:27:32.9923409Z   Using cached cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+2026-10-01T08:27:33.0720326Z Collecting charset-normalizer==3.5.1 (from -r requirements/ci-py312-linux.lock (line 127))
+2026-10-01T08:27:33.0727661Z   Using cached charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (248 kB)
+2026-10-01T08:27:33.2462996Z Collecting cryptography==50.0.0 (from -r requirements/ci-py312-linux.lock (line 301))
+2026-10-01T08:27:33.2474120Z   Using cached cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+2026-10-01T08:27:33.3826748Z Collecting cyclonedx-python-lib==11.12.0 (from -r requirements/ci-py312-linux.lock (line 351))
+2026-10-01T08:27:33.3834786Z   Using cached cyclonedx_python_lib-11.12.0-py3-none-any.whl (529 kB)
+2026-10-01T08:27:33.4432070Z Collecting defusedxml==0.7.1 (from -r requirements/ci-py312-linux.lock (line 355))
+2026-10-01T08:27:33.4443604Z   Using cached defusedxml-0.7.1-py2.py3-none-any.whl (25 kB)
+2026-10-01T08:27:33.4917910Z Collecting filelock==3.32.3 (from -r requirements/ci-py312-linux.lock (line 359))
+2026-10-01T08:27:33.4925324Z   Using cached filelock-3.32.3-py3-none-any.whl (98 kB)
+2026-10-01T08:27:33.5298960Z Collecting fsspec==2026.7.0 (from -r requirements/ci-py312-linux.lock (line 367))
+2026-10-01T08:27:33.5306344Z   Using cached fsspec-2026.7.0-py3-none-any.whl (206 kB)
+2026-10-01T08:27:33.5702846Z Collecting idna==3.18 (from -r requirements/ci-py312-linux.lock (line 371))
+2026-10-01T08:27:33.5710359Z   Using cached idna-3.18-py3-none-any.whl (65 kB)
+2026-10-01T08:27:33.7012959Z Collecting iniconfig==2.3.0 (from -r requirements/ci-py312-linux.lock (line 375))
+2026-10-01T08:27:33.7021691Z   Using cached iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+2026-10-01T08:27:33.7337328Z Collecting jinja2==3.1.6 (from -r requirements/ci-py312-linux.lock (line 379))
+2026-10-01T08:27:33.7344220Z   Using cached jinja2-3.1.6-py3-none-any.whl (134 kB)
+2026-10-01T08:27:33.7997686Z Collecting license-expression==30.4.4 (from -r requirements/ci-py312-linux.lock (line 383))
+2026-10-01T08:27:33.8005483Z   Using cached license_expression-30.4.4-py3-none-any.whl (120 kB)
+2026-10-01T08:27:33.8635849Z Collecting markdown-it-py==4.2.0 (from -r requirements/ci-py312-linux.lock (line 387))
+2026-10-01T08:27:33.8642787Z   Using cached markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+2026-10-01T08:27:33.9252066Z Collecting markupsafe==3.0.3 (from -r requirements/ci-py312-linux.lock (line 391))
+2026-10-01T08:27:33.9259887Z   Using cached markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+2026-10-01T08:27:33.9823053Z Collecting mdurl==0.1.2 (from -r requirements/ci-py312-linux.lock (line 482))
+2026-10-01T08:27:33.9830258Z   Using cached mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+2026-10-01T08:27:34.0148065Z Collecting mpmath==1.3.0 (from -r requirements/ci-py312-linux.lock (line 486))
+2026-10-01T08:27:34.0155453Z   Using cached mpmath-1.3.0-py3-none-any.whl (536 kB)
+2026-10-01T08:27:34.1114642Z Collecting msgpack==1.2.1 (from -r requirements/ci-py312-linux.lock (line 490))
+2026-10-01T08:27:34.1121800Z   Using cached msgpack-1.2.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (419 kB)
+2026-10-01T08:27:34.1504256Z Collecting networkx==3.6.1 (from -r requirements/ci-py312-linux.lock (line 558))
+2026-10-01T08:27:34.1511267Z   Using cached networkx-3.6.1-py3-none-any.whl (2.1 MB)
+2026-10-01T08:27:34.2249871Z Collecting nodejs-wheel-binaries==24.16.0 (from -r requirements/ci-py312-linux.lock (line 562))
+2026-10-01T08:27:34.2257029Z   Using cached nodejs_wheel_binaries-24.16.0-py2.py3-none-manylinux_2_28_x86_64.whl (60.7 MB)
+2026-10-01T08:27:34.5271728Z Collecting numpy==2.2.6 (from -r requirements/ci-py312-linux.lock (line 573))
+2026-10-01T08:27:34.5280799Z   Using cached numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.5 MB)
+2026-10-01T08:27:34.6081978Z Collecting packageurl-python==0.17.6 (from -r requirements/ci-py312-linux.lock (line 632))
+2026-10-01T08:27:34.6088896Z   Using cached packageurl_python-0.17.6-py3-none-any.whl (36 kB)
+2026-10-01T08:27:34.6411228Z Collecting packaging==26.3 (from -r requirements/ci-py312-linux.lock (line 636))
+2026-10-01T08:27:34.6418229Z   Using cached packaging-26.3-py3-none-any.whl (129 kB)
+2026-10-01T08:27:34.6433224Z Requirement already satisfied: pip==26.2.1 in /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages (from -r requirements/ci-py312-linux.lock (line 645)) (26.2.1)
+2026-10-01T08:27:34.7055850Z Collecting pip-api==0.0.34 (from -r requirements/ci-py312-linux.lock (line 649))
+2026-10-01T08:27:34.7062684Z   Using cached pip_api-0.0.34-py3-none-any.whl (120 kB)
+2026-10-01T08:27:34.7641310Z Collecting pip-audit==2.10.1 (from -r requirements/ci-py312-linux.lock (line 653))
+2026-10-01T08:27:34.7648233Z   Using cached pip_audit-2.10.1-py3-none-any.whl (62 kB)
+2026-10-01T08:27:34.8315011Z Collecting pip-requirements-parser==32.0.1 (from -r requirements/ci-py312-linux.lock (line 657))
+2026-10-01T08:27:34.8321911Z   Using cached pip_requirements_parser-32.0.1-py3-none-any.whl (35 kB)
+2026-10-01T08:27:34.8881875Z Collecting platformdirs==4.11.3 (from -r requirements/ci-py312-linux.lock (line 661))
+2026-10-01T08:27:34.8888733Z   Using cached platformdirs-4.11.3-py3-none-any.whl (23 kB)
+2026-10-01T08:27:34.9515497Z Collecting pluggy==1.6.0 (from -r requirements/ci-py312-linux.lock (line 665))
+2026-10-01T08:27:34.9522210Z   Using cached pluggy-1.6.0-py3-none-any.whl (20 kB)
+2026-10-01T08:27:35.0129354Z Collecting py-serializable==2.1.0 (from -r requirements/ci-py312-linux.lock (line 669))
+2026-10-01T08:27:35.0136782Z   Using cached py_serializable-2.1.0-py3-none-any.whl (23 kB)
+2026-10-01T08:27:35.1239331Z Collecting pycparser==3.0 (from -r requirements/ci-py312-linux.lock (line 673))
+2026-10-01T08:27:35.1246016Z   Using cached pycparser-3.0-py3-none-any.whl (48 kB)
+2026-10-01T08:27:35.2356123Z Collecting pygments==2.20.0 (from -r requirements/ci-py312-linux.lock (line 677))
+2026-10-01T08:27:35.2363506Z   Using cached pygments-2.20.0-py3-none-any.whl (1.2 MB)
+2026-10-01T08:27:35.3011863Z Collecting pyparsing==3.3.2 (from -r requirements/ci-py312-linux.lock (line 683))
+2026-10-01T08:27:35.3018643Z   Using cached pyparsing-3.3.2-py3-none-any.whl (122 kB)
+2026-10-01T08:27:35.4104942Z Collecting pyproject-hooks==1.2.0 (from -r requirements/ci-py312-linux.lock (line 687))
+2026-10-01T08:27:35.4112435Z   Using cached pyproject_hooks-1.2.0-py3-none-any.whl (10 kB)
+2026-10-01T08:27:35.4905890Z Collecting pytest==9.1.1 (from -r requirements/ci-py312-linux.lock (line 691))
+2026-10-01T08:27:35.4912894Z   Using cached pytest-9.1.1-py3-none-any.whl (386 kB)
+2026-10-01T08:27:35.5251097Z Collecting requests==2.34.2 (from -r requirements/ci-py312-linux.lock (line 695))
+2026-10-01T08:27:35.5257828Z   Using cached requests-2.34.2-py3-none-any.whl (73 kB)
+2026-10-01T08:27:35.5899133Z Collecting rich==15.0.0 (from -r requirements/ci-py312-linux.lock (line 701))
+2026-10-01T08:27:35.5906070Z   Using cached rich-15.0.0-py3-none-any.whl (310 kB)
+2026-10-01T08:27:35.6456137Z Collecting setuptools==84.0.0 (from -r requirements/ci-py312-linux.lock (line 705))
+2026-10-01T08:27:35.6462890Z   Using cached setuptools-84.0.0-py3-none-any.whl (818 kB)
+2026-10-01T08:27:35.7294945Z Collecting sortedcontainers==2.4.0 (from -r requirements/ci-py312-linux.lock (line 711))
+2026-10-01T08:27:35.7301838Z   Using cached sortedcontainers-2.4.0-py2.py3-none-any.whl (29 kB)
+2026-10-01T08:27:35.7644983Z Collecting sympy==1.14.0 (from -r requirements/ci-py312-linux.lock (line 715))
+2026-10-01T08:27:35.7652007Z   Using cached sympy-1.14.0-py3-none-any.whl (6.3 MB)
+2026-10-01T08:27:35.8346640Z Collecting tomli==2.4.1 (from -r requirements/ci-py312-linux.lock (line 719))
+2026-10-01T08:27:35.8353637Z   Using cached tomli-2.4.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (253 kB)
+2026-10-01T08:27:35.8949776Z Collecting tomli-w==1.2.0 (from -r requirements/ci-py312-linux.lock (line 768))
+2026-10-01T08:27:35.8959448Z   Using cached tomli_w-1.2.0-py3-none-any.whl (6.7 kB)
+2026-10-01T08:27:36.0060689Z Collecting torch==2.13.0+cpu (from -r requirements/ci-py312-linux.lock (line 772))
+2026-10-01T08:27:36.0930115Z   Using cached torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl (191.8 MB)
+2026-10-01T08:27:36.3004005Z Collecting typing-extensions==4.16.0 (from -r requirements/ci-py312-linux.lock (line 807))
+2026-10-01T08:27:36.3011076Z   Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+2026-10-01T08:27:36.3337733Z Collecting urllib3==2.8.0 (from -r requirements/ci-py312-linux.lock (line 813))
+2026-10-01T08:27:36.3344688Z   Using cached urllib3-2.8.0-py3-none-any.whl (135 kB)
+2026-10-01T08:27:36.4291557Z Collecting wheel==0.46.3 (from -r requirements/ci-py312-linux.lock (line 817))
+2026-10-01T08:27:36.4299946Z   Using cached wheel-0.46.3-py3-none-any.whl (30 kB)
+2026-10-01T08:27:36.6198518Z Installing collected packages: sortedcontainers, mpmath, boolean-py, urllib3, typing-extensions, tomli-w, tomli, sympy, setuptools, pyproject-hooks, pyparsing, pygments, pycparser, pluggy, platformdirs, pip-api, packaging, packageurl-python, numpy, nodejs-wheel-binaries, networkx, msgpack, mdurl, markupsafe, license-expression, iniconfig, idna, fsspec, filelock, defusedxml, charset-normalizer, certifi, wheel, requests, pytest, py-serializable, pip-requirements-parser, markdown-it-py, jinja2, cffi, build, basedpyright, torch, rich, cyclonedx-python-lib, cryptography, cachecontrol, pip-audit
+2026-10-01T08:27:52.4200653Z 
+2026-10-01T08:27:52.4227348Z Successfully installed basedpyright-1.39.9 boolean-py-5.0 build-1.5.0 cachecontrol-0.14.4 certifi-2026.7.22 cffi-2.1.1 charset-normalizer-3.5.1 cryptography-50.0.0 cyclonedx-python-lib-11.12.0 defusedxml-0.7.1 filelock-3.32.3 fsspec-2026.7.0 idna-3.18 iniconfig-2.3.0 jinja2-3.1.6 license-expression-30.4.4 markdown-it-py-4.2.0 markupsafe-3.0.3 mdurl-0.1.2 mpmath-1.3.0 msgpack-1.2.1 networkx-3.6.1 nodejs-wheel-binaries-24.16.0 numpy-2.2.6 packageurl-python-0.17.6 packaging-26.3 pip-api-0.0.34 pip-audit-2.10.1 pip-requirements-parser-32.0.1 platformdirs-4.11.3 pluggy-1.6.0 py-serializable-2.1.0 pycparser-3.0 pygments-2.20.0 pyparsing-3.3.2 pyproject-hooks-1.2.0 pytest-9.1.1 requests-2.34.2 rich-15.0.0 setuptools-84.0.0 sortedcontainers-2.4.0 sympy-1.14.0 tomli-2.4.1 tomli-w-1.2.0 torch-2.13.0+cpu typing-extensions-4.16.0 urllib3-2.8.0 wheel-0.46.3
+2026-10-01T08:27:52.5776042Z ##[group]Run printf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py
+2026-10-01T08:27:52.5776439Z [36;1mprintf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py[0m
+2026-10-01T08:27:52.5776683Z [36;1mpython -I - <<'PY'[0m
+2026-10-01T08:27:52.5776813Z [36;1mimport site[0m
+2026-10-01T08:27:52.5776939Z [36;1mfrom pathlib import Path[0m
+2026-10-01T08:27:52.5777075Z [36;1m[0m
+2026-10-01T08:27:52.5777180Z [36;1mimport pip_audit[0m
+2026-10-01T08:27:52.5777305Z [36;1mimport torch[0m
+2026-10-01T08:27:52.5777417Z [36;1m[0m
+2026-10-01T08:27:52.5777544Z [36;1mmodule = Path(pip_audit.__file__).resolve()[0m
+2026-10-01T08:27:52.5777778Z [36;1mroots = tuple(Path(item).resolve() for item in site.getsitepackages())[0m
+2026-10-01T08:27:52.5778045Z [36;1massert any(root == module or root in module.parents for root in roots)[0m
+2026-10-01T08:27:52.5778270Z [36;1massert torch.version.cuda is None[0m
+2026-10-01T08:27:52.5778441Z [36;1mPY[0m
+2026-10-01T08:27:52.5778617Z [36;1mpython -I "$GITHUB_WORKSPACE/.github/scripts/check_dependency_locks.py"[0m
+2026-10-01T08:27:52.5778830Z [36;1mpython -I -m pip_audit \[0m
+2026-10-01T08:27:52.5778970Z [36;1m  --strict \[0m
+2026-10-01T08:27:52.5779092Z [36;1m  --disable-pip \[0m
+2026-10-01T08:27:52.5779219Z [36;1m  --no-deps \[0m
+2026-10-01T08:27:52.5779344Z [36;1m  --requirement "$LOCK_FILE"[0m
+2026-10-01T08:27:52.5830041Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:27:52.5830173Z env:
+2026-10-01T08:27:52.5830319Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:52.5830551Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:27:52.5830784Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:52.5830990Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:52.5831211Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:52.5831427Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:27:52.5831695Z   LOCK_FILE: /home/runner/work/AD4DVAR-radar/AD4DVAR-radar/requirements/ci-py312-linux.lock
+2026-10-01T08:27:52.5831934Z ##[endgroup]
+2026-10-01T08:27:53.7773033Z dependency locks: 4 hashed Linux CPU closures are synchronized
+2026-10-01T08:27:54.1810895Z WARNING:pip_audit._cli:--no-deps is supported, but users are encouraged to fully hash their pinned dependencies
+2026-10-01T08:27:54.1811408Z WARNING:pip_audit._cli:Consider using a tool like `pip-compile`: https://pip-tools.readthedocs.io/en/latest/#using-hashes
+2026-10-01T08:27:55.4519060Z No known vulnerabilities found
+2026-10-01T08:27:55.5201627Z ##[group]Run python -I -m pip install \
+2026-10-01T08:27:55.5201963Z [36;1mpython -I -m pip install \[0m
+2026-10-01T08:27:55.5202209Z [36;1m  --no-build-isolation \[0m
+2026-10-01T08:27:55.5202462Z [36;1m  --no-deps \[0m
+2026-10-01T08:27:55.5202663Z [36;1m  --editable .[0m
+2026-10-01T08:27:55.5202895Z [36;1mpython -I -m pip check[0m
+2026-10-01T08:27:55.5256216Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:27:55.5256354Z env:
+2026-10-01T08:27:55.5256501Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:55.5256734Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:27:55.5256965Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:55.5257178Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:55.5257391Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:55.5257599Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:27:55.5257802Z ##[endgroup]
+2026-10-01T08:27:55.7273870Z Obtaining file:///home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:27:55.7283411Z   Checking if build backend supports build_editable: started
+2026-10-01T08:27:55.9461052Z   Checking if build backend supports build_editable: finished with status 'done'
+2026-10-01T08:27:55.9467653Z   Preparing editable metadata (pyproject.toml): started
+2026-10-01T08:27:56.1947049Z   Preparing editable metadata (pyproject.toml): finished with status 'done'
+2026-10-01T08:27:56.2011555Z Building wheels for collected packages: advar-radar-nowcast
+2026-10-01T08:27:56.2016774Z   Building editable for advar-radar-nowcast (pyproject.toml): started
+2026-10-01T08:27:56.5603363Z   Building editable for advar-radar-nowcast (pyproject.toml): finished with status 'done'
+2026-10-01T08:27:56.5608925Z   Created wheel for advar-radar-nowcast: filename=advar_radar_nowcast-0.114.0-0.editable-py3-none-any.whl size=63186 sha256=8ec4bd42ce9d78d7ae8b9ea05936555ae76468283ee042e32daaeace0e7e121a
+2026-10-01T08:27:56.5609896Z   Stored in directory: /tmp/pip-ephem-wheel-cache-px5ch19h/wheels/1b/17/88/759e7a703f550adf36506436df8ea413a3c2e2eb8d99fc9f9a
+2026-10-01T08:27:56.5667933Z Successfully built advar-radar-nowcast
+2026-10-01T08:27:56.5735681Z Installing collected packages: advar-radar-nowcast
+2026-10-01T08:27:56.6168162Z Successfully installed advar-radar-nowcast-0.114.0
+2026-10-01T08:27:56.7883800Z No broken requirements found.
+2026-10-01T08:27:56.8107664Z ##[group]Run python -I .github/scripts/check_basedpyright.py
+2026-10-01T08:27:56.8107936Z [36;1mpython -I .github/scripts/check_basedpyright.py[0m
+2026-10-01T08:27:56.8158803Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:27:56.8158941Z env:
+2026-10-01T08:27:56.8159089Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:56.8159324Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:27:56.8159553Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:56.8159761Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:56.8159963Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:56.8160169Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:27:56.8160356Z ##[endgroup]
+2026-10-01T08:28:05.7415815Z basedpyright: 0 errors, 8048 warnings, 0 notes
+2026-10-01T08:28:05.7554738Z ##[group]Run python -I .github/scripts/run_cpu_test_shard.py \
+2026-10-01T08:28:05.7555025Z [36;1mpython -I .github/scripts/run_cpu_test_shard.py \[0m
+2026-10-01T08:28:05.7555208Z [36;1m  --shard-index 3 \[0m
+2026-10-01T08:28:05.7555345Z [36;1m  --shard-count 6 \[0m
+2026-10-01T08:28:05.7555506Z [36;1m  --record-dir "$RUNNER_TEMP/cpu-shard-records"[0m
+2026-10-01T08:28:05.7619576Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:05.7619941Z env:
+2026-10-01T08:28:05.7620282Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:05.7620843Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:05.7621387Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:05.7621873Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:05.7622424Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:05.7622987Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:05.7623387Z   OMP_NUM_THREADS: 1
+2026-10-01T08:28:05.7623620Z   MKL_NUM_THREADS: 1
+2026-10-01T08:28:05.7623866Z ##[endgroup]
+2026-10-01T08:28:10.6095859Z ============================= test session starts ==============================
+2026-10-01T08:28:10.6096239Z platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.12.14/x64/bin/python
+2026-10-01T08:28:10.6096519Z cachedir: .pytest_cache
+2026-10-01T08:28:10.6096681Z rootdir: /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:28:10.6096865Z configfile: pyproject.toml
+2026-10-01T08:28:12.0466602Z collecting ... collected 385 items
+2026-10-01T08:28:12.0466769Z 
+2026-10-01T08:28:13.0706666Z tests/test_a2_ledger_snapshot.py::LedgerSnapshotA2Tests::test_computed_snapshot_public_round_trip_preserves_nan_evidence PASSED [  0%]
+2026-10-01T08:28:13.0950899Z tests/test_a2_ledger_snapshot.py::LedgerSnapshotA2Tests::test_noncanonical_context_names_are_rejected_before_publication PASSED [  0%]
+2026-10-01T08:28:13.1206879Z tests/test_a2_ledger_snapshot.py::LedgerSnapshotA2Tests::test_unavailable_tile_impact_must_be_nan PASSED [  0%]
+2026-10-01T08:28:13.1596840Z tests/test_a2_ledger_snapshot.py::LedgerSnapshotA2Tests::test_whitened_tile_norm_checks_only_retained_maps PASSED [  1%]
+2026-10-01T08:28:13.1838587Z tests/test_a2_ledger_snapshot.py::LedgerSnapshotA2Tests::test_zero_spatial_snapshot_is_rejected PASSED [  1%]
+2026-10-01T08:28:13.3017871Z tests/test_a2_numerics.py::test_extreme_finite_remap_is_zero_and_has_finite_ad_paths PASSED [  1%]
+2026-10-01T08:28:13.3090006Z tests/test_a2_numerics.py::test_canonical_observations_are_finite_without_binding_frozen_state PASSED [  1%]
+2026-10-01T08:28:14.1284886Z tests/test_a2_numerics.py::test_retained_linearization_rejects_control_inconsistent_remap_cells PASSED [  2%]
+2026-10-01T08:28:14.1318322Z tests/test_a2_numerics.py::test_range_partition_evidence_requires_nonempty_unique_labels PASSED [  2%]
+2026-10-01T08:28:14.5257686Z tests/test_a5_artifacts_intervention.py::test_source_availability_is_required_and_blocks_zero_effect_dbz_action PASSED [  2%]
+2026-10-01T08:28:14.5954885Z tests/test_a5_artifacts_intervention.py::test_source_backed_context_keeps_existing_positive_dbz_decision PASSED [  2%]
+2026-10-01T08:28:14.5985058Z tests/test_a5_artifacts_intervention.py::test_present_malformed_common_bias_is_rejected[1.0] PASSED [  3%]
+2026-10-01T08:28:14.6012873Z tests/test_a5_artifacts_intervention.py::test_present_malformed_common_bias_is_rejected[None] PASSED [  3%]
+2026-10-01T08:28:14.6041358Z tests/test_a5_artifacts_intervention.py::test_present_malformed_common_bias_is_rejected[True] PASSED [  3%]
+2026-10-01T08:28:14.6070006Z tests/test_a5_artifacts_intervention.py::test_present_malformed_common_bias_is_rejected[-1.0] PASSED [  3%]
+2026-10-01T08:28:14.6097897Z tests/test_a5_artifacts_intervention.py::test_common_bias_guard_accepts_absent_or_zero_and_rejects_positive PASSED [  4%]
+2026-10-01T08:28:14.6132123Z tests/test_a5_artifacts_intervention.py::test_single_site_range_resolver_validates_contract_before_use PASSED [  4%]
+2026-10-01T08:28:15.1705976Z tests/test_a5_artifacts_intervention.py::test_p1_loader_rejects_conflicting_duplicate_acceptance_flag PASSED [  4%]
+2026-10-01T08:28:15.1740489Z tests/test_a5_artifacts_intervention.py::test_durable_source_mask_rebuild_rejects_ambiguous_current_archive PASSED [  4%]
+2026-10-01T08:28:15.1773274Z tests/test_a5_artifacts_intervention.py::test_legacy_archive_rebuilds_all_source_mask_and_action_state PASSED [  5%]
+2026-10-01T08:28:15.2018974Z tests/test_a5_artifacts_intervention.py::test_durable_append_rejects_nontrivial_source_before_publishing PASSED [  5%]
+2026-10-01T08:28:15.2052202Z tests/test_a5_artifacts_intervention.py::test_acceptance_non_directory_root_normalizes_open_error PASSED [  5%]
+2026-10-01T08:28:15.2086866Z tests/test_a5_artifacts_intervention.py::test_acceptance_fifo_final_component_is_rejected_without_blocking PASSED [  5%]
+2026-10-01T08:28:15.2732174Z tests/test_a5_ledger_storage.py::A5LedgerStorageTests::test_direct_impact_is_rederived_from_retained_map_and_innovation PASSED [  6%]
+2026-10-01T08:28:15.2964640Z tests/test_a5_ledger_storage.py::A5LedgerStorageTests::test_direct_maps_must_be_zero_outside_retained_support PASSED [  6%]
+2026-10-01T08:28:15.3246391Z tests/test_a5_ledger_storage.py::A5LedgerStorageTests::test_empty_active_support_is_rejected_but_normal_missingness_is_valid PASSED [  6%]
+2026-10-01T08:28:15.3542754Z tests/test_a5_ledger_storage.py::A5LedgerStorageTests::test_episode_append_rolls_back_scalar_rows_and_directory PASSED [  7%]
+2026-10-01T08:28:15.5304079Z tests/test_a5_ledger_storage.py::A5LedgerStorageTests::test_holdout_plan_clock_abort_rolls_back_all_plan_rows PASSED [  7%]
+2026-10-01T08:28:19.1017280Z tests/test_a5_ledger_storage.py::A5LedgerStorageTests::test_public_scoring_replay_retries_after_process_death_orphan PASSED [  7%]
+2026-10-01T08:28:19.1295325Z tests/test_a5_ledger_storage.py::A5LedgerStorageTests::test_retained_tile_l2_norms_are_nonnegative_and_map_consistent PASSED [  7%]
+2026-10-01T08:28:19.1788980Z tests/test_a5_ledger_storage.py::A5LedgerStorageTests::test_scalar_impact_migration_preserves_existing_rows PASSED [  8%]
+2026-10-01T08:28:19.2419923Z tests/test_a5_ledger_storage.py::A5LedgerStorageTests::test_standalone_evaluation_loader_binds_declared_digest_list PASSED [  8%]
+2026-10-01T08:28:19.2462858Z tests/test_a5_offline_bounds.py::A5OfflineBoundsTests::test_exact_signed_ledger_genesis_fixture_is_accepted PASSED [  8%]
+2026-10-01T08:28:19.2518122Z tests/test_a5_offline_bounds.py::A5OfflineBoundsTests::test_exact_signed_operational_certificate_uses_current_trust_store PASSED [  8%]
+2026-10-01T08:28:19.2558596Z tests/test_a5_offline_bounds.py::A5OfflineBoundsTests::test_exact_signed_runtime_expiry_matches_release_expiry PASSED [  9%]
+2026-10-01T08:28:19.2609926Z tests/test_a5_offline_bounds.py::A5OfflineBoundsTests::test_signed_operational_certificate_with_wrong_trust_digest_is_rejected PASSED [  9%]
+2026-10-01T08:28:19.2650985Z tests/test_a5_offline_bounds.py::A5OfflineBoundsTests::test_signed_runtime_expiry_beyond_release_is_rejected PASSED [  9%]
+2026-10-01T08:28:19.2691347Z tests/test_a5_offline_bounds.py::A5OfflineBoundsTests::test_signed_sequence_two_genesis_fixture_is_rejected PASSED [  9%]
+2026-10-01T08:28:19.3083046Z tests/test_cli.py::CliTests::test_all_qc_rejected_uses_stale_background PASSED [ 10%]
+2026-10-01T08:28:19.3293555Z tests/test_cli.py::CliTests::test_all_qc_rejected_without_background_is_unavailable PASSED [ 10%]
+2026-10-01T08:28:19.3336196Z tests/test_cli.py::CliTests::test_atomic_save_fsyncs_file_and_parent_directory PASSED [ 10%]
+2026-10-01T08:28:19.3377021Z tests/test_cli.py::CliTests::test_atomic_save_preserves_existing_file_on_failure PASSED [ 10%]
+2026-10-01T08:28:19.3974133Z tests/test_cli.py::CliTests::test_audit_is_optional_and_reuses_the_forecast PASSED [ 11%]
+2026-10-01T08:28:19.4032322Z tests/test_cli.py::CliTests::test_background_requires_age PASSED         [ 11%]
+2026-10-01T08:28:19.5720719Z tests/test_cli.py::CliTests::test_cli_diagnostic_tampering_breaks_artifact_digest PASSED [ 11%]
+2026-10-01T08:28:19.6269387Z tests/test_cli.py::CliTests::test_cli_persists_grid_time_contract PASSED [ 11%]
+2026-10-01T08:28:19.7638117Z tests/test_cli.py::CliTests::test_cli_records_operational_amplitude_policy PASSED [ 12%]
+2026-10-01T08:28:19.8198951Z tests/test_cli.py::CliTests::test_normal_p0_output_contains_operational_metadata PASSED [ 12%]
+2026-10-01T08:28:19.9710620Z tests/test_cli.py::CliTests::test_operational_manifest_rejects_changed_runtime_profile PASSED [ 12%]
+2026-10-01T08:28:20.2055948Z tests/test_cli.py::CliTests::test_operational_mode_records_complete_fail_closed_profile PASSED [ 12%]
+2026-10-01T08:28:20.2117637Z tests/test_cli.py::CliTests::test_operational_mode_requires_explicit_calibration PASSED [ 13%]
+2026-10-01T08:28:20.2253249Z tests/test_cli.py::CliTests::test_operational_mode_requires_manifest_with_matching_identity PASSED [ 13%]
+2026-10-01T08:28:20.4110554Z tests/test_cli.py::CliTests::test_operational_mode_requires_pair_calibration 
+2026-10-01T08:28:20.4143850Z tests/test_cli.py::CliTests::test_operational_mode_requires_pair_calibration PASSED [ 13%]
+2026-10-01T08:28:20.5606567Z tests/test_cli.py::CliTests::test_operational_p0_profile_is_supported PASSED [ 14%]
+2026-10-01T08:28:21.1536116Z tests/test_cli.py::CliTests::test_operational_runtime_profile_tracks_content_not_label PASSED [ 14%]
+2026-10-01T08:28:21.1981484Z tests/test_cli.py::CliTests::test_variational_cli_binds_common_bias_group_map PASSED [ 14%]
+2026-10-01T08:28:21.2429995Z tests/test_cli.py::CliTests::test_variational_cli_binds_overlapping_common_bias_modes PASSED [ 14%]
+2026-10-01T08:28:21.2493562Z tests/test_cli.py::CliTests::test_variational_cli_rejects_modes_before_materializing_them PASSED [ 15%]
+2026-10-01T08:28:21.6197829Z tests/test_cli.py::CliTests::test_variational_output_records_feasibility_diagnostics PASSED [ 15%]
+2026-10-01T08:28:21.6240428Z tests/test_cpu_test_sharding.py::test_greedy_partition_is_deterministic_balanced_and_module_ordered PASSED [ 15%]
+2026-10-01T08:28:21.6281769Z tests/test_cpu_test_sharding.py::test_reconciliation_accepts_exact_partition_and_counts_skips PASSED [ 15%]
+2026-10-01T08:28:21.6322999Z tests/test_cpu_test_sharding.py::test_reconciliation_rejects_missing_extra_or_duplicate_actual_nodeids[missing] PASSED [ 16%]
+2026-10-01T08:28:21.6363918Z tests/test_cpu_test_sharding.py::test_reconciliation_rejects_missing_extra_or_duplicate_actual_nodeids[extra] PASSED [ 16%]
+2026-10-01T08:28:21.6404874Z tests/test_cpu_test_sharding.py::test_reconciliation_rejects_missing_extra_or_duplicate_actual_nodeids[duplicate] PASSED [ 16%]
+2026-10-01T08:28:21.6445677Z tests/test_cpu_test_sharding.py::test_reconciliation_rejects_collection_failure_without_running_shards PASSED [ 16%]
+2026-10-01T08:28:21.6486344Z tests/test_cpu_test_sharding.py::test_reconciliation_rejects_incomplete_case_outcomes[missing] PASSED [ 17%]
+2026-10-01T08:28:21.6528202Z tests/test_cpu_test_sharding.py::test_reconciliation_rejects_incomplete_case_outcomes[nonterminal] PASSED [ 17%]
+2026-10-01T08:28:21.6569682Z tests/test_cpu_test_sharding.py::test_reconciliation_rejects_incomplete_case_outcomes[failed] PASSED [ 17%]
+2026-10-01T08:28:21.6611562Z tests/test_cpu_test_sharding.py::test_partition_refuses_empty_shards_and_duplicate_inventory PASSED [ 17%]
+2026-10-01T08:28:21.6651832Z tests/test_cpu_test_sharding.py::test_terminal_outcome_keeps_phase_and_xfail_information PASSED [ 18%]
+2026-10-01T08:28:21.6693514Z tests/test_cpu_test_sharding.py::test_unexpected_collection_is_stopped_before_test_execution PASSED [ 18%]
+2026-10-01T08:28:21.6735770Z tests/test_cpu_test_sharding.py::test_phase_summary_requires_call_for_pass_and_teardown_for_terminal PASSED [ 18%]
+2026-10-01T08:28:21.6778809Z tests/test_cpu_test_sharding.py::test_phase_summary_preserves_xfail_and_non_strict_xpass[skipped-True-xfailed] PASSED [ 18%]
+2026-10-01T08:28:21.6821037Z tests/test_cpu_test_sharding.py::test_phase_summary_preserves_xfail_and_non_strict_xpass[passed-True-xpassed] PASSED [ 19%]
+2026-10-01T08:28:21.6863394Z tests/test_cpu_test_sharding.py::test_phase_summary_preserves_xfail_raised_in_teardown PASSED [ 19%]
+2026-10-01T08:28:21.6905545Z tests/test_cpu_test_sharding.py::test_phase_summary_rejects_missing_skipped_reason PASSED [ 19%]
+2026-10-01T08:28:21.6948326Z tests/test_cpu_test_sharding.py::test_reconciliation_rejects_forged_pass_without_call PASSED [ 20%]
+2026-10-01T08:28:22.1077313Z tests/test_cpu_test_sharding.py::test_cli_runs_isolated_collection_and_isolated_execution_with_exact_outcomes PASSED [ 20%]
+2026-10-01T08:28:22.4164051Z tests/test_cpu_test_sharding.py::test_cli_failure_records_never_reconcile_as_complete[import module_that_does_not_exist\ndef test_unreachable(): pass\n-failed-failed] PASSED [ 20%]
+2026-10-01T08:28:22.6664783Z tests/test_cpu_test_sharding.py::test_cli_failure_records_never_reconcile_as_complete[import pytest\npytest.skip('toy module skip', allow_module_level=True)\n-failed-skipped] PASSED [ 20%]
+2026-10-01T08:28:23.0662198Z tests/test_cpu_test_sharding.py::test_cli_failure_records_never_reconcile_as_complete[def test_fails():\n    assert False\n-complete-None] PASSED [ 21%]
+2026-10-01T08:28:23.3624906Z tests/test_cpu_test_sharding.py::test_cli_stops_before_execution_when_assigned_nodeids_differ PASSED [ 21%]
+2026-10-01T08:28:23.8151062Z tests/test_cpu_test_sharding.py::test_cli_sanitizes_inherited_pytest_addopts[-k test_pass] PASSED [ 21%]
+2026-10-01T08:28:24.2060510Z tests/test_cpu_test_sharding.py::test_cli_sanitizes_inherited_pytest_addopts[--ignore=tests/test_toy.py] PASSED [ 21%]
+2026-10-01T08:28:24.5011170Z tests/test_cpu_test_sharding.py::test_direct_internal_workers_sanitize_inherited_pytest_addopts PASSED [ 22%]
+2026-10-01T08:28:24.7622751Z tests/test_cpu_test_sharding.py::test_configured_collection_filters_fail_with_explicit_inventory_record[addopts0] PASSED [ 22%]
+2026-10-01T08:28:25.0000298Z tests/test_cpu_test_sharding.py::test_configured_collection_filters_fail_with_explicit_inventory_record[addopts1] PASSED [ 22%]
+2026-10-01T08:28:25.2564618Z tests/test_cpu_test_sharding.py::test_collector_deselection_is_recorded_and_fails_inventory PASSED [ 22%]
+2026-10-01T08:28:25.2622360Z tests/test_full_transport_resource_probe.py::test_post_exit_wall_time_is_still_a_failure PASSED [ 23%]
+2026-10-01T08:28:25.2686076Z tests/test_full_transport_resource_probe.py::test_missing_worker_output_cannot_reuse_stale_report PASSED [ 23%]
+2026-10-01T08:28:25.2739721Z tests/test_full_transport_resource_probe.py::test_worker_result_rejects_missing_nonfinite_and_mismatched_evidence PASSED [ 23%]
+2026-10-01T08:28:25.2791085Z tests/test_full_transport_resource_probe.py::test_worker_result_accepts_the_worker_contract PASSED [ 23%]
+2026-10-01T08:28:25.3073375Z tests/test_fv_control_domain.py::test_every_small_box_corner_and_interior_point_respects_actual_cfl[donorcell-dtype0] PASSED [ 24%]
+2026-10-01T08:28:25.3328565Z tests/test_fv_control_domain.py::test_every_small_box_corner_and_interior_point_respects_actual_cfl[donorcell-dtype1] PASSED [ 24%]
+2026-10-01T08:28:25.3682772Z tests/test_fv_control_domain.py::test_every_small_box_corner_and_interior_point_respects_actual_cfl[minmod-dtype0] PASSED [ 24%]
+2026-10-01T08:28:25.4014596Z tests/test_fv_control_domain.py::test_every_small_box_corner_and_interior_point_respects_actual_cfl[minmod-dtype1] PASSED [ 24%]
+2026-10-01T08:28:25.4069526Z tests/test_fv_control_domain.py::test_unsafe_box_is_rejected_even_at_zero_current_control PASSED [ 25%]
+2026-10-01T08:28:25.4121975Z tests/test_fv_control_domain.py::test_near_cap_box_rejection_is_from_rounding_allowance[dtype0] PASSED [ 25%]
+2026-10-01T08:28:25.4174182Z tests/test_fv_control_domain.py::test_near_cap_box_rejection_is_from_rounding_allowance[dtype1] PASSED [ 25%]
+2026-10-01T08:28:25.4301417Z tests/test_fv_control_domain.py::test_chart_preserves_first_and_second_derivatives PASSED [ 25%]
+2026-10-01T08:28:27.5124126Z tests/test_fv_grid_convergence_probe.py::test_spatial_and_jvp_errors_decrease_on_refinement[translation] PASSED [ 26%]
+2026-10-01T08:28:27.5176305Z tests/test_fv_grid_convergence_probe.py::test_spatial_and_jvp_errors_decrease_on_refinement[rotation] PASSED [ 26%]
+2026-10-01T08:28:27.5255944Z tests/test_fv_grid_convergence_probe.py::test_spatial_and_jvp_errors_decrease_on_refinement[area_preserving_strain] PASSED [ 26%]
+2026-10-01T08:28:27.5309639Z tests/test_fv_grid_convergence_probe.py::test_shape_moments_include_uniform_cell_interior PASSED [ 27%]
+2026-10-01T08:28:27.5357840Z tests/test_fv_grid_convergence_probe.py::test_empty_shape_has_no_defined_centroid_or_width PASSED [ 27%]
+2026-10-01T08:28:27.7112771Z tests/test_fv_grid_convergence_probe.py::test_minmod_one_lead_forwards_reconstruction_to_primal_and_jvp PASSED [ 27%]
+2026-10-01T08:28:27.7485252Z tests/test_fv_inverse_identifiability.py::test_zero_flow_selected_jacobian_is_not_a_directional_stationarity_test[False] PASSED [ 27%]
+2026-10-01T08:28:27.7968567Z tests/test_fv_inverse_identifiability.py::test_zero_flow_selected_jacobian_is_not_a_directional_stationarity_test[True] PASSED [ 28%]
+2026-10-01T08:28:27.8872983Z tests/test_fv_inverse_identifiability.py::test_constant_echo_with_matching_boundary_cannot_identify_rotation[donorcell] PASSED [ 28%]
+2026-10-01T08:28:27.9886581Z tests/test_fv_inverse_identifiability.py::test_constant_echo_with_matching_boundary_cannot_identify_rotation[minmod] PASSED [ 28%]
+2026-10-01T08:28:28.0617591Z tests/test_fv_inverse_identifiability.py::test_constant_echo_psi_null_does_not_certify_mixed_field_psi_derivatives PASSED [ 28%]
+2026-10-01T08:28:29.7305698Z tests/test_fv_minmod_joint_derivatives.py::test_minmod_joint_gradient_hvp_and_replay_with_signed_flow PASSED [ 29%]
+2026-10-01T08:28:33.2348554Z tests/test_fv_minmod_joint_derivatives.py::test_one_sided_joint_state_and_gradient_taylor_slopes PASSED [ 29%]
+2026-10-01T08:28:33.2607037Z tests/test_fv_minmod_joint_derivatives.py::test_nominal_zero_flow_forward_identity_is_distinct_from_signed_flow PASSED [ 29%]
+2026-10-01T08:28:33.2684825Z tests/test_fv_partial_face_event_probe.py::test_bisect_zero_finds_linear_event_with_bounded_bracket PASSED [ 29%]
+2026-10-01T08:28:33.2746204Z tests/test_fv_partial_face_event_probe.py::test_bisect_zero_accepts_exact_representable_root_without_event_derivatives PASSED [ 30%]
+2026-10-01T08:28:33.2799576Z tests/test_fv_partial_face_event_probe.py::test_bisect_zero_refuses_unbracketed_or_nonfinite_events[<lambda>-opposite signs] PASSED [ 30%]
+2026-10-01T08:28:33.2851318Z tests/test_fv_partial_face_event_probe.py::test_bisect_zero_refuses_unbracketed_or_nonfinite_events[<lambda>-endpoint event] PASSED [ 30%]
+2026-10-01T08:28:33.2903244Z tests/test_fv_partial_face_event_probe.py::test_bisect_zero_refuses_unbracketed_or_nonfinite_events[<lambda>-finite] PASSED [ 30%]
+2026-10-01T08:28:33.2953651Z tests/test_fv_partial_face_event_probe.py::test_event_side_parameters_keep_declared_offsets_separate PASSED [ 31%]
+2026-10-01T08:28:33.3004009Z tests/test_fv_partial_face_event_probe.py::test_event_side_parameters_omits_offsets_outside_open_chord PASSED [ 31%]
+2026-10-01T08:28:33.3054535Z tests/test_fv_partial_face_event_probe.py::test_event_side_schedule_records_each_unavailable_offset_without_replacement PASSED [ 31%]
+2026-10-01T08:28:33.3107899Z tests/test_fv_partial_face_event_probe.py::test_event_side_parameters_requires_finite_interior_event[nan] PASSED [ 31%]
+2026-10-01T08:28:33.3161075Z tests/test_fv_partial_face_event_probe.py::test_event_side_parameters_requires_finite_interior_event[-0.1] PASSED [ 32%]
+2026-10-01T08:28:33.3213082Z tests/test_fv_partial_face_event_probe.py::test_event_side_parameters_requires_finite_interior_event[1.0] PASSED [ 32%]
+2026-10-01T08:28:33.3507190Z tests/test_fv_partial_face_event_probe.py::test_event_side_parameters_requires_finite_interior_event[1.1] PASSED [ 32%]
+2026-10-01T08:28:33.3563022Z tests/test_fv_partial_face_event_probe.py::test_known_strict_branch_refusal_is_recorded_without_derivatives PASSED [ 32%]
+2026-10-01T08:28:33.3619103Z tests/test_fv_partial_face_event_probe.py::test_unexpected_branch_callback_error_fails_closed PASSED [ 33%]
+2026-10-01T08:28:33.3674683Z tests/test_fv_persistent_learning_probe.py::test_saved_persistent_learning_evidence PASSED [ 33%]
+2026-10-01T08:39:04.5209514Z tests/test_fv_persistent_learning_probe.py::test_persistent_learning_reanalysis_and_resume PASSED [ 33%]
+2026-10-01T08:39:04.9149399Z tests/test_fv_point_3h_seed_linear_probe.py::test_margin_prepass_covers_full_forecast_before_strict_refusal PASSED [ 34%]
+2026-10-01T08:39:04.9216634Z tests/test_fv_point_3h_seed_linear_probe.py::test_full_branch_requires_all_margin_stages PASSED [ 34%]
+2026-10-01T08:39:04.9297440Z tests/test_fv_point_3h_seed_linear_probe.py::test_linear_preflight_solves_one_rhs_and_recomputes_true_residual PASSED [ 34%]
+2026-10-01T08:39:04.9352866Z tests/test_fv_point_3h_seed_linear_probe.py::test_stationary_zero_rhs_skips_pcg_and_leaves_curvature_unverified PASSED [ 34%]
+2026-10-01T08:39:04.9409779Z tests/test_fv_point_3h_seed_linear_probe.py::test_linear_preflight_classifies_only_known_pcg_runtime_failures[error0-pcg_refused_non_spd] PASSED [ 35%]
+2026-10-01T08:39:04.9466369Z tests/test_fv_point_3h_seed_linear_probe.py::test_linear_preflight_classifies_only_known_pcg_runtime_failures[error1-nonfinite_derivative] PASSED [ 35%]
+2026-10-01T08:39:04.9523338Z tests/test_fv_point_3h_seed_linear_probe.py::test_unexpected_pcg_callback_error_is_not_hidden PASSED [ 35%]
+2026-10-01T08:39:04.9587375Z tests/test_fv_point_3h_seed_linear_probe.py::test_parent_guard_does_not_rebuild_fixture_and_rejects_bad_exit PASSED [ 35%]
+2026-10-01T08:39:04.9651124Z tests/test_fv_point_3h_seed_linear_probe.py::test_parent_accepts_only_a_valid_completed_child PASSED [ 36%]
+2026-10-01T08:39:04.9714978Z tests/test_fv_point_3h_seed_linear_probe.py::test_parent_rejects_child_branch_status_contradiction PASSED [ 36%]
+2026-10-01T08:39:04.9775016Z tests/test_fv_point_3h_shifted_branch_probe.py::test_shift_changes_only_second_flow_latent_at_control_21 PASSED [ 36%]
+2026-10-01T08:39:04.9832706Z tests/test_fv_point_3h_shifted_branch_probe.py::test_shift_rejects_unexpected_original_fractions PASSED [ 36%]
+2026-10-01T08:39:04.9896548Z tests/test_fv_point_3h_shifted_branch_probe.py::test_static_face_gate_uses_production_operators_and_finds_nonzero_fluxes PASSED [ 37%]
+2026-10-01T08:39:04.9962178Z tests/test_fv_point_3h_shifted_branch_probe.py::test_child_recomputes_live_input_identity_after_diagnostic_mutation PASSED [ 37%]
+2026-10-01T08:39:05.0026556Z tests/test_fv_point_3h_shifted_branch_probe.py::test_static_face_refusal_stops_before_candidate_forecast PASSED [ 37%]
+2026-10-01T08:39:05.0110826Z tests/test_fv_point_3h_shifted_branch_probe.py::test_full_oracle_record_is_compact_and_hashes_signature PASSED [ 37%]
+2026-10-01T08:39:05.0176609Z tests/test_fv_point_3h_shifted_branch_probe.py::test_guarded_parent_accepts_completed_pointwise_branch_pass PASSED [ 38%]
+2026-10-01T08:39:05.0241582Z tests/test_fv_point_3h_shifted_branch_probe.py::test_guarded_parent_keeps_numerical_refusal_distinct_from_execution_failure PASSED [ 38%]
+2026-10-01T08:39:05.0305856Z tests/test_fv_point_3h_shifted_branch_probe.py::test_guarded_parent_rejects_nonzero_child_exit PASSED [ 38%]
+2026-10-01T08:39:05.0371070Z tests/test_fv_point_3h_shifted_branch_probe.py::test_guarded_parent_rejects_status_evidence_contradictions[static] PASSED [ 38%]
+2026-10-01T08:39:05.0436606Z tests/test_fv_point_3h_shifted_branch_probe.py::test_guarded_parent_rejects_status_evidence_contradictions[full_oracle] PASSED [ 39%]
+2026-10-01T08:39:05.0503949Z tests/test_fv_point_3h_shifted_branch_probe.py::test_guarded_parent_rejects_candidate_report_mutations[original_control_sha256] PASSED [ 39%]
+2026-10-01T08:39:05.0569571Z tests/test_fv_point_3h_shifted_branch_probe.py::test_guarded_parent_rejects_candidate_report_mutations[shifted_control_sha256] PASSED [ 39%]
+2026-10-01T08:39:05.0641202Z tests/test_fv_point_3h_shifted_branch_probe.py::test_guarded_parent_rejects_candidate_report_mutations[parameters_sha256] PASSED [ 40%]
+2026-10-01T08:39:05.0707192Z tests/test_fv_point_3h_shifted_branch_probe.py::test_guarded_parent_rejects_candidate_report_mutations[terminal_truth_sha256] PASSED [ 40%]
+2026-10-01T08:39:05.0773828Z tests/test_fv_point_3h_shifted_branch_probe.py::test_guarded_parent_rejects_candidate_report_mutations[changed_control_index] PASSED [ 40%]
+2026-10-01T08:39:05.0840093Z tests/test_fv_point_3h_shifted_branch_probe.py::test_guarded_parent_rejects_candidate_report_mutations[changed_control_indices] PASSED [ 40%]
+2026-10-01T08:39:05.0952579Z tests/test_fv_point_3h_shifted_branch_probe.py::test_guarded_parent_rejects_candidate_report_mutations[original_fraction] PASSED [ 41%]
+2026-10-01T08:39:05.1021246Z tests/test_fv_point_3h_shifted_branch_probe.py::test_guarded_parent_rejects_candidate_report_mutations[shifted_fraction] PASSED [ 41%]
+2026-10-01T08:39:05.1234958Z tests/test_fv_point_original_policy.py::test_exact_original_input_is_unsupported_by_current_search_policies PASSED [ 41%]
+2026-10-01T08:39:05.1440692Z tests/test_fv_point_original_policy.py::test_archive_semantic_mutations_cannot_be_reclassified_as_refusal[published_response] PASSED [ 41%]
+2026-10-01T08:39:05.1641455Z tests/test_fv_point_original_policy.py::test_archive_semantic_mutations_cannot_be_reclassified_as_refusal[false_gradient] PASSED [ 42%]
+2026-10-01T08:39:05.2027936Z tests/test_fv_point_original_policy.py::test_archive_semantic_mutations_cannot_be_reclassified_as_refusal[accepted_final_trial] PASSED [ 42%]
+2026-10-01T08:39:05.2227880Z tests/test_fv_point_original_policy.py::test_archive_semantic_mutations_cannot_be_reclassified_as_refusal[wrong_merit_seed] PASSED [ 42%]
+2026-10-01T08:39:05.2466602Z tests/test_fv_point_original_policy.py::test_archive_semantic_mutations_cannot_be_reclassified_as_refusal[constructed_identity_reused] PASSED [ 42%]
+2026-10-01T08:39:05.2567611Z tests/test_fv_point_original_policy.py::test_archive_semantic_mutations_cannot_be_reclassified_as_refusal[changed_raw_hash] PASSED [ 43%]
+2026-10-01T08:39:05.2772497Z tests/test_fv_point_original_policy.py::test_archive_semantic_mutations_cannot_be_reclassified_as_refusal[child_status] PASSED [ 43%]
+2026-10-01T08:39:05.2922719Z tests/test_fv_point_original_policy.py::test_archive_semantic_mutations_cannot_be_reclassified_as_refusal[parent_status] PASSED [ 43%]
+2026-10-01T08:39:05.3021019Z tests/test_fv_point_original_policy.py::test_archive_semantic_mutations_cannot_be_reclassified_as_refusal[resource_limited] PASSED [ 43%]
+2026-10-01T08:39:05.3179621Z tests/test_fv_point_original_policy.py::test_raw_manifest_cannot_escape_its_attempt_directory PASSED [ 44%]
+2026-10-01T08:39:05.3731403Z tests/test_fv_point_original_policy.py::test_coordinated_resealed_attempts_cannot_change_the_original_problem PASSED [ 44%]
+2026-10-01T08:39:05.6906376Z tests/test_fv_research_long_horizon.py::test_long_horizon_times_layout_and_stage_count PASSED [ 44%]
+2026-10-01T08:39:07.6953918Z tests/test_fv_research_long_horizon.py::test_long_horizon_forecast_matches_per_interval_analytic_echo_growth PASSED [ 44%]
+2026-10-01T08:39:12.8555607Z tests/test_fv_research_long_horizon.py::test_long_horizon_scores_are_mean_of_per_lead_spatial_mse FAILED [ 45%]
+2026-10-01T08:39:12.8666167Z tests/test_fv_research_long_horizon.py::test_long_horizon_refuses_short_future_boundary_schedule PASSED [ 45%]
+2026-10-01T08:39:12.8735711Z tests/test_fv_research_long_horizon.py::test_ten_minute_interval_keeps_coefficient_box_cfl_with_ninety_substeps PASSED [ 45%]
+2026-10-01T08:39:12.8799787Z tests/test_fv_research_long_horizon.py::test_long_horizon_refuses_verification_time_misalignment[<lambda>0] PASSED [ 45%]
+2026-10-01T08:39:12.8862687Z tests/test_fv_research_long_horizon.py::test_long_horizon_refuses_verification_time_misalignment[<lambda>1] PASSED [ 46%]
+2026-10-01T08:39:13.1080894Z tests/test_fv_research_long_horizon.py::test_explicit_verification_times_are_bound_into_problem_identity PASSED [ 46%]
+2026-10-01T08:39:15.1028872Z tests/test_fv_research_long_horizon.py::test_growth_control_is_integrated_once_per_ten_minute_interval PASSED [ 46%]
+2026-10-01T08:39:19.2328676Z tests/test_fv_research_long_horizon.py::test_bounded_nonzero_flow_long_horizon_forward_matches_synthetic_truth PASSED [ 47%]
+2026-10-01T08:39:25.3642911Z tests/test_fv_research_long_horizon.py::test_nonzero_flow_uses_future_boundary_traces_in_time_order PASSED [ 47%]
+2026-10-01T08:39:25.4752428Z tests/test_fv_research_problem.py::test_common_objective_score_and_derivatives_match_frozen_reference[4x5] ERROR [ 47%]
+2026-10-01T08:39:25.4960321Z tests/test_fv_research_problem.py::test_common_layout_identity_and_branch_match[4x5] ERROR [ 47%]
+2026-10-01T08:39:25.5163375Z tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[4x5-missing] ERROR [ 48%]
+2026-10-01T08:39:25.5470072Z tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[4x5-boundary] ERROR [ 48%]
+2026-10-01T08:39:25.5713230Z tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[4x5-operator] ERROR [ 48%]
+2026-10-01T08:39:25.5895631Z tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[4x5-stage_signature] ERROR [ 48%]
+2026-10-01T08:39:25.6018436Z tests/test_fv_research_problem.py::test_legacy_profile_wrappers_keep_fixed_control_count[4x5] ERROR [ 49%]
+2026-10-01T08:39:25.8612142Z tests/test_fv_research_problem.py::test_common_objective_score_and_derivatives_match_frozen_reference[8x10] ERROR [ 49%]
+2026-10-01T08:39:25.8742501Z tests/test_fv_research_problem.py::test_common_layout_identity_and_branch_match[8x10] ERROR [ 49%]
+2026-10-01T08:39:25.8869258Z tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[8x10-missing] ERROR [ 49%]
+2026-10-01T08:39:25.8995705Z tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[8x10-boundary] ERROR [ 50%]
+2026-10-01T08:39:25.9122557Z tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[8x10-operator] ERROR [ 50%]
+2026-10-01T08:39:25.9270500Z tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[8x10-stage_signature] ERROR [ 50%]
+2026-10-01T08:39:25.9398410Z tests/test_fv_research_problem.py::test_legacy_profile_wrappers_keep_fixed_control_count[8x10] ERROR [ 50%]
+2026-10-01T08:39:25.9472719Z tests/test_fv_stage_observer.py::test_nested_observers_are_called_inner_then_outer_and_preserve_stage_output PASSED [ 51%]
+2026-10-01T08:39:25.9543692Z tests/test_fv_stage_observer.py::test_mutating_a_diagnostic_snapshot_does_not_change_transport PASSED [ 51%]
+2026-10-01T08:39:25.9644658Z tests/test_fv_stage_observer.py::test_nested_observers_receive_independent_snapshots PASSED [ 51%]
+2026-10-01T08:39:25.9716097Z tests/test_fv_stage_observer.py::test_observer_context_resets_after_exception PASSED [ 51%]
+2026-10-01T08:39:25.9826590Z tests/test_fv_stage_observer.py::test_concurrent_observers_match_serial_signatures_without_cross_talk PASSED [ 52%]
+2026-10-01T08:39:25.9920768Z tests/test_fv_stage_observer.py::test_concurrent_strict_branch_traces_keep_each_exact_signature PASSED [ 52%]
+2026-10-01T08:39:26.0002022Z tests/test_fv_stage_observer.py::test_zero_face_forward_does_not_enter_another_threads_observer PASSED [ 52%]
+2026-10-01T08:39:39.8388196Z tests/test_fv_stationary_refinement.py::test_matrix_free_refinement_decreases_actual_stationary_residual PASSED [ 52%]
+2026-10-01T08:39:39.8527233Z tests/test_fv_stationary_refinement.py::test_negative_curvature_cannot_be_polished_into_a_certificate PASSED [ 53%]
+2026-10-01T08:39:39.8603671Z tests/test_fv_stationary_refinement.py::test_sensitive_face_tie_is_rejected_before_newton PASSED [ 53%]
+2026-10-01T08:39:39.8725738Z tests/test_fv_stationary_refinement.py::test_stopping_uses_max_component_residual_when_l2_is_larger PASSED [ 53%]
+2026-10-01T08:39:39.8887240Z tests/test_local_response.py::test_quadratic_response_has_direct_and_implicit_terms_without_dense_solver PASSED [ 54%]
+2026-10-01T08:39:39.9116052Z tests/test_local_response.py::test_physical_directional_response_is_invariant_to_control_parameter_and_objective_units PASSED [ 54%]
+2026-10-01T08:39:39.9193577Z tests/test_local_response.py::test_requires_float64_stationarity_branch_and_input_identity PASSED [ 54%]
+2026-10-01T08:39:39.9298530Z tests/test_local_response.py::test_rejects_non_spd_hessian_and_nonfinite_direction PASSED [ 54%]
+2026-10-01T08:39:39.9380047Z tests/test_local_response.py::test_zero_rhs_accepts_only_zero_true_transpose_residual PASSED [ 55%]
+2026-10-01T08:39:39.9452660Z tests/test_local_response.py::test_nonfinite_score_is_rejected_before_gradient PASSED [ 55%]
+2026-10-01T08:39:39.9534729Z tests/test_local_response.py::test_true_transpose_residual_is_checked_even_when_pcg_reports_success PASSED [ 55%]
+2026-10-01T08:39:39.9606120Z tests/test_local_response.py::test_rejects_empty_vectors PASSED          [ 55%]
+2026-10-01T08:39:40.4617336Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-nonuniform-0.001] PASSED [ 56%]
+2026-10-01T08:39:40.9650933Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-nonuniform-0.0001] PASSED [ 56%]
+2026-10-01T08:39:41.4690001Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-nonuniform-1e-05] PASSED [ 56%]
+2026-10-01T08:39:41.9034810Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[confidence_weighted-unit-0.001] PASSED [ 56%]
+2026-10-01T08:39:42.3370164Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[confidence_weighted-unit-0.0001] PASSED [ 57%]
+2026-10-01T08:39:42.7704243Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[confidence_weighted-unit-1e-05] PASSED [ 57%]
+2026-10-01T08:39:43.2032393Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[radar_dynamics_anchored-unit-0.001] PASSED [ 57%]
+2026-10-01T08:39:43.6352004Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[radar_dynamics_anchored-unit-0.0001] PASSED [ 57%]
+2026-10-01T08:39:44.0690167Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[radar_dynamics_anchored-unit-1e-05] PASSED [ 58%]
+2026-10-01T08:39:44.5056279Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-unit-0.001] PASSED [ 58%]
+2026-10-01T08:39:44.9418242Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-unit-0.0001] PASSED [ 58%]
+2026-10-01T08:39:45.3788313Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-unit-1e-05] PASSED [ 58%]
+2026-10-01T08:39:45.8155258Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-uniform-0.001] PASSED [ 59%]
+2026-10-01T08:39:46.2519382Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-uniform-0.0001] PASSED [ 59%]
+2026-10-01T08:39:46.6926138Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-uniform-1e-05] PASSED [ 59%]
+2026-10-01T08:39:47.1303604Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-missing-0.001] PASSED [ 60%]
+2026-10-01T08:39:47.5687925Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-missing-0.0001] PASSED [ 60%]
+2026-10-01T08:39:48.0067959Z tests/test_m0_linearity_weights.py::test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-missing-1e-05] PASSED [ 60%]
+2026-10-01T08:39:48.0154496Z tests/test_pcg_observer.py::test_observed_and_unobserved_spd_solve_have_exact_same_result PASSED [ 60%]
+2026-10-01T08:39:48.0250034Z tests/test_pcg_observer.py::test_overlapping_thread_observers_are_independent_and_skip_ordinary_caller PASSED [ 61%]
+2026-10-01T08:39:48.0333467Z tests/test_pcg_observer.py::test_nested_observers_run_inner_before_outer PASSED [ 61%]
+2026-10-01T08:39:48.0416099Z tests/test_pcg_observer.py::test_observer_context_is_cleaned_up_after_exception PASSED [ 61%]
+2026-10-01T08:39:48.0496950Z tests/test_pcg_observer.py::test_preimported_local_refinement_pcg_alias_uses_active_observer PASSED [ 61%]
+2026-10-01T08:39:48.0576003Z tests/test_pcg_observer.py::test_partial_reanalysis_monitor_receives_pcg_operator_calls PASSED [ 62%]
+2026-10-01T08:39:48.1689189Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_artifact_digest_is_independent_of_numpy_memory_layout PASSED [ 62%]
+2026-10-01T08:40:17.7191979Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_current_deployment_binds_exact_forecast_run_lineage 
+2026-10-01T08:40:17.7245645Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_current_deployment_binds_exact_forecast_run_lineage PASSED [ 62%]
+2026-10-01T08:40:17.9124980Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_current_deployment_requires_terminal_activation_receipt PASSED [ 62%]
+2026-10-01T08:40:18.6549093Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_current_run_rejects_deployment_selection_lineage PASSED [ 63%]
+2026-10-01T08:40:18.8356682Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_deployment_replay_binds_the_operational_radar_site PASSED [ 63%]
+2026-10-01T08:40:19.0703362Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_input_bundle_digest_covers_all_three_input_times PASSED [ 63%]
+2026-10-01T08:40:19.2087700Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_applies_archive_resource_limits_before_materialization 
+2026-10-01T08:40:19.2137902Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_applies_archive_resource_limits_before_materialization PASSED [ 63%]
+2026-10-01T08:40:19.3688090Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_config_json_that_disagrees_with_digest PASSED [ 64%]
+2026-10-01T08:40:19.4735269Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_declared_array_size_before_materialization PASSED [ 64%]
+2026-10-01T08:40:19.6295972Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_incorrect_pair_union_count PASSED [ 64%]
+2026-10-01T08:40:19.8119521Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_malformed_phase_correlation_psr_schema 
+2026-10-01T08:40:19.8167658Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_malformed_phase_correlation_psr_schema PASSED [ 64%]
+2026-10-01T08:40:19.9228335Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_object_array_header_before_materialization PASSED [ 65%]
+2026-10-01T08:40:20.0787900Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_pair_selection_count_mismatch PASSED [ 65%]
+2026-10-01T08:40:20.2415262Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_resigned_forecast_confidence PASSED [ 65%]
+2026-10-01T08:40:20.3997273Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_resigned_forecast_verified_support PASSED [ 65%]
+2026-10-01T08:40:20.5586287Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_resigned_local_dynamics_support PASSED [ 66%]
+2026-10-01T08:40:20.7190386Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_resigned_local_motion_support PASSED [ 66%]
+2026-10-01T08:40:20.8738401Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_tampered_background_tendency_provenance PASSED [ 66%]
+2026-10-01T08:40:21.0287884Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_tampered_grid_time_contract PASSED [ 67%]
+2026-10-01T08:40:21.1935688Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_tampered_input_bundle_identity PASSED [ 67%]
+2026-10-01T08:40:21.3526674Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_tampered_phase_correlation_psr PASSED [ 67%]
+2026-10-01T08:40:21.5110910Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_tampered_physical_displacement PASSED [ 67%]
+2026-10-01T08:40:21.6725531Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_tampered_state PASSED [ 68%]
+2026-10-01T08:40:21.8183213Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_unknown_archive_member PASSED [ 68%]
+2026-10-01T08:40:21.9863883Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_uses_central_metadata_semantics 
+2026-10-01T08:40:21.9910056Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_uses_central_metadata_semantics PASSED [ 68%]
+2026-10-01T08:40:22.1713190Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_uses_the_same_file_after_resource_preflight PASSED [ 68%]
+2026-10-01T08:40:22.3224566Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_loader_materializes_each_archive_member_once PASSED [ 69%]
+2026-10-01T08:40:22.4266317Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_neural_prior_lineage_is_all_or_none PASSED [ 69%]
+2026-10-01T08:40:23.1739390Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_neural_prior_lineage_round_trips_with_the_run PASSED [ 69%]
+2026-10-01T08:40:23.4435636Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_restart_m0_uses_embedded_latest_background PASSED [ 69%]
+2026-10-01T08:40:23.7058195Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_restart_round_trip_preserves_m0_snapshot 
+2026-10-01T08:40:23.7110241Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_restart_round_trip_preserves_m0_snapshot PASSED [ 70%]
+2026-10-01T08:40:23.8960063Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_round_trip_preserves_grid_time_contract PASSED [ 70%]
+2026-10-01T08:40:24.0385224Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_round_trip_preserves_long_pair_provenance PASSED [ 70%]
+2026-10-01T08:40:24.2762937Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_round_trip_preserves_motion_conditioned_growth_conflict PASSED [ 70%]
+2026-10-01T08:40:24.4422191Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_round_trip_preserves_scientific_projected_grid_identity PASSED [ 71%]
+2026-10-01T08:40:24.5661115Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_save_rejects_incompatible_forecast_integrator PASSED [ 71%]
+2026-10-01T08:40:24.6899038Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_save_rejects_mutated_analysis_lineage PASSED [ 71%]
+2026-10-01T08:40:24.8131564Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_save_rejects_mutated_metadata PASSED [ 71%]
+2026-10-01T08:40:24.9930188Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_signed_promotion_and_external_policy_anchor_durable_decision 
+2026-10-01T08:40:24.9977477Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_signed_promotion_and_external_policy_anchor_durable_decision PASSED [ 72%]
+2026-10-01T08:40:25.1041160Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_tensor_digest_accepts_scalar_tensors PASSED [ 72%]
+2026-10-01T08:40:25.2702191Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_v42_artifact_migrates_without_prior_lineage PASSED [ 72%]
+2026-10-01T08:40:26.0001707Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_v44_artifact_preserves_existing_prior_lineage PASSED [ 72%]
+2026-10-01T08:40:26.7587690Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_v49_candidate_run_loads_as_deployment_audit PASSED [ 73%]
+2026-10-01T08:40:27.5442078Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_v50_deployment_lineage_loads_as_policy_audit PASSED [ 73%]
+2026-10-01T08:40:28.3272747Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_v51_deployment_lineage_loads_as_decision_audit PASSED [ 73%]
+2026-10-01T08:40:29.3183339Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_v52_deployment_geometry_loads_as_audit_only 
+2026-10-01T08:40:29.3235699Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_v52_deployment_geometry_loads_as_audit_only PASSED [ 74%]
+2026-10-01T08:40:29.4793557Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_v53_cannot_omit_deployment_lineage_contract PASSED [ 74%]
+2026-10-01T08:40:29.6913148Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_v62_derivation_round_trip 
+2026-10-01T08:40:29.6966351Z tests/test_run_artifact.py::ForecastRunArtifactTests::test_v62_derivation_round_trip PASSED [ 74%]
+2026-10-01T08:40:29.7060463Z tests/test_runtime.py::NumericalRuntimeManifestTest::test_runtime_digest_changes_with_device_model PASSED [ 74%]
+2026-10-01T08:40:29.7153413Z tests/test_runtime.py::NumericalRuntimeManifestTest::test_runtime_digest_changes_with_matmul_precision PASSED [ 75%]
+2026-10-01T08:40:29.7961739Z tests/test_sensitivity.py::SensitivityTests::test_area_weighted_echo_is_resolution_invariant PASSED [ 75%]
+2026-10-01T08:40:29.8132926Z tests/test_sensitivity.py::SensitivityTests::test_background_only_state_has_no_direct_sensitivity PASSED [ 75%]
+2026-10-01T08:40:29.8220987Z tests/test_sensitivity.py::SensitivityTests::test_candidate_ranking_is_dimensionless_and_benefit_directed PASSED [ 75%]
+2026-10-01T08:40:29.8312528Z tests/test_sensitivity.py::SensitivityTests::test_confidence_weighted_fss_downweights_low_confidence_windows PASSED [ 76%]
+2026-10-01T08:40:29.8406780Z tests/test_sensitivity.py::SensitivityTests::test_context_distinguishes_missing_psr_from_numeric_zero PASSED [ 76%]
+2026-10-01T08:40:29.8501750Z tests/test_sensitivity.py::SensitivityTests::test_context_preserves_independent_pair_conflicts PASSED [ 76%]
+2026-10-01T08:40:29.8581371Z tests/test_sensitivity.py::SensitivityTests::test_context_records_reconstruction_and_growth_evidence 
+2026-10-01T08:40:29.8625799Z tests/test_sensitivity.py::SensitivityTests::test_context_records_reconstruction_and_growth_evidence PASSED [ 76%]
+2026-10-01T08:40:29.8724641Z tests/test_sensitivity.py::SensitivityTests::test_context_separates_observed_weather_from_missing_area PASSED [ 77%]
+2026-10-01T08:40:29.9493033Z tests/test_sensitivity.py::SensitivityTests::test_context_uses_projected_velocity_from_grid_contract PASSED [ 77%]
+2026-10-01T08:40:29.9594969Z tests/test_sensitivity.py::SensitivityTests::test_control_gradient_matches_centered_finite_difference PASSED [ 77%]
+2026-10-01T08:40:29.9694674Z tests/test_sensitivity.py::SensitivityTests::test_current_metric_uncertainty_reaches_soft_fss_footprint PASSED [ 77%]
+2026-10-01T08:40:29.9755681Z tests/test_sensitivity.py::SensitivityTests::test_empty_centroid_and_invalid_configs_are_explicit 
+2026-10-01T08:40:29.9802540Z tests/test_sensitivity.py::SensitivityTests::test_empty_centroid_and_invalid_configs_are_explicit PASSED [ 78%]
+2026-10-01T08:40:29.9921930Z tests/test_sensitivity.py::SensitivityTests::test_forecast_linear_core_matches_step_and_dbz_paths PASSED [ 78%]
+2026-10-01T08:40:30.0018113Z tests/test_sensitivity.py::SensitivityTests::test_joint_evidence_rejects_spatially_disjoint_marginals PASSED [ 78%]
+2026-10-01T08:40:30.0120372Z tests/test_sensitivity.py::SensitivityTests::test_latest_direct_dbz_gradient_obeys_frozen_active_set PASSED [ 78%]
+2026-10-01T08:40:30.0566316Z tests/test_sensitivity.py::SensitivityTests::test_m0_uses_the_issued_forecast_confidence PASSED [ 79%]
+2026-10-01T08:40:30.0668824Z tests/test_sensitivity.py::SensitivityTests::test_metric_domain_policies_freeze_distinct_weights PASSED [ 79%]
+2026-10-01T08:40:30.0766340Z tests/test_sensitivity.py::SensitivityTests::test_missing_background_marks_impacts_unavailable PASSED [ 79%]
+2026-10-01T08:40:30.0925387Z tests/test_sensitivity.py::SensitivityTests::test_missing_verification_is_not_recorded_as_zero_error PASSED [ 80%]
+2026-10-01T08:40:30.1376016Z tests/test_sensitivity.py::SensitivityTests::test_nonfinite_background_does_not_create_fake_innovation PASSED [ 80%]
+2026-10-01T08:40:30.1475257Z tests/test_sensitivity.py::SensitivityTests::test_odd_grid_tile_impacts_close_to_total PASSED [ 80%]
+2026-10-01T08:40:30.2253389Z tests/test_sensitivity.py::SensitivityTests::test_pair_conflict_reduces_trust_without_changing_other_components PASSED [ 80%]
+2026-10-01T08:40:30.2389442Z tests/test_sensitivity.py::SensitivityTests::test_physical_fss_uses_exact_anisotropic_affine_footprint PASSED [ 81%]
+2026-10-01T08:40:30.2509366Z tests/test_sensitivity.py::SensitivityTests::test_physical_metric_settings_resolve_from_the_grid PASSED [ 81%]
+2026-10-01T08:40:30.2938608Z tests/test_sensitivity.py::SensitivityTests::test_returned_acceptance_mask_is_an_independent_copy PASSED [ 81%]
+2026-10-01T08:40:30.3373142Z tests/test_sensitivity.py::SensitivityTests::test_scores_and_gradients_use_only_the_issued_domain PASSED [ 81%]
+2026-10-01T08:40:30.3476114Z tests/test_sensitivity.py::SensitivityTests::test_sensitivity_rejects_a_changed_acceptance_mask PASSED [ 82%]
+2026-10-01T08:40:30.3577806Z tests/test_sensitivity.py::SensitivityTests::test_sensitivity_rejects_a_forecast_that_does_not_close PASSED [ 82%]
+2026-10-01T08:40:30.3679759Z tests/test_sensitivity.py::SensitivityTests::test_sensitivity_rejects_a_shrunken_issued_domain PASSED [ 82%]
+2026-10-01T08:40:30.3833750Z tests/test_sensitivity.py::SensitivityTests::test_sensitivity_rejects_mismatched_run_inputs PASSED [ 82%]
+2026-10-01T08:40:30.4253652Z tests/test_sensitivity.py::SensitivityTests::test_sensitivity_scores_the_issued_capped_forecast PASSED [ 83%]
+2026-10-01T08:40:30.4473068Z tests/test_sensitivity.py::SensitivityTests::test_sensitivity_uses_the_forecast_run_config PASSED [ 83%]
+2026-10-01T08:40:30.4572056Z tests/test_sensitivity.py::SensitivityTests::test_snapshot_shapes_and_m0_scope PASSED [ 83%]
+2026-10-01T08:40:30.4670393Z tests/test_sensitivity.py::SensitivityTests::test_soft_fss_handles_a_grid_smaller_than_its_window PASSED [ 83%]
+2026-10-01T08:40:30.4771456Z tests/test_sensitivity.py::SensitivityTests::test_soft_fss_is_zero_for_identity_and_symmetric_for_a_miss PASSED [ 84%]
+2026-10-01T08:40:30.4896973Z tests/test_sensitivity.py::SensitivityTests::test_unissued_forecast_has_no_sensitivity PASSED [ 84%]
+2026-10-01T08:40:30.4994597Z tests/test_sensitivity.py::SensitivityTests::test_unlineaged_baseline_scores_are_rejected PASSED [ 84%]
+2026-10-01T08:40:30.5737169Z tests/test_sensitivity.py::SensitivityTests::test_unverified_path_support_reduces_trust PASSED [ 84%]
+2026-10-01T08:40:33.0739660Z tests/test_sensitivity.py::VariationalFSOTests::test_adjoint_config_validation_and_active_set_margin 
+2026-10-01T08:40:33.0802432Z tests/test_sensitivity.py::VariationalFSOTests::test_adjoint_config_validation_and_active_set_margin PASSED [ 85%]
+2026-10-01T08:40:40.1058780Z tests/test_sensitivity.py::VariationalFSOTests::test_approved_learning_policy_with_supplied_branch_certificate PASSED [ 85%]
+2026-10-01T08:40:40.1232568Z tests/test_sensitivity.py::VariationalFSOTests::test_baseline_branch_signature_covers_pair_and_peak_identity PASSED [ 85%]
+2026-10-01T08:40:40.1403561Z tests/test_sensitivity.py::VariationalFSOTests::test_baseline_branch_validation_checks_half_perturbation PASSED [ 85%]
+2026-10-01T08:40:41.0991424Z tests/test_sensitivity.py::VariationalFSOTests::test_censored_and_weight_sensitivity_match_perturb_and_resolve PASSED [ 86%]
+2026-10-01T08:40:41.1102668Z tests/test_sensitivity.py::VariationalFSOTests::test_censored_perturbations_use_event_specific_factories PASSED [ 86%]
+2026-10-01T08:40:41.6700608Z tests/test_sensitivity.py::VariationalFSOTests::test_confirmatory_observation_masks_and_source_identity_replay 
+2026-10-01T08:40:41.6766791Z tests/test_sensitivity.py::VariationalFSOTests::test_confirmatory_observation_masks_and_source_identity_replay PASSED [ 86%]
+2026-10-01T08:40:44.7492057Z tests/test_sensitivity.py::VariationalFSOTests::test_correlated_observation_fso_matches_perturb_and_resolve PASSED [ 87%]
+2026-10-01T08:40:44.7599039Z tests/test_sensitivity.py::VariationalFSOTests::test_current_geometry_binds_grid_identity_and_derived_spacing PASSED [ 87%]
+2026-10-01T08:40:44.7703864Z tests/test_sensitivity.py::VariationalFSOTests::test_current_geometry_binds_registry_crs_and_model_scope PASSED [ 87%]
+2026-10-01T08:40:44.7806597Z tests/test_sensitivity.py::VariationalFSOTests::test_current_source_registry_rejects_radar_outside_metric_domain PASSED [ 87%]
+2026-10-01T08:40:44.7955595Z tests/test_sensitivity.py::VariationalFSOTests::test_current_source_selection_declares_cpu_binary64_boundary SKIPPED [ 88%]
+2026-10-01T08:40:44.8103584Z tests/test_sensitivity.py::VariationalFSOTests::test_current_v6_mps_physical_psr_fss_and_centroid_paths SKIPPED [ 88%]
+2026-10-01T08:40:44.8187337Z tests/test_sensitivity.py::VariationalFSOTests::test_current_verification_rejects_half_precision_spatial_fields 
+2026-10-01T08:40:44.8237139Z tests/test_sensitivity.py::VariationalFSOTests::test_current_verification_rejects_half_precision_spatial_fields PASSED [ 88%]
+2026-10-01T08:40:44.8361603Z tests/test_sensitivity.py::VariationalFSOTests::test_feasibility_margins_are_content_addressed PASSED [ 88%]
+2026-10-01T08:40:45.1761307Z tests/test_sensitivity.py::VariationalFSOTests::test_fp32_reflectivity_does_not_downcast_observation_geometry PASSED [ 89%]
+2026-10-01T08:40:45.1894050Z tests/test_sensitivity.py::VariationalFSOTests::test_gauss_newton_curvature_defect_has_analytic_reference PASSED [ 89%]
+2026-10-01T08:40:45.5227728Z tests/test_sensitivity.py::VariationalFSOTests::test_ground_range_bounds_control_verification_selection_and_age PASSED [ 89%]
+2026-10-01T08:40:45.5339770Z tests/test_sensitivity.py::VariationalFSOTests::test_historical_v9_observation_error_digest_is_immutable PASSED [ 89%]
+2026-10-01T08:40:45.5418903Z tests/test_sensitivity.py::VariationalFSOTests::test_learning_policy_is_external_and_requires_physical_input 
+2026-10-01T08:40:45.5473182Z tests/test_sensitivity.py::VariationalFSOTests::test_learning_policy_is_external_and_requires_physical_input PASSED [ 90%]
+2026-10-01T08:40:45.5586768Z tests/test_sensitivity.py::VariationalFSOTests::test_learning_policy_trust_store_requires_root_ownership PASSED [ 90%]
+2026-10-01T08:40:45.6016903Z tests/test_sensitivity.py::VariationalFSOTests::test_legacy_v13_linearization_migrates_without_prior_state PASSED [ 90%]
+2026-10-01T08:40:45.6127191Z tests/test_sensitivity.py::VariationalFSOTests::test_mosaic_cell_state_is_bound_to_source_assignment PASSED [ 90%]
+2026-10-01T08:40:45.6187577Z tests/test_sensitivity.py::VariationalFSOTests::test_mosaic_observation_registry_bounds_and_binds_source_indices 
+2026-10-01T08:40:45.6238690Z tests/test_sensitivity.py::VariationalFSOTests::test_mosaic_observation_registry_bounds_and_binds_source_indices PASSED [ 91%]
+2026-10-01T08:40:45.6484016Z tests/test_sensitivity.py::VariationalFSOTests::test_observation_error_derivation_replays_exact_registry_tensors 
+2026-10-01T08:40:45.6536367Z tests/test_sensitivity.py::VariationalFSOTests::test_observation_error_derivation_replays_exact_registry_tensors PASSED [ 91%]
+2026-10-01T08:40:45.6662390Z tests/test_sensitivity.py::VariationalFSOTests::test_observation_error_gaussian_diagnostic_is_proper_and_report_only PASSED [ 91%]
+2026-10-01T08:40:47.4712099Z tests/test_sensitivity.py::VariationalFSOTests::test_observation_removal_rebuilds_the_full_analysis PASSED [ 91%]
+2026-10-01T08:40:49.3406050Z tests/test_sensitivity.py::VariationalFSOTests::test_observation_removal_rejects_unaccepted_input PASSED [ 92%]
+2026-10-01T08:40:49.3876462Z tests/test_sensitivity.py::VariationalFSOTests::test_p1_linearization_artifact_rejects_tamper_and_runtime_mismatch PASSED [ 92%]
+2026-10-01T08:40:49.6367107Z tests/test_sensitivity.py::VariationalFSOTests::test_p1_linearization_artifact_restarts_identical_fso PASSED [ 92%]
+2026-10-01T08:40:49.6557375Z tests/test_sensitivity.py::VariationalFSOTests::test_p1_linearization_artifact_syncs_file_and_directory PASSED [ 92%]
+2026-10-01T08:40:51.9206981Z tests/test_sensitivity.py::VariationalFSOTests::test_physical_fsoi_includes_spatial_prior_uncertainty_path PASSED [ 93%]
+2026-10-01T08:40:52.1588282Z tests/test_sensitivity.py::VariationalFSOTests::test_physical_radar_perturbation_factory_connects_input_paths PASSED [ 93%]
+2026-10-01T08:40:52.1702199Z tests/test_sensitivity.py::VariationalFSOTests::test_scalar_observation_sensitivity_sign_is_independent PASSED [ 93%]
+2026-10-01T08:40:52.1853504Z tests/test_sensitivity.py::VariationalFSOTests::test_scientific_geometry_is_generated_from_one_float64_affine PASSED [ 94%]
+2026-10-01T08:40:55.3324543Z tests/test_sensitivity.py::VariationalFSOTests::test_selected_leads_warm_start_and_resource_budgets PASSED [ 94%]
+2026-10-01T08:40:55.9958759Z tests/test_sensitivity.py::VariationalFSOTests::test_sheared_grid_uses_minimum_singular_spatial_age_gate PASSED [ 94%]
+2026-10-01T08:40:56.3383324Z tests/test_sensitivity.py::VariationalFSOTests::test_source_selection_never_treats_pow_exp_as_authoritative PASSED [ 94%]
+2026-10-01T08:40:56.6835119Z tests/test_sensitivity.py::VariationalFSOTests::test_temporal_transcendental_overlap_leaves_source_unassigned PASSED [ 95%]
+2026-10-01T08:40:56.6958548Z tests/test_sensitivity.py::VariationalFSOTests::test_top2_source_dominance_matches_quadratic_oracle PASSED [ 95%]
+2026-10-01T08:40:56.7095010Z tests/test_sensitivity.py::VariationalFSOTests::test_v2_observation_derivation_inputs_are_audit_only PASSED [ 95%]
+2026-10-01T08:40:56.8964111Z tests/test_sensitivity.py::VariationalFSOTests::test_variational_fso_binds_metric_domain_policy PASSED [ 95%]
+2026-10-01T08:40:57.1176609Z tests/test_sensitivity.py::VariationalFSOTests::test_variational_fso_binds_verification_and_output_contents PASSED [ 96%]
+2026-10-01T08:40:57.1345154Z tests/test_sensitivity.py::VariationalFSOTests::test_variational_fso_covers_all_observation_times PASSED [ 96%]
+2026-10-01T08:40:58.5584209Z tests/test_sensitivity.py::VariationalFSOTests::test_variational_fso_fails_closed PASSED [ 96%]
+2026-10-01T08:40:58.5965448Z tests/test_sensitivity.py::VariationalFSOTests::test_variational_fso_matches_dense_and_finite_difference PASSED [ 96%]
+2026-10-01T08:41:01.5005984Z tests/test_sensitivity.py::VariationalFSOTests::test_variational_fso_matches_observation_perturb_and_resolve PASSED [ 97%]
+2026-10-01T08:41:01.5654524Z tests/test_sensitivity.py::VariationalFSOTests::test_variational_fsoi_enforces_global_trust_radius PASSED [ 97%]
+2026-10-01T08:41:01.5902568Z tests/test_sensitivity.py::VariationalFSOTests::test_variational_fsoi_rejects_directional_classification_change PASSED [ 97%]
+2026-10-01T08:41:01.6584664Z tests/test_sensitivity.py::VariationalFSOTests::test_variational_fsoi_rejects_invalid_perturbation_contracts PASSED [ 97%]
+2026-10-01T08:41:01.8930210Z tests/test_sensitivity.py::VariationalFSOTests::test_variational_fsoi_requires_and_applies_explicit_perturbation PASSED [ 98%]
+2026-10-01T08:41:07.2159360Z tests/test_sensitivity.py::VariationalFSOTests::test_verification_bundle_binds_time_grid_qc_and_content 
+2026-10-01T08:41:07.2229594Z tests/test_sensitivity.py::VariationalFSOTests::test_verification_bundle_binds_time_grid_qc_and_content PASSED [ 98%]
+2026-10-01T08:41:07.2294963Z tests/test_sensitivity.py::VariationalFSOTests::test_verification_bundle_capabilities_have_one_current_generation 
+2026-10-01T08:41:07.2351038Z tests/test_sensitivity.py::VariationalFSOTests::test_verification_bundle_capabilities_have_one_current_generation PASSED [ 98%]
+2026-10-01T08:41:07.2470822Z tests/test_sensitivity.py::VariationalFSOTests::test_verification_cell_state_preserves_censoring_without_point_score PASSED [ 98%]
+2026-10-01T08:41:07.2593492Z tests/test_sensitivity.py::VariationalFSOTests::test_verification_observation_error_controls_metric_weight PASSED [ 99%]
+2026-10-01T08:41:07.2733362Z tests/test_subpixel_motion_refinement.py::SubpixelMotionRefinementTests::test_broad_fast_motion_remains_a_visible_candidate_limit PASSED [ 99%]
+2026-10-01T08:41:07.2944954Z tests/test_subpixel_motion_refinement.py::SubpixelMotionRefinementTests::test_signed_fractional_shifts_improve_independent_error PASSED [ 99%]
+2026-10-01T08:41:07.3199039Z tests/test_subpixel_motion_refinement.py::SubpixelMotionRefinementTests::test_width_and_contrast_changes_do_not_change_shift_sign PASSED [100%]
+2026-10-01T08:41:07.3199614Z 
+2026-10-01T08:41:07.3199748Z ==================================== ERRORS ====================================
+2026-10-01T08:41:07.3200205Z _ ERROR at setup of test_common_objective_score_and_derivatives_match_frozen_reference[4x5] _
+2026-10-01T08:41:07.3200567Z 
+2026-10-01T08:41:07.3200900Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[4x5]>>
+2026-10-01T08:41:07.3201546Z 
+2026-10-01T08:41:07.3201695Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3202001Z     def bound_case(request):
+2026-10-01T08:41:07.3202230Z         if request.param=='4x5':
+2026-10-01T08:41:07.3202577Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3203166Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3203779Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3204445Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3204887Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3205291Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3205712Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3206153Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3206671Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3207146Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3207581Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3207999Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3208431Z >           assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3209110Z E           AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3209863Z E             
+2026-10-01T08:41:07.3210133Z E             - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3210540Z E             + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3210794Z 
+2026-10-01T08:41:07.3210918Z tests/test_fv_research_problem.py:45: AssertionError
+2026-10-01T08:41:07.3211298Z _____ ERROR at setup of test_common_layout_identity_and_branch_match[4x5] ______
+2026-10-01T08:41:07.3211568Z 
+2026-10-01T08:41:07.3211896Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[4x5]>>
+2026-10-01T08:41:07.3212293Z 
+2026-10-01T08:41:07.3212416Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3212681Z     def bound_case(request):
+2026-10-01T08:41:07.3212891Z         if request.param=='4x5':
+2026-10-01T08:41:07.3213201Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3213725Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3214309Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3214927Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3215366Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3215752Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3216140Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3216569Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3217075Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3217550Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3218106Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3218501Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3218904Z >           assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3219652Z E           AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3220279Z E             
+2026-10-01T08:41:07.3220561Z E             - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3221008Z E             + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3221261Z 
+2026-10-01T08:41:07.3221382Z tests/test_fv_research_problem.py:45: AssertionError
+2026-10-01T08:41:07.3221760Z _ ERROR at setup of test_common_contract_refuses_unsupported_variants[4x5-missing] _
+2026-10-01T08:41:07.3222039Z 
+2026-10-01T08:41:07.3222347Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[4x5]>>
+2026-10-01T08:41:07.3222739Z 
+2026-10-01T08:41:07.3222864Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3223134Z     def bound_case(request):
+2026-10-01T08:41:07.3223340Z         if request.param=='4x5':
+2026-10-01T08:41:07.3223655Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3224192Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3224883Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3225380Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3225997Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3226390Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3226749Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3227152Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3227623Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3228063Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3228449Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3228843Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3229242Z >           assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3229961Z E           AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3230588Z E             
+2026-10-01T08:41:07.3230857Z E             - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3231278Z E             + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3231527Z 
+2026-10-01T08:41:07.3231638Z tests/test_fv_research_problem.py:45: AssertionError
+2026-10-01T08:41:07.3232011Z _ ERROR at setup of test_common_contract_refuses_unsupported_variants[4x5-boundary] _
+2026-10-01T08:41:07.3232371Z 
+2026-10-01T08:41:07.3232676Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[4x5]>>
+2026-10-01T08:41:07.3233064Z 
+2026-10-01T08:41:07.3233181Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3233444Z     def bound_case(request):
+2026-10-01T08:41:07.3233655Z         if request.param=='4x5':
+2026-10-01T08:41:07.3234084Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3234705Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3235268Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3235754Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3236161Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3236514Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3236866Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3237261Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3237727Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3238163Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3238556Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3238934Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3239316Z >           assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3240016Z E           AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3240615Z E             
+2026-10-01T08:41:07.3240882Z E             - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3241295Z E             + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3241660Z 
+2026-10-01T08:41:07.3241776Z tests/test_fv_research_problem.py:45: AssertionError
+2026-10-01T08:41:07.3242166Z _ ERROR at setup of test_common_contract_refuses_unsupported_variants[4x5-operator] _
+2026-10-01T08:41:07.3242460Z 
+2026-10-01T08:41:07.3242760Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[4x5]>>
+2026-10-01T08:41:07.3243148Z 
+2026-10-01T08:41:07.3243265Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3243529Z     def bound_case(request):
+2026-10-01T08:41:07.3243733Z         if request.param=='4x5':
+2026-10-01T08:41:07.3244044Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3244663Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3245214Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3245769Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3246189Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3246540Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3246890Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3247297Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3247771Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3248225Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3248622Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3249023Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3249435Z >           assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3250303Z E           AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3250917Z E             
+2026-10-01T08:41:07.3251185Z E             - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3251606Z E             + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3251860Z 
+2026-10-01T08:41:07.3251974Z tests/test_fv_research_problem.py:45: AssertionError
+2026-10-01T08:41:07.3252372Z _ ERROR at setup of test_common_contract_refuses_unsupported_variants[4x5-stage_signature] _
+2026-10-01T08:41:07.3252675Z 
+2026-10-01T08:41:07.3252982Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[4x5]>>
+2026-10-01T08:41:07.3253368Z 
+2026-10-01T08:41:07.3253492Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3253760Z     def bound_case(request):
+2026-10-01T08:41:07.3253999Z         if request.param=='4x5':
+2026-10-01T08:41:07.3254441Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3255002Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3255569Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3256071Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3256478Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3256825Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3257183Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3257589Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3258168Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3258606Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3258989Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3259368Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3259756Z >           assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3260461Z E           AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3261073Z E             
+2026-10-01T08:41:07.3261337Z E             - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3261772Z E             + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3262020Z 
+2026-10-01T08:41:07.3262135Z tests/test_fv_research_problem.py:45: AssertionError
+2026-10-01T08:41:07.3262503Z _ ERROR at setup of test_legacy_profile_wrappers_keep_fixed_control_count[4x5] _
+2026-10-01T08:41:07.3262763Z 
+2026-10-01T08:41:07.3263071Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[4x5]>>
+2026-10-01T08:41:07.3263456Z 
+2026-10-01T08:41:07.3263574Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3263836Z     def bound_case(request):
+2026-10-01T08:41:07.3264043Z         if request.param=='4x5':
+2026-10-01T08:41:07.3264457Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3264973Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3265547Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3266145Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3266550Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3266904Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3267268Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3267663Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3268131Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3268581Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3268969Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3269356Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3269755Z >           assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3270464Z E           AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3271077Z E             
+2026-10-01T08:41:07.3271344Z E             - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3271767Z E             + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3272012Z 
+2026-10-01T08:41:07.3272127Z tests/test_fv_research_problem.py:45: AssertionError
+2026-10-01T08:41:07.3272531Z _ ERROR at setup of test_common_objective_score_and_derivatives_match_frozen_reference[8x10] _
+2026-10-01T08:41:07.3272833Z 
+2026-10-01T08:41:07.3273140Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[8x10]>>
+2026-10-01T08:41:07.3273645Z 
+2026-10-01T08:41:07.3273767Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3274037Z     def bound_case(request):
+2026-10-01T08:41:07.3274245Z         if request.param=='4x5':
+2026-10-01T08:41:07.3274657Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3275170Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3275732Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3276218Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3276634Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3276987Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3277341Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3277742Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3278211Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3278659Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3279051Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3279442Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3279834Z             assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3280278Z             response_reference=json.loads((EVIDENCE/'minmod_parameter_vjp.json').read_text())
+2026-10-01T08:41:07.3280792Z             assert legacy._digest(verification)==response_reference['input_identity']['verification']
+2026-10-01T08:41:07.3281318Z             args=(obs,frozen,boundary,support,pattern,verification,saved['nominal_branch'])
+2026-10-01T08:41:07.3281832Z             problem=small.make_research_problem(*args)
+2026-10-01T08:41:07.3282139Z             old=legacy.make_research_functions(*args)
+2026-10-01T08:41:07.3282379Z         else:
+2026-10-01T08:41:07.3282712Z             legacy=reference_module('fv86_measured_case.py.txt','legacy8x10','fv_scaled_research_case.py',
+2026-10-01T08:41:07.3283234Z                 '4622da4e7cd9f3aaffd35e52ad0eacebcf6479fb3fda9d69d9f74a67123f83d5')
+2026-10-01T08:41:07.3283580Z             original=legacy.make_case()
+2026-10-01T08:41:07.3283812Z             case=large.make_case()
+2026-10-01T08:41:07.3284135Z             for first,second in ((case.observations.dbz,original.observations.dbz),
+2026-10-01T08:41:07.3284716Z                                  (case.parameters,original.parameters),(case.pattern,original.pattern),
+2026-10-01T08:41:07.3285142Z                                  (case.verification,original.verification)):
+2026-10-01T08:41:07.3285488Z                 torch.testing.assert_close(first,second,rtol=0,atol=0)
+2026-10-01T08:41:07.3285844Z             saved=json.loads((EVIDENCE/'fv86_seed_a.json').read_text())
+2026-10-01T08:41:07.3286208Z             c=torch.tensor(saved['workflow']['control'],dtype=torch.float64)
+2026-10-01T08:41:07.3286566Z             p=case.parameters
+2026-10-01T08:41:07.3286926Z >           assert hashlib.sha256(p.numpy().tobytes()).hexdigest()==saved['input_identity']['parameters']
+2026-10-01T08:41:07.3287692Z E           AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.3288291Z E             
+2026-10-01T08:41:07.3288557Z E             - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.3288969Z E             + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.3289337Z 
+2026-10-01T08:41:07.3289456Z tests/test_fv_research_problem.py:63: AssertionError
+2026-10-01T08:41:07.3289813Z _____ ERROR at setup of test_common_layout_identity_and_branch_match[8x10] _____
+2026-10-01T08:41:07.3290067Z 
+2026-10-01T08:41:07.3290372Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[8x10]>>
+2026-10-01T08:41:07.3290765Z 
+2026-10-01T08:41:07.3290884Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3291152Z     def bound_case(request):
+2026-10-01T08:41:07.3291356Z         if request.param=='4x5':
+2026-10-01T08:41:07.3291668Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3292195Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3292775Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3293266Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3293675Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3294031Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3294501Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3294902Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3295366Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3295811Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3296210Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3296589Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3296985Z             assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3297538Z             response_reference=json.loads((EVIDENCE/'minmod_parameter_vjp.json').read_text())
+2026-10-01T08:41:07.3298043Z             assert legacy._digest(verification)==response_reference['input_identity']['verification']
+2026-10-01T08:41:07.3298567Z             args=(obs,frozen,boundary,support,pattern,verification,saved['nominal_branch'])
+2026-10-01T08:41:07.3298975Z             problem=small.make_research_problem(*args)
+2026-10-01T08:41:07.3299252Z             old=legacy.make_research_functions(*args)
+2026-10-01T08:41:07.3299483Z         else:
+2026-10-01T08:41:07.3299809Z             legacy=reference_module('fv86_measured_case.py.txt','legacy8x10','fv_scaled_research_case.py',
+2026-10-01T08:41:07.3300320Z                 '4622da4e7cd9f3aaffd35e52ad0eacebcf6479fb3fda9d69d9f74a67123f83d5')
+2026-10-01T08:41:07.3300666Z             original=legacy.make_case()
+2026-10-01T08:41:07.3300896Z             case=large.make_case()
+2026-10-01T08:41:07.3301224Z             for first,second in ((case.observations.dbz,original.observations.dbz),
+2026-10-01T08:41:07.3301703Z                                  (case.parameters,original.parameters),(case.pattern,original.pattern),
+2026-10-01T08:41:07.3302120Z                                  (case.verification,original.verification)):
+2026-10-01T08:41:07.3302463Z                 torch.testing.assert_close(first,second,rtol=0,atol=0)
+2026-10-01T08:41:07.3302809Z             saved=json.loads((EVIDENCE/'fv86_seed_a.json').read_text())
+2026-10-01T08:41:07.3303178Z             c=torch.tensor(saved['workflow']['control'],dtype=torch.float64)
+2026-10-01T08:41:07.3303487Z             p=case.parameters
+2026-10-01T08:41:07.3303846Z >           assert hashlib.sha256(p.numpy().tobytes()).hexdigest()==saved['input_identity']['parameters']
+2026-10-01T08:41:07.3304711Z E           AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.3305417Z E             
+2026-10-01T08:41:07.3305678Z E             - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.3306094Z E             + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.3306339Z 
+2026-10-01T08:41:07.3306453Z tests/test_fv_research_problem.py:63: AssertionError
+2026-10-01T08:41:07.3306825Z _ ERROR at setup of test_common_contract_refuses_unsupported_variants[8x10-missing] _
+2026-10-01T08:41:07.3307101Z 
+2026-10-01T08:41:07.3307403Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[8x10]>>
+2026-10-01T08:41:07.3307793Z 
+2026-10-01T08:41:07.3307910Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3308175Z     def bound_case(request):
+2026-10-01T08:41:07.3308380Z         if request.param=='4x5':
+2026-10-01T08:41:07.3308685Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3309214Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3309769Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3310256Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3310658Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3311013Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3311365Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3311768Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3312236Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3312677Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3313167Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3313556Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3313947Z             assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3314488Z             response_reference=json.loads((EVIDENCE/'minmod_parameter_vjp.json').read_text())
+2026-10-01T08:41:07.3314993Z             assert legacy._digest(verification)==response_reference['input_identity']['verification']
+2026-10-01T08:41:07.3315521Z             args=(obs,frozen,boundary,support,pattern,verification,saved['nominal_branch'])
+2026-10-01T08:41:07.3315916Z             problem=small.make_research_problem(*args)
+2026-10-01T08:41:07.3316193Z             old=legacy.make_research_functions(*args)
+2026-10-01T08:41:07.3316427Z         else:
+2026-10-01T08:41:07.3316758Z             legacy=reference_module('fv86_measured_case.py.txt','legacy8x10','fv_scaled_research_case.py',
+2026-10-01T08:41:07.3317263Z                 '4622da4e7cd9f3aaffd35e52ad0eacebcf6479fb3fda9d69d9f74a67123f83d5')
+2026-10-01T08:41:07.3317607Z             original=legacy.make_case()
+2026-10-01T08:41:07.3317834Z             case=large.make_case()
+2026-10-01T08:41:07.3318157Z             for first,second in ((case.observations.dbz,original.observations.dbz),
+2026-10-01T08:41:07.3318633Z                                  (case.parameters,original.parameters),(case.pattern,original.pattern),
+2026-10-01T08:41:07.3319055Z                                  (case.verification,original.verification)):
+2026-10-01T08:41:07.3319402Z                 torch.testing.assert_close(first,second,rtol=0,atol=0)
+2026-10-01T08:41:07.3319743Z             saved=json.loads((EVIDENCE/'fv86_seed_a.json').read_text())
+2026-10-01T08:41:07.3320103Z             c=torch.tensor(saved['workflow']['control'],dtype=torch.float64)
+2026-10-01T08:41:07.3320554Z             p=case.parameters
+2026-10-01T08:41:07.3320925Z >           assert hashlib.sha256(p.numpy().tobytes()).hexdigest()==saved['input_identity']['parameters']
+2026-10-01T08:41:07.3321685Z E           AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.3322285Z E             
+2026-10-01T08:41:07.3322543Z E             - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.3322957Z E             + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.3323201Z 
+2026-10-01T08:41:07.3323315Z tests/test_fv_research_problem.py:63: AssertionError
+2026-10-01T08:41:07.3323691Z _ ERROR at setup of test_common_contract_refuses_unsupported_variants[8x10-boundary] _
+2026-10-01T08:41:07.3323971Z 
+2026-10-01T08:41:07.3324278Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[8x10]>>
+2026-10-01T08:41:07.3324778Z 
+2026-10-01T08:41:07.3324899Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3325169Z     def bound_case(request):
+2026-10-01T08:41:07.3325373Z         if request.param=='4x5':
+2026-10-01T08:41:07.3325689Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3326205Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3326766Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3327263Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3327667Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3328021Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3328382Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3328891Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3329367Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3329812Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3330206Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3330594Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3330983Z             assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3331427Z             response_reference=json.loads((EVIDENCE/'minmod_parameter_vjp.json').read_text())
+2026-10-01T08:41:07.3331937Z             assert legacy._digest(verification)==response_reference['input_identity']['verification']
+2026-10-01T08:41:07.3332467Z             args=(obs,frozen,boundary,support,pattern,verification,saved['nominal_branch'])
+2026-10-01T08:41:07.3332874Z             problem=small.make_research_problem(*args)
+2026-10-01T08:41:07.3333150Z             old=legacy.make_research_functions(*args)
+2026-10-01T08:41:07.3333390Z         else:
+2026-10-01T08:41:07.3333721Z             legacy=reference_module('fv86_measured_case.py.txt','legacy8x10','fv_scaled_research_case.py',
+2026-10-01T08:41:07.3334223Z                 '4622da4e7cd9f3aaffd35e52ad0eacebcf6479fb3fda9d69d9f74a67123f83d5')
+2026-10-01T08:41:07.3334701Z             original=legacy.make_case()
+2026-10-01T08:41:07.3334854Z             case=large.make_case()
+2026-10-01T08:41:07.3335060Z             for first,second in ((case.observations.dbz,original.observations.dbz),
+2026-10-01T08:41:07.3335356Z                                  (case.parameters,original.parameters),(case.pattern,original.pattern),
+2026-10-01T08:41:07.3335615Z                                  (case.verification,original.verification)):
+2026-10-01T08:41:07.3335933Z                 torch.testing.assert_close(first,second,rtol=0,atol=0)
+2026-10-01T08:41:07.3336150Z             saved=json.loads((EVIDENCE/'fv86_seed_a.json').read_text())
+2026-10-01T08:41:07.3336377Z             c=torch.tensor(saved['workflow']['control'],dtype=torch.float64)
+2026-10-01T08:41:07.3336572Z             p=case.parameters
+2026-10-01T08:41:07.3336800Z >           assert hashlib.sha256(p.numpy().tobytes()).hexdigest()==saved['input_identity']['parameters']
+2026-10-01T08:41:07.3337255Z E           AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.3337609Z E             
+2026-10-01T08:41:07.3337778Z E             - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.3338032Z E             + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.3338183Z 
+2026-10-01T08:41:07.3338256Z tests/test_fv_research_problem.py:63: AssertionError
+2026-10-01T08:41:07.3338492Z _ ERROR at setup of test_common_contract_refuses_unsupported_variants[8x10-operator] _
+2026-10-01T08:41:07.3338664Z 
+2026-10-01T08:41:07.3338849Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[8x10]>>
+2026-10-01T08:41:07.3339082Z 
+2026-10-01T08:41:07.3339163Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3339333Z     def bound_case(request):
+2026-10-01T08:41:07.3339471Z         if request.param=='4x5':
+2026-10-01T08:41:07.3339665Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3339985Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3340331Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3340640Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3340973Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3341195Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3341415Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3341665Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3341950Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3342218Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3342460Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3342702Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3342949Z             assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3343228Z             response_reference=json.loads((EVIDENCE/'minmod_parameter_vjp.json').read_text())
+2026-10-01T08:41:07.3343546Z             assert legacy._digest(verification)==response_reference['input_identity']['verification']
+2026-10-01T08:41:07.3343865Z             args=(obs,frozen,boundary,support,pattern,verification,saved['nominal_branch'])
+2026-10-01T08:41:07.3344110Z             problem=small.make_research_problem(*args)
+2026-10-01T08:41:07.3344286Z             old=legacy.make_research_functions(*args)
+2026-10-01T08:41:07.3344589Z         else:
+2026-10-01T08:41:07.3344798Z             legacy=reference_module('fv86_measured_case.py.txt','legacy8x10','fv_scaled_research_case.py',
+2026-10-01T08:41:07.3345105Z                 '4622da4e7cd9f3aaffd35e52ad0eacebcf6479fb3fda9d69d9f74a67123f83d5')
+2026-10-01T08:41:07.3345323Z             original=legacy.make_case()
+2026-10-01T08:41:07.3345555Z             case=large.make_case()
+2026-10-01T08:41:07.3345757Z             for first,second in ((case.observations.dbz,original.observations.dbz),
+2026-10-01T08:41:07.3346047Z                                  (case.parameters,original.parameters),(case.pattern,original.pattern),
+2026-10-01T08:41:07.3346500Z                                  (case.verification,original.verification)):
+2026-10-01T08:41:07.3346715Z                 torch.testing.assert_close(first,second,rtol=0,atol=0)
+2026-10-01T08:41:07.3346929Z             saved=json.loads((EVIDENCE/'fv86_seed_a.json').read_text())
+2026-10-01T08:41:07.3347156Z             c=torch.tensor(saved['workflow']['control'],dtype=torch.float64)
+2026-10-01T08:41:07.3347350Z             p=case.parameters
+2026-10-01T08:41:07.3347577Z >           assert hashlib.sha256(p.numpy().tobytes()).hexdigest()==saved['input_identity']['parameters']
+2026-10-01T08:41:07.3348026Z E           AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.3348384Z E             
+2026-10-01T08:41:07.3348550Z E             - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.3348801Z E             + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.3348953Z 
+2026-10-01T08:41:07.3349027Z tests/test_fv_research_problem.py:63: AssertionError
+2026-10-01T08:41:07.3349277Z _ ERROR at setup of test_common_contract_refuses_unsupported_variants[8x10-stage_signature] _
+2026-10-01T08:41:07.3349457Z 
+2026-10-01T08:41:07.3349640Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[8x10]>>
+2026-10-01T08:41:07.3349872Z 
+2026-10-01T08:41:07.3349948Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3350119Z     def bound_case(request):
+2026-10-01T08:41:07.3350251Z         if request.param=='4x5':
+2026-10-01T08:41:07.3350448Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3350851Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3351195Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3351496Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3351748Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3351971Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3352197Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3352443Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3352731Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3353006Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3353252Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3353496Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3353742Z             assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3354022Z             response_reference=json.loads((EVIDENCE/'minmod_parameter_vjp.json').read_text())
+2026-10-01T08:41:07.3354446Z             assert legacy._digest(verification)==response_reference['input_identity']['verification']
+2026-10-01T08:41:07.3354769Z             args=(obs,frozen,boundary,support,pattern,verification,saved['nominal_branch'])
+2026-10-01T08:41:07.3355018Z             problem=small.make_research_problem(*args)
+2026-10-01T08:41:07.3355195Z             old=legacy.make_research_functions(*args)
+2026-10-01T08:41:07.3355428Z         else:
+2026-10-01T08:41:07.3355639Z             legacy=reference_module('fv86_measured_case.py.txt','legacy8x10','fv_scaled_research_case.py',
+2026-10-01T08:41:07.3355947Z                 '4622da4e7cd9f3aaffd35e52ad0eacebcf6479fb3fda9d69d9f74a67123f83d5')
+2026-10-01T08:41:07.3356162Z             original=legacy.make_case()
+2026-10-01T08:41:07.3356312Z             case=large.make_case()
+2026-10-01T08:41:07.3356513Z             for first,second in ((case.observations.dbz,original.observations.dbz),
+2026-10-01T08:41:07.3356804Z                                  (case.parameters,original.parameters),(case.pattern,original.pattern),
+2026-10-01T08:41:07.3357065Z                                  (case.verification,original.verification)):
+2026-10-01T08:41:07.3357279Z                 torch.testing.assert_close(first,second,rtol=0,atol=0)
+2026-10-01T08:41:07.3357495Z             saved=json.loads((EVIDENCE/'fv86_seed_a.json').read_text())
+2026-10-01T08:41:07.3357720Z             c=torch.tensor(saved['workflow']['control'],dtype=torch.float64)
+2026-10-01T08:41:07.3357915Z             p=case.parameters
+2026-10-01T08:41:07.3358142Z >           assert hashlib.sha256(p.numpy().tobytes()).hexdigest()==saved['input_identity']['parameters']
+2026-10-01T08:41:07.3358596Z E           AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.3358953Z E             
+2026-10-01T08:41:07.3359121Z E             - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.3359375Z E             + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.3359526Z 
+2026-10-01T08:41:07.3359601Z tests/test_fv_research_problem.py:63: AssertionError
+2026-10-01T08:41:07.3359828Z _ ERROR at setup of test_legacy_profile_wrappers_keep_fixed_control_count[8x10] _
+2026-10-01T08:41:07.3359988Z 
+2026-10-01T08:41:07.3360173Z request = <SubRequest 'bound_case' for <Function test_common_objective_score_and_derivatives_match_frozen_reference[8x10]>>
+2026-10-01T08:41:07.3360410Z 
+2026-10-01T08:41:07.3360566Z     @pytest.fixture(scope='module',params=['4x5','8x10'])
+2026-10-01T08:41:07.3360740Z     def bound_case(request):
+2026-10-01T08:41:07.3360874Z         if request.param=='4x5':
+2026-10-01T08:41:07.3361070Z             legacy=reference_module('legacy_fv4x5_adapter_0956709.py.txt','legacy4x5',
+2026-10-01T08:41:07.3361388Z                 'fv_minmod_matrix_free_probe.py','bdd42e0b5241ec4f40e205883391a3ca38838b061da68807d48083477fa66f42')
+2026-10-01T08:41:07.3361732Z             obs,frozen,boundary,support=legacy._load('fv_minmod_inverse_probe').make_spatial_case()
+2026-10-01T08:41:07.3362031Z             saved=json.loads((EVIDENCE/'minmod_middle_time_bias_final.json').read_text())
+2026-10-01T08:41:07.3362285Z             c=torch.tensor(saved['nominal_control'],dtype=torch.float64)
+2026-10-01T08:41:07.3362508Z             p=torch.cat((obs.dbz.flatten(),obs.dbz.new_tensor([.02])))
+2026-10-01T08:41:07.3362735Z             pattern=torch.linspace(-.2,.3,20,dtype=p.dtype).reshape(4,5)
+2026-10-01T08:41:07.3362984Z             contract=replace(frozen,initial_background_dbz=obs.dbz[0]+p[-1]*pattern)
+2026-10-01T08:41:07.3363273Z             forecast=legacy.v.forecast_fv_analysis(c,contract,leads=1,boundary_start_interval=2,
+2026-10-01T08:41:07.3363547Z                                                   boundary_echo=boundary,boundary_support=support)
+2026-10-01T08:41:07.3363791Z             verification=(legacy._load('fv_minmod_inverse_probe').echo_to_dbz(
+2026-10-01T08:41:07.3364035Z                 forecast.frames_linear[-1],min_dbz=-10.)+.1*pattern).detach()
+2026-10-01T08:41:07.3364284Z             assert legacy._digest(p)==saved['input_identity']['parameters_sha256']
+2026-10-01T08:41:07.3364806Z             response_reference=json.loads((EVIDENCE/'minmod_parameter_vjp.json').read_text())
+2026-10-01T08:41:07.3365120Z             assert legacy._digest(verification)==response_reference['input_identity']['verification']
+2026-10-01T08:41:07.3365530Z             args=(obs,frozen,boundary,support,pattern,verification,saved['nominal_branch'])
+2026-10-01T08:41:07.3365780Z             problem=small.make_research_problem(*args)
+2026-10-01T08:41:07.3365955Z             old=legacy.make_research_functions(*args)
+2026-10-01T08:41:07.3366104Z         else:
+2026-10-01T08:41:07.3366311Z             legacy=reference_module('fv86_measured_case.py.txt','legacy8x10','fv_scaled_research_case.py',
+2026-10-01T08:41:07.3366629Z                 '4622da4e7cd9f3aaffd35e52ad0eacebcf6479fb3fda9d69d9f74a67123f83d5')
+2026-10-01T08:41:07.3366849Z             original=legacy.make_case()
+2026-10-01T08:41:07.3366997Z             case=large.make_case()
+2026-10-01T08:41:07.3367201Z             for first,second in ((case.observations.dbz,original.observations.dbz),
+2026-10-01T08:41:07.3367498Z                                  (case.parameters,original.parameters),(case.pattern,original.pattern),
+2026-10-01T08:41:07.3367758Z                                  (case.verification,original.verification)):
+2026-10-01T08:41:07.3367978Z                 torch.testing.assert_close(first,second,rtol=0,atol=0)
+2026-10-01T08:41:07.3368228Z             saved=json.loads((EVIDENCE/'fv86_seed_a.json').read_text())
+2026-10-01T08:41:07.3368453Z             c=torch.tensor(saved['workflow']['control'],dtype=torch.float64)
+2026-10-01T08:41:07.3368646Z             p=case.parameters
+2026-10-01T08:41:07.3368877Z >           assert hashlib.sha256(p.numpy().tobytes()).hexdigest()==saved['input_identity']['parameters']
+2026-10-01T08:41:07.3369343Z E           AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.3369696Z E             
+2026-10-01T08:41:07.3369863Z E             - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.3370120Z E             + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.3370275Z 
+2026-10-01T08:41:07.3370359Z tests/test_fv_research_problem.py:63: AssertionError
+2026-10-01T08:41:07.3370637Z =================================== FAILURES ===================================
+2026-10-01T08:41:07.3370866Z __________ test_long_horizon_scores_are_mean_of_per_lead_spatial_mse ___________
+2026-10-01T08:41:07.3371020Z 
+2026-10-01T08:41:07.3371225Z long_horizon_case = (FVResearchProblem(observations=AnalysisObservations(dbz=tensor([[[14.7857, 14.8742, 14.9665, 15.0623, 15.1614],
+2026-10-01T08:41:07.3371529Z      ...5.8654, 16.0062, 16.1476, 16.2893, 15.8596,
+2026-10-01T08:41:07.3371726Z         16.0249, 16.1890, 16.3518, 16.5134,  0.0000], dtype=torch.float64))
+2026-10-01T08:41:07.3371863Z 
+2026-10-01T08:41:07.3371981Z     def test_long_horizon_scores_are_mean_of_per_lead_spatial_mse(long_horizon_case):
+2026-10-01T08:41:07.3372225Z         problem, control, parameters = long_horizon_case
+2026-10-01T08:41:07.3372384Z     
+2026-10-01T08:41:07.3372517Z         forecasts = problem.forecast(control, parameters)
+2026-10-01T08:41:07.3372797Z         per_lead_mse = (forecasts - problem.verification).square().flatten(1).mean(1)
+2026-10-01T08:41:07.3381630Z >       torch.testing.assert_close(
+2026-10-01T08:41:07.3381854Z             problem.score(control, parameters), per_lead_mse.mean(), rtol=0, atol=0
+2026-10-01T08:41:07.3382059Z         )
+2026-10-01T08:41:07.3382194Z E       AssertionError: Scalars are not equal!
+2026-10-01T08:41:07.3382349Z E       
+2026-10-01T08:41:07.3382498Z E       Expected 1.3994295800370546e-22 but got 1.3994295800370544e-22.
+2026-10-01T08:41:07.3382700Z E       Absolute difference: 2.350988701644575e-38
+2026-10-01T08:41:07.3382871Z E       Relative difference: 1.6799621325585562e-16
+2026-10-01T08:41:07.3382980Z 
+2026-10-01T08:41:07.3383065Z tests/test_fv_research_long_horizon.py:62: AssertionError
+2026-10-01T08:41:07.3383268Z =============================== warnings summary ===============================
+2026-10-01T08:41:07.3383600Z tests/test_a2_numerics.py: 18 warnings
+2026-10-01T08:41:07.3384042Z   /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+2026-10-01T08:41:07.3384599Z     warnings.warn(
+2026-10-01T08:41:07.3384670Z 
+2026-10-01T08:41:07.3384796Z -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2026-10-01T08:41:07.3385054Z =========================== short test summary info ============================
+2026-10-01T08:41:07.3385418Z FAILED tests/test_fv_research_long_horizon.py::test_long_horizon_scores_are_mean_of_per_lead_spatial_mse - AssertionError: Scalars are not equal!
+2026-10-01T08:41:07.3385687Z 
+2026-10-01T08:41:07.3385777Z Expected 1.3994295800370546e-22 but got 1.3994295800370544e-22.
+2026-10-01T08:41:07.3385967Z Absolute difference: 2.350988701644575e-38
+2026-10-01T08:41:07.3386128Z Relative difference: 1.6799621325585562e-16
+2026-10-01T08:41:07.3386704Z ERROR tests/test_fv_research_problem.py::test_common_objective_score_and_derivatives_match_frozen_reference[4x5] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3387322Z   
+2026-10-01T08:41:07.3387492Z   - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3387749Z   + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3388321Z ERROR tests/test_fv_research_problem.py::test_common_layout_identity_and_branch_match[4x5] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3388833Z   
+2026-10-01T08:41:07.3388995Z   - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3389241Z   + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3389928Z ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[4x5-missing] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3390460Z   
+2026-10-01T08:41:07.3390613Z   - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3390858Z   + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3391444Z ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[4x5-boundary] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3391976Z   
+2026-10-01T08:41:07.3392130Z   - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3392374Z   + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3392963Z ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[4x5-operator] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3393499Z   
+2026-10-01T08:41:07.3393652Z   - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3393897Z   + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3394649Z ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[4x5-stage_signature] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3395193Z   
+2026-10-01T08:41:07.3395347Z   - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3395592Z   + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3396252Z ERROR tests/test_fv_research_problem.py::test_legacy_profile_wrappers_keep_fixed_control_count[4x5] - AssertionError: assert '40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0' == '64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07'
+2026-10-01T08:41:07.3396768Z   
+2026-10-01T08:41:07.3396922Z   - 64cd06d7c841daa26fedee11243aff55dfb583654a5cbaea68c78ad37bb44d07
+2026-10-01T08:41:07.3397167Z   + 40bd28f11f74d6ca087c47f99e1b903914d2a3cf3ed9c8cd61aff686c8b1fcb0
+2026-10-01T08:41:07.3397768Z ERROR tests/test_fv_research_problem.py::test_common_objective_score_and_derivatives_match_frozen_reference[8x10] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.3398299Z   
+2026-10-01T08:41:07.3398448Z   - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.3398687Z   + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.3399240Z ERROR tests/test_fv_research_problem.py::test_common_layout_identity_and_branch_match[8x10] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.3399740Z   
+2026-10-01T08:41:07.3399889Z   - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.3400126Z   + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.3400707Z ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[8x10-missing] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.3401238Z   
+2026-10-01T08:41:07.3401386Z   - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.6461307Z   + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.6462394Z ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[8x10-boundary] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.6463083Z   
+2026-10-01T08:41:07.6463249Z   - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.6463500Z   + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.6464079Z ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[8x10-operator] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.6464742Z   
+2026-10-01T08:41:07.6464891Z   - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.6465138Z   + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.6465726Z ERROR tests/test_fv_research_problem.py::test_common_contract_refuses_unsupported_variants[8x10-stage_signature] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.6466257Z   
+2026-10-01T08:41:07.6466406Z   - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.6466638Z   + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.6467198Z ERROR tests/test_fv_research_problem.py::test_legacy_profile_wrappers_keep_fixed_control_count[8x10] - AssertionError: assert 'afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133' == '316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54'
+2026-10-01T08:41:07.6467705Z   
+2026-10-01T08:41:07.6467851Z   - 316b2bfbf44567a02e6db2a523a297afa4cbea317156664a331b5ce29764ab54
+2026-10-01T08:41:07.6468208Z   + afabc0816e95ed0c573095a45e770442c4f06f3a7a4042617755058df31c7133
+2026-10-01T08:41:07.6468497Z = 1 failed, 368 passed, 2 skipped, 18 warnings, 14 errors, 167 subtests passed in 776.71s (0:12:56) =
+2026-10-01T08:41:08.4212954Z ##[error]Process completed with exit code 1.
+2026-10-01T08:41:08.4265709Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-10-01T08:41:08.4265927Z with:
+2026-10-01T08:41:08.4266082Z   name: cpu-shard-3-a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf
+2026-10-01T08:41:08.4266287Z   path: /home/runner/work/_temp/cpu-shard-records
+2026-10-01T08:41:08.4266454Z   if-no-files-found: error
+2026-10-01T08:41:08.4266580Z   retention-days: 7
+2026-10-01T08:41:08.4266697Z   compression-level: 6
+2026-10-01T08:41:08.4266817Z   overwrite: false
+2026-10-01T08:41:08.4266934Z   include-hidden-files: false
+2026-10-01T08:41:08.4267064Z   archive: true
+2026-10-01T08:41:08.4267173Z env:
+2026-10-01T08:41:08.4267325Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:41:08.4267553Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:41:08.4267778Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:41:08.4267981Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:41:08.4268200Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:41:08.4268407Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:41:08.4268581Z ##[endgroup]
+2026-10-01T08:41:08.5158690Z With the provided path, there will be 5 files uploaded
+2026-10-01T08:41:08.5162024Z Artifact name is valid!
+2026-10-01T08:41:08.5162348Z Root directory input is valid!
+2026-10-01T08:41:08.8372591Z Uploading artifact: cpu-shard-3-a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf.zip
+2026-10-01T08:41:08.8396615Z Beginning upload of artifact content to blob storage
+2026-10-01T08:41:09.1547757Z Uploaded bytes 107598
+2026-10-01T08:41:09.1984934Z Finished uploading artifact content to blob storage!
+2026-10-01T08:41:09.1985601Z SHA256 digest of uploaded artifact is 2649bf4c9d5547a328da61a4c87efed84b1a1834255af41e584f86fbe86e23f4
+2026-10-01T08:41:09.1986093Z Finalizing artifact upload
+2026-10-01T08:41:09.5047899Z Artifact cpu-shard-3-a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf successfully finalized. Artifact ID 11149209893
+2026-10-01T08:41:09.5048432Z Artifact cpu-shard-3-a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf has been successfully uploaded! Final size is 107598 bytes. Artifact ID is 11149209893
+2026-10-01T08:41:09.5050835Z Artifact download URL: https://github.com/gonos2k/AD4DVAR-radar/actions/runs/36836402831/artifacts/11149209893
+2026-10-01T08:41:09.5189250Z Post job cleanup.
+2026-10-01T08:41:09.5725424Z [command]/usr/bin/git version
+2026-10-01T08:41:09.5760154Z git version 2.55.0
+2026-10-01T08:41:09.5788343Z Temporarily overriding HOME='/home/runner/work/_temp/0e1adaa8-ccde-406a-99ff-866f1e31b2a8' before making global git config changes
+2026-10-01T08:41:09.5789028Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-01T08:41:09.5791501Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:41:09.5818022Z Removing SSH command configuration
+2026-10-01T08:41:09.5822359Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-01T08:41:09.5849662Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-01T08:41:09.6040404Z Removing HTTP extra header
+2026-10-01T08:41:09.6045208Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-01T08:41:09.6073137Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-01T08:41:09.6273182Z Removing includeIf entries pointing to credentials config files
+2026-10-01T08:41:09.6278783Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-01T08:41:09.6307794Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+2026-10-01T08:41:09.6308233Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+2026-10-01T08:41:09.6308640Z includeif.gitdir:/github/workspace/.git.path
+2026-10-01T08:41:09.6308954Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-01T08:41:09.6314095Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+2026-10-01T08:41:09.6335839Z /home/runner/work/_temp/git-credentials-462151dd-105d-44d8-a411-d447c999156b.config
+2026-10-01T08:41:09.6342495Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-462151dd\-105d\-44d8\-a411\-d447c999156b\.config
+2026-10-01T08:41:09.6373048Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+2026-10-01T08:41:09.6394662Z /home/runner/work/_temp/git-credentials-462151dd-105d-44d8-a411-d447c999156b.config
+2026-10-01T08:41:09.6400940Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-462151dd\-105d\-44d8\-a411\-d447c999156b\.config
+2026-10-01T08:41:09.6437919Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-01T08:41:09.6458540Z /github/runner_temp/git-credentials-462151dd-105d-44d8-a411-d447c999156b.config
+2026-10-01T08:41:09.6463809Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-462151dd\-105d\-44d8\-a411\-d447c999156b\.config
+2026-10-01T08:41:09.6492102Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-01T08:41:09.6513088Z /github/runner_temp/git-credentials-462151dd-105d-44d8-a411-d447c999156b.config
+2026-10-01T08:41:09.6518363Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-462151dd\-105d\-44d8\-a411\-d447c999156b\.config
+2026-10-01T08:41:09.6547309Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-01T08:41:09.6715611Z Removing credentials config '/home/runner/work/_temp/git-credentials-462151dd-105d-44d8-a411-d447c999156b.config'
+2026-10-01T08:41:09.6848040Z Cleaning up orphan processes

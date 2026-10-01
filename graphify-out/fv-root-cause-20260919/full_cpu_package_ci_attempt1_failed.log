@@ -1,0 +1,80 @@
+Python 3.12 CPU	Verify and audit the locked closure in isolation	﻿2026-10-01T00:52:56.5727843Z ##[group]Run printf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5728590Z [36;1mprintf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5728964Z [36;1mpython -I - <<'PY'[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5729169Z [36;1mimport site[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5729359Z [36;1mfrom pathlib import Path[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5729563Z [36;1m[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5729738Z [36;1mimport pip_audit[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5729932Z [36;1mimport torch[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5730100Z [36;1m[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5730286Z [36;1mmodule = Path(pip_audit.__file__).resolve()[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5730623Z [36;1mroots = tuple(Path(item).resolve() for item in site.getsitepackages())[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5731020Z [36;1massert any(root == module or root in module.parents for root in roots)[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5731334Z [36;1massert torch.version.cuda is None[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5731551Z [36;1mPY[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5731889Z [36;1mpython -I "$GITHUB_WORKSPACE/.github/scripts/check_dependency_locks.py"[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5732223Z [36;1mpython -I -m pip_audit \[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5732435Z [36;1m  --strict \[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5732623Z [36;1m  --disable-pip \[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5732822Z [36;1m  --no-deps \[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5733015Z [36;1m  --requirement "$LOCK_FILE"[0m
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5792673Z shell: /usr/bin/bash -e {0}
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5792908Z env:
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5793130Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5793648Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5793985Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5794285Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5794590Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5794890Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5795288Z   LOCK_FILE: /home/runner/work/AD4DVAR-radar/AD4DVAR-radar/requirements/ci-py312-linux.lock
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:56.5795631Z ##[endgroup]
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:58.8636032Z dependency locks: 4 hashed Linux CPU closures are synchronized
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:59.4664077Z WARNING:pip_audit._cli:--no-deps is supported, but users are encouraged to fully hash their pinned dependencies
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:52:59.4665199Z WARNING:pip_audit._cli:Consider using a tool like `pip-compile`: https://pip-tools.readthedocs.io/en/latest/#using-hashes
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:53:00.1044963Z Found 3 known vulnerabilities in 1 package
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:53:00.1053789Z Name    Version ID             Fix Versions
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:53:00.1054132Z ------- ------- -------------- ------------
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:53:00.1054462Z urllib3 2.7.0   CVE-2026-97687 2.8.0
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:53:00.1054776Z urllib3 2.7.0   CVE-2026-97688 2.8.0
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:53:00.1055013Z urllib3 2.7.0   CVE-2026-97689 2.8.0
+Python 3.12 CPU	Verify and audit the locked closure in isolation	2026-10-01T00:53:00.1493252Z ##[error]Process completed with exit code 1.
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	﻿2026-10-01T00:52:59.1364703Z ##[group]Run printf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1365447Z [36;1mprintf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1365908Z [36;1mpython -I - <<'PY'[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1366155Z [36;1mimport site[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1366391Z [36;1mfrom pathlib import Path[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1366645Z [36;1m[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1366855Z [36;1mimport pip_audit[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1367089Z [36;1mimport torch[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1367321Z [36;1m[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1367550Z [36;1mmodule = Path(pip_audit.__file__).resolve()[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1367987Z [36;1mroots = tuple(Path(item).resolve() for item in site.getsitepackages())[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1368502Z [36;1massert any(root == module or root in module.parents for root in roots)[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1368901Z [36;1massert torch.version.cuda is None[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1369178Z [36;1mPY[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1369545Z [36;1mpython -I "$GITHUB_WORKSPACE/.github/scripts/check_dependency_locks.py"[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1369943Z [36;1mpython -I -m pip_audit \[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1370203Z [36;1m  --strict \[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1370442Z [36;1m  --disable-pip \[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1370690Z [36;1m  --no-deps \[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1371046Z [36;1m  --requirement "$GITHUB_WORKSPACE/requirements/ci-py312-linux.lock"[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1442896Z shell: /usr/bin/bash -e {0}
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1443161Z env:
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1443783Z   PYTHONDONTWRITEBYTECODE: 1
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1444122Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1444568Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1444993Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1445370Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1445748Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1446140Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:52:59.1446478Z ##[endgroup]
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:53:00.9902360Z dependency locks: 4 hashed Linux CPU closures are synchronized
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:53:01.6201629Z WARNING:pip_audit._cli:--no-deps is supported, but users are encouraged to fully hash their pinned dependencies
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:53:01.6203248Z WARNING:pip_audit._cli:Consider using a tool like `pip-compile`: https://pip-tools.readthedocs.io/en/latest/#using-hashes
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:53:02.1928811Z Found 3 known vulnerabilities in 1 package
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:53:02.1940570Z Name    Version ID             Fix Versions
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:53:02.1940961Z ------- ------- -------------- ------------
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:53:02.1941247Z urllib3 2.7.0   CVE-2026-97687 2.8.0
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:53:02.1941532Z urllib3 2.7.0   CVE-2026-97688 2.8.0
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:53:02.1941801Z urllib3 2.7.0   CVE-2026-97689 2.8.0
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T00:53:02.2427104Z ##[error]Process completed with exit code 1.

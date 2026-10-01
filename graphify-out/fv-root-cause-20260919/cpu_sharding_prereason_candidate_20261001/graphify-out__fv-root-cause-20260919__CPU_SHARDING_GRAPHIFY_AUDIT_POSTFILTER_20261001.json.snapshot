@@ -1,0 +1,18 @@
+{
+  "mode": "code-only incremental refresh of two changed files; no semantic rebuild",
+  "source_files": [
+    ".github/scripts/run_cpu_test_shard.py",
+    "tests/test_cpu_test_sharding.py"
+  ],
+  "ast_nodes": 76,
+  "ast_edges": 221,
+  "before_nodes": 8444,
+  "before_edges": 210759,
+  "after_nodes": 8455,
+  "after_edges": 210794,
+  "unrelated_node_metadata_unchanged": true,
+  "unrelated_link_metadata_unchanged": true,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "backup": "graphify-out/.graphify_cpu_shard_prefilter_graph.json"
+}

@@ -18,9 +18,13 @@ jobs:
   test:
     # Phase 1 uses focused local numerical checks; full tests are opt-in.
     if: github.event_name == 'workflow_dispatch'
-    name: Python 3.12 CPU
+    name: Python 3.12 CPU shard ${{ matrix.shard }}
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
 
     steps:
       - name: Check out source
@@ -81,7 +85,33 @@ jobs:
         env:
           OMP_NUM_THREADS: "1"
           MKL_NUM_THREADS: "1"
-        run: python -I -m pytest -q
+        run: |
+          python -I .github/scripts/run_cpu_test_shard.py \
+            --shard-index ${{ matrix.shard }} \
+            --shard-count 6 \
+            --record-dir "$RUNNER_TEMP/cpu-shard-records"
+
+      - name: Preserve CPU test inventory and terminal results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cpu-shard-${{ matrix.shard }}-${{ github.sha }}
+          path: ${{ runner.temp }}/cpu-shard-records
+          if-no-files-found: error
+          retention-days: 7
+
+  test-summary:
+    # Preserve the required check name; full regression stays explicitly opt-in.
+    if: github.event_name == 'workflow_dispatch' && always()
+    name: Python 3.12 CPU
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every CPU shard to succeed
+        env:
+          CPU_SHARD_RESULT: ${{ needs.test.result }}
+        run: test "$CPU_SHARD_RESULT" = success
 
   lab-ui:
     name: Initial-field lab UI

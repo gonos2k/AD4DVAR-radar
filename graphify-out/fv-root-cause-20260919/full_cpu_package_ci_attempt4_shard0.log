@@ -1,0 +1,879 @@
+﻿2026-10-01T08:27:26.8560067Z Current runner version: '2.337.0'
+2026-10-01T08:27:26.8597214Z ##[group]Runner Image Provisioner
+2026-10-01T08:27:26.8598861Z Hosted Compute Agent
+2026-10-01T08:27:26.8599968Z Version: 20260828.587
+2026-10-01T08:27:26.8601254Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-10-01T08:27:26.8602536Z Build Date: 2026-08-28T16:44:25Z
+2026-10-01T08:27:26.8604308Z Worker ID: {649bb55e-e430-486e-a193-195538e68ae9}
+2026-10-01T08:27:26.8605638Z Azure Region: eastus
+2026-10-01T08:27:26.8606982Z ##[endgroup]
+2026-10-01T08:27:26.8609510Z ##[group]Operating System
+2026-10-01T08:27:26.8610615Z Ubuntu
+2026-10-01T08:27:26.8611813Z 24.04.5
+2026-10-01T08:27:26.8612876Z LTS
+2026-10-01T08:27:26.8613907Z ##[endgroup]
+2026-10-01T08:27:26.8615069Z ##[group]Runner Image
+2026-10-01T08:27:26.8616137Z Image: ubuntu-24.04
+2026-10-01T08:27:26.8618286Z Version: 20260920.314.1
+2026-10-01T08:27:26.8620714Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260920.314/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-01T08:27:26.8623725Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260920.314
+2026-10-01T08:27:26.8625456Z ##[endgroup]
+2026-10-01T08:27:26.8627843Z ##[group]GITHUB_TOKEN Permissions
+2026-10-01T08:27:26.8630878Z Contents: read
+2026-10-01T08:27:26.8632108Z Metadata: read
+2026-10-01T08:27:26.8633077Z ##[endgroup]
+2026-10-01T08:27:26.8636125Z Secret source: Actions
+2026-10-01T08:27:26.8638134Z Cache mode: write
+2026-10-01T08:27:26.8639565Z Prepare workflow directory
+2026-10-01T08:27:26.9123206Z Prepare all required actions
+2026-10-01T08:27:26.9195442Z Getting action download info
+2026-10-01T08:27:27.0808693Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-01T08:27:27.1964983Z Download action repository 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1' (SHA:ece7cb06caefa5fff74198d8649806c4678c61a1)
+2026-10-01T08:27:27.2683516Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+2026-10-01T08:27:27.4496248Z Complete job name: Python 3.12 CPU shard 0
+2026-10-01T08:27:27.5273302Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-10-01T08:27:27.5274399Z with:
+2026-10-01T08:27:27.5274872Z   repository: gonos2k/AD4DVAR-radar
+2026-10-01T08:27:27.5278876Z   token: ***
+2026-10-01T08:27:27.5279324Z   ssh-strict: true
+2026-10-01T08:27:27.5279794Z   ssh-user: git
+2026-10-01T08:27:27.5280259Z   persist-credentials: true
+2026-10-01T08:27:27.5280755Z   clean: true
+2026-10-01T08:27:27.5281218Z   sparse-checkout-cone-mode: true
+2026-10-01T08:27:27.5281760Z   fetch-depth: 1
+2026-10-01T08:27:27.5282210Z   fetch-tags: false
+2026-10-01T08:27:27.5282675Z   show-progress: true
+2026-10-01T08:27:27.5283138Z   lfs: false
+2026-10-01T08:27:27.5283574Z   submodules: false
+2026-10-01T08:27:27.5284041Z   set-safe-directory: true
+2026-10-01T08:27:27.5284565Z   allow-unsafe-pr-checkout: false
+2026-10-01T08:27:27.5285542Z ##[endgroup]
+2026-10-01T08:27:27.6294912Z Syncing repository: gonos2k/AD4DVAR-radar
+2026-10-01T08:27:27.6297493Z ##[group]Getting Git version info
+2026-10-01T08:27:27.6298828Z Working directory is '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+2026-10-01T08:27:27.6300677Z [command]/usr/bin/git version
+2026-10-01T08:27:27.6374018Z git version 2.55.0
+2026-10-01T08:27:27.6395694Z ##[endgroup]
+2026-10-01T08:27:27.6412944Z Temporarily overriding HOME='/home/runner/work/_temp/011d48d2-4cac-4030-a236-48880936a0a7' before making global git config changes
+2026-10-01T08:27:27.6417426Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-01T08:27:27.6422072Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:27:27.6478886Z Deleting the contents of '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+2026-10-01T08:27:27.6482578Z ##[group]Determining repository object format
+2026-10-01T08:27:27.6484454Z ##[endgroup]
+2026-10-01T08:27:27.6485211Z ##[group]Initializing the repository
+2026-10-01T08:27:27.6489059Z [command]/usr/bin/git init /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:27:27.6594697Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-01T08:27:27.6596583Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-01T08:27:27.6598615Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-01T08:27:27.6599884Z hint: call:
+2026-10-01T08:27:27.6601104Z hint:
+2026-10-01T08:27:27.6601989Z hint: 	git config --global init.defaultBranch <name>
+2026-10-01T08:27:27.6603081Z hint:
+2026-10-01T08:27:27.6604093Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-01T08:27:27.6605628Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-01T08:27:27.6607139Z hint:
+2026-10-01T08:27:27.6607904Z hint: 	git branch -m <name>
+2026-10-01T08:27:27.6608746Z hint:
+2026-10-01T08:27:27.6610034Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-01T08:27:27.6611910Z Initialized empty Git repository in /home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/
+2026-10-01T08:27:27.6617156Z [command]/usr/bin/git remote add origin https://github.com/gonos2k/AD4DVAR-radar
+2026-10-01T08:27:27.6657614Z ##[endgroup]
+2026-10-01T08:27:27.6658970Z ##[group]Disabling automatic garbage collection
+2026-10-01T08:27:27.6660669Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-01T08:27:27.6694284Z ##[endgroup]
+2026-10-01T08:27:27.6696131Z ##[group]Setting up auth
+2026-10-01T08:27:27.6697330Z Removing SSH command configuration
+2026-10-01T08:27:27.6702664Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-01T08:27:27.6741173Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-01T08:27:27.7103016Z Removing HTTP extra header
+2026-10-01T08:27:27.7109828Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-01T08:27:27.7150749Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-01T08:27:27.7370740Z Removing includeIf entries pointing to credentials config files
+2026-10-01T08:27:27.7376269Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-01T08:27:27.7411279Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-01T08:27:27.7642150Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-1a11afdd-cce7-44fe-aa98-bfc1e5762f5b.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-01T08:27:27.7681676Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path /home/runner/work/_temp/git-credentials-1a11afdd-cce7-44fe-aa98-bfc1e5762f5b.config
+2026-10-01T08:27:27.7715340Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-1a11afdd-cce7-44fe-aa98-bfc1e5762f5b.config
+2026-10-01T08:27:27.7754556Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-1a11afdd-cce7-44fe-aa98-bfc1e5762f5b.config
+2026-10-01T08:27:27.7790259Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-1a11afdd-cce7-44fe-aa98-bfc1e5762f5b.config
+2026-10-01T08:27:27.7820083Z ##[endgroup]
+2026-10-01T08:27:27.7820866Z ##[group]Fetching the repository
+2026-10-01T08:27:27.7826330Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf:refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T08:27:29.0602859Z From https://github.com/gonos2k/AD4DVAR-radar
+2026-10-01T08:27:29.0604537Z  * [new ref]         a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf -> origin/agent/full-cpu-package-regression
+2026-10-01T08:27:29.0611254Z [command]/usr/bin/git branch --list --remote origin/agent/full-cpu-package-regression
+2026-10-01T08:27:29.0641214Z   origin/agent/full-cpu-package-regression
+2026-10-01T08:27:29.0649421Z [command]/usr/bin/git rev-parse refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T08:27:29.0677176Z a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf
+2026-10-01T08:27:29.0682519Z ##[endgroup]
+2026-10-01T08:27:29.0683803Z ##[group]Determining the checkout info
+2026-10-01T08:27:29.0686769Z ##[endgroup]
+2026-10-01T08:27:29.0688301Z [command]/usr/bin/git sparse-checkout disable
+2026-10-01T08:27:29.0743479Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-01T08:27:29.0777645Z ##[group]Checking out the ref
+2026-10-01T08:27:29.0782062Z [command]/usr/bin/git checkout --progress --force -B agent/full-cpu-package-regression refs/remotes/origin/agent/full-cpu-package-regression
+2026-10-01T08:27:29.2797767Z Switched to a new branch 'agent/full-cpu-package-regression'
+2026-10-01T08:27:29.2803457Z branch 'agent/full-cpu-package-regression' set up to track 'origin/agent/full-cpu-package-regression'.
+2026-10-01T08:27:29.2834544Z ##[endgroup]
+2026-10-01T08:27:29.2886763Z [command]/usr/bin/git log -1 --format=%H
+2026-10-01T08:27:29.2917042Z a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf
+2026-10-01T08:27:29.3191028Z ##[group]Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+2026-10-01T08:27:29.3191630Z with:
+2026-10-01T08:27:29.3191880Z   python-version: 3.12
+2026-10-01T08:27:29.3192142Z   cache: pip
+2026-10-01T08:27:29.3255644Z   cache-dependency-path: requirements/ci-py312-linux.lock
+2026-10-01T08:27:29.3256150Z   check-latest: false
+2026-10-01T08:27:29.3258947Z   token: ***
+2026-10-01T08:27:29.3259248Z   update-environment: true
+2026-10-01T08:27:29.3259551Z   allow-prereleases: false
+2026-10-01T08:27:29.3259829Z   freethreaded: false
+2026-10-01T08:27:29.3260085Z ##[endgroup]
+2026-10-01T08:27:29.4547754Z ##[group]Installed versions
+2026-10-01T08:27:29.4642845Z Successfully set up CPython (3.12.14)
+2026-10-01T08:27:29.4643900Z ##[endgroup]
+2026-10-01T08:27:29.4945815Z [command]/opt/hostedtoolcache/Python/3.12.14/x64/bin/pip cache dir
+2026-10-01T08:27:29.7908196Z /home/runner/.cache/pip
+2026-10-01T08:27:29.8807904Z Cache hit for restore-key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.14-pip-f7cee36fe32686215bbb9f8a086817e4840e974b74a211879070eaf02f04bcd8
+2026-10-01T08:27:30.9492622Z Received 264241152 of 287618844 (91.9%), 252.0 MBs/sec
+2026-10-01T08:27:31.1292855Z Received 287618844 of 287618844 (100.0%), 232.5 MBs/sec
+2026-10-01T08:27:31.1293680Z Cache Size: ~274 MB (287618844 B)
+2026-10-01T08:27:31.1351832Z [command]/usr/bin/tar -xf /home/runner/work/_temp/a1706cf2-c9d9-48a4-9a86-529f7bb9daa0/cache.tzst -P -C /home/runner/work/AD4DVAR-radar/AD4DVAR-radar --use-compress-program unzstd
+2026-10-01T08:27:31.5252416Z Cache restored successfully
+2026-10-01T08:27:31.5915314Z Cache restored from key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.14-pip-f7cee36fe32686215bbb9f8a086817e4840e974b74a211879070eaf02f04bcd8
+2026-10-01T08:27:31.6116929Z ##[group]Run python -I -m pip install \
+2026-10-01T08:27:31.6117377Z [36;1mpython -I -m pip install \[0m
+2026-10-01T08:27:31.6117693Z [36;1m  --require-hashes \[0m
+2026-10-01T08:27:31.6117971Z [36;1m  --only-binary=:all: \[0m
+2026-10-01T08:27:31.6118415Z [36;1m  --extra-index-url https://download.pytorch.org/whl/cpu \[0m
+2026-10-01T08:27:31.6118883Z [36;1m  --requirement requirements/ci-py312-linux.lock[0m
+2026-10-01T08:27:31.7013396Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:27:31.7013717Z env:
+2026-10-01T08:27:31.7014012Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:31.7014820Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:27:31.7015284Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:31.7015679Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:31.7016065Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:27:31.7016687Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:27:31.7017029Z ##[endgroup]
+2026-10-01T08:27:32.2399658Z Looking in indexes: https://pypi.org/simple, https://download.pytorch.org/whl/cpu
+2026-10-01T08:27:32.5016827Z Collecting basedpyright==1.39.9 (from -r requirements/ci-py312-linux.lock (line 5))
+2026-10-01T08:27:32.5029403Z   Using cached basedpyright-1.39.9-py3-none-any.whl (13.4 MB)
+2026-10-01T08:27:32.5991236Z Collecting boolean-py==5.0 (from -r requirements/ci-py312-linux.lock (line 9))
+2026-10-01T08:27:32.6004138Z   Using cached boolean_py-5.0-py3-none-any.whl (26 kB)
+2026-10-01T08:27:32.6269930Z Collecting build==1.5.0 (from -r requirements/ci-py312-linux.lock (line 13))
+2026-10-01T08:27:32.6282423Z   Using cached build-1.5.0-py3-none-any.whl (26 kB)
+2026-10-01T08:27:32.6946901Z Collecting cachecontrol==0.14.4 (from -r requirements/ci-py312-linux.lock (line 17))
+2026-10-01T08:27:32.6959087Z   Using cached cachecontrol-0.14.4-py3-none-any.whl (22 kB)
+2026-10-01T08:27:32.7313434Z Collecting certifi==2026.7.22 (from -r requirements/ci-py312-linux.lock (line 21))
+2026-10-01T08:27:32.7325536Z   Using cached certifi-2026.7.22-py3-none-any.whl (136 kB)
+2026-10-01T08:27:32.8552573Z Collecting cffi==2.1.1 (from -r requirements/ci-py312-linux.lock (line 25))
+2026-10-01T08:27:32.8566215Z   Using cached cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+2026-10-01T08:27:32.9754210Z Collecting charset-normalizer==3.5.1 (from -r requirements/ci-py312-linux.lock (line 127))
+2026-10-01T08:27:32.9767021Z   Using cached charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (248 kB)
+2026-10-01T08:27:33.1861985Z Collecting cryptography==50.0.0 (from -r requirements/ci-py312-linux.lock (line 301))
+2026-10-01T08:27:33.1874949Z   Using cached cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+2026-10-01T08:27:33.2518496Z Collecting cyclonedx-python-lib==11.12.0 (from -r requirements/ci-py312-linux.lock (line 351))
+2026-10-01T08:27:33.2530895Z   Using cached cyclonedx_python_lib-11.12.0-py3-none-any.whl (529 kB)
+2026-10-01T08:27:33.2783012Z Collecting defusedxml==0.7.1 (from -r requirements/ci-py312-linux.lock (line 355))
+2026-10-01T08:27:33.2796698Z   Using cached defusedxml-0.7.1-py2.py3-none-any.whl (25 kB)
+2026-10-01T08:27:33.3241938Z Collecting filelock==3.32.3 (from -r requirements/ci-py312-linux.lock (line 359))
+2026-10-01T08:27:33.3255423Z   Using cached filelock-3.32.3-py3-none-any.whl (98 kB)
+2026-10-01T08:27:33.3563558Z Collecting fsspec==2026.7.0 (from -r requirements/ci-py312-linux.lock (line 367))
+2026-10-01T08:27:33.3575086Z   Using cached fsspec-2026.7.0-py3-none-any.whl (206 kB)
+2026-10-01T08:27:33.3917181Z Collecting idna==3.18 (from -r requirements/ci-py312-linux.lock (line 371))
+2026-10-01T08:27:33.3929687Z   Using cached idna-3.18-py3-none-any.whl (65 kB)
+2026-10-01T08:27:33.4381784Z Collecting iniconfig==2.3.0 (from -r requirements/ci-py312-linux.lock (line 375))
+2026-10-01T08:27:33.4394628Z   Using cached iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+2026-10-01T08:27:33.4581300Z Collecting jinja2==3.1.6 (from -r requirements/ci-py312-linux.lock (line 379))
+2026-10-01T08:27:33.4593659Z   Using cached jinja2-3.1.6-py3-none-any.whl (134 kB)
+2026-10-01T08:27:33.4901585Z Collecting license-expression==30.4.4 (from -r requirements/ci-py312-linux.lock (line 383))
+2026-10-01T08:27:33.4913101Z   Using cached license_expression-30.4.4-py3-none-any.whl (120 kB)
+2026-10-01T08:27:33.5182316Z Collecting markdown-it-py==4.2.0 (from -r requirements/ci-py312-linux.lock (line 387))
+2026-10-01T08:27:33.5194123Z   Using cached markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+2026-10-01T08:27:33.6143212Z Collecting markupsafe==3.0.3 (from -r requirements/ci-py312-linux.lock (line 391))
+2026-10-01T08:27:33.6155917Z   Using cached markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+2026-10-01T08:27:33.6446652Z Collecting mdurl==0.1.2 (from -r requirements/ci-py312-linux.lock (line 482))
+2026-10-01T08:27:33.6457994Z   Using cached mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+2026-10-01T08:27:33.6665631Z Collecting mpmath==1.3.0 (from -r requirements/ci-py312-linux.lock (line 486))
+2026-10-01T08:27:33.6677729Z   Using cached mpmath-1.3.0-py3-none-any.whl (536 kB)
+2026-10-01T08:27:33.7541431Z Collecting msgpack==1.2.1 (from -r requirements/ci-py312-linux.lock (line 490))
+2026-10-01T08:27:33.7553682Z   Using cached msgpack-1.2.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (419 kB)
+2026-10-01T08:27:33.7899502Z Collecting networkx==3.6.1 (from -r requirements/ci-py312-linux.lock (line 558))
+2026-10-01T08:27:33.7911411Z   Using cached networkx-3.6.1-py3-none-any.whl (2.1 MB)
+2026-10-01T08:27:33.8427815Z Collecting nodejs-wheel-binaries==24.16.0 (from -r requirements/ci-py312-linux.lock (line 562))
+2026-10-01T08:27:33.8440628Z   Using cached nodejs_wheel_binaries-24.16.0-py2.py3-none-manylinux_2_28_x86_64.whl (60.7 MB)
+2026-10-01T08:27:34.4602053Z Collecting numpy==2.2.6 (from -r requirements/ci-py312-linux.lock (line 573))
+2026-10-01T08:27:34.4616813Z   Using cached numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.5 MB)
+2026-10-01T08:27:34.6547920Z Collecting packageurl-python==0.17.6 (from -r requirements/ci-py312-linux.lock (line 632))
+2026-10-01T08:27:34.6560876Z   Using cached packageurl_python-0.17.6-py3-none-any.whl (36 kB)
+2026-10-01T08:27:34.6819516Z Collecting packaging==26.3 (from -r requirements/ci-py312-linux.lock (line 636))
+2026-10-01T08:27:34.6831494Z   Using cached packaging-26.3-py3-none-any.whl (129 kB)
+2026-10-01T08:27:34.6853449Z Requirement already satisfied: pip==26.2.1 in /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages (from -r requirements/ci-py312-linux.lock (line 645)) (26.2.1)
+2026-10-01T08:27:34.7517656Z Collecting pip-api==0.0.34 (from -r requirements/ci-py312-linux.lock (line 649))
+2026-10-01T08:27:34.7529974Z   Using cached pip_api-0.0.34-py3-none-any.whl (120 kB)
+2026-10-01T08:27:34.7896271Z Collecting pip-audit==2.10.1 (from -r requirements/ci-py312-linux.lock (line 653))
+2026-10-01T08:27:34.7908564Z   Using cached pip_audit-2.10.1-py3-none-any.whl (62 kB)
+2026-10-01T08:27:34.8178494Z Collecting pip-requirements-parser==32.0.1 (from -r requirements/ci-py312-linux.lock (line 657))
+2026-10-01T08:27:34.8190790Z   Using cached pip_requirements_parser-32.0.1-py3-none-any.whl (35 kB)
+2026-10-01T08:27:34.8495807Z Collecting platformdirs==4.11.3 (from -r requirements/ci-py312-linux.lock (line 661))
+2026-10-01T08:27:34.8507082Z   Using cached platformdirs-4.11.3-py3-none-any.whl (23 kB)
+2026-10-01T08:27:34.9067034Z Collecting pluggy==1.6.0 (from -r requirements/ci-py312-linux.lock (line 665))
+2026-10-01T08:27:34.9078772Z   Using cached pluggy-1.6.0-py3-none-any.whl (20 kB)
+2026-10-01T08:27:34.9984493Z Collecting py-serializable==2.1.0 (from -r requirements/ci-py312-linux.lock (line 669))
+2026-10-01T08:27:34.9996053Z   Using cached py_serializable-2.1.0-py3-none-any.whl (23 kB)
+2026-10-01T08:27:35.1867574Z Collecting pycparser==3.0 (from -r requirements/ci-py312-linux.lock (line 673))
+2026-10-01T08:27:35.1879115Z   Using cached pycparser-3.0-py3-none-any.whl (48 kB)
+2026-10-01T08:27:35.2183408Z Collecting pygments==2.20.0 (from -r requirements/ci-py312-linux.lock (line 677))
+2026-10-01T08:27:35.2194709Z   Using cached pygments-2.20.0-py3-none-any.whl (1.2 MB)
+2026-10-01T08:27:35.2685213Z Collecting pyparsing==3.3.2 (from -r requirements/ci-py312-linux.lock (line 683))
+2026-10-01T08:27:35.2696940Z   Using cached pyparsing-3.3.2-py3-none-any.whl (122 kB)
+2026-10-01T08:27:35.3279377Z Collecting pyproject-hooks==1.2.0 (from -r requirements/ci-py312-linux.lock (line 687))
+2026-10-01T08:27:35.3291616Z   Using cached pyproject_hooks-1.2.0-py3-none-any.whl (10 kB)
+2026-10-01T08:27:35.4646776Z Collecting pytest==9.1.1 (from -r requirements/ci-py312-linux.lock (line 691))
+2026-10-01T08:27:35.4658395Z   Using cached pytest-9.1.1-py3-none-any.whl (386 kB)
+2026-10-01T08:27:35.4991234Z Collecting requests==2.34.2 (from -r requirements/ci-py312-linux.lock (line 695))
+2026-10-01T08:27:35.5002708Z   Using cached requests-2.34.2-py3-none-any.whl (73 kB)
+2026-10-01T08:27:35.5395423Z Collecting rich==15.0.0 (from -r requirements/ci-py312-linux.lock (line 701))
+2026-10-01T08:27:35.5406824Z   Using cached rich-15.0.0-py3-none-any.whl (310 kB)
+2026-10-01T08:27:35.6420962Z Collecting setuptools==84.0.0 (from -r requirements/ci-py312-linux.lock (line 705))
+2026-10-01T08:27:35.6437488Z   Using cached setuptools-84.0.0-py3-none-any.whl (818 kB)
+2026-10-01T08:27:35.7383872Z Collecting sortedcontainers==2.4.0 (from -r requirements/ci-py312-linux.lock (line 711))
+2026-10-01T08:27:35.7395751Z   Using cached sortedcontainers-2.4.0-py2.py3-none-any.whl (29 kB)
+2026-10-01T08:27:35.8081188Z Collecting sympy==1.14.0 (from -r requirements/ci-py312-linux.lock (line 715))
+2026-10-01T08:27:35.8093050Z   Using cached sympy-1.14.0-py3-none-any.whl (6.3 MB)
+2026-10-01T08:27:35.8986435Z Collecting tomli==2.4.1 (from -r requirements/ci-py312-linux.lock (line 719))
+2026-10-01T08:27:35.8998745Z   Using cached tomli-2.4.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (253 kB)
+2026-10-01T08:27:35.9421871Z Collecting tomli-w==1.2.0 (from -r requirements/ci-py312-linux.lock (line 768))
+2026-10-01T08:27:35.9433784Z   Using cached tomli_w-1.2.0-py3-none-any.whl (6.7 kB)
+2026-10-01T08:27:36.4100615Z Collecting torch==2.13.0+cpu (from -r requirements/ci-py312-linux.lock (line 772))
+2026-10-01T08:27:36.4725716Z   Using cached torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl (191.8 MB)
+2026-10-01T08:27:37.0665818Z Collecting typing-extensions==4.16.0 (from -r requirements/ci-py312-linux.lock (line 807))
+2026-10-01T08:27:37.0677790Z   Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+2026-10-01T08:27:37.0899627Z Collecting urllib3==2.8.0 (from -r requirements/ci-py312-linux.lock (line 813))
+2026-10-01T08:27:37.0911365Z   Using cached urllib3-2.8.0-py3-none-any.whl (135 kB)
+2026-10-01T08:27:37.1325300Z Collecting wheel==0.46.3 (from -r requirements/ci-py312-linux.lock (line 817))
+2026-10-01T08:27:37.1336964Z   Using cached wheel-0.46.3-py3-none-any.whl (30 kB)
+2026-10-01T08:27:37.4465601Z Installing collected packages: sortedcontainers, mpmath, boolean-py, urllib3, typing-extensions, tomli-w, tomli, sympy, setuptools, pyproject-hooks, pyparsing, pygments, pycparser, pluggy, platformdirs, pip-api, packaging, packageurl-python, numpy, nodejs-wheel-binaries, networkx, msgpack, mdurl, markupsafe, license-expression, iniconfig, idna, fsspec, filelock, defusedxml, charset-normalizer, certifi, wheel, requests, pytest, py-serializable, pip-requirements-parser, markdown-it-py, jinja2, cffi, build, basedpyright, torch, rich, cyclonedx-python-lib, cryptography, cachecontrol, pip-audit
+2026-10-01T08:28:04.1992095Z 
+2026-10-01T08:28:04.2035900Z Successfully installed basedpyright-1.39.9 boolean-py-5.0 build-1.5.0 cachecontrol-0.14.4 certifi-2026.7.22 cffi-2.1.1 charset-normalizer-3.5.1 cryptography-50.0.0 cyclonedx-python-lib-11.12.0 defusedxml-0.7.1 filelock-3.32.3 fsspec-2026.7.0 idna-3.18 iniconfig-2.3.0 jinja2-3.1.6 license-expression-30.4.4 markdown-it-py-4.2.0 markupsafe-3.0.3 mdurl-0.1.2 mpmath-1.3.0 msgpack-1.2.1 networkx-3.6.1 nodejs-wheel-binaries-24.16.0 numpy-2.2.6 packageurl-python-0.17.6 packaging-26.3 pip-api-0.0.34 pip-audit-2.10.1 pip-requirements-parser-32.0.1 platformdirs-4.11.3 pluggy-1.6.0 py-serializable-2.1.0 pycparser-3.0 pygments-2.20.0 pyparsing-3.3.2 pyproject-hooks-1.2.0 pytest-9.1.1 requests-2.34.2 rich-15.0.0 setuptools-84.0.0 sortedcontainers-2.4.0 sympy-1.14.0 tomli-2.4.1 tomli-w-1.2.0 torch-2.13.0+cpu typing-extensions-4.16.0 urllib3-2.8.0 wheel-0.46.3
+2026-10-01T08:28:04.3352750Z ##[group]Run printf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py
+2026-10-01T08:28:04.3353513Z [36;1mprintf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py[0m
+2026-10-01T08:28:04.3353995Z [36;1mpython -I - <<'PY'[0m
+2026-10-01T08:28:04.3354251Z [36;1mimport site[0m
+2026-10-01T08:28:04.3354483Z [36;1mfrom pathlib import Path[0m
+2026-10-01T08:28:04.3354730Z [36;1m[0m
+2026-10-01T08:28:04.3354928Z [36;1mimport pip_audit[0m
+2026-10-01T08:28:04.3355157Z [36;1mimport torch[0m
+2026-10-01T08:28:04.3355360Z [36;1m[0m
+2026-10-01T08:28:04.3355600Z [36;1mmodule = Path(pip_audit.__file__).resolve()[0m
+2026-10-01T08:28:04.3356071Z [36;1mroots = tuple(Path(item).resolve() for item in site.getsitepackages())[0m
+2026-10-01T08:28:04.3356898Z [36;1massert any(root == module or root in module.parents for root in roots)[0m
+2026-10-01T08:28:04.3357327Z [36;1massert torch.version.cuda is None[0m
+2026-10-01T08:28:04.3357629Z [36;1mPY[0m
+2026-10-01T08:28:04.3357966Z [36;1mpython -I "$GITHUB_WORKSPACE/.github/scripts/check_dependency_locks.py"[0m
+2026-10-01T08:28:04.3358376Z [36;1mpython -I -m pip_audit \[0m
+2026-10-01T08:28:04.3358633Z [36;1m  --strict \[0m
+2026-10-01T08:28:04.3358859Z [36;1m  --disable-pip \[0m
+2026-10-01T08:28:04.3359093Z [36;1m  --no-deps \[0m
+2026-10-01T08:28:04.3359324Z [36;1m  --requirement "$LOCK_FILE"[0m
+2026-10-01T08:28:04.3425695Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:04.3425948Z env:
+2026-10-01T08:28:04.3426217Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:04.3426909Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:04.3427353Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:04.3427752Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:04.3428133Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:04.3428554Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:04.3429071Z   LOCK_FILE: /home/runner/work/AD4DVAR-radar/AD4DVAR-radar/requirements/ci-py312-linux.lock
+2026-10-01T08:28:04.3429519Z ##[endgroup]
+2026-10-01T08:28:06.0501233Z dependency locks: 4 hashed Linux CPU closures are synchronized
+2026-10-01T08:28:06.5834496Z WARNING:pip_audit._cli:--no-deps is supported, but users are encouraged to fully hash their pinned dependencies
+2026-10-01T08:28:06.5835954Z WARNING:pip_audit._cli:Consider using a tool like `pip-compile`: https://pip-tools.readthedocs.io/en/latest/#using-hashes
+2026-10-01T08:28:06.9963784Z No known vulnerabilities found
+2026-10-01T08:28:07.0432953Z ##[group]Run python -I -m pip install \
+2026-10-01T08:28:07.0433315Z [36;1mpython -I -m pip install \[0m
+2026-10-01T08:28:07.0433597Z [36;1m  --no-build-isolation \[0m
+2026-10-01T08:28:07.0433875Z [36;1m  --no-deps \[0m
+2026-10-01T08:28:07.0434108Z [36;1m  --editable .[0m
+2026-10-01T08:28:07.0434371Z [36;1mpython -I -m pip check[0m
+2026-10-01T08:28:07.0498228Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:07.0498491Z env:
+2026-10-01T08:28:07.0498757Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:07.0499193Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:07.0499627Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:07.0500006Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:07.0500394Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:07.0500781Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:07.0501141Z ##[endgroup]
+2026-10-01T08:28:07.3744220Z Obtaining file:///home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:28:07.3754590Z   Checking if build backend supports build_editable: started
+2026-10-01T08:28:07.5437146Z   Checking if build backend supports build_editable: finished with status 'done'
+2026-10-01T08:28:07.5447142Z   Preparing editable metadata (pyproject.toml): started
+2026-10-01T08:28:07.7764376Z   Preparing editable metadata (pyproject.toml): finished with status 'done'
+2026-10-01T08:28:07.7864032Z Building wheels for collected packages: advar-radar-nowcast
+2026-10-01T08:28:07.7871912Z   Building editable for advar-radar-nowcast (pyproject.toml): started
+2026-10-01T08:28:08.0654612Z   Building editable for advar-radar-nowcast (pyproject.toml): finished with status 'done'
+2026-10-01T08:28:08.0661915Z   Created wheel for advar-radar-nowcast: filename=advar_radar_nowcast-0.114.0-0.editable-py3-none-any.whl size=63186 sha256=ae3ec40456528020a1b89fa18f9aa07d8014826dcc7a9872af3106d492a49504
+2026-10-01T08:28:08.0663574Z   Stored in directory: /tmp/pip-ephem-wheel-cache-ftyak018/wheels/1b/17/88/759e7a703f550adf36506436df8ea413a3c2e2eb8d99fc9f9a
+2026-10-01T08:28:08.0752271Z Successfully built advar-radar-nowcast
+2026-10-01T08:28:08.0859557Z Installing collected packages: advar-radar-nowcast
+2026-10-01T08:28:08.0971189Z Successfully installed advar-radar-nowcast-0.114.0
+2026-10-01T08:28:08.3937895Z No broken requirements found.
+2026-10-01T08:28:08.4229244Z ##[group]Run python -I .github/scripts/check_basedpyright.py
+2026-10-01T08:28:08.4229718Z [36;1mpython -I .github/scripts/check_basedpyright.py[0m
+2026-10-01T08:28:08.4293585Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:08.4293843Z env:
+2026-10-01T08:28:08.4294108Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:08.4294554Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:08.4294978Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:08.4295360Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:08.4295738Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:08.4296119Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:08.4296710Z ##[endgroup]
+2026-10-01T08:28:24.6667892Z basedpyright: 0 errors, 8048 warnings, 0 notes
+2026-10-01T08:28:24.6813737Z ##[group]Run python -I .github/scripts/run_cpu_test_shard.py \
+2026-10-01T08:28:24.6814564Z [36;1mpython -I .github/scripts/run_cpu_test_shard.py \[0m
+2026-10-01T08:28:24.6815171Z [36;1m  --shard-index 0 \[0m
+2026-10-01T08:28:24.6815623Z [36;1m  --shard-count 6 \[0m
+2026-10-01T08:28:24.6816165Z [36;1m  --record-dir "$RUNNER_TEMP/cpu-shard-records"[0m
+2026-10-01T08:28:24.6901467Z shell: /usr/bin/bash -e {0}
+2026-10-01T08:28:24.6901919Z env:
+2026-10-01T08:28:24.6902371Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:24.6903139Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T08:28:24.6903879Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:24.6904531Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:24.6905223Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T08:28:24.6905845Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T08:28:24.6906621Z   OMP_NUM_THREADS: 1
+2026-10-01T08:28:24.6907009Z   MKL_NUM_THREADS: 1
+2026-10-01T08:28:24.6907363Z ##[endgroup]
+2026-10-01T08:28:31.5023686Z ============================= test session starts ==============================
+2026-10-01T08:28:31.5024555Z platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.12.14/x64/bin/python
+2026-10-01T08:28:31.5025241Z cachedir: .pytest_cache
+2026-10-01T08:28:31.5025612Z rootdir: /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T08:28:31.5026056Z configfile: pyproject.toml
+2026-10-01T08:28:33.9557642Z collecting ... collected 386 items
+2026-10-01T08:28:33.9558114Z 
+2026-10-01T08:28:35.7402651Z tests/test_a2_intervention.py::InterventionA2Tests::test_prospective_decision_rejects_all_canonical_noops 
+2026-10-01T08:28:35.7427796Z tests/test_a2_intervention.py::InterventionA2Tests::test_prospective_decision_rejects_all_canonical_noops PASSED [  0%]
+2026-10-01T08:28:35.9147928Z tests/test_a2_intervention.py::InterventionA2Tests::test_selected_override_with_real_change_remains_decidable PASSED [  0%]
+2026-10-01T08:28:36.0368074Z tests/test_a2_numerics_cross.py::test_cross_dtype_giant_finite_remap_has_zero_connected_ad_paths PASSED [  0%]
+2026-10-01T08:28:36.0443104Z tests/test_a2_numerics_cross.py::test_cross_dtype_integer_boundary_keeps_frozen_branch_derivative PASSED [  1%]
+2026-10-01T08:28:36.0537338Z tests/test_a2_numerics_cross.py::test_mps_float32_echo_accepts_cpu_float64_displacement SKIPPED [  1%]
+2026-10-01T08:28:36.0601929Z tests/test_a2_numerics_cross.py::test_cpu_float64_echo_accepts_mps_float32_displacement SKIPPED [  1%]
+2026-10-01T08:28:38.0081029Z tests/test_a2_numerics_cross.py::test_linearization_admission_rejects_malformed_control[wrong_dtype] PASSED [  1%]
+2026-10-01T08:28:39.9406360Z tests/test_a2_numerics_cross.py::test_linearization_admission_rejects_malformed_control[extra_tail] PASSED [  2%]
+2026-10-01T08:28:41.8768817Z tests/test_a2_numerics_cross.py::test_linearization_admission_rejects_malformed_control[short] PASSED [  2%]
+2026-10-01T08:28:42.7481637Z tests/test_a5_scoring.py::A5ScoringTests::test_full_map_scoring_rejects_off_grid_leads PASSED [  2%]
+2026-10-01T08:28:42.7539037Z tests/test_a5_scoring.py::A5ScoringTests::test_issuance_change_fractions_use_operational_and_parent_denominators PASSED [  2%]
+2026-10-01T08:28:43.7053249Z tests/test_a5_scoring.py::A5ScoringTests::test_public_targets_keep_confirmed_clear_out_of_echo_support PASSED [  3%]
+2026-10-01T08:28:45.6082119Z tests/test_a5_scoring.py::A5ScoringTests::test_public_targets_use_detection_limit_for_censored_event_domain PASSED [  3%]
+2026-10-01T08:28:45.6146908Z tests/test_a5_scoring.py::A5ScoringTests::test_support_and_intensity_oracles_use_their_declared_weights PASSED [  3%]
+2026-10-01T08:28:46.5264414Z tests/test_a5_verification.py::A5VerificationTests::test_current_producer_dtypes_remain_native PASSED [  3%]
+2026-10-01T08:28:47.6838535Z tests/test_a5_verification.py::A5VerificationTests::test_current_v22_uses_independent_spatial_temporal_and_weight_oracle PASSED [  4%]
+2026-10-01T08:28:49.0622081Z tests/test_a5_verification.py::A5VerificationTests::test_replay_and_contract_boundaries_require_exact_dtypes PASSED [  4%]
+2026-10-01T08:28:49.8242924Z tests/test_a5_verification.py::A5VerificationTests::test_selection_certification_keeps_transcendentals_non_authoritative PASSED [  4%]
+2026-10-01T08:28:49.9241047Z tests/test_fv_analysis_forecast.py::test_forecast_starts_at_analysis_end_and_matches_split_backend PASSED [  4%]
+2026-10-01T08:28:50.7392244Z tests/test_fv_analysis_forecast.py::test_future_time_varying_edges_are_consumed_and_differentiable PASSED [  5%]
+2026-10-01T08:28:50.8047235Z tests/test_fv_analysis_forecast.py::test_forecast_rejects_a_boundary_start_other_than_analysis_interval PASSED [  5%]
+2026-10-01T08:28:51.7968067Z tests/test_fv_analysis_forecast.py::test_analysis_plus_forecast_matches_one_uninterrupted_trajectory_and_jvp[donorcell] PASSED [  5%]
+2026-10-01T08:28:52.9785089Z tests/test_fv_analysis_forecast.py::test_analysis_plus_forecast_matches_one_uninterrupted_trajectory_and_jvp[minmod] PASSED [  5%]
+2026-10-01T08:28:53.1550321Z tests/test_fv_analysis_forecast.py::test_wrong_boundary_time_is_rejected_before_analysis[0] PASSED [  6%]
+2026-10-01T08:28:53.2191602Z tests/test_fv_analysis_forecast.py::test_wrong_boundary_time_is_rejected_before_analysis[1] PASSED [  6%]
+2026-10-01T08:28:53.2834973Z tests/test_fv_analysis_forecast.py::test_wrong_boundary_time_is_rejected_before_analysis[3] PASSED [  6%]
+2026-10-01T08:28:53.3489154Z tests/test_fv_analysis_forecast.py::test_wrong_boundary_time_is_rejected_before_analysis[2.0] PASSED [  6%]
+2026-10-01T08:28:53.4145377Z tests/test_fv_analysis_forecast.py::test_wrong_boundary_time_is_rejected_before_analysis[True] PASSED [  7%]
+2026-10-01T08:28:53.4890765Z tests/test_fv_analysis_forecast.py::test_future_boundary_schedule_cannot_reuse_a_different_horizon PASSED [  7%]
+2026-10-01T08:28:53.4997787Z tests/test_fv_gn_response_probe.py::test_fresh_gn_forwards_exact_solver_control_after_verification[False] PASSED [  7%]
+2026-10-01T08:28:53.5101218Z tests/test_fv_gn_response_probe.py::test_fresh_gn_forwards_exact_solver_control_after_verification[True] PASSED [  8%]
+2026-10-01T08:28:53.7234612Z tests/test_fv_minmod_inverse_probe.py::test_joint_inverse_traces_both_rk_stages_across_replay_boundary PASSED [  8%]
+2026-10-01T08:28:53.8552142Z tests/test_fv_minmod_inverse_probe.py::test_joint_inverse_rejects_nominal_zero_controlled_flux PASSED [  8%]
+2026-10-01T08:28:56.3393785Z tests/test_fv_minmod_inverse_probe.py::test_joint_inverse_traces_decay_maintain_and_growth_on_smooth_branches[-0.023187493904503132] PASSED [  8%]
+2026-10-01T08:28:58.5971754Z tests/test_fv_minmod_inverse_probe.py::test_joint_inverse_traces_decay_maintain_and_growth_on_smooth_branches[0.0] PASSED [  9%]
+2026-10-01T08:29:00.9156940Z tests/test_fv_minmod_inverse_probe.py::test_joint_inverse_traces_decay_maintain_and_growth_on_smooth_branches[0.023187493904503132] PASSED [  9%]
+2026-10-01T08:29:04.0914139Z tests/test_fv_minmod_inverse_probe.py::test_zero_growth_objective_hvp_has_two_sided_second_order_convergence PASSED [  9%]
+2026-10-01T08:29:04.2561675Z tests/test_fv_minmod_inverse_probe.py::test_flat_echo_is_forward_available_but_strict_local_response_is_refused PASSED [  9%]
+2026-10-01T08:29:04.2622997Z tests/test_fv_minmod_inverse_probe.py::test_joint_inverse_rejects_active_limiter_tie PASSED [ 10%]
+2026-10-01T08:29:04.2702085Z tests/test_fv_minmod_inverse_probe.py::test_branch_signature_keeps_signed_faces_and_per_cell_slope_choices PASSED [ 10%]
+2026-10-01T08:29:04.2770856Z tests/test_fv_minmod_inverse_probe.py::test_strict_opposite_slopes_have_a_smooth_zero_limiter PASSED [ 10%]
+2026-10-01T08:29:04.2865848Z tests/test_fv_partial_alternate_seed_gate.py::test_selection_is_one_previously_refused_cross_sector_candidate PASSED [ 10%]
+2026-10-01T08:29:04.2943084Z tests/test_fv_partial_alternate_seed_gate.py::test_changed_archived_control_hash_is_rejected PASSED [ 11%]
+2026-10-01T08:29:04.3072598Z tests/test_fv_partial_alternate_seed_gate.py::test_parent_requires_only_seed_evidence[none] PASSED [ 11%]
+2026-10-01T08:29:04.3196288Z tests/test_fv_partial_alternate_seed_gate.py::test_parent_requires_only_seed_evidence[response] PASSED [ 11%]
+2026-10-01T08:29:04.3322966Z tests/test_fv_partial_alternate_seed_gate.py::test_parent_requires_only_seed_evidence[wrong_curvature_hash] PASSED [ 11%]
+2026-10-01T08:29:04.3449446Z tests/test_fv_partial_alternate_seed_gate.py::test_parent_requires_only_seed_evidence[low_margin] PASSED [ 12%]
+2026-10-01T08:29:04.3575325Z tests/test_fv_partial_alternate_seed_gate.py::test_parent_requires_only_seed_evidence[wrong_exit] PASSED [ 12%]
+2026-10-01T08:29:04.3700357Z tests/test_fv_partial_alternate_seed_gate.py::test_parent_requires_only_seed_evidence[accepted_seed] PASSED [ 12%]
+2026-10-01T08:29:04.3829355Z tests/test_fv_partial_alternate_seed_gate.py::test_parent_requires_only_seed_evidence[wrong_input] PASSED [ 12%]
+2026-10-01T08:29:04.3959116Z tests/test_fv_partial_alternate_seed_gate.py::test_parent_requires_only_seed_evidence[newton_count] PASSED [ 13%]
+2026-10-01T08:29:04.4026110Z tests/test_fv_partial_alternate_seed_gate.py::test_gate_cannot_write_into_archived_raw_directory PASSED [ 13%]
+2026-10-01T08:29:04.4091927Z tests/test_fv_partial_alternate_seed_gate.py::test_guarded_parent_cannot_create_directory_inside_raw_archive PASSED [ 13%]
+2026-10-01T08:29:05.9567161Z tests/test_fv_partial_alternate_seed_gate.py::test_direct_cli_cannot_create_directory_inside_raw_archive PASSED [ 13%]
+2026-10-01T08:29:05.9694367Z tests/test_fv_partial_alternate_seed_gate.py::test_reviewed_plan_and_probe_hashes_are_required_before_fv_work PASSED [ 14%]
+2026-10-01T08:29:05.9819394Z tests/test_fv_partial_alternate_seed_gate.py::test_status_helper_source_mismatch_fails_before_fv_preflight PASSED [ 14%]
+2026-10-01T08:29:05.9910372Z tests/test_fv_partial_alternate_seed_gate.py::test_guarded_parent_rejects_unreviewed_runner_before_child PASSED [ 14%]
+2026-10-01T08:29:47.5333140Z tests/test_fv_partial_observation_preparation.py::test_partial_prepare_solve_refine_forecast_and_exact_response[missing] PASSED [ 15%]
+2026-10-01T08:30:29.1077584Z tests/test_fv_partial_observation_preparation.py::test_partial_prepare_solve_refine_forecast_and_exact_response[qc] PASSED [ 15%]
+2026-10-01T08:31:10.7762661Z tests/test_fv_partial_observation_preparation.py::test_partial_prepare_solve_refine_forecast_and_exact_response[quality] PASSED [ 15%]
+2026-10-01T08:31:10.9082249Z tests/test_fv_partial_observation_preparation.py::test_finite_masked_values_do_not_change_prepared_fv_state PASSED [ 15%]
+2026-10-01T08:32:00.4943725Z tests/test_fv_partial_observation_preparation.py::test_parameterized_background_masks_invalid_observation_dependency PASSED [ 16%]
+2026-10-01T08:34:26.9351570Z tests/test_fv_partial_observation_preparation.py::test_parameterized_background_uses_fixed_censored_representative PASSED [ 16%]
+2026-10-01T08:34:27.1420727Z tests/test_fv_partial_observation_preparation.py::test_fv_prepare_rejects_no_valid_observations PASSED [ 16%]
+2026-10-01T08:34:27.2292629Z tests/test_fv_partial_observation_preparation.py::test_fv_prepare_rejects_missing_initial_support_without_background PASSED [ 16%]
+2026-10-01T08:34:27.2381723Z tests/test_fv_partial_policy_decision.py::test_archived_refusal_is_a_policy_outcome_not_root_absence PASSED [ 17%]
+2026-10-01T08:34:27.2472970Z tests/test_fv_partial_policy_decision.py::test_output_cannot_overwrite_plan_manifest_or_archived_raw PASSED [ 17%]
+2026-10-01T08:34:27.2583203Z tests/test_fv_partial_policy_decision.py::test_reclassification_rejects_tampered_archived_semantics[issued_response] PASSED [ 17%]
+2026-10-01T08:34:27.2689568Z tests/test_fv_partial_policy_decision.py::test_reclassification_rejects_tampered_archived_semantics[zero_exit] PASSED [ 17%]
+2026-10-01T08:34:27.2798898Z tests/test_fv_partial_policy_decision.py::test_reclassification_rejects_tampered_archived_semantics[wrong_reason_counts] PASSED [ 18%]
+2026-10-01T08:34:27.2905349Z tests/test_fv_partial_policy_decision.py::test_reclassification_rejects_tampered_archived_semantics[resource_killed] PASSED [ 18%]
+2026-10-01T08:34:27.3000153Z tests/test_fv_partial_policy_decision.py::test_reclassification_rejects_tampered_archived_semantics[path_escape] PASSED [ 18%]
+2026-10-01T08:34:27.3481225Z tests/test_fv_point_3h_seed_hessian_probe.py::test_exact_hessian_audit_uses_columns_and_fresh_minimum_eigenpair[matrix0-locally_negative_curvature] PASSED [ 18%]
+2026-10-01T08:34:27.3955763Z tests/test_fv_point_3h_seed_hessian_probe.py::test_exact_hessian_audit_uses_columns_and_fresh_minimum_eigenpair[matrix1-locally_positive_curvature] PASSED [ 19%]
+2026-10-01T08:34:27.4429043Z tests/test_fv_point_3h_seed_hessian_probe.py::test_exact_hessian_audit_uses_columns_and_fresh_minimum_eigenpair[matrix2-near_zero_inconclusive] PASSED [ 19%]
+2026-10-01T08:34:27.4518616Z tests/test_fv_point_3h_seed_hessian_probe.py::test_exact_hessian_audit_rejects_nonfinite_hvp_without_curvature_claim PASSED [ 19%]
+2026-10-01T08:34:27.4774811Z tests/test_fv_point_3h_seed_hessian_probe.py::test_zero_hessian_is_inconclusive_and_has_no_eigenvalue_ratio PASSED [ 19%]
+2026-10-01T08:34:27.5200546Z tests/test_fv_point_3h_seed_hessian_probe.py::test_nonfinite_hessian_norm_is_not_reported_as_zero_scale PASSED [ 20%]
+2026-10-01T08:34:27.5675664Z tests/test_fv_point_3h_seed_hessian_probe.py::test_zero_lambda_max_is_recorded_but_ratio_is_undefined PASSED [ 20%]
+2026-10-01T08:34:27.5754966Z tests/test_fv_point_3h_seed_hessian_probe.py::test_hessian_audit_does_not_hide_objective_callback_error PASSED [ 20%]
+2026-10-01T08:34:27.5834313Z tests/test_fv_point_3h_seed_hessian_probe.py::test_hessian_audit_does_not_classify_callback_runtime_by_message_text PASSED [ 20%]
+2026-10-01T08:34:27.5911508Z tests/test_fv_point_3h_seed_hessian_probe.py::test_parent_recomputes_curvature_claim_and_requires_all_eigenvalues PASSED [ 21%]
+2026-10-01T08:34:27.5989110Z tests/test_fv_point_3h_seed_hessian_probe.py::test_parent_rejects_curvature_sign_label_inconsistent_with_spectrum PASSED [ 21%]
+2026-10-01T08:34:27.6066994Z tests/test_fv_point_3h_seed_hessian_probe.py::test_parent_rejects_inflated_delta_that_masks_positive_curvature PASSED [ 21%]
+2026-10-01T08:34:27.6156741Z tests/test_fv_point_3h_seed_hessian_probe.py::test_parent_guard_rejects_source_mutation_after_child PASSED [ 22%]
+2026-10-01T08:34:27.6246439Z tests/test_fv_point_3h_seed_hessian_probe.py::test_parent_guard_rejects_plan_mutation_after_child PASSED [ 22%]
+2026-10-01T08:34:28.7690313Z tests/test_fv_point_empty_centered_response.py::test_empty_first_time_keeps_complete_state_schedule_and_external_background PASSED [ 22%]
+2026-10-01T08:34:41.3142388Z tests/test_fv_point_empty_centered_response.py::test_four_inactive_first_time_payloads_have_zero_local_effect PASSED [ 22%]
+2026-10-01T08:34:41.3232077Z tests/test_fv_point_empty_centered_response.py::test_empty_profile_wrappers_bind_plan_mask_theta_and_scope PASSED [ 23%]
+2026-10-01T08:34:44.3054768Z tests/test_fv_point_empty_centered_response.py::test_empty_profile_direct_cli_imports_from_unrelated_cwd PASSED [ 23%]
+2026-10-01T08:34:44.3135876Z tests/test_fv_point_merit_root.py::test_changed_sector_uses_measured_merit_not_objective_or_max_gradient PASSED [ 23%]
+2026-10-01T08:34:44.3215950Z tests/test_fv_point_merit_root.py::test_merit_rejects_increase_roundoff_and_overflow PASSED [ 23%]
+2026-10-01T08:34:44.3394797Z tests/test_fv_point_merit_root.py::test_pinned_seed_and_plan_without_newton PASSED [ 24%]
+2026-10-01T08:34:44.9205437Z tests/test_fv_point_merit_root.py::test_parent_separates_execution_refusal_and_final_root[merit_refused-None-completed] PASSED [ 24%]
+2026-10-01T08:34:45.4986937Z tests/test_fv_point_merit_root.py::test_parent_separates_execution_refusal_and_final_root[merit_refused-wrong_exit-failed] PASSED [ 24%]
+2026-10-01T08:34:46.0755499Z tests/test_fv_point_merit_root.py::test_parent_separates_execution_refusal_and_final_root[merit_refused-wrong_plan-failed] PASSED [ 24%]
+2026-10-01T08:34:46.6559065Z tests/test_fv_point_merit_root.py::test_parent_separates_execution_refusal_and_final_root[merit_root_margin_qualified-None-completed] PASSED [ 25%]
+2026-10-01T08:34:47.2367242Z tests/test_fv_point_merit_root.py::test_parent_separates_execution_refusal_and_final_root[merit_root_low_margin-None-completed] PASSED [ 25%]
+2026-10-01T08:34:47.9389385Z tests/test_fv_point_merit_root.py::test_parent_separates_execution_refusal_and_final_root[merit_root_margin_qualified-missing_final_trace-failed] PASSED [ 25%]
+2026-10-01T08:34:48.5181283Z tests/test_fv_point_merit_root.py::test_parent_separates_execution_refusal_and_final_root[merit_root_margin_qualified-bad_control_hash-failed] PASSED [ 25%]
+2026-10-01T08:34:49.1088134Z tests/test_fv_point_merit_root.py::test_unexpected_final_score_error_propagates_as_execution_failure FAILED [ 26%]
+2026-10-01T08:34:49.1181881Z tests/test_fv_trajectory_contract.py::test_basis_anchor_and_full_rank_are_required PASSED [ 26%]
+2026-10-01T08:34:49.1293270Z tests/test_fv_trajectory_contract.py::test_empty_psi_basis_is_a_valid_zero_flow_case PASSED [ 26%]
+2026-10-01T08:34:49.1385362Z tests/test_fv_trajectory_contract.py::test_schedule_length_and_fixed_timing_types_are_checked PASSED [ 26%]
+2026-10-01T08:34:49.1504194Z tests/test_fv_trajectory_contract.py::test_partial_support_is_allowed_for_donorcell_but_rejected_by_minmod PASSED [ 27%]
+2026-10-01T08:34:49.1704534Z tests/test_fv_trajectory_contract.py::test_replay_preserves_support_boundary_derivative PASSED [ 27%]
+2026-10-01T08:34:49.1973824Z tests/test_fv_trajectory_contract.py::test_replay_freezes_mutable_spacing_metadata_before_backward PASSED [ 27%]
+2026-10-01T08:34:49.3441083Z tests/test_fv_zero_face_scope.py::test_every_zero_face_is_flow_control_sensitive_in_supported_profiles[4x5] PASSED [ 27%]
+2026-10-01T08:34:49.6285110Z tests/test_fv_zero_face_scope.py::test_every_zero_face_is_flow_control_sensitive_in_supported_profiles[8x10] PASSED [ 28%]
+2026-10-01T08:34:49.7809599Z tests/test_fv_zero_face_scope.py::test_restricted_streamfunction_has_structural_zero_faces PASSED [ 28%]
+2026-10-01T08:34:49.7977959Z tests/test_matrix_free.py::MatrixFreeTests::test_advection_hvp_matches_finite_difference_in_frozen_cell PASSED [ 28%]
+2026-10-01T08:34:49.8078697Z tests/test_matrix_free.py::MatrixFreeTests::test_advection_is_continuous_at_an_integer_cell_boundary PASSED [ 29%]
+2026-10-01T08:34:49.8188603Z tests/test_matrix_free.py::MatrixFreeTests::test_advection_jvp_matches_finite_difference_in_frozen_cell 
+2026-10-01T08:34:49.8233227Z tests/test_matrix_free.py::MatrixFreeTests::test_advection_jvp_matches_finite_difference_in_frozen_cell PASSED [ 29%]
+2026-10-01T08:34:49.8415900Z tests/test_matrix_free.py::MatrixFreeTests::test_forecast_hvp_matches_finite_difference_inside_remap_cell PASSED [ 29%]
+2026-10-01T08:34:49.8546521Z tests/test_matrix_free.py::MatrixFreeTests::test_forecast_jvp_matches_finite_difference_inside_remap_cell PASSED [ 29%]
+2026-10-01T08:34:49.8894506Z tests/test_matrix_free.py::MatrixFreeTests::test_forecast_metric_hvp_is_symmetric PASSED [ 30%]
+2026-10-01T08:34:49.9084564Z tests/test_matrix_free.py::MatrixFreeTests::test_forecast_operator_jvp_vjp_identity PASSED [ 30%]
+2026-10-01T08:34:49.9210313Z tests/test_matrix_free.py::MatrixFreeTests::test_hvp_is_symmetric PASSED [ 30%]
+2026-10-01T08:34:49.9315215Z tests/test_matrix_free.py::MatrixFreeTests::test_jvp_vjp_dot_product_identity PASSED [ 30%]
+2026-10-01T08:34:49.9435442Z tests/test_matrix_free.py::MatrixFreeTests::test_positive_state_gate_does_not_clamp_signed_jvp PASSED [ 31%]
+2026-10-01T08:34:49.9702658Z tests/test_numerical_review.py::NumericalReviewTests::test_ensemble_centering_rejects_relative_bias_at_small_scales 
+2026-10-01T08:34:49.9748900Z tests/test_numerical_review.py::NumericalReviewTests::test_ensemble_centering_rejects_relative_bias_at_small_scales PASSED [ 31%]
+2026-10-01T08:34:49.9863629Z tests/test_numerical_review.py::NumericalReviewTests::test_ensemble_centering_uses_each_metric_scale PASSED [ 31%]
+2026-10-01T08:34:49.9928009Z tests/test_numerical_review.py::NumericalReviewTests::test_ensemble_statistics_reject_low_precision_members 
+2026-10-01T08:34:49.9973647Z tests/test_numerical_review.py::NumericalReviewTests::test_ensemble_statistics_reject_low_precision_members PASSED [ 31%]
+2026-10-01T08:34:50.0176473Z tests/test_numerical_review.py::NumericalReviewTests::test_float32_transport_without_boundary_echo_has_zero_outflow PASSED [ 32%]
+2026-10-01T08:34:50.0280553Z tests/test_numerical_review.py::NumericalReviewTests::test_large_background_projection_keeps_direction 
+2026-10-01T08:34:50.0328517Z tests/test_numerical_review.py::NumericalReviewTests::test_large_background_projection_keeps_direction PASSED [ 32%]
+2026-10-01T08:34:50.0560852Z tests/test_numerical_review.py::NumericalReviewTests::test_large_control_has_finite_velocity_jacobian 
+2026-10-01T08:34:50.0608517Z tests/test_numerical_review.py::NumericalReviewTests::test_large_control_has_finite_velocity_jacobian PASSED [ 32%]
+2026-10-01T08:34:50.0752342Z tests/test_numerical_review.py::NumericalReviewTests::test_mps_velocity_background_and_control_jacobians SKIPPED [ 32%]
+2026-10-01T08:34:50.0906393Z tests/test_numerical_review.py::NumericalReviewTests::test_normal_interval_both_tails_have_finite_gradients PASSED [ 33%]
+2026-10-01T08:34:50.1142537Z tests/test_numerical_review.py::NumericalReviewTests::test_small_float32_residual_cost PASSED [ 33%]
+2026-10-01T08:34:50.7515038Z tests/test_numerical_review.py::NumericalReviewTests::test_small_float32_residual_solve PASSED [ 33%]
+2026-10-01T08:34:50.7597408Z tests/test_numerical_review.py::NumericalReviewTests::test_transport_outflow_counts_corner_once 
+2026-10-01T08:34:50.7646742Z tests/test_numerical_review.py::NumericalReviewTests::test_transport_outflow_counts_corner_once PASSED [ 33%]
+2026-10-01T08:34:50.7813007Z tests/test_numerical_review.py::NumericalReviewTests::test_truncated_gaussian_left_tail_value_and_gradients PASSED [ 34%]
+2026-10-01T08:34:50.7923476Z tests/test_numerical_review.py::NumericalReviewTests::test_valid_grid_cell_area_encloses_nominal_and_exact_value PASSED [ 34%]
+2026-10-01T08:34:50.8500801Z tests/test_numerical_review.py::NumericalReviewTests::test_zero_background_velocity_derivatives 
+2026-10-01T08:34:50.8560572Z tests/test_numerical_review.py::NumericalReviewTests::test_zero_background_velocity_derivatives PASSED [ 34%]
+2026-10-01T08:34:57.6171953Z tests/test_phase1_learning_demonstration.py::Phase1LearningDemonstrationTests::test_radar_prior_p1_fsoi_real_resolves_and_approves PASSED [ 34%]
+2026-10-01T08:34:59.9968354Z tests/test_phase1_learning_demonstration.py::Phase1LearningDemonstrationTests::test_unmaterial_delta_is_rejected_after_real_validation PASSED [ 35%]
+2026-10-01T08:35:02.7338850Z tests/test_phase1_scenario_learning.py::Phase1ScenarioLearningTests::test_classification_margin_gate_is_rejected_before_learning PASSED [ 35%]
+2026-10-01T08:35:02.7933302Z tests/test_phase1_scenario_learning.py::Phase1ScenarioLearningTests::test_metric_weight_is_nonuniform_and_partially_supported PASSED [ 35%]
+2026-10-01T08:35:05.1737449Z tests/test_phase1_scenario_learning.py::Phase1ScenarioLearningTests::test_no_material_signal_is_rejected_after_real_validation PASSED [ 36%]
+2026-10-01T08:35:05.3141938Z tests/test_phase1_scenario_learning.py::Phase1ScenarioLearningTests::test_pixel_budget_is_rejected_before_learning PASSED [ 36%]
+2026-10-01T08:35:14.3223977Z tests/test_phase1_scenario_learning.py::Phase1ScenarioLearningTests::test_positive_and_negative_prior_cell_use_real_full_half_validation PASSED [ 36%]
+2026-10-01T08:36:16.7664757Z tests/test_promotion.py::NeuralPriorPromotionTests::test_absolute_bad_band_is_not_certified_when_parent_is_equally_bad PASSED [ 36%]
+2026-10-01T08:37:20.6638209Z tests/test_promotion.py::NeuralPriorPromotionTests::test_activation_write_lock_crossing_publication_fails_closed PASSED [ 37%]
+2026-10-01T08:38:23.1995893Z tests/test_promotion.py::NeuralPriorPromotionTests::test_all_active_range_classifier_fails_set_precision PASSED [ 37%]
+2026-10-01T08:38:39.3007906Z tests/test_promotion.py::NeuralPriorPromotionTests::test_automatic_small_sample_aggregate_does_not_use_point_bootstrap PASSED [ 37%]
+2026-10-01T08:38:55.4138103Z tests/test_promotion.py::NeuralPriorPromotionTests::test_automatic_uncertainty_never_treats_zero_variance_as_certainty PASSED [ 37%]
+2026-10-01T08:39:30.3335155Z tests/test_promotion.py::NeuralPriorPromotionTests::test_backdated_raw_payload_cannot_be_committed_after_deadline PASSED [ 38%]
+2026-10-01T08:39:30.3593497Z tests/test_promotion.py::NeuralPriorPromotionTests::test_background_lineage_uses_model_times_not_observation_times PASSED [ 38%]
+2026-10-01T08:39:46.5675826Z tests/test_promotion.py::NeuralPriorPromotionTests::test_band_family_requires_its_own_bootstrap_tail_resolution PASSED [ 38%]
+2026-10-01T08:41:21.5140679Z tests/test_promotion.py::NeuralPriorPromotionTests::test_band_local_withdrawal_blocks_only_the_affected_group PASSED [ 38%]
+2026-10-01T08:42:23.4668374Z tests/test_promotion.py::NeuralPriorPromotionTests::test_band_skill_evidence_preserves_tail_and_event_diagnostics PASSED [ 39%]
+2026-10-01T08:42:39.4535676Z tests/test_promotion.py::NeuralPriorPromotionTests::test_binary_event_interval_rejects_fractional_event_values PASSED [ 39%]
+2026-10-01T08:43:42.2683004Z tests/test_promotion.py::NeuralPriorPromotionTests::test_bootstrap_tail_resolution_fails_closed PASSED [ 39%]
+2026-10-01T08:43:57.7317667Z tests/test_promotion.py::NeuralPriorPromotionTests::test_boundary_shift_cannot_hide_training_event_overlap PASSED [ 39%]
+2026-10-01T08:44:14.6345513Z tests/test_promotion.py::NeuralPriorPromotionTests::test_brier_preflight_inverts_the_actual_upper_bound PASSED [ 40%]
+2026-10-01T08:44:30.2609615Z tests/test_promotion.py::NeuralPriorPromotionTests::test_candidate_manifest_binds_the_candidate_neutral_event_catalog PASSED [ 40%]
+2026-10-01T08:44:45.3792876Z tests/test_promotion.py::NeuralPriorPromotionTests::test_candidate_manifest_digest_detects_lineage_mutation PASSED [ 40%]
+2026-10-01T08:45:00.5431694Z tests/test_promotion.py::NeuralPriorPromotionTests::test_candidate_training_event_lineage_is_a_signed_catalog_result PASSED [ 40%]
+2026-10-01T08:45:15.7365244Z tests/test_promotion.py::NeuralPriorPromotionTests::test_candidate_training_events_must_be_disjoint_from_holdout_events PASSED [ 41%]
+2026-10-01T08:45:15.9771746Z tests/test_promotion.py::NeuralPriorPromotionTests::test_case_object_evidence_must_match_the_track_sample PASSED [ 41%]
+2026-10-01T08:45:16.0050939Z tests/test_promotion.py::NeuralPriorPromotionTests::test_centroid_support_uses_the_full_affine_grid_diameter PASSED [ 41%]
+2026-10-01T08:46:18.0603874Z tests/test_promotion.py::NeuralPriorPromotionTests::test_certificate_authority_roles_cannot_share_one_key PASSED [ 41%]
+2026-10-01T08:46:34.0363554Z tests/test_promotion.py::NeuralPriorPromotionTests::test_classifier_eighteen_of_twenty_does_not_certify_at_point_threshold PASSED [ 42%]
+2026-10-01T08:47:36.1383958Z tests/test_promotion.py::NeuralPriorPromotionTests::test_classifier_holdout_rejects_constant_false_routing PASSED [ 42%]
+2026-10-01T08:48:38.0131892Z tests/test_promotion.py::NeuralPriorPromotionTests::test_classifier_safety_gates_use_event_level_finite_sample_bounds PASSED [ 42%]
+2026-10-01T08:48:41.2343791Z tests/test_promotion.py::NeuralPriorPromotionTests::test_classifier_training_event_cannot_overlap_holdout_cycle PASSED [ 43%]
+2026-10-01T08:48:44.4707754Z tests/test_promotion.py::NeuralPriorPromotionTests::test_classifier_training_input_cannot_reappear_under_new_case_name PASSED [ 43%]
+2026-10-01T08:48:44.7220876Z tests/test_promotion.py::NeuralPriorPromotionTests::test_classifier_training_storm_cannot_overlap_holdout PASSED [ 43%]
+2026-10-01T08:49:46.7686748Z tests/test_promotion.py::NeuralPriorPromotionTests::test_clear_sky_gain_cannot_hide_echo_intensity_regression PASSED [ 43%]
+2026-10-01T08:49:46.7815830Z tests/test_promotion.py::NeuralPriorPromotionTests::test_clear_sky_hurdle_score_is_floor_representation_invariant PASSED [ 44%]
+2026-10-01T08:50:02.7256230Z tests/test_promotion.py::NeuralPriorPromotionTests::test_cluster_mean_cannot_hide_case_level_harm_frequency PASSED [ 44%]
+2026-10-01T08:50:02.9388696Z tests/test_promotion.py::NeuralPriorPromotionTests::test_complete_mosaic_outage_uses_signed_missing_receipts PASSED [ 44%]
+2026-10-01T08:51:05.4943139Z tests/test_promotion.py::NeuralPriorPromotionTests::test_component_geometry_rejects_single_pixel_evidence PASSED [ 44%]
+2026-10-01T08:52:09.4513139Z tests/test_promotion.py::NeuralPriorPromotionTests::test_concurrent_distinct_operational_decisions_form_linear_chain PASSED [ 45%]
+2026-10-01T08:52:09.4651730Z tests/test_promotion.py::NeuralPriorPromotionTests::test_conditional_pit_replaces_raw_truncated_z_score PASSED [ 45%]
+2026-10-01T08:53:11.4454378Z tests/test_promotion.py::NeuralPriorPromotionTests::test_consistent_subthreshold_band_harm_fails_certification PASSED [ 45%]
+2026-10-01T08:54:13.4564552Z tests/test_promotion.py::NeuralPriorPromotionTests::test_cpu_only_scoring_generation_has_a_stable_backend_contract PASSED [ 45%]
+2026-10-01T08:54:13.4999932Z tests/test_promotion.py::NeuralPriorPromotionTests::test_cross_family_raw_identity_reuse_is_rejected PASSED [ 46%]
+2026-10-01T08:54:13.5142512Z tests/test_promotion.py::NeuralPriorPromotionTests::test_cross_radar_motion_components_cannot_be_split PASSED [ 46%]
+2026-10-01T08:55:16.7231150Z tests/test_promotion.py::NeuralPriorPromotionTests::test_current_deployment_requires_committed_derivation PASSED [ 46%]
+2026-10-01T08:55:16.9454862Z tests/test_promotion.py::NeuralPriorPromotionTests::test_current_holdout_rejects_legacy_observation_error_plan PASSED [ 46%]
+2026-10-01T08:55:16.9585149Z tests/test_promotion.py::NeuralPriorPromotionTests::test_deployment_authority_ids_cannot_alias_one_public_key PASSED [ 47%]
+2026-10-01T08:56:19.5597285Z tests/test_promotion.py::NeuralPriorPromotionTests::test_deployment_certificate_binds_the_full_promotion_preimage PASSED [ 47%]
+2026-10-01T08:57:22.1058147Z tests/test_promotion.py::NeuralPriorPromotionTests::test_deployment_requires_preregistered_ood_validation PASSED [ 47%]
+2026-10-01T08:57:38.0821540Z tests/test_promotion.py::NeuralPriorPromotionTests::test_deployment_sized_constant_event_scores_keep_finite_uncertainty PASSED [ 47%]
+2026-10-01T08:57:38.0948016Z tests/test_promotion.py::NeuralPriorPromotionTests::test_direct_evaluation_construction_is_disabled PASSED [ 48%]
+2026-10-01T08:57:38.1072429Z tests/test_promotion.py::NeuralPriorPromotionTests::test_disjoint_track_extrapolation_uses_terminal_motion PASSED [ 48%]
+2026-10-01T08:57:38.3150096Z tests/test_promotion.py::NeuralPriorPromotionTests::test_duplicate_site_time_receipt_is_rejected PASSED [ 48%]
+2026-10-01T08:57:38.5225172Z tests/test_promotion.py::NeuralPriorPromotionTests::test_dynamic_source_coverage_cannot_predate_input PASSED [ 48%]
+2026-10-01T08:57:38.7963643Z tests/test_promotion.py::NeuralPriorPromotionTests::test_dynamic_source_coverage_must_be_ledgered_before_deadline PASSED [ 49%]
+2026-10-01T08:57:39.0007970Z tests/test_promotion.py::NeuralPriorPromotionTests::test_dynamic_source_coverage_rejects_unregistered_radar_index PASSED [ 49%]
+2026-10-01T08:57:39.2078156Z tests/test_promotion.py::NeuralPriorPromotionTests::test_dynamic_source_coverage_resolves_after_input_availability PASSED [ 49%]
+2026-10-01T08:58:57.1376786Z tests/test_promotion.py::NeuralPriorPromotionTests::test_ece_is_diagnostic_not_a_dead_policy_gate PASSED [ 50%]
+2026-10-01T08:58:57.1519194Z tests/test_promotion.py::NeuralPriorPromotionTests::test_echo_miss_is_not_hidden_by_clear_sky_prevalence PASSED [ 50%]
+2026-10-01T08:59:59.0792424Z tests/test_promotion.py::NeuralPriorPromotionTests::test_end_to_end_harm_blocks_promotion PASSED [ 50%]
+2026-10-01T09:01:01.0735793Z tests/test_promotion.py::NeuralPriorPromotionTests::test_end_to_end_harm_is_checked_when_common_skill_is_immaterial PASSED [ 50%]
+2026-10-01T09:01:16.9257577Z tests/test_promotion.py::NeuralPriorPromotionTests::test_event_association_algorithm_must_be_preregistered PASSED [ 51%]
+2026-10-01T09:01:17.1678120Z tests/test_promotion.py::NeuralPriorPromotionTests::test_event_case_spatial_membership_must_fit_the_event_envelope PASSED [ 51%]
+2026-10-01T09:01:33.2912561Z tests/test_promotion.py::NeuralPriorPromotionTests::test_event_catalog_adjudicator_must_be_preregistered PASSED [ 51%]
+2026-10-01T09:01:34.9687767Z tests/test_promotion.py::NeuralPriorPromotionTests::test_event_catalog_append_rejects_future_catalog_time PASSED [ 51%]
+2026-10-01T09:01:34.9825032Z tests/test_promotion.py::NeuralPriorPromotionTests::test_event_envelope_must_contain_the_entire_replayable_track PASSED [ 52%]
+2026-10-01T09:01:51.4365580Z tests/test_promotion.py::NeuralPriorPromotionTests::test_event_member_input_time_must_match_preregistered_plan PASSED [ 52%]
+2026-10-01T09:01:51.4499159Z tests/test_promotion.py::NeuralPriorPromotionTests::test_event_weighted_estimand_is_invariant_to_case_replication PASSED [ 52%]
+2026-10-01T09:02:07.5717735Z tests/test_promotion.py::NeuralPriorPromotionTests::test_experiment_family_counts_trials_across_separate_plans PASSED [ 52%]
+2026-10-01T09:02:07.7749245Z tests/test_promotion.py::NeuralPriorPromotionTests::test_family_ten_with_one_thousand_bootstraps_is_rejected PASSED [ 53%]
+2026-10-01T09:02:23.7052870Z tests/test_promotion.py::NeuralPriorPromotionTests::test_five_perfect_events_do_not_produce_certain_rate_bounds PASSED [ 53%]
+2026-10-01T09:02:23.7197058Z tests/test_promotion.py::NeuralPriorPromotionTests::test_float32_value_on_decimal_lattice_is_accepted PASSED [ 53%]
+2026-10-01T09:03:26.4890413Z tests/test_promotion.py::NeuralPriorPromotionTests::test_fractional_second_chronology_uses_instants_not_strings PASSED [ 53%]
+2026-10-01T09:03:32.7830811Z tests/test_promotion.py::NeuralPriorPromotionTests::test_full_product_semantic_replay_reaches_promotion_without_scorer_patch PASSED [ 54%]
+2026-10-01T09:03:33.2475994Z tests/test_promotion.py::NeuralPriorPromotionTests::test_future_operational_provenance_does_not_require_holdout PASSED [ 54%]
+2026-10-01T09:04:36.0549376Z tests/test_promotion.py::NeuralPriorPromotionTests::test_historical_evidence_cannot_be_marked_deployment_eligible PASSED [ 54%]
+2026-10-01T09:05:19.8481744Z tests/test_promotion.py::NeuralPriorPromotionTests::test_holdout_factory_uses_common_domain_and_inference_evidence 
+2026-10-01T09:05:19.8559230Z tests/test_promotion.py::NeuralPriorPromotionTests::test_holdout_factory_uses_common_domain_and_inference_evidence PASSED [ 54%]
+2026-10-01T09:05:20.5562858Z tests/test_promotion.py::NeuralPriorPromotionTests::test_holdout_plan_accepts_only_one_registered_event_catalog_result PASSED [ 55%]
+2026-10-01T09:05:20.7788376Z tests/test_promotion.py::NeuralPriorPromotionTests::test_holdout_plan_requires_every_preregistered_observation_error_plan PASSED [ 55%]
+2026-10-01T09:05:36.7254669Z tests/test_promotion.py::NeuralPriorPromotionTests::test_identical_small_metric_sample_retains_population_uncertainty PASSED [ 55%]
+2026-10-01T09:06:54.0462959Z tests/test_promotion.py::NeuralPriorPromotionTests::test_immediately_previous_contracts_remain_audit_only PASSED [ 55%]
+2026-10-01T09:06:54.2454499Z tests/test_promotion.py::NeuralPriorPromotionTests::test_input_plan_must_match_actual_operational_identity 
+2026-10-01T09:06:54.2532709Z tests/test_promotion.py::NeuralPriorPromotionTests::test_input_plan_must_match_actual_operational_identity PASSED [ 56%]
+2026-10-01T09:08:29.6188394Z tests/test_promotion.py::NeuralPriorPromotionTests::test_issuance_gate_includes_cases_with_unavailable_required_metric PASSED [ 56%]
+2026-10-01T09:09:32.2538204Z tests/test_promotion.py::NeuralPriorPromotionTests::test_large_mask_cannot_hide_tiny_valid_band_sample PASSED [ 56%]
+2026-10-01T09:10:35.6440539Z tests/test_promotion.py::NeuralPriorPromotionTests::test_late_final_operational_row_is_recorded_unusable PASSED [ 56%]
+2026-10-01T09:11:39.0816113Z tests/test_promotion.py::NeuralPriorPromotionTests::test_late_publication_is_deactivated_fail_closed PASSED [ 57%]
+2026-10-01T09:11:39.4520719Z tests/test_promotion.py::NeuralPriorPromotionTests::test_ledger_rejects_repackaged_processing_for_the_same_weather_sample PASSED [ 57%]
+2026-10-01T09:11:39.4660265Z tests/test_promotion.py::NeuralPriorPromotionTests::test_legacy_intervention_is_not_a_prospective_receipt PASSED [ 57%]
+2026-10-01T09:12:26.1609661Z tests/test_promotion.py::NeuralPriorPromotionTests::test_legacy_promotion_tensor_lists_load_as_audit_only PASSED [ 58%]
+2026-10-01T09:12:26.2001788Z tests/test_promotion.py::NeuralPriorPromotionTests::test_metric_bound_is_derived_from_the_metric_support PASSED [ 58%]
+2026-10-01T09:12:42.1520106Z tests/test_promotion.py::NeuralPriorPromotionTests::test_metric_cell_event_minimum_is_bound_into_policy_digest PASSED [ 58%]
+2026-10-01T09:13:44.1596711Z tests/test_promotion.py::NeuralPriorPromotionTests::test_metric_cell_family_includes_local_issuance_bounds PASSED [ 58%]
+2026-10-01T09:15:32.9189222Z tests/test_promotion.py::NeuralPriorPromotionTests::test_metric_support_must_match_the_forecast_run_and_grid PASSED [ 59%]
+2026-10-01T09:15:32.9585622Z tests/test_promotion.py::NeuralPriorPromotionTests::test_metric_support_rejects_an_uninstalled_metric_engine PASSED [ 59%]
+2026-10-01T09:15:32.9934989Z tests/test_promotion.py::NeuralPriorPromotionTests::test_metric_support_reuses_spatial_identity_across_valid_times PASSED [ 59%]
+2026-10-01T09:16:34.9142283Z tests/test_promotion.py::NeuralPriorPromotionTests::test_missed_echo_objects_fail_the_probability_guard PASSED [ 59%]
+2026-10-01T09:17:53.5994494Z tests/test_promotion.py::NeuralPriorPromotionTests::test_missing_required_band_metric_prevents_certification PASSED [ 60%]
+2026-10-01T09:17:53.8060286Z tests/test_promotion.py::NeuralPriorPromotionTests::test_mosaic_issuance_domain_requires_dynamic_resolution PASSED [ 60%]
+2026-10-01T09:17:53.8235094Z tests/test_promotion.py::NeuralPriorPromotionTests::test_mosaic_range_uses_the_resolved_source_radar PASSED [ 60%]
+2026-10-01T09:18:55.8002582Z tests/test_promotion.py::NeuralPriorPromotionTests::test_mutated_metric_is_detected PASSED [ 60%]
+2026-10-01T09:19:11.1435837Z tests/test_promotion.py::NeuralPriorPromotionTests::test_nonfinite_issuance_effect_is_rejected PASSED [ 61%]
+2026-10-01T09:20:13.9580139Z tests/test_promotion.py::NeuralPriorPromotionTests::test_one_cluster_regime_cannot_support_promotion PASSED [ 61%]
+2026-10-01T09:20:14.8017936Z tests/test_promotion.py::NeuralPriorPromotionTests::test_operational_client_cannot_be_constructed_or_faked PASSED [ 61%]
+2026-10-01T09:21:18.1158181Z tests/test_promotion.py::NeuralPriorPromotionTests::test_operational_commit_crossing_deadline_is_rejected PASSED [ 61%]
+2026-10-01T09:22:20.6994761Z tests/test_promotion.py::NeuralPriorPromotionTests::test_operational_decision_after_deadline_is_rejected PASSED [ 62%]
+2026-10-01T09:22:20.9063748Z tests/test_promotion.py::NeuralPriorPromotionTests::test_operational_domain_uses_publication_cells_as_denominator PASSED [ 62%]
+2026-10-01T09:23:24.9700994Z tests/test_promotion.py::NeuralPriorPromotionTests::test_operational_fault_injection_every_stage_is_retryable PASSED [ 62%]
+2026-10-01T09:24:28.7509865Z tests/test_promotion.py::NeuralPriorPromotionTests::test_operational_issuer_rechecks_provenance_and_selection PASSED [ 62%]
+2026-10-01T09:24:28.9577235Z tests/test_promotion.py::NeuralPriorPromotionTests::test_operational_masks_must_match_the_holdout_plan PASSED [ 63%]
+2026-10-01T09:24:28.9742437Z tests/test_promotion.py::NeuralPriorPromotionTests::test_operational_range_coordinates_must_match_frame_shape PASSED [ 63%]
+2026-10-01T09:24:28.9903537Z tests/test_promotion.py::NeuralPriorPromotionTests::test_operational_range_geometry_must_match_current_radar_site PASSED [ 63%]
+2026-10-01T09:24:29.0076197Z tests/test_promotion.py::NeuralPriorPromotionTests::test_operational_range_geometry_must_match_current_run_grid PASSED [ 63%]
+2026-10-01T09:24:29.0587641Z tests/test_promotion.py::NeuralPriorPromotionTests::test_overlapping_windows_append_same_family PASSED [ 64%]
+2026-10-01T09:24:29.0759500Z tests/test_promotion.py::NeuralPriorPromotionTests::test_overlapping_windows_share_raw_observation_identity PASSED [ 64%]
+2026-10-01T09:25:31.7342649Z tests/test_promotion.py::NeuralPriorPromotionTests::test_partial_regime_certification_only_falls_back_for_missing_group PASSED [ 64%]
+2026-10-01T09:26:18.3388430Z tests/test_promotion.py::NeuralPriorPromotionTests::test_physical_applicability_contract_versions_are_new_generations PASSED [ 65%]
+2026-10-01T09:26:33.4602143Z tests/test_promotion.py::NeuralPriorPromotionTests::test_physical_event_catalog_must_enclose_member_issue_times PASSED [ 65%]
+2026-10-01T09:26:33.9335320Z tests/test_promotion.py::NeuralPriorPromotionTests::test_physical_event_catalog_result_is_fixed_before_candidate_scoring PASSED [ 65%]
+2026-10-01T09:26:33.9501368Z tests/test_promotion.py::NeuralPriorPromotionTests::test_physical_event_catalog_signature_binds_case_membership PASSED [ 65%]
+2026-10-01T09:27:04.5526253Z tests/test_promotion.py::NeuralPriorPromotionTests::test_physical_event_digest_controls_outer_cluster PASSED [ 66%]
+2026-10-01T09:27:04.7952465Z tests/test_promotion.py::NeuralPriorPromotionTests::test_physical_event_identity_is_not_a_free_form_label PASSED [ 66%]
+2026-10-01T09:27:04.8111100Z tests/test_promotion.py::NeuralPriorPromotionTests::test_piecewise_linear_tracks_detect_mid_segment_crossing PASSED [ 66%]
+2026-10-01T09:28:21.9462463Z tests/test_promotion.py::NeuralPriorPromotionTests::test_pr102_contracts_remain_audit_only PASSED [ 66%]
+2026-10-01T09:29:24.0730839Z tests/test_promotion.py::NeuralPriorPromotionTests::test_pr105_contracts_remain_audit_only PASSED [ 67%]
+2026-10-01T09:30:26.4545606Z tests/test_promotion.py::NeuralPriorPromotionTests::test_pr108_contracts_remain_audit_only PASSED [ 67%]
+2026-10-01T09:30:26.4753208Z tests/test_promotion.py::NeuralPriorPromotionTests::test_pr110_snapshot_bundle_remains_audit_loadable PASSED [ 67%]
+2026-10-01T09:30:26.4919985Z tests/test_promotion.py::NeuralPriorPromotionTests::test_pr111_semantic_bundle_remains_audit_loadable PASSED [ 67%]
+2026-10-01T09:30:41.9604107Z tests/test_promotion.py::NeuralPriorPromotionTests::test_pr144_v24_durable_replay_loads_as_audit_only PASSED [ 68%]
+2026-10-01T09:31:43.6817791Z tests/test_promotion.py::NeuralPriorPromotionTests::test_pre_source_composition_replay_generations_are_audit_only 
+2026-10-01T09:31:43.6904585Z tests/test_promotion.py::NeuralPriorPromotionTests::test_pre_source_composition_replay_generations_are_audit_only PASSED [ 68%]
+2026-10-01T09:31:59.0471337Z tests/test_promotion.py::NeuralPriorPromotionTests::test_previous_physical_contracts_load_as_audit_only PASSED [ 68%]
+2026-10-01T09:32:14.3890171Z tests/test_promotion.py::NeuralPriorPromotionTests::test_prior_holdout_evidence_has_no_intervention_selection_fields PASSED [ 68%]
+2026-10-01T09:33:16.4626311Z tests/test_promotion.py::NeuralPriorPromotionTests::test_prior_uncertainty_must_not_regress_against_parent PASSED [ 69%]
+2026-10-01T09:34:18.5051534Z tests/test_promotion.py::NeuralPriorPromotionTests::test_probability_skill_cannot_hide_unreliable_state_uncertainty PASSED [ 69%]
+2026-10-01T09:34:33.6202006Z tests/test_promotion.py::NeuralPriorPromotionTests::test_process_log_payload_tampering_is_detected_by_rehash PASSED [ 69%]
+2026-10-01T09:35:35.7123341Z tests/test_promotion.py::NeuralPriorPromotionTests::test_promotes_only_independent_material_holdout_cases PASSED [ 69%]
+2026-10-01T09:35:51.1157651Z tests/test_promotion.py::NeuralPriorPromotionTests::test_promotion_audit_payload_recomputes_tensor_digests PASSED [ 70%]
+2026-10-01T09:36:53.1843255Z tests/test_promotion.py::NeuralPriorPromotionTests::test_promotion_evidence_makes_preflight_a_deployment_gate PASSED [ 70%]
+2026-10-01T09:38:16.9447964Z tests/test_promotion.py::NeuralPriorPromotionTests::test_promotion_policy_rejects_a_different_event_catalog_result PASSED [ 70%]
+2026-10-01T09:39:19.0705783Z tests/test_promotion.py::NeuralPriorPromotionTests::test_promotion_rejects_classifier_outside_preregistered_family PASSED [ 70%]
+2026-10-01T09:40:27.5557544Z tests/test_promotion.py::NeuralPriorPromotionTests::test_promotion_rejects_post_scoring_threshold_changes PASSED [ 71%]
+2026-10-01T09:41:14.3057572Z tests/test_promotion.py::NeuralPriorPromotionTests::test_promotion_requires_every_preregistered_case PASSED [ 71%]
+2026-10-01T09:41:14.3228864Z tests/test_promotion.py::NeuralPriorPromotionTests::test_prospective_decision_direct_construction_is_disabled PASSED [ 71%]
+2026-10-01T09:41:14.5708951Z tests/test_promotion.py::NeuralPriorPromotionTests::test_prospective_plan_cannot_store_future_weather_truth PASSED [ 72%]
+2026-10-01T09:41:14.9070575Z tests/test_promotion.py::NeuralPriorPromotionTests::test_prospective_plan_is_durably_registered_before_raw_slots PASSED [ 72%]
+2026-10-01T09:41:15.1357307Z tests/test_promotion.py::NeuralPriorPromotionTests::test_prospective_plan_precedes_every_raw_slot PASSED [ 72%]
+2026-10-01T09:42:17.9760502Z tests/test_promotion.py::NeuralPriorPromotionTests::test_pure_clear_and_pure_echo_cases_use_component_applicability PASSED [ 72%]
+2026-10-01T09:42:18.3491754Z tests/test_promotion.py::NeuralPriorPromotionTests::test_qc_invalid_values_are_model_invariant PASSED [ 73%]
+2026-10-01T09:42:18.3664951Z tests/test_promotion.py::NeuralPriorPromotionTests::test_quantized_gaussian_upper_tail_has_finite_large_nll PASSED [ 73%]
+2026-10-01T09:42:18.3836218Z tests/test_promotion.py::NeuralPriorPromotionTests::test_quantized_point_diagnostic_uses_local_detection_limit PASSED [ 73%]
+2026-10-01T09:42:18.4003274Z tests/test_promotion.py::NeuralPriorPromotionTests::test_quantized_threshold_bins_form_a_disjoint_partition PASSED [ 73%]
+2026-10-01T09:42:18.4179240Z tests/test_promotion.py::NeuralPriorPromotionTests::test_quantized_threshold_uses_interval_midpoint_pit PASSED [ 74%]
+2026-10-01T09:43:20.5387859Z tests/test_promotion.py::NeuralPriorPromotionTests::test_range_band_harm_is_not_hidden_by_whole_domain_skill PASSED [ 74%]
+2026-10-01T09:43:35.8934322Z tests/test_promotion.py::NeuralPriorPromotionTests::test_range_band_preserves_absolute_candidate_and_parent_scores PASSED [ 74%]
+2026-10-01T09:43:35.9101875Z tests/test_promotion.py::NeuralPriorPromotionTests::test_range_geometry_contract_is_explicitly_horizontal_only PASSED [ 74%]
+2026-10-01T09:43:35.9276546Z tests/test_promotion.py::NeuralPriorPromotionTests::test_range_geometry_resolves_a_complete_physical_partition PASSED [ 75%]
+2026-10-01T09:43:35.9448295Z tests/test_promotion.py::NeuralPriorPromotionTests::test_range_masks_must_cover_the_complete_operational_grid PASSED [ 75%]
+2026-10-01T09:43:35.9615408Z tests/test_promotion.py::NeuralPriorPromotionTests::test_range_object_component_uses_object_count_not_pixel_count PASSED [ 75%]
+2026-10-01T09:43:36.2009922Z tests/test_promotion.py::NeuralPriorPromotionTests::test_raw_identity_survives_ingestor_key_rotation PASSED [ 75%]
+2026-10-01T09:44:39.8942949Z tests/test_promotion.py::NeuralPriorPromotionTests::test_raw_ingestor_change_after_activation_fails_closed PASSED [ 76%]
+2026-10-01T09:44:40.1049196Z tests/test_promotion.py::NeuralPriorPromotionTests::test_raw_ingestor_validity_and_revocation_are_enforced PASSED [ 76%]
+2026-10-01T09:44:40.1178918Z tests/test_promotion.py::NeuralPriorPromotionTests::test_raw_quality_weight_is_rejected_outside_unit_interval 
+2026-10-01T09:44:40.1263764Z tests/test_promotion.py::NeuralPriorPromotionTests::test_raw_quality_weight_is_rejected_outside_unit_interval PASSED [ 76%]
+2026-10-01T09:45:14.6776369Z tests/test_promotion.py::NeuralPriorPromotionTests::test_raw_resolution_after_case_deadline_is_rejected PASSED [ 76%]
+2026-10-01T09:45:14.9515549Z tests/test_promotion.py::NeuralPriorPromotionTests::test_raw_trust_artifact_activation_change_fails_closed PASSED [ 77%]
+2026-10-01T09:45:17.0169026Z tests/test_promotion.py::NeuralPriorPromotionTests::test_recovery_rechecks_processor_and_derivation_chronology PASSED [ 77%]
+2026-10-01T09:45:17.0635514Z tests/test_promotion.py::NeuralPriorPromotionTests::test_regime_classifier_evidence_is_bound_to_current_input PASSED [ 77%]
+2026-10-01T09:45:17.1096645Z tests/test_promotion.py::NeuralPriorPromotionTests::test_regime_classifier_rehashes_mutable_execution_contract PASSED [ 77%]
+2026-10-01T09:45:17.5465040Z tests/test_promotion.py::NeuralPriorPromotionTests::test_regime_reference_signature_binds_observed_label PASSED [ 78%]
+2026-10-01T09:46:19.6330944Z tests/test_promotion.py::NeuralPriorPromotionTests::test_regime_specific_uncertainty_regression_is_not_averaged_away PASSED [ 78%]
+2026-10-01T09:47:54.4832462Z tests/test_promotion.py::NeuralPriorPromotionTests::test_required_metric_cell_checks_end_to_end_non_inferiority PASSED [ 78%]
+2026-10-01T09:49:29.9332721Z tests/test_promotion.py::NeuralPriorPromotionTests::test_required_metric_cell_must_be_non_inferior PASSED [ 79%]
+2026-10-01T09:50:48.6702497Z tests/test_promotion.py::NeuralPriorPromotionTests::test_required_metric_cell_requires_independent_events PASSED [ 79%]
+2026-10-01T09:51:51.6833217Z tests/test_promotion.py::NeuralPriorPromotionTests::test_revoked_authority_and_foreign_ledger_are_rejected PASSED [ 79%]
+2026-10-01T09:52:54.4357643Z tests/test_promotion.py::NeuralPriorPromotionTests::test_runtime_activation_receipt_rejects_expiry_and_resigned_outer_digest PASSED [ 79%]
+2026-10-01T09:52:54.4856972Z tests/test_promotion.py::NeuralPriorPromotionTests::test_runtime_activation_sql_chain_rejects_rewind_gap_and_unsigned_rollback PASSED [ 80%]
+2026-10-01T09:52:54.5035693Z tests/test_promotion.py::NeuralPriorPromotionTests::test_same_physical_storm_across_days_and_radars_is_one_cluster PASSED [ 80%]
+2026-10-01T09:53:43.1620888Z tests/test_promotion.py::NeuralPriorPromotionTests::test_sample_preflight_fails_a_sparse_metric_cell 
+2026-10-01T09:53:43.1722625Z tests/test_promotion.py::NeuralPriorPromotionTests::test_sample_preflight_fails_a_sparse_metric_cell PASSED [ 80%]
+2026-10-01T09:54:47.9038953Z tests/test_promotion.py::NeuralPriorPromotionTests::test_sample_size_preflight_is_subset_aware PASSED [ 80%]
+2026-10-01T09:55:36.8823199Z tests/test_promotion.py::NeuralPriorPromotionTests::test_sample_size_preflight_rejects_an_impossible_small_holdout PASSED [ 81%]
+2026-10-01T09:55:37.2830809Z tests/test_promotion.py::NeuralPriorPromotionTests::test_sampling_unit_is_independent_of_processing_contracts PASSED [ 81%]
+2026-10-01T09:55:37.3017992Z tests/test_promotion.py::NeuralPriorPromotionTests::test_scheduler_authority_must_be_independent_from_adjudicator PASSED [ 81%]
+2026-10-01T09:56:11.8646080Z tests/test_promotion.py::NeuralPriorPromotionTests::test_scored_input_cannot_be_rebound_to_different_raw_volumes PASSED [ 81%]
+2026-10-01T09:56:58.5666123Z tests/test_promotion.py::NeuralPriorPromotionTests::test_scoring_algorithm_must_match_the_preregistered_plan PASSED [ 82%]
+2026-10-01T09:57:51.0764212Z tests/test_promotion.py::NeuralPriorPromotionTests::test_scoring_artifact_detects_a_changed_evaluation PASSED [ 82%]
+2026-10-01T09:57:51.0948879Z tests/test_promotion.py::NeuralPriorPromotionTests::test_scoring_backend_is_cpu_only PASSED [ 82%]
+2026-10-01T09:58:37.4242215Z tests/test_promotion.py::NeuralPriorPromotionTests::test_scoring_completion_rejects_an_unbacked_output_digest PASSED [ 82%]
+2026-10-01T09:58:52.7989102Z tests/test_promotion.py::NeuralPriorPromotionTests::test_scoring_input_seals_completed_reference_truth PASSED [ 83%]
+2026-10-01T09:58:59.2331858Z tests/test_promotion.py::NeuralPriorPromotionTests::test_scoring_input_seals_the_exact_forecast_realization PASSED [ 83%]
+2026-10-01T09:58:59.2534895Z tests/test_promotion.py::NeuralPriorPromotionTests::test_scoring_replay_crash_durability PASSED [ 83%]
+2026-10-01T10:00:34.9673771Z tests/test_promotion.py::NeuralPriorPromotionTests::test_scoring_replay_reproduces_evaluation_digest 
+2026-10-01T10:00:34.9787703Z tests/test_promotion.py::NeuralPriorPromotionTests::test_scoring_replay_reproduces_evaluation_digest PASSED [ 83%]
+2026-10-01T10:00:41.8345323Z tests/test_promotion.py::NeuralPriorPromotionTests::test_scoring_start_requires_registered_catalog_and_trusted_time PASSED [ 84%]
+2026-10-01T10:00:41.8873745Z tests/test_promotion.py::NeuralPriorPromotionTests::test_second_family_continues_registry PASSED [ 84%]
+2026-10-01T10:00:42.4863791Z tests/test_promotion.py::NeuralPriorPromotionTests::test_selector_rechecks_operational_partition_grid PASSED [ 84%]
+2026-10-01T10:01:17.4249402Z tests/test_promotion.py::NeuralPriorPromotionTests::test_self_authorized_provenance_receipt_is_rejected PASSED [ 84%]
+2026-10-01T10:02:19.5660561Z tests/test_promotion.py::NeuralPriorPromotionTests::test_self_selected_one_percent_validity_blocks_promotion PASSED [ 85%]
+2026-10-01T10:02:54.2938834Z tests/test_promotion.py::NeuralPriorPromotionTests::test_semantic_replay_detects_forecast_tensor_after_rehash_attempt PASSED [ 85%]
+2026-10-01T10:04:12.2284477Z tests/test_promotion.py::NeuralPriorPromotionTests::test_semantic_replay_generation_stops_before_operational_deployment PASSED [ 85%]
+2026-10-01T10:04:46.8888306Z tests/test_promotion.py::NeuralPriorPromotionTests::test_semantic_replay_raw_input_must_match_forecast_run PASSED [ 86%]
+2026-10-01T10:05:21.7471756Z tests/test_promotion.py::NeuralPriorPromotionTests::test_semantic_replay_requires_exact_background_time_shape PASSED [ 86%]
+2026-10-01T10:05:57.0475812Z tests/test_promotion.py::NeuralPriorPromotionTests::test_semantic_replay_requires_factory_and_exact_product_types 
+2026-10-01T10:05:57.0603762Z tests/test_promotion.py::NeuralPriorPromotionTests::test_semantic_replay_requires_factory_and_exact_product_types PASSED [ 86%]
+2026-10-01T10:06:32.4204696Z tests/test_promotion.py::NeuralPriorPromotionTests::test_semantic_replay_requires_one_device_across_every_role PASSED [ 86%]
+2026-10-01T10:07:07.6862626Z tests/test_promotion.py::NeuralPriorPromotionTests::test_semantic_replay_requires_time_resolved_quality_weight PASSED [ 87%]
+2026-10-01T10:07:43.3534879Z tests/test_promotion.py::NeuralPriorPromotionTests::test_semantic_replay_role_schema_rejects_wrong_dtype PASSED [ 87%]
+2026-10-01T10:07:59.7820805Z tests/test_promotion.py::NeuralPriorPromotionTests::test_simultaneous_uncertainty_count_covers_family_components_groups PASSED [ 87%]
+2026-10-01T10:08:16.2970818Z tests/test_promotion.py::NeuralPriorPromotionTests::test_skill_rate_bounds_retain_finite_event_uncertainty PASSED [ 87%]
+2026-10-01T10:08:16.5708054Z tests/test_promotion.py::NeuralPriorPromotionTests::test_split_events_with_an_association_edge_are_rejected PASSED [ 88%]
+2026-10-01T10:09:19.9328350Z tests/test_promotion.py::NeuralPriorPromotionTests::test_state_false_support_is_a_direct_promotion_guard PASSED [ 88%]
+2026-10-01T10:09:20.1460683Z tests/test_promotion.py::NeuralPriorPromotionTests::test_state_target_requires_v2_measurement_attestation PASSED [ 88%]
+2026-10-01T10:10:22.2459741Z tests/test_promotion.py::NeuralPriorPromotionTests::test_state_uncertainty_regression_against_parent_blocks_promotion PASSED [ 88%]
+2026-10-01T10:10:22.4958831Z tests/test_promotion.py::NeuralPriorPromotionTests::test_track_payload_tampering_is_detected_by_rehash PASSED [ 89%]
+2026-10-01T10:10:22.5155099Z tests/test_promotion.py::NeuralPriorPromotionTests::test_track_rejects_hidden_extreme_segment_speed PASSED [ 89%]
+2026-10-01T10:10:52.8579471Z tests/test_promotion.py::NeuralPriorPromotionTests::test_training_and_holdout_inputs_must_be_disjoint PASSED [ 89%]
+2026-10-01T10:11:08.1158594Z tests/test_promotion.py::NeuralPriorPromotionTests::test_training_and_holdout_storms_must_be_disjoint PASSED [ 89%]
+2026-10-01T10:11:08.4204150Z tests/test_promotion.py::NeuralPriorPromotionTests::test_training_completion_requires_a_ledger_backed_start PASSED [ 90%]
+2026-10-01T10:11:09.2251118Z tests/test_promotion.py::NeuralPriorPromotionTests::test_training_dataset_derivation_replay PASSED [ 90%]
+2026-10-01T10:11:25.0751568Z tests/test_promotion.py::NeuralPriorPromotionTests::test_training_raw_and_sampling_units_cannot_overlap_holdout PASSED [ 90%]
+2026-10-01T10:11:25.3655072Z tests/test_promotion.py::NeuralPriorPromotionTests::test_training_raw_receipt_cannot_be_rewritten_after_reservation PASSED [ 90%]
+2026-10-01T10:11:25.3871234Z tests/test_promotion.py::NeuralPriorPromotionTests::test_training_shard_rejects_oversized_file_before_hashing PASSED [ 91%]
+2026-10-01T10:11:56.1849932Z tests/test_promotion.py::NeuralPriorPromotionTests::test_training_targets_are_finite_nonempty_and_inside_windows 
+2026-10-01T10:11:56.1967667Z tests/test_promotion.py::NeuralPriorPromotionTests::test_training_targets_are_finite_nonempty_and_inside_windows PASSED [ 91%]
+2026-10-01T10:11:56.2240943Z tests/test_promotion.py::NeuralPriorPromotionTests::test_truncated_tail_score_is_stable_and_differentiable PASSED [ 91%]
+2026-10-01T10:12:04.0671721Z tests/test_promotion.py::NeuralPriorPromotionTests::test_trusted_process_start_receipt_rejects_signature_tampering PASSED [ 91%]
+2026-10-01T10:12:04.0898290Z tests/test_promotion.py::NeuralPriorPromotionTests::test_uncertainty_scoring_clips_before_event_aggregation PASSED [ 92%]
+2026-10-01T10:12:04.1111015Z tests/test_promotion.py::NeuralPriorPromotionTests::test_uncertainty_scoring_uses_observation_error_weight PASSED [ 92%]
+2026-10-01T10:12:05.1539957Z tests/test_promotion.py::NeuralPriorPromotionTests::test_uncertainty_target_requires_its_planned_verification_source PASSED [ 92%]
+2026-10-01T10:13:07.5912216Z tests/test_promotion.py::NeuralPriorPromotionTests::test_uncertified_regime_requires_parent_fallback PASSED [ 93%]
+2026-10-01T10:14:10.0875332Z tests/test_promotion.py::NeuralPriorPromotionTests::test_unreliable_prior_uncertainty_blocks_promotion PASSED [ 93%]
+2026-10-01T10:15:12.6786144Z tests/test_promotion.py::NeuralPriorPromotionTests::test_v10_promotion_evidence_remains_audit_only PASSED [ 93%]
+2026-10-01T10:16:15.6188050Z tests/test_promotion.py::NeuralPriorPromotionTests::test_v11_promotion_evidence_remains_audit_only PASSED [ 93%]
+2026-10-01T10:17:17.8402928Z tests/test_promotion.py::NeuralPriorPromotionTests::test_v15_promotion_remains_audit_only PASSED [ 94%]
+2026-10-01T10:18:20.3490159Z tests/test_promotion.py::NeuralPriorPromotionTests::test_v18_promotion_remains_audit_only PASSED [ 94%]
+2026-10-01T10:18:35.7817962Z tests/test_promotion.py::NeuralPriorPromotionTests::test_v19_evaluation_loads_as_audit_only PASSED [ 94%]
+2026-10-01T10:18:51.2353519Z tests/test_promotion.py::NeuralPriorPromotionTests::test_v6_hurdle_evaluation_remains_content_verified_audit_only PASSED [ 94%]
+2026-10-01T10:18:52.5175807Z tests/test_promotion.py::NeuralPriorPromotionTests::test_verification_target_identity_rechecks_observation_error_plan PASSED [ 95%]
+2026-10-01T10:18:52.7522299Z tests/test_promotion.py::NeuralPriorPromotionTests::test_wrong_single_site_radar_is_rejected PASSED [ 95%]
+2026-10-01T10:18:52.7872573Z tests/test_recompute_contract.py::test_recompute_alias_forms_match_plain_grad_gradgrad_and_jvp_of_grad[identity] PASSED [ 95%]
+2026-10-01T10:18:52.8212018Z tests/test_recompute_contract.py::test_recompute_alias_forms_match_plain_grad_gradgrad_and_jvp_of_grad[clone] PASSED [ 95%]
+2026-10-01T10:18:52.8546352Z tests/test_recompute_contract.py::test_recompute_alias_forms_match_plain_grad_gradgrad_and_jvp_of_grad[add_zero] PASSED [ 96%]
+2026-10-01T10:18:52.8900974Z tests/test_recompute_contract.py::test_recompute_alias_forms_match_plain_grad_gradgrad_and_jvp_of_grad[tuple_alias] PASSED [ 96%]
+2026-10-01T10:18:52.9106209Z tests/test_recompute_contract.py::test_recompute_rejects_nonfloating_inputs_before_function_execution[bool] PASSED [ 96%]
+2026-10-01T10:18:52.9310469Z tests/test_recompute_contract.py::test_recompute_rejects_nonfloating_inputs_before_function_execution[int] PASSED [ 96%]
+2026-10-01T10:18:52.9517119Z tests/test_recompute_contract.py::test_recompute_rejects_cpu_autocast_for_floating_input PASSED [ 97%]
+2026-10-01T10:18:52.9762046Z tests/test_review_legacy_loaders.py::ReviewLegacyLoaderTests::test_legacy_loaders_round_trip_canonical_signed_payloads PASSED [ 97%]
+2026-10-01T10:18:52.9968952Z tests/test_review_legacy_loaders.py::ReviewLegacyLoaderTests::test_low_confidence_replay_records_low_confidence_reason PASSED [ 97%]
+2026-10-01T10:18:53.4349466Z tests/test_review_legacy_loaders.py::ReviewLegacyLoaderTests::test_resigned_malformed_regime_reference_digest_is_rejected 
+2026-10-01T10:18:53.4473035Z tests/test_review_legacy_loaders.py::ReviewLegacyLoaderTests::test_resigned_malformed_regime_reference_digest_is_rejected PASSED [ 97%]
+2026-10-01T10:18:53.4705431Z tests/test_review_legacy_loaders.py::ReviewLegacyLoaderTests::test_runtime_activation_requires_positive_exact_integer PASSED [ 98%]
+2026-10-01T10:20:12.7214821Z tests/test_review_promotion_statistics.py::PromotionStatisticsReviewTests::test_automatic_metric_cells_ignore_bootstrap_tail_resolution PASSED [ 98%]
+2026-10-01T10:20:12.7452275Z tests/test_runtime_closure.py::RuntimeClosureTests::test_active_import_path_identity_is_relocatable PASSED [ 98%]
+2026-10-01T10:20:12.7670522Z tests/test_runtime_closure.py::RuntimeClosureTests::test_active_import_path_rejects_an_ambient_root PASSED [ 98%]
+2026-10-01T10:20:12.7891383Z tests/test_runtime_closure.py::RuntimeClosureTests::test_interpreter_snapshot_requires_bytecode_writes_disabled PASSED [ 99%]
+2026-10-01T10:20:12.8135846Z tests/test_runtime_closure.py::RuntimeClosureTests::test_native_library_identity_is_relocatable_within_import_root PASSED [ 99%]
+2026-10-01T10:20:12.8384215Z tests/test_runtime_closure.py::RuntimeClosureTests::test_product_runtime_snapshot_rejects_shadow_and_writable_deployable PASSED [ 99%]
+2026-10-01T10:20:13.1428010Z tests/test_runtime_closure.py::RuntimeClosureTests::test_runtime_file_snapshot_rejects_a_symlink PASSED [100%]
+2026-10-01T10:20:13.1428887Z 
+2026-10-01T10:20:13.1429157Z =================================== FAILURES ===================================
+2026-10-01T10:20:13.1430048Z ______ test_unexpected_final_score_error_propagates_as_execution_failure _______
+2026-10-01T10:20:13.1430596Z 
+2026-10-01T10:20:13.1430962Z monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f3732cae7b0>
+2026-10-01T10:20:13.1431863Z tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_unexpected_final_score_er0')
+2026-10-01T10:20:13.1432405Z 
+2026-10-01T10:20:13.1432873Z     def test_unexpected_final_score_error_propagates_as_execution_failure(monkeypatch, tmp_path):
+2026-10-01T10:20:13.1433799Z         problem, warm, p, direction = preflight.fixed_problem()
+2026-10-01T10:20:13.1434505Z         prior = json.loads(probe.PRIOR.read_text())
+2026-10-01T10:20:13.1435227Z         # Isolate callback classification from the historical prior-source gate;
+2026-10-01T10:20:13.1436069Z         # current refiner source has legitimately changed since that archive.
+2026-10-01T10:20:13.1437326Z         monkeypatch.setattr(probe.sector, "_sources", lambda: prior["source_before"])
+2026-10-01T10:20:13.1438552Z         row = [v for v in prior["trial_records"] if v["accepted"]][-1]
+2026-10-01T10:20:13.1439296Z         seed = torch.tensor(row["candidate_control"], dtype=torch.float64)
+2026-10-01T10:20:13.1440065Z         gradient = torch.func.grad(problem.objective, argnums=0)(seed, p)
+2026-10-01T10:20:13.1440870Z         branch, scope = probe.sector.previous._core_branch(problem, seed, p)
+2026-10-01T10:20:13.1441527Z         real_grad = torch.func.grad
+2026-10-01T10:20:13.1441938Z     
+2026-10-01T10:20:13.1442279Z         def fake_grad(function, *, argnums=0):
+2026-10-01T10:20:13.1442784Z             if function == problem.objective:
+2026-10-01T10:20:13.1443603Z                 return lambda control, _p: gradient if torch.equal(control, seed) else torch.zeros_like(control)
+2026-10-01T10:20:13.1444472Z             return real_grad(function, argnums=argnums)
+2026-10-01T10:20:13.1444946Z     
+2026-10-01T10:20:13.1445577Z         monkeypatch.setattr(probe.preflight, "fixed_problem", lambda: (problem, warm, p, direction))
+2026-10-01T10:20:13.1446706Z         monkeypatch.setattr(probe.torch.func, "grad", fake_grad)
+2026-10-01T10:20:13.1447460Z         monkeypatch.setattr(probe.basin, "_hessian_audit", lambda *_: {
+2026-10-01T10:20:13.1448129Z             "symmetry_relative": 0.0, "lambda_min": 1.0,
+2026-10-01T10:20:13.1448738Z             "lambda_max": 2.0, "lambda_ratio": 0.5, "hvp_columns": 26})
+2026-10-01T10:20:13.1449572Z         monkeypatch.setattr(probe.sector.previous, "_core_branch", lambda *_: (branch, scope))
+2026-10-01T10:20:13.1450510Z         monkeypatch.setattr(probe, "refine_stationary", lambda *_args, **_kwargs:
+2026-10-01T10:20:13.1451337Z                             SimpleNamespace(control=seed + 1e-9, iterations=1, hvp_count=0))
+2026-10-01T10:20:13.1451971Z     
+2026-10-01T10:20:13.1452352Z         def broken_score(_self, _control, _parameters):
+2026-10-01T10:20:13.1452920Z             raise ValueError("unexpected score sentinel")
+2026-10-01T10:20:13.1453383Z     
+2026-10-01T10:20:13.1454004Z         monkeypatch.setattr(type(problem), "score", broken_score)
+2026-10-01T10:20:13.1454597Z         output = tmp_path / "unexpected_score.json"
+2026-10-01T10:20:13.1455206Z >       with pytest.raises(ValueError, match="unexpected score sentinel"):
+2026-10-01T10:20:13.1455830Z              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-01T10:20:13.1456344Z E       AssertionError: Regex pattern did not match.
+2026-10-01T10:20:13.1457086Z E         Expected regex: 'unexpected score sentinel'
+2026-10-01T10:20:13.1457611Z E         Actual message: 'merit root fixed input changed'
+2026-10-01T10:20:13.1457959Z 
+2026-10-01T10:20:13.1458163Z tests/test_fv_point_merit_root.py:178: AssertionError
+2026-10-01T10:20:13.1458713Z =============================== warnings summary ===============================
+2026-10-01T10:20:13.1459256Z tests/test_a2_numerics_cross.py: 18 warnings
+2026-10-01T10:20:13.1460556Z   /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+2026-10-01T10:20:13.1461796Z     warnings.warn(
+2026-10-01T10:20:13.1461992Z 
+2026-10-01T10:20:13.1462311Z -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2026-10-01T10:20:13.1462985Z =========================== short test summary info ============================
+2026-10-01T10:20:13.1464100Z FAILED tests/test_fv_point_merit_root.py::test_unexpected_final_score_error_propagates_as_execution_failure - AssertionError: Regex pattern did not match.
+2026-10-01T10:20:13.1465146Z   Expected regex: 'unexpected score sentinel'
+2026-10-01T10:20:13.1465643Z   Actual message: 'merit root fixed input changed'
+2026-10-01T10:20:13.1466318Z = 1 failed, 382 passed, 3 skipped, 18 warnings, 77 subtests passed in 6701.37s (1:51:41) =
+2026-10-01T10:20:13.8205345Z ##[error]Process completed with exit code 1.
+2026-10-01T10:20:13.8300138Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+2026-10-01T10:20:13.8300568Z with:
+2026-10-01T10:20:13.8300843Z   name: cpu-shard-0-a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf
+2026-10-01T10:20:13.8301223Z   path: /home/runner/work/_temp/cpu-shard-records
+2026-10-01T10:20:13.8301525Z   if-no-files-found: error
+2026-10-01T10:20:13.8301759Z   retention-days: 7
+2026-10-01T10:20:13.8301965Z   compression-level: 6
+2026-10-01T10:20:13.8302174Z   overwrite: false
+2026-10-01T10:20:13.8302384Z   include-hidden-files: false
+2026-10-01T10:20:13.8302620Z   archive: true
+2026-10-01T10:20:13.8302807Z env:
+2026-10-01T10:20:13.8303050Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T10:20:13.8303471Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+2026-10-01T10:20:13.8303897Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T10:20:13.8304272Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T10:20:13.8304688Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+2026-10-01T10:20:13.8305066Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+2026-10-01T10:20:13.8305384Z ##[endgroup]
+2026-10-01T10:20:13.9839440Z With the provided path, there will be 5 files uploaded
+2026-10-01T10:20:13.9846698Z Artifact name is valid!
+2026-10-01T10:20:13.9847504Z Root directory input is valid!
+2026-10-01T10:20:14.3049417Z Uploading artifact: cpu-shard-0-a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf.zip
+2026-10-01T10:20:14.3095465Z Beginning upload of artifact content to blob storage
+2026-10-01T10:20:14.4081141Z Uploaded bytes 108328
+2026-10-01T10:20:14.4219830Z Finished uploading artifact content to blob storage!
+2026-10-01T10:20:14.4220839Z SHA256 digest of uploaded artifact is cf410a2d25c516823bc6b80b0be402095b692747f5884926df047320dd1fe414
+2026-10-01T10:20:14.4221731Z Finalizing artifact upload
+2026-10-01T10:20:14.6538168Z Artifact cpu-shard-0-a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf successfully finalized. Artifact ID 11154850862
+2026-10-01T10:20:14.6540029Z Artifact cpu-shard-0-a9e321d15e4f7fc80b4ea494e1c732897fa0ccdf has been successfully uploaded! Final size is 108328 bytes. Artifact ID is 11154850862
+2026-10-01T10:20:14.6543299Z Artifact download URL: https://github.com/gonos2k/AD4DVAR-radar/actions/runs/36836402831/artifacts/11154850862
+2026-10-01T10:20:14.6771104Z Post job cleanup.
+2026-10-01T10:20:14.7637346Z [command]/usr/bin/git version
+2026-10-01T10:20:14.7693810Z git version 2.55.0
+2026-10-01T10:20:14.7767436Z Temporarily overriding HOME='/home/runner/work/_temp/b9af8ff1-a628-4c41-a333-fd54f64a0bce' before making global git config changes
+2026-10-01T10:20:14.7768877Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-01T10:20:14.7772466Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+2026-10-01T10:20:14.7813060Z Removing SSH command configuration
+2026-10-01T10:20:14.7837330Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-01T10:20:14.7860658Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-01T10:20:14.8120754Z Removing HTTP extra header
+2026-10-01T10:20:14.8126202Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-01T10:20:14.8167991Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-01T10:20:14.8444776Z Removing includeIf entries pointing to credentials config files
+2026-10-01T10:20:14.8445602Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-01T10:20:14.8478075Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+2026-10-01T10:20:14.8479866Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+2026-10-01T10:20:14.8480845Z includeif.gitdir:/github/workspace/.git.path
+2026-10-01T10:20:14.8481593Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-01T10:20:14.8489856Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+2026-10-01T10:20:14.8519826Z /home/runner/work/_temp/git-credentials-1a11afdd-cce7-44fe-aa98-bfc1e5762f5b.config
+2026-10-01T10:20:14.8531173Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-1a11afdd\-cce7\-44fe\-aa98\-bfc1e5762f5b\.config
+2026-10-01T10:20:14.8592128Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+2026-10-01T10:20:14.8621304Z /home/runner/work/_temp/git-credentials-1a11afdd-cce7-44fe-aa98-bfc1e5762f5b.config
+2026-10-01T10:20:14.8640392Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-1a11afdd\-cce7\-44fe\-aa98\-bfc1e5762f5b\.config
+2026-10-01T10:20:14.8683054Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-01T10:20:14.8711571Z /github/runner_temp/git-credentials-1a11afdd-cce7-44fe-aa98-bfc1e5762f5b.config
+2026-10-01T10:20:14.8726268Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-1a11afdd\-cce7\-44fe\-aa98\-bfc1e5762f5b\.config
+2026-10-01T10:20:14.8755768Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-01T10:20:14.8784015Z /github/runner_temp/git-credentials-1a11afdd-cce7-44fe-aa98-bfc1e5762f5b.config
+2026-10-01T10:20:14.8791088Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-1a11afdd\-cce7\-44fe\-aa98\-bfc1e5762f5b\.config
+2026-10-01T10:20:14.8831202Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-01T10:20:14.9079352Z Removing credentials config '/home/runner/work/_temp/git-credentials-1a11afdd-cce7-44fe-aa98-bfc1e5762f5b.config'
+2026-10-01T10:20:14.9244484Z Cleaning up orphan processes

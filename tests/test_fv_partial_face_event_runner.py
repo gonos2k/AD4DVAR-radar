@@ -138,10 +138,33 @@ def _child_report(identity: dict[str, Any], probe_sha: str,
     }
 
 
+def _host_local_input_identity(problem, warm_control, parameters) -> dict[str, Any]:
+    """Bind the synthetic fixture locally without certifying archived preflight data."""
+    observations = problem.observations
+    mode = problem.frozen.observation_whitener.mode
+    assert mode is not None
+    tensors = {
+        "observation_dbz": observations.dbz,
+        "valid_mask": observations.valid_mask,
+        "missing_mask": observations.missing_mask,
+        "whitener_mode": mode,
+        "parameters": parameters,
+        "warm_control": warm_control,
+        "verification": problem.verification,
+    }
+    return {
+        "current_problem_identity": problem.identity,
+        "fixture_scope": "synthetic current-host input; not archived preflight certification",
+        "tensor_sha256": {
+            name: runner.probe._tensor_sha(value) for name, value in tensors.items()
+        },
+    }
+
+
 @pytest.fixture(scope="module")
 def current_context():
-    problem = runner._current_problem()
-    input_identity = runner._current_input_identity()
+    problem, warm_control, parameters = runner.probe._problem()
+    input_identity = _host_local_input_identity(problem, warm_control, parameters)
     assert problem.identity == input_identity["current_problem_identity"]
     probe_sha = runner.probe._sha(Path(runner.probe.__file__))
     runner_sha = runner.probe._sha(Path(runner.__file__))

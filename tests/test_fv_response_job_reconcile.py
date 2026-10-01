@@ -1,6 +1,7 @@
 """Classification only for fixed response-job crash artifacts."""
 from __future__ import annotations
 
+import importlib.util
 import hashlib
 import json
 from pathlib import Path
@@ -16,8 +17,24 @@ from examples.weather_scenarios import fv_response_job_lifecycle as jobs
 from examples.weather_scenarios import fv_response_job_reconcile as reconcile
 from examples.weather_scenarios import fv_process_response_worker as worker
 
+_SUPPORT_SPEC = importlib.util.spec_from_file_location(
+    "fv_response_test_support", Path(__file__).with_name("fv_response_test_support.py"),
+)
+assert _SUPPORT_SPEC is not None and _SUPPORT_SPEC.loader is not None
+_SUPPORT = importlib.util.module_from_spec(_SUPPORT_SPEC)
+_SUPPORT_SPEC.loader.exec_module(_SUPPORT)
+synthetic_job_identity = getattr(_SUPPORT, "synthetic_job_identity")
+synthetic_worker_report = getattr(_SUPPORT, "synthetic_worker_report")
+
 
 FIXTURE = (jobs.EVIDENCE / "response_job_lifecycle_attempt1/complete")
+
+
+@pytest.fixture(autouse=True)
+def _portable_test_identity(monkeypatch):
+    # Reconciliation contract tests use synthetic, current-runtime input identity.
+    # The production identity builder and its archived-hash drift gates are unchanged.
+    monkeypatch.setattr(jobs, "_identity", synthetic_job_identity)
 
 
 def _json(path: Path) -> dict[str, Any]:
@@ -29,36 +46,79 @@ def _write(path: Path, value: dict[str, Any]) -> None:
 
 
 def _make_job(directory: Path, *, lifecycle: bool = False) -> None:
+    """Build protocol-only artifacts; no historical worker report is rebound."""
     directory.mkdir(parents=True)
-    for name in ("published.json", "worker.raw.json", "worker.resource.json"):
-        shutil.copyfile(FIXTURE / name, directory / name)
+    identity, expected_total = jobs._identity()
+    source = jobs._sources()
+    archives = jobs._archives()
     raw_path = directory / "worker.raw.json"
     resource_path = directory / "worker.resource.json"
     published_path = directory / "published.json"
-    child = _json(raw_path)
-    child["source_before"] = worker._hashes()
-    child["source_after"] = worker._hashes()
+    child = synthetic_worker_report(
+        identity, worker._hashes(), archives, expected_total,
+    )
     _write(raw_path, child)
-    resource = _json(resource_path)
-    resource["command"] = [
+    command = [
         sys.executable,
         str((jobs.ROOT / "examples/weather_scenarios/fv_process_response_worker.py").resolve()),
         "--case", "fv4x5", "--output", str(raw_path.resolve()),
     ]
+    resource = {
+        "command": command,
+        "child_pid": child["pid"],
+        "exit_code": 0,
+        "resource_termination": None,
+        "monitor_error": None,
+        "rss_samples": 2,
+        "sampled_peak_rss_bytes": 300_000_000,
+        "wall_limit_seconds": jobs.CHILD_WALL_SECONDS,
+        "rss_limit_bytes": jobs.CHILD_RSS_BYTES,
+        "elapsed_seconds": 1.0,
+    }
     _write(resource_path, resource)
-    published = _json(published_path)
-    published["worker_report_sha256"] = hashlib.sha256(raw_path.read_bytes()).hexdigest()
-    published["request_id"] = "request_1"
+    response = child["response"]
+    completed = child["response_ended_monotonic"] + 1.0
+    decision = completed + 1.0
+    published = {
+        "request_id": "request_1",
+        "case_id": "fv4x5",
+        "scope": reconcile._PUBLICATION_SCOPE,
+        "worker_report_sha256": hashlib.sha256(raw_path.read_bytes()).hexdigest(),
+        "input_identity": identity,
+        "worker_pid": child["pid"],
+        "response_total": response["total"],
+        "response_direct": response["direct"],
+        "response_indirect": response["indirect"],
+        "true_adjoint_relative_residual": response["true_adjoint_relative_residual"],
+        "worker_response_ended_monotonic": child["response_ended_monotonic"],
+        "child_completed_monotonic": completed,
+        "publication_decision_monotonic": decision,
+        "source_sha256": source,
+        "archive_sha256": archives,
+        "job_dir": str(directory.resolve()),
+    }
     _write(published_path, published)
     if lifecycle:
-        shutil.copyfile(FIXTURE / "lifecycle.json", directory / "lifecycle.json")
-        lifecycle_record = _json(directory / "lifecycle.json")
-        lifecycle_record["request_id"] = "request_1"
-        lifecycle_record["resource"] = resource
-        lifecycle_record["source_before"] = jobs._sources()
-        lifecycle_record["source_after"] = dict(lifecycle_record["source_before"])
-        lifecycle_record["archive_before"] = jobs._archives()
-        lifecycle_record["archive_after"] = dict(lifecycle_record["archive_before"])
+        lifecycle_record = {
+            "request_id": "request_1",
+            "execution_status": "completed",
+            "numerical_status": "eligible",
+            "response_validation": "archived_reference_matched",
+            "physical_validation": "not_performed",
+            "response_published": True,
+            "raw_child_read_error": None,
+            "runner_error": None,
+            "cancellation_requested_monotonic": None,
+            "resource": resource,
+            "source_before": source,
+            "source_after": dict(source),
+            "archive_before": archives,
+            "archive_after": dict(archives),
+            "input_before": identity,
+            "input_after": dict(identity),
+            "child_completed_monotonic": completed,
+            "published_monotonic": decision,
+        }
         _write(directory / "lifecycle.json", lifecycle_record)
 
 

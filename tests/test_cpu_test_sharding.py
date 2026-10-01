@@ -1,0 +1,662 @@
+"""Synthetic coverage checks for the complete CPU-test shard audit."""
+from __future__ import annotations
+
+import importlib.util
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+from types import SimpleNamespace
+
+import pytest
+
+
+SCRIPT = Path(__file__).resolve().parents[1] / ".github/scripts/run_cpu_test_shard.py"
+SPEC = importlib.util.spec_from_file_location("cpu_test_sharding", SCRIPT)
+assert SPEC is not None and SPEC.loader is not None
+sharding = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(sharding)
+
+
+def _nodeids(counts: dict[str, int]) -> list[str]:
+    return [f"tests/{module}.py::test_{index}"
+            for module, count in counts.items() for index in range(count)]
+
+
+def _complete_records(nodeids: list[str], shard_count: int):
+    source = {"commit": "c" * 40, "sha256": {"pyproject.toml": "a" * 64}}
+    runtime = {"python": "3.12.14", "torch": "2.13.0+cpu", "pytest": "9.1.1"}
+    digest = sharding.inventory_digest(nodeids, source, runtime, shard_count)
+    inventory = {
+        "schema_version": sharding.SCHEMA_VERSION,
+        "status": "complete", "nodeids": nodeids, "source": source,
+        "runtime": runtime, "shard_count": shard_count, "node_count": len(nodeids),
+        "inventory_sha256": digest,
+        "pytest_return_code": 0, "session_exit_code": 0,
+        "collection_process_return_code": 0, "collection_errors": [],
+        "collection_skips": [], "collection_filter_options": [],
+        "deselected_nodeids": [],
+        "duplicate_nodeids": False,
+    }
+    assignments = []
+    results = []
+    for part in sharding.partition_modules(nodeids, shard_count):
+        assignment = {
+            **part, "inventory_sha256": digest, "source": source, "runtime": runtime,
+            "schema_version": sharding.SCHEMA_VERSION,
+            "assignment_sha256": sharding._sha256(sharding._canonical_json(part)),
+        }
+        assignments.append(assignment)
+        outcomes = ["skipped" if index == 0 else "passed"
+                    for index, _ in enumerate(part["nodeids"])]
+        def phases(outcome: str) -> list[dict[str, str]]:
+            call = {"phase": "call", "outcome": outcome}
+            if outcome == "skipped":
+                call["skip_reason"] = "synthetic skip"
+            return [{"phase": "setup", "outcome": "passed"}, call,
+                    {"phase": "teardown", "outcome": "passed"}]
+
+        results.append({
+            "schema_version": sharding.SCHEMA_VERSION,
+            "status": "complete", "terminal": True, "pytest_return_code": 0,
+            "session_exit_code": 0, "shard_index": part["shard_index"],
+            "selection_matches": True, "collection_errors": [],
+            "collection_filter_options": [], "deselected_nodeids": [],
+            "expected_count": len(part["nodeids"]),
+            "inventory_sha256": digest,
+            "assignment_sha256": assignment["assignment_sha256"],
+            "source": source, "runtime": runtime,
+            "source_unchanged": True, "runtime_unchanged": True,
+            "actual_nodeids": part["nodeids"],
+            "cases": [{"nodeid": nodeid, "terminal": True,
+                       "terminal_phase": "teardown", "outcome": outcome,
+                       "phase_reports": phases("skipped" if outcome == "skipped" else "passed"),
+                       "subtest_reports": [], "subtest_report_count": 0}
+                      for nodeid, outcome in zip(part["nodeids"], outcomes, strict=True)],
+        })
+    return inventory, assignments, results
+
+
+def test_greedy_partition_is_deterministic_balanced_and_module_ordered() -> None:
+    ids = _nodeids({"z": 4, "a": 3, "c": 2, "b": 2, "e": 1, "d": 1})
+    first = sharding.partition_modules(ids, 3)
+    second = sharding.partition_modules(ids, 3)
+    assert first == second
+    assert [row["expected_count"] for row in first] == [5, 4, 4]
+    assert [row["module_paths"] for row in first] == [
+        ["tests/z.py", "tests/e.py"], ["tests/a.py", "tests/d.py"],
+        ["tests/c.py", "tests/b.py"],
+    ]
+    flattened = [nodeid for row in first for nodeid in row["nodeids"]]
+    assert len(flattened) == len(ids)
+    assert set(flattened) == set(ids)
+    assert all(row["nodeids"] == [nodeid for nodeid in ids
+                                  if nodeid.split("::", 1)[0] in row["module_paths"]]
+               for row in first)
+
+
+def test_reconciliation_accepts_exact_partition_and_counts_skips() -> None:
+    records = _complete_records(_nodeids({"a": 3, "b": 2, "c": 2}), 2)
+    result = sharding.reconcile_shards(*records)
+    assert result["status"] == "complete", result["errors"]
+    assert result["node_count"] == 7
+    assert result["terminal_outcome_counts"] == {"skipped": 2, "passed": 5}
+    assert result["subtest_outcome_counts"] == {}
+
+
+def test_subtest_summaries_preserve_context_skip_xfail_and_failure_details() -> None:
+    reports = [
+        {"phase": "call", "outcome": "passed",
+         "context": {"msg": "passed", "kwargs": {"case": "passed"}}},
+        {"phase": "call", "outcome": "skipped", "skip_reason": "expected skip",
+         "context": {"msg": None, "kwargs": {"case": "skipped"}}},
+        {"phase": "call", "outcome": "skipped", "wasxfail": "expected xfail",
+         "skip_reason": "expected xfail",
+         "context": {"msg": "xfail", "kwargs": {}}},
+        {"phase": "call", "outcome": "failed", "failure_traceback": "AssertionError",
+         "context": {"msg": None, "kwargs": {"case": "failed"}}},
+    ]
+
+    assert sharding.summarize_subtests(reports) == {
+        "passed": 1, "skipped": 1, "xfailed": 1, "failed": 1,
+    }
+    with pytest.raises(sharding.ShardError, match="skipped subtest lacks its reason"):
+        sharding.summarize_subtests([
+            {"phase": "call", "outcome": "skipped",
+             "context": {"msg": None, "kwargs": {}}},
+        ])
+
+
+@pytest.mark.parametrize("mutation", ["missing", "extra", "duplicate"])
+def test_reconciliation_rejects_missing_extra_or_duplicate_actual_nodeids(mutation: str) -> None:
+    inventory, assignments, results = _complete_records(_nodeids({"a": 2, "b": 2}), 2)
+    if mutation == "missing":
+        results[0]["actual_nodeids"].pop()
+    elif mutation == "extra":
+        results[0]["actual_nodeids"].append("tests/extra.py::test_extra")
+    else:
+        results[0]["actual_nodeids"].append(results[0]["actual_nodeids"][0])
+    result = sharding.reconcile_shards(inventory, assignments, results)
+    assert result["status"] == "incomplete"
+    assert any("actual collected node IDs" in error for error in result["errors"])
+
+
+def test_reconciliation_rejects_collection_failure_without_running_shards() -> None:
+    inventory, assignments, results = _complete_records(_nodeids({"a": 2, "b": 2}), 2)
+    inventory["status"] = "failed"
+    inventory["collection_errors"] = [{"nodeid": "tests/broken.py", "outcome": "failed"}]
+    result = sharding.reconcile_shards(inventory, assignments, results)
+    assert result["status"] == "incomplete"
+    assert "full collection did not complete" in result["errors"]
+
+
+@pytest.mark.parametrize("mutation", ["missing", "nonterminal", "failed"])
+def test_reconciliation_rejects_incomplete_case_outcomes(mutation: str) -> None:
+    inventory, assignments, results = _complete_records(_nodeids({"a": 2, "b": 2}), 2)
+    if mutation == "missing":
+        results[0]["cases"].pop()
+    elif mutation == "nonterminal":
+        results[0]["cases"][0]["terminal"] = False
+        results[0]["cases"][0]["outcome"] = "running"
+    else:
+        results[0]["cases"][0]["outcome"] = "failed"
+    result = sharding.reconcile_shards(inventory, assignments, results)
+    assert result["status"] == "incomplete"
+    assert any("terminal outcomes" in error or "non-success outcome" in error
+               or "summary differs" in error or "nonterminal case" in error
+               or "case outcome differs" in error
+               for error in result["errors"])
+
+
+def test_partition_refuses_empty_shards_and_duplicate_inventory() -> None:
+    with pytest.raises(sharding.ShardError, match="at least one complete test module"):
+        sharding.partition_modules(_nodeids({"only": 2}), 2)
+    with pytest.raises(sharding.ShardError, match="duplicate node IDs"):
+        sharding.partition_modules(["tests/a.py::test_x"] * 2, 1)
+
+
+def test_terminal_outcome_keeps_phase_and_xfail_information() -> None:
+    nodeid = "tests/a.py::test_expected_failure"
+    assignment = {"shard_index": 0, "inventory_sha256": "a" * 64,
+                  "assignment_sha256": "b" * 64, "source": {}, "runtime": {},
+                  "nodeids": [nodeid]}
+    plugin = sharding._RunPlugin(assignment, Path("unused.json"))
+    plugin.reports[nodeid] = [
+        {"phase": "setup", "outcome": "passed"},
+        {"phase": "call", "outcome": "skipped", "wasxfail": "known reason",
+         "skip_reason": "known reason"},
+        {"phase": "teardown", "outcome": "passed"},
+    ]
+    case = plugin.cases()[0]
+    assert case["terminal"] is True
+    assert case["terminal_phase"] == "teardown"
+    assert case["outcome"] == "xfailed"
+
+
+def test_unexpected_collection_is_stopped_before_test_execution() -> None:
+    assignment = {"shard_index": 0, "inventory_sha256": "a" * 64,
+                  "assignment_sha256": "b" * 64, "source": {}, "runtime": {},
+                  "nodeids": ["tests/a.py::test_expected"]}
+    plugin = sharding._RunPlugin(assignment, Path("unused.json"))
+    plugin.actual = ["tests/extra.py::test_unexpected"]
+    plugin.selection_matches = False
+    session = SimpleNamespace(exitstatus=0)
+
+    assert plugin.pytest_runtestloop(session) is True
+    assert session.exitstatus == 1
+
+
+def test_phase_summary_requires_call_for_pass_and_teardown_for_terminal() -> None:
+    with pytest.raises(sharding.ShardError, match="without a call"):
+        sharding.summarize_phases([
+            {"phase": "setup", "outcome": "passed"},
+            {"phase": "teardown", "outcome": "passed"},
+        ])
+    partial = sharding.summarize_phases([
+        {"phase": "setup", "outcome": "passed"},
+        {"phase": "call", "outcome": "passed"},
+    ])
+    assert partial == {"terminal": False, "terminal_phase": "call", "outcome": "running"}
+    with pytest.raises(sharding.ShardError, match="duplicated or out of order"):
+        sharding.summarize_phases([
+            {"phase": "setup", "outcome": "passed"},
+            {"phase": "call", "outcome": "passed"},
+            {"phase": "call", "outcome": "passed"},
+        ])
+
+
+@pytest.mark.parametrize(
+    ("call_outcome", "xfail", "expected"),
+    [("skipped", True, "xfailed"), ("passed", True, "xpassed")],
+)
+def test_phase_summary_preserves_xfail_and_non_strict_xpass(
+    call_outcome: str, xfail: bool, expected: str,
+) -> None:
+    call = {"phase": "call", "outcome": call_outcome}
+    if xfail:
+        call["wasxfail"] = "expected failure"
+    if call_outcome == "skipped":
+        call["skip_reason"] = "expected failure"
+    summary = sharding.summarize_phases([
+        {"phase": "setup", "outcome": "passed"}, call,
+        {"phase": "teardown", "outcome": "passed"},
+    ])
+    assert summary == {"terminal": True, "terminal_phase": "teardown",
+                       "outcome": expected}
+
+
+def test_phase_summary_preserves_xfail_raised_in_teardown() -> None:
+    summary = sharding.summarize_phases([
+        {"phase": "setup", "outcome": "passed"},
+        {"phase": "call", "outcome": "passed"},
+        {"phase": "teardown", "outcome": "skipped", "wasxfail": "teardown xfail",
+         "skip_reason": "teardown xfail"},
+    ])
+    assert summary == {"terminal": True, "terminal_phase": "teardown", "outcome": "xfailed"}
+
+
+def test_phase_summary_rejects_missing_skipped_reason() -> None:
+    with pytest.raises(sharding.ShardError, match="lacks its reason"):
+        sharding.summarize_phases([
+            {"phase": "setup", "outcome": "passed"},
+            {"phase": "call", "outcome": "skipped"},
+            {"phase": "teardown", "outcome": "passed"},
+        ])
+
+
+def test_reconciliation_rejects_forged_pass_without_call() -> None:
+    inventory, assignments, results = _complete_records(_nodeids({"a": 2, "b": 2}), 2)
+    case = results[0]["cases"][0]
+    case["phase_reports"] = [
+        {"phase": "setup", "outcome": "passed"},
+        {"phase": "teardown", "outcome": "passed"},
+    ]
+    result = sharding.reconcile_shards(inventory, assignments, results)
+    assert result["status"] == "incomplete"
+    assert any("invalid phase report" in error for error in result["errors"])
+
+
+def _toy_repository(
+    tmp_path: Path, test_source: str, *, addopts: list[str] | None = None,
+    conftest: str | None = None,
+) -> Path:
+    repo = tmp_path / "toy-repo"
+    (repo / ".github/scripts").mkdir(parents=True)
+    (repo / ".github/workflows").mkdir()
+    (repo / "requirements").mkdir()
+    (repo / "tests").mkdir()
+    shutil.copyfile(SCRIPT, repo / ".github/scripts/run_cpu_test_shard.py")
+    (repo / ".github/workflows/ci.yml").write_text("name: toy\n", encoding="utf-8")
+    (repo / "requirements/ci-py312-linux.lock").write_text("toy-lock\n", encoding="utf-8")
+    pyproject = '[tool.pytest.ini_options]\ntestpaths = ["tests"]\npythonpath = ["."]\n'
+    if addopts is not None:
+        pyproject += f"addopts = {json.dumps(addopts)}\n"
+    (repo / "pyproject.toml").write_text(pyproject, encoding="utf-8")
+    (repo / "tests/test_toy.py").write_text(test_source, encoding="utf-8")
+    if conftest is not None:
+        (repo / "tests/conftest.py").write_text(conftest, encoding="utf-8")
+    subprocess.run(["git", "init", "-q", str(repo)], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(repo), "add", "."], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(repo), "-c", "user.name=Shard Test",
+         "-c", "user.email=shard-test@example.invalid", "-c", "commit.gpgsign=false",
+         "-c", "core.hooksPath=/dev/null", "commit", "-qm", "toy source"],
+        check=True, capture_output=True,
+    )
+    return repo
+
+
+def _run_toy_shard(
+    repo: Path, record_dir: Path, *, pytest_addopts: str | None = None,
+) -> subprocess.CompletedProcess[str]:
+    script = repo / ".github/scripts/run_cpu_test_shard.py"
+    environment = os.environ.copy()
+    if pytest_addopts is None:
+        environment.pop("PYTEST_ADDOPTS", None)
+    else:
+        environment["PYTEST_ADDOPTS"] = pytest_addopts
+    return subprocess.run(
+        [sys.executable, "-I", str(script), "--shard-index", "0",
+         "--shard-count", "1", "--record-dir", str(record_dir)],
+        cwd=repo, env=environment, capture_output=True, text=True, check=False,
+    )
+
+
+def test_cli_runs_isolated_collection_and_isolated_execution_with_exact_outcomes(
+    tmp_path: Path,
+) -> None:
+    repo = _toy_repository(tmp_path, """
+import pytest
+
+def test_pass():
+    assert True
+
+@pytest.fixture
+def skip_setup():
+    pytest.skip("toy setup skip")
+
+def test_setup_skip(skip_setup):
+    assert True
+
+@pytest.fixture
+def xfail_setup():
+    pytest.xfail("toy setup xfail")
+
+def test_setup_xfail(xfail_setup):
+    assert True
+
+@pytest.mark.xfail(strict=False, reason="toy non-strict xpass")
+def test_xpass():
+    assert True
+
+@pytest.fixture
+def xfail_teardown():
+    yield
+    pytest.xfail("toy teardown xfail")
+
+def test_teardown_xfail(xfail_teardown):
+    assert True
+""")
+    record_dir = tmp_path / "success-records"
+    completed = _run_toy_shard(repo, record_dir)
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+
+    inventory = json.loads((record_dir / "inventory.json").read_text())
+    assignment = json.loads((record_dir / "shard-00-assignment.json").read_text())
+    result = json.loads((record_dir / "shard-00-result.json").read_text())
+    audit = sharding.reconcile_shards(inventory, [assignment], [result])
+    assert audit["status"] == "complete", audit["errors"]
+    assert audit["node_count"] == 5
+    assert audit["terminal_outcome_counts"] == {
+        "passed": 1, "skipped": 1, "xfailed": 2, "xpassed": 1,
+    }
+    skip_case = next(case for case in result["cases"] if case["outcome"] == "skipped")
+    assert any("toy setup skip" in phase.get("skip_reason", "")
+               for phase in skip_case["phase_reports"])
+    xfail_cases = [case for case in result["cases"] if case["outcome"] == "xfailed"]
+    assert len(xfail_cases) == 2
+    assert all(any("wasxfail" in phase and phase.get("skip_reason")
+                   for phase in case["phase_reports"]) for case in xfail_cases)
+    assert inventory["source"]["commit"]
+    assert assignment["inventory_sha256"] == result["inventory_sha256"]
+
+
+def test_cli_records_unittest_and_fixture_subtests_separately_from_parent_phases(
+    tmp_path: Path,
+) -> None:
+    repo = _toy_repository(tmp_path, """
+import unittest
+
+import pytest
+
+class TestUnitSubtests(unittest.TestCase):
+    def test_subtest_lifecycle(self):
+        with self.subTest("unit passed", case="passed"):
+            self.assertEqual(1, 1)
+        with self.subTest("unit skipped", case="skipped"):
+            self.skipTest("unit subtest skip")
+        with self.subTest("unit xfailed", case="xfailed"):
+            pytest.xfail("unit subtest xfail")
+
+def test_fixture_subtests(subtests):
+    with subtests.test("fixture passed", case="passed"):
+        assert 1 == 1
+    with subtests.test("fixture skipped", case="skipped"):
+        pytest.skip("fixture subtest skip")
+    with subtests.test("fixture xfailed", case="xfailed"):
+        pytest.xfail("fixture subtest xfail")
+""")
+    record_dir = tmp_path / "subtest-records"
+    completed = _run_toy_shard(repo, record_dir)
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+
+    inventory = json.loads((record_dir / "inventory.json").read_text())
+    assignment = json.loads((record_dir / "shard-00-assignment.json").read_text())
+    result = json.loads((record_dir / "shard-00-result.json").read_text())
+    audit = sharding.reconcile_shards(inventory, [assignment], [result])
+    assert audit["status"] == "complete", audit["errors"]
+    assert audit["terminal_outcome_counts"] == {"passed": 2}
+    assert audit["subtest_outcome_counts"] == {
+        "passed": 2, "skipped": 2, "xfailed": 2,
+    }
+
+    for case in result["cases"]:
+        assert [phase["phase"] for phase in case["phase_reports"]] == [
+            "setup", "call", "teardown",
+        ]
+        assert case["outcome"] == "passed"
+        assert case["subtest_report_count"] == 3
+        assert len(case["subtest_reports"]) == 3
+        assert all(report["phase"] == "call" for report in case["subtest_reports"])
+        by_message = {report["context"]["msg"]: report for report in case["subtest_reports"]}
+        assert by_message["unit passed" if "TestUnitSubtests" in case["nodeid"]
+                          else "fixture passed"]["outcome"] == "passed"
+        skipped = by_message["unit skipped" if "TestUnitSubtests" in case["nodeid"]
+                             else "fixture skipped"]
+        assert skipped["outcome"] == "skipped"
+        assert "subtest skip" in skipped["skip_reason"]
+        xfailed = by_message["unit xfailed" if "TestUnitSubtests" in case["nodeid"]
+                             else "fixture xfailed"]
+        assert xfailed["outcome"] == "skipped"
+        assert "wasxfail" in xfailed and "subtest xfail" in xfailed["skip_reason"]
+
+
+def test_cli_retains_failed_unittest_and_fixture_subtest_contexts(
+    tmp_path: Path,
+) -> None:
+    repo = _toy_repository(tmp_path, """
+import unittest
+
+class TestUnitSubtestFailure(unittest.TestCase):
+    def test_failed_subtest(self):
+        with self.subTest("unit failure", case="unit"):
+            self.assertEqual(1, 2)
+
+def test_fixture_subtest_failure(subtests):
+    with subtests.test("fixture failure", case="fixture"):
+        assert 1 == 2
+""")
+    record_dir = tmp_path / "failed-subtest-records"
+    completed = _run_toy_shard(repo, record_dir)
+    assert completed.returncode != 0
+
+    inventory = json.loads((record_dir / "inventory.json").read_text())
+    assignment = json.loads((record_dir / "shard-00-assignment.json").read_text())
+    result = json.loads((record_dir / "shard-00-result.json").read_text())
+    assert result["status"] == "failed"
+    assert len(result["cases"]) == 2
+    audit = sharding.reconcile_shards(inventory, [assignment], [result])
+    assert audit["status"] == "incomplete"
+    assert audit["terminal_outcome_counts"] == {"failed": 2}
+    assert audit["subtest_outcome_counts"] == {"failed": 2}
+    for case in result["cases"]:
+        assert [phase["phase"] for phase in case["phase_reports"]] == [
+            "setup", "call", "teardown",
+        ]
+        assert case["terminal"] is True
+        assert case["outcome"] == "failed"
+        assert case["subtest_report_count"] == 1
+        subtest = case["subtest_reports"][0]
+        assert subtest["outcome"] == "failed"
+        assert subtest["context"]["msg"] in {"unit failure", "fixture failure"}
+        assert subtest["failure_traceback"].strip()
+
+
+@pytest.mark.parametrize(
+    ("test_source", "expected_inventory_status", "expected_collection_outcome"),
+    [
+        ("import module_that_does_not_exist\ndef test_unreachable(): pass\n",
+         "failed", "failed"),
+        ("import pytest\npytest.skip('toy module skip', allow_module_level=True)\n",
+         "failed", "skipped"),
+        ("def test_fails():\n    assert False\n", "complete", None),
+    ],
+)
+def test_cli_failure_records_never_reconcile_as_complete(
+    tmp_path: Path, test_source: str, expected_inventory_status: str,
+    expected_collection_outcome: str | None,
+) -> None:
+    repo = _toy_repository(tmp_path, test_source)
+    record_dir = tmp_path / "failure-records"
+    completed = _run_toy_shard(repo, record_dir)
+    assert completed.returncode != 0
+
+    inventory = json.loads((record_dir / "inventory.json").read_text())
+    assert inventory["status"] == expected_inventory_status
+    if expected_collection_outcome is not None:
+        records = (inventory["collection_errors"] if expected_collection_outcome == "failed"
+                   else inventory["collection_skips"])
+        assert records
+        assert records[0]["outcome"] == expected_collection_outcome
+        assert not (record_dir / "shard-00-result.json").exists()
+        audit = sharding.reconcile_shards(inventory, [], [])
+    else:
+        assignment = json.loads((record_dir / "shard-00-assignment.json").read_text())
+        result = json.loads((record_dir / "shard-00-result.json").read_text())
+        assert result["terminal"] is True
+        assert any(case["outcome"] == "failed" for case in result["cases"])
+        audit = sharding.reconcile_shards(inventory, [assignment], [result])
+    assert audit["status"] == "incomplete"
+
+
+def test_cli_stops_before_execution_when_assigned_nodeids_differ(tmp_path: Path) -> None:
+    repo = _toy_repository(tmp_path, """
+from pathlib import Path
+
+def test_must_not_run():
+    Path("test-ran.marker").write_text("unexpected", encoding="utf-8")
+""")
+    script = repo / ".github/scripts/run_cpu_test_shard.py"
+    inventory_path = tmp_path / "inventory.json"
+    collected = subprocess.run(
+        [sys.executable, "-I", str(script), "--collect-worker",
+         str(inventory_path), "--shard-count", "1"],
+        cwd=repo, capture_output=True, text=True, check=False,
+    )
+    assert collected.returncode == 0, collected.stdout + collected.stderr
+    inventory = json.loads(inventory_path.read_text())
+    part = sharding.partition_modules(inventory["nodeids"], 1)[0]
+    part["nodeids"] = ["tests/test_toy.py::test_not_collected"]
+    part["expected_count"] = 1
+    assignment = {
+        **part, "schema_version": sharding.SCHEMA_VERSION,
+        "inventory_sha256": inventory["inventory_sha256"],
+        "source": inventory["source"], "runtime": inventory["runtime"],
+        "assignment_sha256": sharding._sha256(sharding._canonical_json(part)),
+    }
+    assignment_path = tmp_path / "assignment.json"
+    result_path = tmp_path / "result.json"
+    assignment_path.write_text(json.dumps(assignment), encoding="utf-8")
+    completed = subprocess.run(
+        [sys.executable, "-I", str(script), "--run-worker",
+         str(assignment_path), str(result_path)],
+        cwd=repo, capture_output=True, text=True, check=False,
+    )
+    assert completed.returncode != 0
+    assert not (repo / "test-ran.marker").exists()
+    result = json.loads(result_path.read_text())
+    assert result["selection_matches"] is False
+    assert result["actual_nodeids"] == inventory["nodeids"]
+
+
+@pytest.mark.parametrize("pytest_addopts", ["-k test_pass", "--ignore=tests/test_toy.py"])
+def test_cli_sanitizes_inherited_pytest_addopts(
+    tmp_path: Path, pytest_addopts: str,
+) -> None:
+    repo = _toy_repository(tmp_path, """
+def test_pass():
+    assert True
+
+def test_other():
+    assert True
+""")
+    record_dir = tmp_path / "sanitized-records"
+    completed = _run_toy_shard(repo, record_dir, pytest_addopts=pytest_addopts)
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    inventory = json.loads((record_dir / "inventory.json").read_text())
+    assignment = json.loads((record_dir / "shard-00-assignment.json").read_text())
+    result = json.loads((record_dir / "shard-00-result.json").read_text())
+    assert inventory["node_count"] == 2
+    assert inventory["deselected_nodeids"] == []
+    assert len(assignment["nodeids"]) == 2
+    assert len(result["actual_nodeids"]) == 2
+    assert len(result["cases"]) == 2
+
+
+def test_direct_internal_workers_sanitize_inherited_pytest_addopts(tmp_path: Path) -> None:
+    repo = _toy_repository(tmp_path, """
+def test_pass():
+    assert True
+
+def test_other():
+    assert True
+""")
+    script = repo / ".github/scripts/run_cpu_test_shard.py"
+    environment = os.environ.copy()
+    environment["PYTEST_ADDOPTS"] = "-k test_pass"
+    inventory_path = tmp_path / "direct-inventory.json"
+    collection = subprocess.run(
+        [sys.executable, "-I", str(script), "--collect-worker",
+         str(inventory_path), "--shard-count", "1"],
+        cwd=repo, env=environment, capture_output=True, text=True, check=False,
+    )
+    assert collection.returncode == 0, collection.stdout + collection.stderr
+    inventory = json.loads(inventory_path.read_text())
+    assert inventory["node_count"] == 2
+
+    part = sharding.partition_modules(inventory["nodeids"], 1)[0]
+    assignment = {
+        **part, "schema_version": sharding.SCHEMA_VERSION,
+        "inventory_sha256": inventory["inventory_sha256"],
+        "source": inventory["source"], "runtime": inventory["runtime"],
+        "assignment_sha256": sharding._sha256(sharding._canonical_json(part)),
+    }
+    assignment_path = tmp_path / "direct-assignment.json"
+    result_path = tmp_path / "direct-result.json"
+    assignment_path.write_text(json.dumps(assignment), encoding="utf-8")
+    execution = subprocess.run(
+        [sys.executable, "-I", str(script), "--run-worker",
+         str(assignment_path), str(result_path)],
+        cwd=repo, env=environment, capture_output=True, text=True, check=False,
+    )
+    assert execution.returncode == 0, execution.stdout + execution.stderr
+    result = json.loads(result_path.read_text())
+    assert result["status"] == "complete"
+    assert result["actual_nodeids"] == inventory["nodeids"]
+    assert len(result["cases"]) == 2
+
+
+@pytest.mark.parametrize("addopts", [["-k", "test_pass"], ["--ignore=tests/test_toy.py"]])
+def test_configured_collection_filters_fail_with_explicit_inventory_record(
+    tmp_path: Path, addopts: list[str],
+) -> None:
+    repo = _toy_repository(tmp_path, "def test_pass():\n    assert True\n", addopts=addopts)
+    record_dir = tmp_path / "filtered-records"
+    completed = _run_toy_shard(repo, record_dir)
+    assert completed.returncode != 0
+    inventory = json.loads((record_dir / "inventory.json").read_text())
+    assert inventory["status"] == "failed"
+    expected_option = "-k" if addopts[0] == "-k" else "--ignore"
+    assert inventory["collection_filter_options"] == [expected_option]
+    assert inventory["collection_errors"][0]["nodeid"] == "<pytest-config>"
+    assert inventory["deselected_nodeids"] == []
+
+
+def test_collector_deselection_is_recorded_and_fails_inventory(tmp_path: Path) -> None:
+    repo = _toy_repository(
+        tmp_path, "def test_one(): pass\ndef test_two(): pass\n",
+        conftest="""
+def pytest_collection_modifyitems(config, items):
+    removed = [items.pop()]
+    config.hook.pytest_deselected(items=removed)
+""",
+    )
+    record_dir = tmp_path / "deselected-records"
+    completed = _run_toy_shard(repo, record_dir)
+    assert completed.returncode != 0
+    inventory = json.loads((record_dir / "inventory.json").read_text())
+    assert inventory["status"] == "failed"
+    assert inventory["deselected_nodeids"] == ["tests/test_toy.py::test_two"]
+    assert not (record_dir / "shard-00-assignment.json").exists()

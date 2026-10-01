@@ -1,0 +1,996 @@
+Wheel and CLI smoke	Set up job	﻿2026-10-01T04:02:46.6512932Z Current runner version: '2.337.0'
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6538969Z ##[group]Runner Image Provisioner
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6539910Z Hosted Compute Agent
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6540512Z Version: 20260901.588
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6541260Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6542005Z Build Date: 2026-09-01T19:56:44Z
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6542800Z Worker ID: {722c14be-7f61-42bd-b7d5-aef908a39b0c}
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6543570Z Azure Region: westus
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6544195Z ##[endgroup]
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6546266Z ##[group]Operating System
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6546962Z Ubuntu
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6547646Z 24.04.5
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6548241Z LTS
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6548771Z ##[endgroup]
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6549427Z ##[group]Runner Image
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6550058Z Image: ubuntu-24.04
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6550670Z Version: 20260927.320.1
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6551824Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6553627Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6554624Z ##[endgroup]
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6556053Z ##[group]GITHUB_TOKEN Permissions
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6558136Z Contents: read
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6559170Z Metadata: read
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6559801Z ##[endgroup]
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6561964Z Secret source: Actions
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6563063Z Cache mode: write
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6564007Z Prepare workflow directory
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.6961140Z Prepare all required actions
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:46.7008601Z Getting action download info
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:47.0601698Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:47.1771431Z Download action repository 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1' (SHA:ece7cb06caefa5fff74198d8649806c4678c61a1)
+Wheel and CLI smoke	Set up job	2026-10-01T04:02:47.3855943Z Complete job name: Wheel and CLI smoke
+Wheel and CLI smoke	Check out source	﻿2026-10-01T04:02:47.4642377Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4643491Z with:
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4643964Z   repository: gonos2k/AD4DVAR-radar
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4647926Z   token: ***
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4648379Z   ssh-strict: true
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4648830Z   ssh-user: git
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4649292Z   persist-credentials: true
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4649816Z   clean: true
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4650279Z   sparse-checkout-cone-mode: true
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4650841Z   fetch-depth: 1
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4651289Z   fetch-tags: false
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4651745Z   show-progress: true
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4652233Z   lfs: false
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4652662Z   submodules: false
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4653126Z   set-safe-directory: true
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4653651Z   allow-unsafe-pr-checkout: false
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4654433Z env:
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4654889Z   PYTHONDONTWRITEBYTECODE: 1
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.4655568Z ##[endgroup]
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5657029Z Syncing repository: gonos2k/AD4DVAR-radar
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5660205Z ##[group]Getting Git version info
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5661464Z Working directory is '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5663264Z [command]/usr/bin/git version
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5747575Z git version 2.55.0
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5774344Z ##[endgroup]
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5787705Z Temporarily overriding HOME='/home/runner/work/_temp/80c753b8-028d-4a7c-85a3-d3abe87d186f' before making global git config changes
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5790515Z Adding repository directory to the temporary git global config as a safe directory
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5794212Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5853766Z Deleting the contents of '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5857605Z ##[group]Determining repository object format
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5859387Z ##[endgroup]
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5860555Z ##[group]Initializing the repository
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.5864040Z [command]/usr/bin/git init /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6004272Z hint: Using 'master' as the name for the initial branch. This default branch name
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6006212Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6007763Z hint: to use in all of your new repositories, which will suppress this warning,
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6008951Z hint: call:
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6009577Z hint:
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6010370Z hint: 	git config --global init.defaultBranch <name>
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6011422Z hint:
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6012381Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6013957Z hint: 'development'. The just-created branch can be renamed via this command:
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6015160Z hint:
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6016076Z hint: 	git branch -m <name>
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6016831Z hint:
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6017854Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6019941Z Initialized empty Git repository in /home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6027423Z [command]/usr/bin/git remote add origin https://github.com/gonos2k/AD4DVAR-radar
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6088285Z ##[endgroup]
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6089576Z ##[group]Disabling automatic garbage collection
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6090684Z [command]/usr/bin/git config --local gc.auto 0
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6115083Z ##[endgroup]
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6117931Z ##[group]Setting up auth
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6119786Z Removing SSH command configuration
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6122003Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6157968Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6583022Z Removing HTTP extra header
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6596560Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6630011Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6851120Z Removing includeIf entries pointing to credentials config files
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6856155Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.6929935Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.7169420Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-7863f56a-0535-48bd-ac47-b4ac71c96fb1.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.7219016Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path /home/runner/work/_temp/git-credentials-7863f56a-0535-48bd-ac47-b4ac71c96fb1.config
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.7259521Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-7863f56a-0535-48bd-ac47-b4ac71c96fb1.config
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.7304377Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-7863f56a-0535-48bd-ac47-b4ac71c96fb1.config
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.7348031Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-7863f56a-0535-48bd-ac47-b4ac71c96fb1.config
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.7384579Z ##[endgroup]
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.7385899Z ##[group]Fetching the repository
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:47.7394041Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +aa56f65b4560b398076ee685a4017a12774429b3:refs/remotes/origin/agent/full-cpu-package-regression
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.2346660Z From https://github.com/gonos2k/AD4DVAR-radar
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.2356697Z  * [new ref]         aa56f65b4560b398076ee685a4017a12774429b3 -> origin/agent/full-cpu-package-regression
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.2360643Z [command]/usr/bin/git branch --list --remote origin/agent/full-cpu-package-regression
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.2389113Z   origin/agent/full-cpu-package-regression
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.2399490Z [command]/usr/bin/git rev-parse refs/remotes/origin/agent/full-cpu-package-regression
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.2428107Z aa56f65b4560b398076ee685a4017a12774429b3
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.2433359Z ##[endgroup]
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.2434305Z ##[group]Determining the checkout info
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.2436132Z ##[endgroup]
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.2438576Z [command]/usr/bin/git sparse-checkout disable
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.2506016Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.2545302Z ##[group]Checking out the ref
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.2551131Z [command]/usr/bin/git checkout --progress --force -B agent/full-cpu-package-regression refs/remotes/origin/agent/full-cpu-package-regression
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.4418105Z Switched to a new branch 'agent/full-cpu-package-regression'
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.4424161Z branch 'agent/full-cpu-package-regression' set up to track 'origin/agent/full-cpu-package-regression'.
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.4449566Z ##[endgroup]
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.4503027Z [command]/usr/bin/git log -1 --format=%H
+Wheel and CLI smoke	Check out source	2026-10-01T04:02:49.4533942Z aa56f65b4560b398076ee685a4017a12774429b3
+Wheel and CLI smoke	Set up Python 3.12	﻿2026-10-01T04:02:49.4897221Z ##[group]Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.4898922Z with:
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.4899859Z   python-version: 3.12
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.4900895Z   cache: pip
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.4902596Z   cache-dependency-path: requirements/ci-py312-linux.lock
+Wheel and CLI smoke	Set up Python 3.12	requirements/runtime-py312-linux.lock
+Wheel and CLI smoke	Set up Python 3.12	
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.4904571Z   check-latest: false
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.4913121Z   token: ***
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.4914166Z   update-environment: true
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.4915440Z   allow-prereleases: false
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.4916558Z   freethreaded: false
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.4917562Z env:
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.4918491Z   PYTHONDONTWRITEBYTECODE: 1
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.4919570Z ##[endgroup]
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.6341919Z ##[group]Installed versions
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.6434996Z Successfully set up CPython (3.12.14)
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.6437246Z ##[endgroup]
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:49.6775145Z [command]/opt/hostedtoolcache/Python/3.12.14/x64/bin/pip cache dir
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:50.0708873Z /home/runner/.cache/pip
+Wheel and CLI smoke	Set up Python 3.12	2026-10-01T04:02:50.3268168Z pip cache is not found
+Wheel and CLI smoke	Verify geodetic generator source binding	﻿2026-10-01T04:02:50.3394905Z ##[group]Run python -I .github/scripts/generate_metric_domain_evidence.py \
+Wheel and CLI smoke	Verify geodetic generator source binding	2026-10-01T04:02:50.3395861Z [36;1mpython -I .github/scripts/generate_metric_domain_evidence.py \[0m
+Wheel and CLI smoke	Verify geodetic generator source binding	2026-10-01T04:02:50.3396313Z [36;1m  --check-source-only[0m
+Wheel and CLI smoke	Verify geodetic generator source binding	2026-10-01T04:02:50.3701405Z shell: /usr/bin/bash -e {0}
+Wheel and CLI smoke	Verify geodetic generator source binding	2026-10-01T04:02:50.3701768Z env:
+Wheel and CLI smoke	Verify geodetic generator source binding	2026-10-01T04:02:50.3702028Z   PYTHONDONTWRITEBYTECODE: 1
+Wheel and CLI smoke	Verify geodetic generator source binding	2026-10-01T04:02:50.3702430Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Verify geodetic generator source binding	2026-10-01T04:02:50.3702974Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Wheel and CLI smoke	Verify geodetic generator source binding	2026-10-01T04:02:50.3703513Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Verify geodetic generator source binding	2026-10-01T04:02:50.3703987Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Verify geodetic generator source binding	2026-10-01T04:02:50.3704488Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Verify geodetic generator source binding	2026-10-01T04:02:50.3704937Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Wheel and CLI smoke	Verify geodetic generator source binding	2026-10-01T04:02:50.3705291Z ##[endgroup]
+Wheel and CLI smoke	Verify geodetic generator source binding	2026-10-01T04:02:50.4981365Z ceed652ab406b18b5f8550d2213ca0840ae224babe434d4ca1e1fec9ee7a0e62
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	﻿2026-10-01T04:02:50.5123666Z ##[group]Run env -u LD_LIBRARY_PATH \
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:50.5124062Z [36;1menv -u LD_LIBRARY_PATH \[0m
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:50.5124464Z [36;1m  python -I .github/scripts/generate_metric_domain_evidence.py \[0m
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:50.5125147Z [36;1m    --self-test-execution-environment[0m
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:50.5191963Z shell: /usr/bin/bash -e {0}
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:50.5192241Z env:
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:50.5192464Z   PYTHONDONTWRITEBYTECODE: 1
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:50.5192807Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:50.5193274Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:50.5193745Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:50.5194148Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:50.5194556Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:50.5194963Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:50.5195574Z ##[endgroup]
+Wheel and CLI smoke	Exercise Linux geodetic execution-environment closure	2026-10-01T04:02:51.3513705Z 04c8a340718d8115039b6e509917d313e2ff244d16dd4e27d2b4b8e5ac49a721
+Wheel and CLI smoke	Install the hashed build closure	﻿2026-10-01T04:02:51.3625306Z ##[group]Run python -I -m pip install \
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3625910Z [36;1mpython -I -m pip install \[0m
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3626211Z [36;1m  --require-hashes \[0m
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3626471Z [36;1m  --only-binary=:all: \[0m
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3626858Z [36;1m  --extra-index-url https://download.pytorch.org/whl/cpu \[0m
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3627290Z [36;1m  --requirement requirements/ci-py312-linux.lock[0m
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3694370Z shell: /usr/bin/bash -e {0}
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3694656Z env:
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3694872Z   PYTHONDONTWRITEBYTECODE: 1
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3695206Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3695952Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3696395Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3696784Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3697168Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3697618Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:51.3697957Z ##[endgroup]
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:52.2809365Z Looking in indexes: https://pypi.org/simple, https://download.pytorch.org/whl/cpu
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:52.6031363Z Collecting basedpyright==1.39.9 (from -r requirements/ci-py312-linux.lock (line 5))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:52.6953480Z   Downloading basedpyright-1.39.9-py3-none-any.whl (13.4 MB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:52.9324144Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.4/13.4 MB 73.6 MB/s  0:00:00
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:53.2342385Z Collecting boolean-py==5.0 (from -r requirements/ci-py312-linux.lock (line 9))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:53.2527802Z   Downloading boolean_py-5.0-py3-none-any.whl (26 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:53.5232167Z Collecting build==1.5.0 (from -r requirements/ci-py312-linux.lock (line 13))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:53.5412808Z   Downloading build-1.5.0-py3-none-any.whl (26 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:53.6804652Z Collecting cachecontrol==0.14.4 (from -r requirements/ci-py312-linux.lock (line 17))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:53.6987079Z   Downloading cachecontrol-0.14.4-py3-none-any.whl (22 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:53.7640823Z Collecting certifi==2026.7.22 (from -r requirements/ci-py312-linux.lock (line 21))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:53.7821041Z   Downloading certifi-2026.7.22-py3-none-any.whl (136 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:54.2010079Z Collecting cffi==2.1.1 (from -r requirements/ci-py312-linux.lock (line 25))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:54.2199078Z   Downloading cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:54.4201308Z Collecting charset-normalizer==3.5.1 (from -r requirements/ci-py312-linux.lock (line 127))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:54.4384872Z   Downloading charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (248 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:54.9350528Z Collecting cryptography==50.0.0 (from -r requirements/ci-py312-linux.lock (line 301))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:54.9539486Z   Downloading cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:54.9699172Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.7/4.7 MB 332.0 MB/s  0:00:00
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:55.2280566Z Collecting cyclonedx-python-lib==11.12.0 (from -r requirements/ci-py312-linux.lock (line 351))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:55.2467924Z   Downloading cyclonedx_python_lib-11.12.0-py3-none-any.whl (529 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:55.2524063Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 529.5/529.5 kB 93.5 MB/s  0:00:00
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:55.3752727Z Collecting defusedxml==0.7.1 (from -r requirements/ci-py312-linux.lock (line 355))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:55.3933612Z   Downloading defusedxml-0.7.1-py2.py3-none-any.whl (25 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:55.4706869Z Collecting filelock==3.32.3 (from -r requirements/ci-py312-linux.lock (line 359))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:55.4896814Z   Downloading filelock-3.32.3-py3-none-any.whl (98 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:55.7165256Z Collecting fsspec==2026.7.0 (from -r requirements/ci-py312-linux.lock (line 367))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:55.7347450Z   Downloading fsspec-2026.7.0-py3-none-any.whl (206 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:55.8664019Z Collecting idna==3.18 (from -r requirements/ci-py312-linux.lock (line 371))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:55.8850103Z   Downloading idna-3.18-py3-none-any.whl (65 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:56.2051556Z Collecting iniconfig==2.3.0 (from -r requirements/ci-py312-linux.lock (line 375))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:56.2238509Z   Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:57.0579015Z Collecting jinja2==3.1.6 (from -r requirements/ci-py312-linux.lock (line 379))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:57.0763398Z   Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:57.3309196Z Collecting license-expression==30.4.4 (from -r requirements/ci-py312-linux.lock (line 383))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:57.3494577Z   Downloading license_expression-30.4.4-py3-none-any.whl (120 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:57.4818091Z Collecting markdown-it-py==4.2.0 (from -r requirements/ci-py312-linux.lock (line 387))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:57.5003155Z   Downloading markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:57.6029325Z Collecting markupsafe==3.0.3 (from -r requirements/ci-py312-linux.lock (line 391))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:57.6215907Z   Downloading markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:57.7495827Z Collecting mdurl==0.1.2 (from -r requirements/ci-py312-linux.lock (line 482))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:57.7678582Z   Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:57.8288276Z Collecting mpmath==1.3.0 (from -r requirements/ci-py312-linux.lock (line 486))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:57.8470178Z   Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:57.8519656Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 101.2 MB/s  0:00:00
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:58.0450043Z Collecting msgpack==1.2.1 (from -r requirements/ci-py312-linux.lock (line 490))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:58.0638619Z   Downloading msgpack-1.2.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (419 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:58.1409192Z Collecting networkx==3.6.1 (from -r requirements/ci-py312-linux.lock (line 558))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:58.1588865Z   Downloading networkx-3.6.1-py3-none-any.whl (2.1 MB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:58.1677792Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 272.6 MB/s  0:00:00
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:58.4575846Z Collecting nodejs-wheel-binaries==24.16.0 (from -r requirements/ci-py312-linux.lock (line 562))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:58.4758452Z   Downloading nodejs_wheel_binaries-24.16.0-py2.py3-none-manylinux_2_28_x86_64.whl (60.7 MB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:58.6414969Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 60.7/60.7 MB 371.3 MB/s  0:00:00
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:59.1969565Z Collecting numpy==2.2.6 (from -r requirements/ci-py312-linux.lock (line 573))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:59.2158106Z   Downloading numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.5 MB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:59.2949055Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.5/16.5 MB 211.7 MB/s  0:00:00
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:59.5751413Z Collecting packageurl-python==0.17.6 (from -r requirements/ci-py312-linux.lock (line 632))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:59.5938829Z   Downloading packageurl_python-0.17.6-py3-none-any.whl (36 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:59.6560690Z Collecting packaging==26.3 (from -r requirements/ci-py312-linux.lock (line 636))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:59.6741022Z   Downloading packaging-26.3-py3-none-any.whl (129 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:59.6783542Z Requirement already satisfied: pip==26.2.1 in /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages (from -r requirements/ci-py312-linux.lock (line 645)) (26.2.1)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:59.8012681Z Collecting pip-api==0.0.34 (from -r requirements/ci-py312-linux.lock (line 649))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:59.8198399Z   Downloading pip_api-0.0.34-py3-none-any.whl (120 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:02:59.9880655Z Collecting pip-audit==2.10.1 (from -r requirements/ci-py312-linux.lock (line 653))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:00.0059146Z   Downloading pip_audit-2.10.1-py3-none-any.whl (62 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:00.1710861Z Collecting pip-requirements-parser==32.0.1 (from -r requirements/ci-py312-linux.lock (line 657))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:00.1892040Z   Downloading pip_requirements_parser-32.0.1-py3-none-any.whl (35 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:00.4443904Z Collecting platformdirs==4.11.3 (from -r requirements/ci-py312-linux.lock (line 661))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:00.4626293Z   Downloading platformdirs-4.11.3-py3-none-any.whl (23 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:00.7162128Z Collecting pluggy==1.6.0 (from -r requirements/ci-py312-linux.lock (line 665))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:00.7345789Z   Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:00.9956494Z Collecting py-serializable==2.1.0 (from -r requirements/ci-py312-linux.lock (line 669))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.0141075Z   Downloading py_serializable-2.1.0-py3-none-any.whl (23 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.1389223Z Collecting pycparser==3.0 (from -r requirements/ci-py312-linux.lock (line 673))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.1574190Z   Downloading pycparser-3.0-py3-none-any.whl (48 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.2919795Z Collecting pygments==2.20.0 (from -r requirements/ci-py312-linux.lock (line 677))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.3110902Z   Downloading pygments-2.20.0-py3-none-any.whl (1.2 MB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.3178344Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 219.6 MB/s  0:00:00
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.5730278Z Collecting pyparsing==3.3.2 (from -r requirements/ci-py312-linux.lock (line 683))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.5918604Z   Downloading pyparsing-3.3.2-py3-none-any.whl (122 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.7175143Z Collecting pyproject-hooks==1.2.0 (from -r requirements/ci-py312-linux.lock (line 687))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.7360438Z   Downloading pyproject_hooks-1.2.0-py3-none-any.whl (10 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.8730463Z Collecting pytest==9.1.1 (from -r requirements/ci-py312-linux.lock (line 691))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.8916215Z   Downloading pytest-9.1.1-py3-none-any.whl (386 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.9582734Z Collecting requests==2.34.2 (from -r requirements/ci-py312-linux.lock (line 695))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:01.9767316Z   Downloading requests-2.34.2-py3-none-any.whl (73 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:02.2436813Z Collecting rich==15.0.0 (from -r requirements/ci-py312-linux.lock (line 701))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:02.2621220Z   Downloading rich-15.0.0-py3-none-any.whl (310 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:02.3905092Z Collecting setuptools==84.0.0 (from -r requirements/ci-py312-linux.lock (line 705))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:02.4112357Z   Downloading setuptools-84.0.0-py3-none-any.whl (818 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:02.4176898Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 818.2/818.2 kB 143.9 MB/s  0:00:00
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:02.5494081Z Collecting sortedcontainers==2.4.0 (from -r requirements/ci-py312-linux.lock (line 711))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:02.5677624Z   Downloading sortedcontainers-2.4.0-py2.py3-none-any.whl (29 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:02.6345022Z Collecting sympy==1.14.0 (from -r requirements/ci-py312-linux.lock (line 715))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:02.6538847Z   Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:02.6756686Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 317.4 MB/s  0:00:00
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:02.9428042Z Collecting tomli==2.4.1 (from -r requirements/ci-py312-linux.lock (line 719))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:02.9616513Z   Downloading tomli-2.4.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (253 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:03.0883038Z Collecting tomli-w==1.2.0 (from -r requirements/ci-py312-linux.lock (line 768))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:03.1066334Z   Downloading tomli_w-1.2.0-py3-none-any.whl (6.7 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:03.2788315Z Collecting torch==2.13.0+cpu (from -r requirements/ci-py312-linux.lock (line 772))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:03.4882161Z   Downloading torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl (191.8 MB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:04.3137272Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 191.8/191.8 MB 234.4 MB/s  0:00:00
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:04.5785801Z Collecting typing-extensions==4.16.0 (from -r requirements/ci-py312-linux.lock (line 807))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:04.5972510Z   Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:04.6605077Z Collecting urllib3==2.8.0 (from -r requirements/ci-py312-linux.lock (line 813))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:04.6790266Z   Downloading urllib3-2.8.0-py3-none-any.whl (135 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:04.9417676Z Collecting wheel==0.46.3 (from -r requirements/ci-py312-linux.lock (line 817))
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:04.9603244Z   Downloading wheel-0.46.3-py3-none-any.whl (30 kB)
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:05.2851002Z Installing collected packages: sortedcontainers, mpmath, boolean-py, urllib3, typing-extensions, tomli-w, tomli, sympy, setuptools, pyproject-hooks, pyparsing, pygments, pycparser, pluggy, platformdirs, pip-api, packaging, packageurl-python, numpy, nodejs-wheel-binaries, networkx, msgpack, mdurl, markupsafe, license-expression, iniconfig, idna, fsspec, filelock, defusedxml, charset-normalizer, certifi, wheel, requests, pytest, py-serializable, pip-requirements-parser, markdown-it-py, jinja2, cffi, build, basedpyright, torch, rich, cyclonedx-python-lib, cryptography, cachecontrol, pip-audit
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:32.6011520Z 
+Wheel and CLI smoke	Install the hashed build closure	2026-10-01T04:03:32.6056885Z Successfully installed basedpyright-1.39.9 boolean-py-5.0 build-1.5.0 cachecontrol-0.14.4 certifi-2026.7.22 cffi-2.1.1 charset-normalizer-3.5.1 cryptography-50.0.0 cyclonedx-python-lib-11.12.0 defusedxml-0.7.1 filelock-3.32.3 fsspec-2026.7.0 idna-3.18 iniconfig-2.3.0 jinja2-3.1.6 license-expression-30.4.4 markdown-it-py-4.2.0 markupsafe-3.0.3 mdurl-0.1.2 mpmath-1.3.0 msgpack-1.2.1 networkx-3.6.1 nodejs-wheel-binaries-24.16.0 numpy-2.2.6 packageurl-python-0.17.6 packaging-26.3 pip-api-0.0.34 pip-audit-2.10.1 pip-requirements-parser-32.0.1 platformdirs-4.11.3 pluggy-1.6.0 py-serializable-2.1.0 pycparser-3.0 pygments-2.20.0 pyparsing-3.3.2 pyproject-hooks-1.2.0 pytest-9.1.1 requests-2.34.2 rich-15.0.0 setuptools-84.0.0 sortedcontainers-2.4.0 sympy-1.14.0 tomli-2.4.1 tomli-w-1.2.0 torch-2.13.0+cpu typing-extensions-4.16.0 urllib3-2.8.0 wheel-0.46.3
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	﻿2026-10-01T04:03:32.7324909Z ##[group]Run printf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7325975Z [36;1mprintf '%s\n' 'raise SystemExit("repository module shadowed pip-audit")' > pip_audit.py[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7326440Z [36;1mpython -I - <<'PY'[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7326709Z [36;1mimport site[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7326942Z [36;1mfrom pathlib import Path[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7327197Z [36;1m[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7327386Z [36;1mimport pip_audit[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7327609Z [36;1mimport torch[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7327815Z [36;1m[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7328040Z [36;1mmodule = Path(pip_audit.__file__).resolve()[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7328462Z [36;1mroots = tuple(Path(item).resolve() for item in site.getsitepackages())[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7328969Z [36;1massert any(root == module or root in module.parents for root in roots)[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7329368Z [36;1massert torch.version.cuda is None[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7329634Z [36;1mPY[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7329985Z [36;1mpython -I "$GITHUB_WORKSPACE/.github/scripts/check_dependency_locks.py"[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7330389Z [36;1mpython -I -m pip_audit \[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7330676Z [36;1m  --strict \[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7330897Z [36;1m  --disable-pip \[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7331320Z [36;1m  --no-deps \[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7331667Z [36;1m  --requirement "$GITHUB_WORKSPACE/requirements/ci-py312-linux.lock"[0m
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7396080Z shell: /usr/bin/bash -e {0}
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7396332Z env:
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7396536Z   PYTHONDONTWRITEBYTECODE: 1
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7396860Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7397303Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7397745Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7398127Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7398507Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7398902Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:32.7399230Z ##[endgroup]
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:35.5046471Z dependency locks: 4 hashed Linux CPU closures are synchronized
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:36.1406148Z WARNING:pip_audit._cli:--no-deps is supported, but users are encouraged to fully hash their pinned dependencies
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:36.1407608Z WARNING:pip_audit._cli:Consider using a tool like `pip-compile`: https://pip-tools.readthedocs.io/en/latest/#using-hashes
+Wheel and CLI smoke	Verify and audit the locked CPU package closure	2026-10-01T04:03:36.8002144Z No known vulnerabilities found
+Wheel and CLI smoke	Build source and wheel distributions	﻿2026-10-01T04:03:36.8516236Z ##[group]Run python -I -m build --no-isolation
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:36.8516662Z [36;1mpython -I -m build --no-isolation[0m
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:36.8579239Z shell: /usr/bin/bash -e {0}
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:36.8579490Z env:
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:36.8579698Z   PYTHONDONTWRITEBYTECODE: 1
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:36.8580019Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:36.8580453Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:36.8580881Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:36.8581267Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:36.8581664Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:36.8582068Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:36.8582393Z ##[endgroup]
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:36.9323311Z * Getting build dependencies for sdist...
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.1590274Z running egg_info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.1637794Z creating src/advar_radar_nowcast.egg-info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.1646642Z writing src/advar_radar_nowcast.egg-info/PKG-INFO
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.1666313Z writing dependency_links to src/advar_radar_nowcast.egg-info/dependency_links.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.1676634Z writing entry points to src/advar_radar_nowcast.egg-info/entry_points.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.1677797Z writing requirements to src/advar_radar_nowcast.egg-info/requires.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.1678770Z writing top-level names to src/advar_radar_nowcast.egg-info/top_level.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.1679719Z writing manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.1815168Z reading manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.1836795Z writing manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.2419517Z * Building sdist...
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4467363Z running sdist
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4469424Z running egg_info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4557449Z writing src/advar_radar_nowcast.egg-info/PKG-INFO
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4565892Z writing dependency_links to src/advar_radar_nowcast.egg-info/dependency_links.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4569819Z writing entry points to src/advar_radar_nowcast.egg-info/entry_points.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4572672Z writing requirements to src/advar_radar_nowcast.egg-info/requires.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4573990Z writing top-level names to src/advar_radar_nowcast.egg-info/top_level.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4731598Z reading manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4781456Z writing manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4784769Z running check
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4832455Z creating advar_radar_nowcast-0.114.0
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4838434Z creating advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4841000Z creating advar_radar_nowcast-0.114.0/src/advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4842663Z creating advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4844286Z creating advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4845724Z copying files to advar_radar_nowcast-0.114.0...
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4846773Z copying README.md -> advar_radar_nowcast-0.114.0
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4850378Z copying pyproject.toml -> advar_radar_nowcast-0.114.0
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4852140Z copying src/advar/__init__.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4854055Z copying src/advar/_contract_registry.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4856167Z copying src/advar/_digest.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4858098Z copying src/advar/_input_derivation.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4860004Z copying src/advar/_learned_input.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4861752Z copying src/advar/_runtime.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4863659Z copying src/advar/acceptance.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4865826Z copying src/advar/action_artifacts.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4867767Z copying src/advar/action_contracts.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4869579Z copying src/advar/calibration.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4871922Z copying src/advar/cli.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4874417Z copying src/advar/diagnostics.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4876395Z copying src/advar/ensemble_sensitivity.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4878885Z copying src/advar/fv_point_research_problem.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4880644Z copying src/advar/fv_point_sampler.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4882467Z copying src/advar/fv_research_problem.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4884437Z copying src/advar/fv_sensitivity.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4887169Z copying src/advar/intervention.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4890267Z copying src/advar/ledger.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4898619Z copying src/advar/linearization_artifact.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4900314Z copying src/advar/local_refinement.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4902276Z copying src/advar/local_response.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4904139Z copying src/advar/matrix_free.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4906282Z copying src/advar/metrics.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4908095Z copying src/advar/nowcast.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4912769Z copying src/advar/physics.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4914366Z copying src/advar/promotion.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4923421Z copying src/advar/range_geometry.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4925427Z copying src/advar/run_artifact.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4928229Z copying src/advar/runtime_closure.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4930131Z copying src/advar/sensitivity.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4936520Z copying src/advar/transport.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4938578Z copying src/advar/variational.py -> advar_radar_nowcast-0.114.0/src/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4942955Z copying src/advar/data/epsg5179_metric_domain_evidence_v1.json -> advar_radar_nowcast-0.114.0/src/advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4945090Z copying src/advar/data/epsg5179_metric_domain_evidence_v2.json -> advar_radar_nowcast-0.114.0/src/advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4947505Z copying src/advar/data/epsg5179_metric_domain_evidence_v3.json -> advar_radar_nowcast-0.114.0/src/advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4949734Z copying src/advar/data/epsg5179_metric_domain_evidence_v4.json -> advar_radar_nowcast-0.114.0/src/advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4952007Z copying src/advar_radar_nowcast.egg-info/PKG-INFO -> advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4954809Z copying src/advar_radar_nowcast.egg-info/SOURCES.txt -> advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4957006Z copying src/advar_radar_nowcast.egg-info/dependency_links.txt -> advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4958634Z copying src/advar_radar_nowcast.egg-info/entry_points.txt -> advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4960516Z copying src/advar_radar_nowcast.egg-info/requires.txt -> advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4962157Z copying src/advar_radar_nowcast.egg-info/top_level.txt -> advar_radar_nowcast-0.114.0/src/advar_radar_nowcast.egg-info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4963845Z copying tests/test_a2_artifacts.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4965856Z copying tests/test_a2_branch.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4967858Z copying tests/test_a2_cli_tools.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4969655Z copying tests/test_a2_fso.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4971542Z copying tests/test_a2_intervention.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4973362Z copying tests/test_a2_ledger_io.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4975270Z copying tests/test_a2_ledger_snapshot.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4977363Z copying tests/test_a2_numerics.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4979189Z copying tests/test_a2_numerics_cross.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4981038Z copying tests/test_a2_promotion.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4982945Z copying tests/test_a5_artifacts_intervention.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4984765Z copying tests/test_a5_derivatives.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4986904Z copying tests/test_a5_input_defaults.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4988677Z copying tests/test_a5_io_runtime.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4990501Z copying tests/test_a5_ledger_inputs.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4992433Z copying tests/test_a5_ledger_storage.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4994258Z copying tests/test_a5_loss_stats.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4996444Z copying tests/test_a5_offline_bounds.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.4998344Z copying tests/test_a5_regression_oracles.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5000307Z copying tests/test_a5_resources.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5002379Z copying tests/test_a5_scoring.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5003980Z copying tests/test_a5_uncertainty_oracles.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5005821Z copying tests/test_a5_variational.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5007631Z copying tests/test_a5_verification.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5009177Z copying tests/test_acceptance.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5011077Z copying tests/test_affine_holdout.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5012571Z copying tests/test_async_observer_context.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5014133Z copying tests/test_calibration.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5015950Z copying tests/test_cli.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5018229Z copying tests/test_contract_registry.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5019666Z copying tests/test_deployment_bundle.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5021752Z copying tests/test_ensemble_sensitivity.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5023308Z copying tests/test_finite_volume_transport.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5025227Z copying tests/test_full_transport_resource_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5027095Z copying tests/test_fv86_execution.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5028934Z copying tests/test_fv86_execution_status.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5030428Z copying tests/test_fv86_reanalysis.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5032074Z copying tests/test_fv_analysis_forecast.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5033704Z copying tests/test_fv_analysis_response.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5035534Z copying tests/test_fv_analytic_oracle.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5037415Z copying tests/test_fv_comparison_publisher.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5039076Z copying tests/test_fv_concurrent_response.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5040629Z copying tests/test_fv_control_domain.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5042335Z copying tests/test_fv_external_background_phase1.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5043926Z copying tests/test_fv_general_boundary.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5045761Z copying tests/test_fv_gn_response_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5047727Z copying tests/test_fv_grid_convergence_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5049191Z copying tests/test_fv_inverse_identifiability.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5050759Z copying tests/test_fv_learning_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5052421Z copying tests/test_fv_minmod_derivative_branches.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5053987Z copying tests/test_fv_minmod_inverse_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5055962Z copying tests/test_fv_minmod_joint_derivatives.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5057906Z copying tests/test_fv_minmod_local_path_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5059474Z copying tests/test_fv_minmod_matrix_free_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5061093Z copying tests/test_fv_neural_learning_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5062694Z copying tests/test_fv_neural_observation_path.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5064235Z copying tests/test_fv_numerical_range.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5066023Z copying tests/test_fv_observability.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5067970Z copying tests/test_fv_observation_response.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5069831Z copying tests/test_fv_original_cases.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5071433Z copying tests/test_fv_partial_alternate_root.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5073344Z copying tests/test_fv_partial_alternate_seed_gate.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5074847Z copying tests/test_fv_partial_face_event_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5076874Z copying tests/test_fv_partial_face_event_runner.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5078545Z copying tests/test_fv_partial_face_geometry.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5080194Z copying tests/test_fv_partial_face_tangent_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5081899Z copying tests/test_fv_partial_field_correction_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5083626Z copying tests/test_fv_partial_observation_preparation.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5085274Z copying tests/test_fv_partial_policy_decision.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5087455Z copying tests/test_fv_partial_reanalysis_preflight.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5088916Z copying tests/test_fv_partial_sector_root.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5090907Z copying tests/test_fv_persistent_learning_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5092396Z copying tests/test_fv_point_3h_first_branch_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5094110Z copying tests/test_fv_point_3h_forward.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5096200Z copying tests/test_fv_point_3h_merit_continuation.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5098655Z copying tests/test_fv_point_3h_merit_step_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5100165Z copying tests/test_fv_point_3h_response_policy.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5102171Z copying tests/test_fv_point_3h_seed_hessian_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5104070Z copying tests/test_fv_point_3h_seed_linear_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5106122Z copying tests/test_fv_point_3h_shifted_branch_probe.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5108220Z copying tests/test_fv_point_basin_runner.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5110106Z copying tests/test_fv_point_basin_search.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5112057Z copying tests/test_fv_point_centered_prior_case.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5113986Z copying tests/test_fv_point_centered_prior_response.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5115871Z copying tests/test_fv_point_core_strict_root.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5117916Z copying tests/test_fv_point_empty_centered_response.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5119772Z copying tests/test_fv_point_empty_time.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5121634Z copying tests/test_fv_point_merit_root.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5123562Z copying tests/test_fv_point_missing.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5125646Z copying tests/test_fv_point_missing_centered_response.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5127636Z copying tests/test_fv_point_nominal_runner.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5129453Z copying tests/test_fv_point_original_policy.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5131340Z copying tests/test_fv_point_qc_centered_response.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5133194Z copying tests/test_fv_point_qc_status.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5135047Z copying tests/test_fv_point_research_correlation.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5137267Z copying tests/test_fv_point_research_problem.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5139284Z copying tests/test_fv_point_response_preflight.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5141048Z copying tests/test_fv_point_sampler.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5142902Z copying tests/test_fv_point_sector_policy.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5144712Z copying tests/test_fv_point_sector_root.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5146947Z copying tests/test_fv_point_terminal_newton.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5148799Z copying tests/test_fv_process_response.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5150876Z copying tests/test_fv_research_long_horizon.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5152758Z copying tests/test_fv_research_multilead.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5154644Z copying tests/test_fv_research_partial_observation.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5157306Z copying tests/test_fv_research_problem.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5159191Z copying tests/test_fv_response_job_lifecycle.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5161361Z copying tests/test_fv_response_job_reconcile.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5163311Z copying tests/test_fv_rotation_demo.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5165150Z copying tests/test_fv_scaled_research_case.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5167234Z copying tests/test_fv_stage_observer.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5169245Z copying tests/test_fv_stationarity_verification.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5171058Z copying tests/test_fv_stationary_refinement.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5172834Z copying tests/test_fv_stationary_sensitivity.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5174737Z copying tests/test_fv_support_matrix.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5176950Z copying tests/test_fv_trajectory_contract.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5178877Z copying tests/test_fv_variational_residual.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5180825Z copying tests/test_fv_zero_face_scope.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5182626Z copying tests/test_holdout_evaluation.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5184468Z copying tests/test_initial_field_lab.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5186578Z copying tests/test_integrate_fv_demo.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5188350Z copying tests/test_ledger.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5192114Z copying tests/test_local_refinement.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5194035Z copying tests/test_local_response.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5195960Z copying tests/test_m0_linearity_weights.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5198036Z copying tests/test_matrix_free.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5199937Z copying tests/test_metrics.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5201804Z copying tests/test_motion_diagnostics.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5203635Z copying tests/test_muscl_experiment.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5205584Z copying tests/test_muscl_multistep.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5207665Z copying tests/test_nowcast.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5211320Z copying tests/test_numerical_review.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5213224Z copying tests/test_pcg.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5215187Z copying tests/test_pcg_observer.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5217348Z copying tests/test_phase1_learning_demonstration.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5219302Z copying tests/test_phase1_scenario_learning.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5221691Z copying tests/test_phase1_scenario_nowcast.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5223243Z copying tests/test_phase1_scenario_numerics.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5224978Z copying tests/test_phase1_theoretical_demonstration.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5226796Z copying tests/test_prior_learning.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5228759Z copying tests/test_prior_spatial_cotangent.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5230201Z copying tests/test_promotion.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5237511Z copying tests/test_recompute_contract.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5239025Z copying tests/test_recomputed_transport.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5240933Z copying tests/test_review_intervention.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5242529Z copying tests/test_review_ledger.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5244503Z copying tests/test_review_legacy_loaders.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5246065Z copying tests/test_review_numerics.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5248135Z copying tests/test_review_promotion_contracts.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5249716Z copying tests/test_review_promotion_statistics.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5251307Z copying tests/test_review_run_identity.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5252913Z copying tests/test_run_artifact.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5255488Z copying tests/test_runtime.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5257800Z copying tests/test_runtime_closure.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5259549Z copying tests/test_scenario_reaction_experiment.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5261574Z copying tests/test_scenario_rigid_experiment.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5263379Z copying tests/test_sensitivity.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5267737Z copying tests/test_shift_zero.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5269298Z copying tests/test_subpixel_motion_refinement.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5270902Z copying tests/test_transport_demo.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5272906Z copying tests/test_transport_numerical_diffusion.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5274341Z copying tests/test_transport_trajectory.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5275997Z copying tests/test_variational.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5279383Z copying tests/test_weather_scenarios_demo.py -> advar_radar_nowcast-0.114.0/tests
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5288583Z Writing advar_radar_nowcast-0.114.0/setup.cfg
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:37.5290548Z Creating tar archive
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.2814601Z removing 'advar_radar_nowcast-0.114.0' (and everything under it)
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.3915812Z * Building wheel from sdist
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.3919553Z * Getting build dependencies for wheel...
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.5939210Z running egg_info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.5984991Z writing src/advar_radar_nowcast.egg-info/PKG-INFO
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.5994808Z writing dependency_links to src/advar_radar_nowcast.egg-info/dependency_links.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.5998316Z writing entry points to src/advar_radar_nowcast.egg-info/entry_points.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.6000998Z writing requirements to src/advar_radar_nowcast.egg-info/requires.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.6002342Z writing top-level names to src/advar_radar_nowcast.egg-info/top_level.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.6163127Z reading manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.6214162Z writing manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.6491438Z * Building wheel...
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8425569Z running bdist_wheel
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8646806Z running build
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8647241Z running build_py
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8699300Z creating build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8702105Z copying src/advar/action_artifacts.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8704541Z copying src/advar/acceptance.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8707184Z copying src/advar/cli.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8709804Z copying src/advar/physics.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8712094Z copying src/advar/ensemble_sensitivity.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8714523Z copying src/advar/transport.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8717161Z copying src/advar/metrics.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8719391Z copying src/advar/sensitivity.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8725896Z copying src/advar/fv_sensitivity.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8728562Z copying src/advar/_contract_registry.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8730832Z copying src/advar/_runtime.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8733097Z copying src/advar/run_artifact.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8735978Z copying src/advar/diagnostics.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8738358Z copying src/advar/nowcast.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8742847Z copying src/advar/calibration.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8745263Z copying src/advar/intervention.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8748446Z copying src/advar/linearization_artifact.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8750816Z copying src/advar/range_geometry.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8753187Z copying src/advar/fv_research_problem.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8755439Z copying src/advar/variational.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8760235Z copying src/advar/matrix_free.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8762574Z copying src/advar/action_contracts.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8764854Z copying src/advar/_digest.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8767353Z copying src/advar/fv_point_sampler.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8769487Z copying src/advar/local_response.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8771748Z copying src/advar/local_refinement.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8774054Z copying src/advar/promotion.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8783292Z copying src/advar/ledger.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8791439Z copying src/advar/__init__.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8793983Z copying src/advar/_learned_input.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8796436Z copying src/advar/fv_point_research_problem.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8799268Z copying src/advar/runtime_closure.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8801923Z copying src/advar/_input_derivation.py -> build/lib/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8804748Z running egg_info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8849717Z writing src/advar_radar_nowcast.egg-info/PKG-INFO
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8860377Z writing dependency_links to src/advar_radar_nowcast.egg-info/dependency_links.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8864561Z writing entry points to src/advar_radar_nowcast.egg-info/entry_points.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8868117Z writing requirements to src/advar_radar_nowcast.egg-info/requires.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8870282Z writing top-level names to src/advar_radar_nowcast.egg-info/top_level.txt
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8942345Z reading manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.8994125Z writing manifest file 'src/advar_radar_nowcast.egg-info/SOURCES.txt'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9008383Z creating build/lib/advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9010219Z copying src/advar/data/epsg5179_metric_domain_evidence_v2.json -> build/lib/advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9012997Z copying src/advar/data/epsg5179_metric_domain_evidence_v3.json -> build/lib/advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9015723Z copying src/advar/data/epsg5179_metric_domain_evidence_v4.json -> build/lib/advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9018682Z copying src/advar/data/epsg5179_metric_domain_evidence_v1.json -> build/lib/advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9027432Z warning: build_py: byte-compiling is disabled, skipping.
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9027941Z 
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9116108Z installing to build/bdist.linux-x86_64/wheel
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9116765Z running install
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9187010Z running install_lib
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9232494Z creating build/bdist.linux-x86_64/wheel
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9235547Z creating build/bdist.linux-x86_64/wheel/advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9237558Z copying build/lib/advar/action_artifacts.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9239379Z copying build/lib/advar/acceptance.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9241207Z copying build/lib/advar/cli.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9243505Z copying build/lib/advar/physics.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9245217Z copying build/lib/advar/ensemble_sensitivity.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9247707Z copying build/lib/advar/transport.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9249837Z copying build/lib/advar/metrics.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9251477Z copying build/lib/advar/sensitivity.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9258094Z copying build/lib/advar/fv_sensitivity.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9260137Z copying build/lib/advar/_contract_registry.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9261800Z copying build/lib/advar/_runtime.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9263780Z copying build/lib/advar/run_artifact.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9266139Z copying build/lib/advar/diagnostics.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9267987Z copying build/lib/advar/nowcast.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9272104Z copying build/lib/advar/calibration.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9274510Z creating build/bdist.linux-x86_64/wheel/advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9276494Z copying build/lib/advar/data/epsg5179_metric_domain_evidence_v2.json -> build/bdist.linux-x86_64/wheel/./advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9278834Z copying build/lib/advar/data/epsg5179_metric_domain_evidence_v3.json -> build/bdist.linux-x86_64/wheel/./advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9281021Z copying build/lib/advar/data/epsg5179_metric_domain_evidence_v4.json -> build/bdist.linux-x86_64/wheel/./advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9283151Z copying build/lib/advar/data/epsg5179_metric_domain_evidence_v1.json -> build/bdist.linux-x86_64/wheel/./advar/data
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9285090Z copying build/lib/advar/intervention.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9288072Z copying build/lib/advar/linearization_artifact.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9289808Z copying build/lib/advar/range_geometry.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9291921Z copying build/lib/advar/fv_research_problem.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9293546Z copying build/lib/advar/variational.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9298021Z copying build/lib/advar/matrix_free.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9299921Z copying build/lib/advar/action_contracts.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9301532Z copying build/lib/advar/_digest.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9303230Z copying build/lib/advar/fv_point_sampler.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9304926Z copying build/lib/advar/local_response.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9307121Z copying build/lib/advar/local_refinement.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9308815Z copying build/lib/advar/promotion.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9317713Z copying build/lib/advar/ledger.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9325251Z copying build/lib/advar/__init__.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9327025Z copying build/lib/advar/_learned_input.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9328825Z copying build/lib/advar/fv_point_research_problem.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9330609Z copying build/lib/advar/runtime_closure.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9332545Z copying build/lib/advar/_input_derivation.py -> build/bdist.linux-x86_64/wheel/./advar
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9333818Z warning: install_lib: byte-compiling is disabled, skipping.
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9334276Z 
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9334388Z running install_egg_info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9380212Z Copying src/advar_radar_nowcast.egg-info to build/bdist.linux-x86_64/wheel/./advar_radar_nowcast-0.114.0-py3.12.egg-info
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9390155Z running install_scripts
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9400960Z creating build/bdist.linux-x86_64/wheel/advar_radar_nowcast-0.114.0.dist-info/WHEEL
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9405354Z creating '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/dist/.tmp-j9w8l7tb/advar_radar_nowcast-0.114.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9409100Z adding 'advar/__init__.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9413135Z adding 'advar/_contract_registry.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9415703Z adding 'advar/_digest.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9419608Z adding 'advar/_input_derivation.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9422359Z adding 'advar/_learned_input.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9426581Z adding 'advar/_runtime.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9432626Z adding 'advar/acceptance.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9435384Z adding 'advar/action_artifacts.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9438222Z adding 'advar/action_contracts.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9445475Z adding 'advar/calibration.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9458223Z adding 'advar/cli.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9461798Z adding 'advar/diagnostics.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9471696Z adding 'advar/ensemble_sensitivity.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9478641Z adding 'advar/fv_point_research_problem.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9481508Z adding 'advar/fv_point_sampler.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9486023Z adding 'advar/fv_research_problem.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9498528Z adding 'advar/fv_sensitivity.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9527031Z adding 'advar/intervention.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9711767Z adding 'advar/ledger.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9726733Z adding 'advar/linearization_artifact.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9732795Z adding 'advar/local_refinement.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9737147Z adding 'advar/local_response.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9742942Z adding 'advar/matrix_free.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9745789Z adding 'advar/metrics.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9831120Z adding 'advar/nowcast.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:38.9837173Z adding 'advar/physics.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0082556Z adding 'advar/promotion.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0097472Z adding 'advar/range_geometry.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0117526Z adding 'advar/run_artifact.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0123974Z adding 'advar/runtime_closure.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0275571Z adding 'advar/sensitivity.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0292456Z adding 'advar/transport.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0388084Z adding 'advar/variational.py'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0403288Z adding 'advar/data/epsg5179_metric_domain_evidence_v1.json'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0417047Z adding 'advar/data/epsg5179_metric_domain_evidence_v2.json'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0431176Z adding 'advar/data/epsg5179_metric_domain_evidence_v3.json'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0446137Z adding 'advar/data/epsg5179_metric_domain_evidence_v4.json'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0518380Z adding 'advar_radar_nowcast-0.114.0.dist-info/METADATA'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0521279Z adding 'advar_radar_nowcast-0.114.0.dist-info/WHEEL'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0522710Z adding 'advar_radar_nowcast-0.114.0.dist-info/entry_points.txt'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0524187Z adding 'advar_radar_nowcast-0.114.0.dist-info/top_level.txt'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0528476Z adding 'advar_radar_nowcast-0.114.0.dist-info/RECORD'
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0531024Z removing build/bdist.linux-x86_64/wheel
+Wheel and CLI smoke	Build source and wheel distributions	2026-10-01T04:03:39.0863617Z Successfully built advar_radar_nowcast-0.114.0.tar.gz and advar_radar_nowcast-0.114.0-py3-none-any.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	﻿2026-10-01T04:03:39.1065931Z ##[group]Run mkdir "$RUNNER_TEMP/runtime-wheelhouse"
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1066417Z [36;1mmkdir "$RUNNER_TEMP/runtime-wheelhouse"[0m
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1066751Z [36;1mpython -I -m pip download \[0m
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1067036Z [36;1m  --require-hashes \[0m
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1067295Z [36;1m  --only-binary=:all: \[0m
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1067553Z [36;1m  --no-deps \[0m
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1067891Z [36;1m  --extra-index-url https://download.pytorch.org/whl/cpu \[0m
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1068338Z [36;1m  --requirement requirements/runtime-py312-linux.lock \[0m
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1068734Z [36;1m  --dest "$RUNNER_TEMP/runtime-wheelhouse"[0m
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1131511Z shell: /usr/bin/bash -e {0}
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1131765Z env:
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1131973Z   PYTHONDONTWRITEBYTECODE: 1
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1132291Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1132733Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1133220Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1133601Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1133981Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1134365Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.1134689Z ##[endgroup]
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:39.4603225Z Looking in indexes: https://pypi.org/simple, https://download.pytorch.org/whl/cpu
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.2383112Z Collecting cffi==2.1.1 (from -r requirements/runtime-py312-linux.lock (line 5))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.2398119Z   Using cached cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.5416518Z Collecting cryptography==50.0.0 (from -r requirements/runtime-py312-linux.lock (line 107))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.5430719Z   Using cached cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.5728701Z Collecting filelock==3.32.3 (from -r requirements/runtime-py312-linux.lock (line 157))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.5741377Z   Using cached filelock-3.32.3-py3-none-any.whl (98 kB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.5938696Z Collecting fsspec==2026.7.0 (from -r requirements/runtime-py312-linux.lock (line 164))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.5951176Z   Using cached fsspec-2026.7.0-py3-none-any.whl (206 kB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.6184247Z Collecting jinja2==3.1.6 (from -r requirements/runtime-py312-linux.lock (line 168))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.6197014Z   Using cached jinja2-3.1.6-py3-none-any.whl (134 kB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.6669956Z Collecting markupsafe==3.0.3 (from -r requirements/runtime-py312-linux.lock (line 172))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.6683287Z   Using cached markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.6788897Z Collecting mpmath==1.3.0 (from -r requirements/runtime-py312-linux.lock (line 263))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.6801361Z   Using cached mpmath-1.3.0-py3-none-any.whl (536 kB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.7046546Z Collecting networkx==3.6.1 (from -r requirements/runtime-py312-linux.lock (line 267))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:40.7059247Z   Using cached networkx-3.6.1-py3-none-any.whl (2.1 MB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.1424006Z Collecting numpy==2.2.6 (from -r requirements/runtime-py312-linux.lock (line 271))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.1439587Z   Using cached numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.5 MB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.2573552Z Collecting pycparser==3.0 (from -r requirements/runtime-py312-linux.lock (line 330))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.2586848Z   Using cached pycparser-3.0-py3-none-any.whl (48 kB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.3124697Z Collecting setuptools==84.0.0 (from -r requirements/runtime-py312-linux.lock (line 334))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.3137656Z   Using cached setuptools-84.0.0-py3-none-any.whl (818 kB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.3351681Z Collecting sympy==1.14.0 (from -r requirements/runtime-py312-linux.lock (line 338))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.3364051Z   Using cached sympy-1.14.0-py3-none-any.whl (6.3 MB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.4664248Z Collecting torch==2.13.0+cpu (from -r requirements/runtime-py312-linux.lock (line 342))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.4676783Z   Using cached torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl (191.8 MB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7489954Z Collecting typing-extensions==4.16.0 (from -r requirements/runtime-py312-linux.lock (line 377))
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7502822Z   Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7560852Z Saved /home/runner/work/_temp/runtime-wheelhouse/cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7579796Z Saved /home/runner/work/_temp/runtime-wheelhouse/cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7584545Z Saved /home/runner/work/_temp/runtime-wheelhouse/filelock-3.32.3-py3-none-any.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7590026Z Saved /home/runner/work/_temp/runtime-wheelhouse/fsspec-2026.7.0-py3-none-any.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7595110Z Saved /home/runner/work/_temp/runtime-wheelhouse/jinja2-3.1.6-py3-none-any.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7600606Z Saved /home/runner/work/_temp/runtime-wheelhouse/markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7606363Z Saved /home/runner/work/_temp/runtime-wheelhouse/mpmath-1.3.0-py3-none-any.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7617421Z Saved /home/runner/work/_temp/runtime-wheelhouse/networkx-3.6.1-py3-none-any.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7669965Z Saved /home/runner/work/_temp/runtime-wheelhouse/numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7674598Z Saved /home/runner/work/_temp/runtime-wheelhouse/pycparser-3.0-py3-none-any.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7681785Z Saved /home/runner/work/_temp/runtime-wheelhouse/setuptools-84.0.0-py3-none-any.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.7704717Z Saved /home/runner/work/_temp/runtime-wheelhouse/sympy-1.14.0-py3-none-any.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.8266701Z Saved /home/runner/work/_temp/runtime-wheelhouse/torch-2.13.0+cpu-cp312-cp312-manylinux_2_28_x86_64.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.8271701Z Saved /home/runner/work/_temp/runtime-wheelhouse/typing_extensions-4.16.0-py3-none-any.whl
+Wheel and CLI smoke	Materialize the exact Linux CPU wheelhouse	2026-10-01T04:03:41.8273517Z Successfully downloaded cffi cryptography filelock fsspec jinja2 markupsafe mpmath networkx numpy pycparser setuptools sympy torch typing-extensions
+Wheel and CLI smoke	Install the built wheel offline in isolation	﻿2026-10-01T04:03:41.9086407Z ##[group]Run python -I -m venv --without-pip .wheel-venv
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9086878Z [36;1mpython -I -m venv --without-pip .wheel-venv[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9087269Z [36;1mpython -I -m pip --python .wheel-venv/bin/python install \[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9087617Z [36;1m  --no-index \[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9087944Z [36;1m  --find-links "$RUNNER_TEMP/runtime-wheelhouse" \[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9088342Z [36;1m  --require-hashes \[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9088641Z [36;1m  --only-binary=:all: \[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9088921Z [36;1m  --no-compile \[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9089217Z [36;1m  --requirement requirements/runtime-py312-linux.lock[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9089650Z [36;1mpython -I -m pip --python .wheel-venv/bin/python install \[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9090039Z [36;1m  --no-index --no-deps --no-compile dist/*.whl[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9090414Z [36;1mpython -I -m pip --python .wheel-venv/bin/python check[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9090755Z [36;1mfind .wheel-venv -type f \[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9091119Z [36;1m  \( -name '*.pyc' -o -name '*.pyo' -o -name '*.pth' \) -delete[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9091487Z [36;1m.wheel-venv/bin/python -I -B - <<'PY'[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9091766Z [36;1mimport torch[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9092209Z [36;1m[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9092519Z [36;1massert torch.version.cuda is None[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9093045Z [36;1mPY[0m
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9157815Z shell: /usr/bin/bash -e {0}
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9158233Z env:
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9168347Z   PYTHONDONTWRITEBYTECODE: 1
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9168917Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9169474Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9169932Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9170363Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9170747Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9171137Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:41.9171471Z ##[endgroup]
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.4545260Z Looking in links: /home/runner/work/_temp/runtime-wheelhouse
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.4660800Z Processing /home/runner/work/_temp/runtime-wheelhouse/cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (from -r requirements/runtime-py312-linux.lock (line 5))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.4701646Z Processing /home/runner/work/_temp/runtime-wheelhouse/cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (from -r requirements/runtime-py312-linux.lock (line 107))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.4823078Z Processing /home/runner/work/_temp/runtime-wheelhouse/filelock-3.32.3-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 157))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.4848046Z Processing /home/runner/work/_temp/runtime-wheelhouse/fsspec-2026.7.0-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 164))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.5041920Z Processing /home/runner/work/_temp/runtime-wheelhouse/jinja2-3.1.6-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 168))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.5069631Z Processing /home/runner/work/_temp/runtime-wheelhouse/markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (from -r requirements/runtime-py312-linux.lock (line 172))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.5093211Z Processing /home/runner/work/_temp/runtime-wheelhouse/mpmath-1.3.0-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 263))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.5136941Z Processing /home/runner/work/_temp/runtime-wheelhouse/networkx-3.6.1-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 267))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.5268745Z Processing /home/runner/work/_temp/runtime-wheelhouse/numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (from -r requirements/runtime-py312-linux.lock (line 271))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.5663162Z Processing /home/runner/work/_temp/runtime-wheelhouse/pycparser-3.0-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 330))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.5690912Z Processing /home/runner/work/_temp/runtime-wheelhouse/setuptools-84.0.0-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 334))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.5786548Z Processing /home/runner/work/_temp/runtime-wheelhouse/sympy-1.14.0-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 338))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.5996374Z Processing /home/runner/work/_temp/runtime-wheelhouse/torch-2.13.0+cpu-cp312-cp312-manylinux_2_28_x86_64.whl (from -r requirements/runtime-py312-linux.lock (line 342))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:42.9487699Z Processing /home/runner/work/_temp/runtime-wheelhouse/typing_extensions-4.16.0-py3-none-any.whl (from -r requirements/runtime-py312-linux.lock (line 377))
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:43.0774961Z Installing collected packages: mpmath, typing-extensions, sympy, setuptools, pycparser, numpy, networkx, markupsafe, fsspec, filelock, jinja2, cffi, torch, cryptography
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:47.8019100Z 
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:47.8039710Z Successfully installed cffi-2.1.1 cryptography-50.0.0 filelock-3.32.3 fsspec-2026.7.0 jinja2-3.1.6 markupsafe-3.0.3 mpmath-1.3.0 networkx-3.6.1 numpy-2.2.6 pycparser-3.0 setuptools-84.0.0 sympy-1.14.0 torch-2.13.0+cpu typing-extensions-4.16.0
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:48.3358649Z Processing ./dist/advar_radar_nowcast-0.114.0-py3-none-any.whl
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:48.3597801Z Installing collected packages: advar-radar-nowcast
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:48.3839191Z Successfully installed advar-radar-nowcast-0.114.0
+Wheel and CLI smoke	Install the built wheel offline in isolation	2026-10-01T04:03:48.8141170Z No broken requirements found.
+Wheel and CLI smoke	Generate CLI smoke input	﻿2026-10-01T04:03:52.0387970Z ##[group]Run .wheel-venv/bin/python -I -B - <<'PY'
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0388429Z [36;1m.wheel-venv/bin/python -I -B - <<'PY'[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0388725Z [36;1mimport os[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0388956Z [36;1mfrom pathlib import Path[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0389203Z [36;1m[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0389393Z [36;1mimport numpy as np[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0389617Z [36;1m[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0389846Z [36;1moutput = Path(os.environ["RUNNER_TEMP"])[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0390151Z [36;1my, x = np.meshgrid([0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0390411Z [36;1m    np.arange(16, dtype=np.float32),[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0390707Z [36;1m    np.arange(16, dtype=np.float32),[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0390978Z [36;1m    indexing="ij",[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0391193Z [36;1m)[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0391406Z [36;1mframe = -10.0 + 45.0 * np.exp([0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0391704Z [36;1m    -((y - 7.5) ** 2 + (x - 7.5) ** 2) / 12.0[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0391981Z [36;1m)[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0392289Z [36;1mnp.save(output / "three_frames.npy", np.stack((frame, frame, frame)))[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0392698Z [36;1mPY[0m
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0456890Z shell: /usr/bin/bash -e {0}
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0457149Z env:
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0457352Z   PYTHONDONTWRITEBYTECODE: 1
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0457676Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0458112Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0458552Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0458928Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0459304Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0459690Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Wheel and CLI smoke	Generate CLI smoke input	2026-10-01T04:03:52.0460018Z ##[endgroup]
+Wheel and CLI smoke	Run installed CLI	﻿2026-10-01T04:03:52.3356225Z ##[group]Run .wheel-venv/bin/advar-nowcast \
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:52.3356652Z [36;1m.wheel-venv/bin/advar-nowcast \[0m
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:52.3356970Z [36;1m  "$RUNNER_TEMP/three_frames.npy" \[0m
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:52.3357283Z [36;1m  "$RUNNER_TEMP/forecast.npz"[0m
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:52.3420416Z shell: /usr/bin/bash -e {0}
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:52.3420672Z env:
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:52.3420879Z   PYTHONDONTWRITEBYTECODE: 1
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:52.3421199Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:52.3421639Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:52.3422083Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:52.3422478Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:52.3422859Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:52.3423239Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:52.3423574Z ##[endgroup]
+Wheel and CLI smoke	Run installed CLI	2026-10-01T04:03:55.6562925Z saved 18 frames to /home/runner/work/_temp/forecast.npz (motion dy=0.00, dx=-0.00 px/step)
+Wheel and CLI smoke	Validate installed CLI output contract	﻿2026-10-01T04:03:55.9044752Z ##[group]Run .wheel-venv/bin/python -I -B - <<'PY'
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9045234Z [36;1m.wheel-venv/bin/python -I -B - <<'PY'[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9045872Z [36;1mimport os[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9046104Z [36;1mfrom pathlib import Path[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9046347Z [36;1m[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9046537Z [36;1mimport numpy as np[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9046761Z [36;1m[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9047023Z [36;1mpath = Path(os.environ["RUNNER_TEMP"]) / "forecast.npz"[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9047436Z [36;1mwith np.load(path, allow_pickle=False) as result:[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9047881Z [36;1m    assert result["output_contract_version"].item() == "nowcast-npz-v76"[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9048418Z [36;1m    assert result["forecast_run_artifact_version"].item() == "forecast-run-v72"[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9049135Z [36;1m    assert result["operational_runtime_profile_digest"].item() == ""[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9049624Z [36;1m    assert not result["operational_calibration_manifest_present"].item()[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9050168Z [36;1m    assert result["operational_calibration_manifest_json"].item() == ""[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9050659Z [36;1m    assert result["operational_calibration_manifest_digest"].item() == ""[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9051162Z [36;1m    assert result["operational_calibration_approval_digest"].item() == ""[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9051638Z [36;1m    assert not result["operational_data_identity_present"].item()[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9052086Z [36;1m    assert result["operational_data_identity_json"].item() == ""[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9052536Z [36;1m    assert result["operational_data_identity_digest"].item() == ""[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9052929Z [36;1m    assert "state_path_source" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9053275Z [36;1m    assert "minimum_growth_overlap_support" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9053646Z [36;1m    assert "verified_source_support" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9054002Z [36;1m    assert "local_motion_verified_support" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9054374Z [36;1m    assert "local_growth_verified_support" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9054744Z [36;1m    assert "local_dynamics_verified_support" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9055120Z [36;1m    assert "path_verified_source_support" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9055763Z [36;1m    assert "forecast_path_verified_support" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9056126Z [36;1m    assert "forecast_verified_support" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9056508Z [36;1m    assert "forecast_local_motion_verified_support" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9056931Z [36;1m    assert "forecast_local_growth_verified_support" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9057358Z [36;1m    assert "forecast_local_dynamics_verified_support" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9057750Z [36;1m    assert "forecast_confidence" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9058129Z [36;1m    assert "p1_velocity_saturation_uncertainty_mps" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9058571Z [36;1m    assert "p1_log_growth_saturation_uncertainty_per_step" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9059044Z [36;1m    assert "motion_evidence_uncertainty_multiplier" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9059456Z [36;1m    assert "radar_dynamics_anchored_valid_mask" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9059851Z [36;1m    assert "forecast_position_uncertainty_m" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9060229Z [36;1m    assert "forecast_log_growth_uncertainty" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9060583Z [36;1m    assert "radar_anchored_valid_mask" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9060936Z [36;1m    assert "background_fallback_mask" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9061285Z [36;1m    assert "observation_path_mode" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9061612Z [36;1m    assert "background_path_mode" in result[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9061962Z [36;1m    assert result["forecast_dbz"].shape == (18, 16, 16)[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9062292Z [36;1m    assert np.array_equal([0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9062580Z [36;1m        np.isfinite(result["forecast_dbz"]),[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9063065Z [36;1m        result["valid_mask"],[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9063314Z [36;1m    )[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9063568Z [36;1m    assert result["data_status"].item() == "OBSERVED"[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9063886Z [36;1mPY[0m
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9127062Z shell: /usr/bin/bash -e {0}
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9127313Z env:
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9127518Z   PYTHONDONTWRITEBYTECODE: 1
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9127840Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9128278Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9128711Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9129089Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9129481Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9130048Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Wheel and CLI smoke	Validate installed CLI output contract	2026-10-01T04:03:55.9130379Z ##[endgroup]
+Wheel and CLI smoke	Post Set up Python 3.12	﻿2026-10-01T04:03:56.2146628Z Post job cleanup.
+Wheel and CLI smoke	Post Set up Python 3.12	2026-10-01T04:03:56.3616854Z [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /home/runner/work/AD4DVAR-radar/AD4DVAR-radar --files-from manifest.txt --use-compress-program zstdmt
+Wheel and CLI smoke	Post Set up Python 3.12	2026-10-01T04:03:58.1592880Z Sent 0 of 287618844 (0.0%), 0.0 MBs/sec
+Wheel and CLI smoke	Post Set up Python 3.12	2026-10-01T04:03:59.1600774Z Sent 220509980 of 287618844 (76.7%), 105.1 MBs/sec
+Wheel and CLI smoke	Post Set up Python 3.12	2026-10-01T04:03:59.2633048Z Sent 287618844 of 287618844 (100.0%), 130.4 MBs/sec
+Wheel and CLI smoke	Post Set up Python 3.12	2026-10-01T04:03:59.5936969Z Cache saved with the key: setup-python-Linux-x64-24.04-Ubuntu-python-3.12.14-pip-f7cee36fe32686215bbb9f8a086817e4840e974b74a211879070eaf02f04bcd8
+Wheel and CLI smoke	Post Check out source	﻿2026-10-01T04:03:59.6090355Z Post job cleanup.
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.6969626Z [command]/usr/bin/git version
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7015992Z git version 2.55.0
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7061951Z Temporarily overriding HOME='/home/runner/work/_temp/51f25343-e305-42c9-be6c-759fdc272ccc' before making global git config changes
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7063426Z Adding repository directory to the temporary git global config as a safe directory
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7068525Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7103220Z Removing SSH command configuration
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7110535Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7150021Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7400377Z Removing HTTP extra header
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7406956Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7460711Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7733985Z Removing includeIf entries pointing to credentials config files
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7740622Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7776089Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7777544Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7778851Z includeif.gitdir:/github/workspace/.git.path
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7779740Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7786133Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7813946Z /home/runner/work/_temp/git-credentials-7863f56a-0535-48bd-ac47-b4ac71c96fb1.config
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7836189Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-7863f56a\-0535\-48bd\-ac47\-b4ac71c96fb1\.config
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7869493Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7907434Z /home/runner/work/_temp/git-credentials-7863f56a-0535-48bd-ac47-b4ac71c96fb1.config
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7930820Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-7863f56a\-0535\-48bd\-ac47\-b4ac71c96fb1\.config
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.7973138Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.8000018Z /github/runner_temp/git-credentials-7863f56a-0535-48bd-ac47-b4ac71c96fb1.config
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.8007821Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-7863f56a\-0535\-48bd\-ac47\-b4ac71c96fb1\.config
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.8047090Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.8074448Z /github/runner_temp/git-credentials-7863f56a-0535-48bd-ac47-b4ac71c96fb1.config
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.8083418Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-7863f56a\-0535\-48bd\-ac47\-b4ac71c96fb1\.config
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.8123096Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Wheel and CLI smoke	Post Check out source	2026-10-01T04:03:59.8371793Z Removing credentials config '/home/runner/work/_temp/git-credentials-7863f56a-0535-48bd-ac47-b4ac71c96fb1.config'
+Wheel and CLI smoke	Complete job	﻿2026-10-01T04:03:59.8511756Z Cleaning up orphan processes

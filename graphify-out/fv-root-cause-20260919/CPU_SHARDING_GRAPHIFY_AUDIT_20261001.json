@@ -1,0 +1,20 @@
+{
+  "mode": "bounded AST-only additions; cached unrelated/shared metadata and links preserved exactly",
+  "changed_files": [
+    ".github/scripts/run_cpu_test_shard.py",
+    "tests/test_cpu_test_sharding.py"
+  ],
+  "ast_nodes": 65,
+  "ast_edges": 182,
+  "before_nodes": 8381,
+  "before_edges": 210606,
+  "after_nodes": 8444,
+  "after_edges": 210759,
+  "semantic_extraction": false,
+  "old_node_metadata_unchanged": true,
+  "old_link_metadata_unchanged": true,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "backup": "graphify-out/.graphify_cpu_shard_before.json",
+  "initial_validation_attempt": "Multigraph edge keys required; no graph write occurred before correction"
+}

@@ -528,6 +528,7 @@ def compute_fv_observation_response(
     background_parameter: Tensor | None = None,
     background_builder: Callable[[Tensor, Tensor], Tensor] | None = None,
     maximum_normal_products: int = 128,
+    adjoint_relative_tolerance: float = 1e-10,
     curvature: Literal["irls_gauss_newton", "exact_robust_hessian"] = (
         "irls_gauss_newton"
     ),
@@ -577,10 +578,24 @@ def compute_fv_observation_response(
     a local first-order research response, not a differentiated training API,
     legacy FSO/FSOI eligibility, or a finite-impact certificate.
 
+    ``adjoint_relative_tolerance`` is a CPU FP64 solve-accuracy control in
+    ``(0, 1e-10]``. The same threshold is checked against a fresh true residual.
+
     The budget counts normal products, including true-residual checks, not
     total runtime/memory or every derivative. Budget 1 with a nonzero RHS fails
-    closed because a fresh residual needs another product. No dense Hessian is constructed.
+    closed because the fresh residual checks need additional products. No dense
+    Hessian is constructed.
     """
+    if (
+        isinstance(adjoint_relative_tolerance, bool)
+        or not isinstance(adjoint_relative_tolerance, (int, float))
+        or adjoint_relative_tolerance <= 0.0
+        or adjoint_relative_tolerance > 1.0e-10
+        or not math.isfinite(adjoint_relative_tolerance)
+    ):
+        raise ValueError(
+            "adjoint_relative_tolerance must be finite, positive, and at most 1e-10"
+        )
     fv = frozen.fv_transport
     if fv is None or fv.reconstruction != "donorcell":
         raise ValueError("FV observation response requires donorcell")
@@ -894,15 +909,34 @@ def compute_fv_observation_response(
             return hessian
 
     # The identity control-prior rows guarantee A=J.T J >= I in GN mode.
-    # Exact mode checks positive curvature on each HVP direction.  Reserve a
-    # final product; true-residual checks remain inside the same hard budget.
+    # Exact mode checks positive curvature on each HVP direction. Reserve one
+    # product for PCG's true residual and another for an independent check.
     diagonal = _initial_observation_diagonal(control, observations, frozen)
     adjoint = pcg(
         normal, rhs, preconditioner=lambda x: x / diagonal,
-        rtol=1e-10, max_iterations=max(1, maximum_normal_products - 1)
+        rtol=adjoint_relative_tolerance,
+        max_iterations=max(1, maximum_normal_products - 2),
     )
     if not adjoint.converged:
         raise ValueError("FV curvature adjoint did not converge")
+    rhs_norm = torch.linalg.vector_norm(rhs)
+    if not bool(torch.any(rhs != 0)):
+        # A zero RHS has the exact zero PCG solution and zero true residual;
+        # avoid spending a curvature product on the known A(0) = 0 identity.
+        true_relative_residual = rhs_norm
+    elif bool(rhs_norm > 0):
+        true_residual = rhs - normal(adjoint.solution)
+        true_relative_residual = torch.linalg.vector_norm(true_residual) / rhs_norm
+    else:
+        # A nonzero RHS whose FP64 norm underflows cannot meet a relative gate.
+        true_relative_residual = rhs_norm.new_tensor(float("inf"))
+    if (
+        not bool(torch.isfinite(true_relative_residual))
+        or bool(true_relative_residual > adjoint_relative_tolerance)
+    ):
+        raise ValueError(
+            "FV curvature adjoint true residual exceeds requested tolerance"
+        )
     observation_pullback = torch.func.vjp(
         lambda y, theta: gradient(control, y, theta),
         observations.dbz,
@@ -924,7 +958,7 @@ def compute_fv_observation_response(
         score=float(metric_value),
         gradient_max=gradient_max,
         normal_products=products,
-        adjoint_relative_residual=adjoint.relative_residual,
+        adjoint_relative_residual=float(true_relative_residual),
         face_margin=face_margin,
         curvature=curvature,
         sensitivity_theta=sensitivity_theta,

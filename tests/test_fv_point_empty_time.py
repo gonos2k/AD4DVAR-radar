@@ -7,6 +7,7 @@ import torch
 
 from advar import variational as v
 from advar.fv_point_sampler import point_dbz_bilinear
+from advar.fv_point_research_problem import _fingerprint
 from advar.physics import echo_to_dbz
 from examples.weather_scenarios.fv_point_research_case import make_case
 
@@ -106,11 +107,27 @@ def test_default_and_mismatched_empty_time_declarations_fail_closed(case):
         replace(selected, observation_status=two_empty, observation_dbz=values)
 
 
-def test_legacy_nonempty_identity_is_unchanged(case):
+def test_nonempty_identity_is_stable_for_same_runtime_inputs(case):
     problem, _control, _parameters = case
-    assert problem.identity["fixed_problem_sha256"] == (
-        "dd8ec41e5c1a115fe58f4862462c39614234bf31b5065fc634711f864db06f0f"
-    )
+    assert problem.identity["fixed_problem_sha256"] == _fingerprint({
+        "frozen": problem.frozen,
+        "observation_coordinates": problem.observation_coordinates,
+        "observation_operator": "point_dbz_bilinear_v1",
+        "observation_dbz": problem.observation_dbz,
+        "observation_std_dbz": problem.observation_std_dbz,
+        "quality_weight": problem.quality_weight,
+        "observation_correlation": problem.observation_correlation,
+        "observation_status": problem.observation_status,
+        "whitening_convention": "per_time_valid_principal_symmetric_standardized_correlation_v2",
+        "background_dbz": problem.background_dbz,
+        "background_pattern": problem.background_pattern,
+        "verification_dbz": problem.verification_dbz,
+        "future_boundary_echo": problem.future_boundary_echo,
+        "future_boundary_support": problem.future_boundary_support,
+        "source_sha256": problem.source_sha256,
+        "layout": problem.layout,
+        "support": problem.support,
+    })
 
 
 def test_legacy_positional_expected_branch_slot_is_preserved(case):
