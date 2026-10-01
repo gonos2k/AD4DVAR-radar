@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_field_correction_probe.py",
+    "--child",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/partial_field_correction_attempt1/field_correction.json",
+    "--expected-plan-sha256",
+    "391bfdbeb4f97af617dc00840700cadba36c36be8ed797e78026ba8cc3aed1f8",
+    "--expected-probe-sha256",
+    "30c6c1177e0a001a37751aa4f0396cb616f2f2e1d0c76f5b47472246f0373c18"
+  ],
+  "child_pid": 73009,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 38.02494575001765,
+  "sampled_peak_rss_bytes": 347389952,
+  "rss_samples": 142,
+  "wall_limit_seconds": 300,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}
