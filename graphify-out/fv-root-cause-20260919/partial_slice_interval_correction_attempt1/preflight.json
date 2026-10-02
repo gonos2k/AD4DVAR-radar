@@ -1,0 +1,11 @@
+{
+  "source_sha256": {
+    "examples/weather_scenarios/fv_slice_interval_correction_probe.py": "5328880693f8f8e9537702727a81256939ddb2f9e3ea650f021fd0f10decc55a",
+    "examples/weather_scenarios/fv_slice_interval_acceptance.py": "e428ae7ba3e7cb69720a487af8945c970a18faf29e1c6cd4de47fb7bb825e15e",
+    "examples/weather_scenarios/fv_slice_precision_probe.py": "d89ecf687e4d85f30e4e35c0317fda00cc9d4e7ecbf3273764bc983510b5817f",
+    "examples/weather_scenarios/fv_slice_precision_reference.py": "0bf291f03f822cdb39508df97e7ae23bcfdbef13c48e9e5210baca67ba0f708c",
+    "graphify-out/fv-root-cause-20260919/R4_INTERVAL_CORRECTION_PLAN_20261003.md": "e16dcb536ace295eed1a5e2d314c52dee438bcd09f5bcd2883da646c91be2f0e"
+  },
+  "wall_seconds": 120,
+  "sampled_rss_bytes": 1073741824
+}

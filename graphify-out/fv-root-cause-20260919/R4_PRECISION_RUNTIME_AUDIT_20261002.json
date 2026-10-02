@@ -1,0 +1,15 @@
+{
+  "scope": "post-execution runtime audit; launch source had no explicit runtime gate",
+  "archived_runtime": {
+    "device": "CPU FP64",
+    "python": "3.12.13",
+    "torch": "2.13.0"
+  },
+  "measured_runtime": {
+    "python": "3.12.13",
+    "torch": "2.13.0"
+  },
+  "device_dtype": "CPU FP64 from pinned source tensor construction and fixed problem",
+  "matched": true,
+  "original_result_sha256": "50267f00fed59074b8d848552fbdde70b3eeda0e25a1f5813fe2dd86d2825442"
+}

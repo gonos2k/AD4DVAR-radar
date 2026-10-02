@@ -1,0 +1,85 @@
+{
+  "current_source_sha256": {
+    "examples/weather_scenarios/fv_slice_precision_probe.py": "d89ecf687e4d85f30e4e35c0317fda00cc9d4e7ecbf3273764bc983510b5817f",
+    "examples/weather_scenarios/fv_slice_precision_reference.py": "0bf291f03f822cdb39508df97e7ae23bcfdbef13c48e9e5210baca67ba0f708c",
+    "examples/weather_scenarios/fv_slice_interval_probe.py": "29fe400cb6ee2b9b653a3b57df327512bcf382f59db2a83abad2b2d7a6360fe4",
+    "examples/weather_scenarios/fv_slice_interval_acceptance.py": "e428ae7ba3e7cb69720a487af8945c970a18faf29e1c6cd4de47fb7bb825e15e",
+    "examples/weather_scenarios/fv_slice_interval_correction_probe.py": "5328880693f8f8e9537702727a81256939ddb2f9e3ea650f021fd0f10decc55a",
+    "tests/test_fv_slice_precision_probe.py": "ad281e1128c0a90ca63ec4897125f6d5797a6c266a78895aebb785a296b57294",
+    "tests/test_fv_slice_precision_reference.py": "ed29ff4835fb081d9dc28a6b9badd1aa5c0e98800783d9e22620b2debe53d020",
+    "tests/test_fv_slice_interval_acceptance.py": "6d7108ba1f3799e0d0fd81736d5263d195188d46aabc513f3b82921f970d0881"
+  },
+  "evidence_sha256": {
+    "graphify-out/fv-root-cause-20260919/R4_PRECISION_DIAGNOSTIC_PLAN_20261002.md": "d46e34e1c1de4c2bb2da6d8bfb331495191a273fa7dee14edf80ec7bbb33e968",
+    "graphify-out/fv-root-cause-20260919/R4_PRECISION_ATTEMPT2_AMENDMENT_20261002.md": "143934fd05fb5c49d542792e6f8cf581e2cb3ce128514733574795b3a2cce346",
+    "graphify-out/fv-root-cause-20260919/R4_INTERVAL_DIAGNOSTIC_PLAN_20261002.md": "bc4db3beff6d381d538d8c3eb332ebd901fc322160646ce2ec8d313bb5a67e60",
+    "graphify-out/fv-root-cause-20260919/R4_INTERVAL_CORRECTION_PLAN_20261003.md": "e16dcb536ace295eed1a5e2d314c52dee438bcd09f5bcd2883da646c91be2f0e",
+    "graphify-out/fv-root-cause-20260919/R4_OBJECTIVE_PRECISION_RESULTS_20261003.md": "cbc0a175935cd4ac53e0cf733c26ed22443f2e4f714e00cfa9c8f89dacff8813",
+    "graphify-out/fv-root-cause-20260919/R4_OBJECTIVE_PRECISION_SUMMARY_20261003.json": "2c7882552f52e19c6366457119e66a710224ab15b141b839365f735d196e10c0",
+    "graphify-out/fv-root-cause-20260919/R4_INTERVAL_CORRECTION_RESULTS_20261003.md": "305a96b0fc522506fba845708c26e9cf11bc64445223886e4377b2460f738237",
+    "graphify-out/fv-root-cause-20260919/R4_PRECISION_FOCUSED_TESTS_20261003.log": "4af6a4a4507f5993ac141cd547bbcd6ad407c2ce4f750d6d6c5b1cfb3b8209ce",
+    "graphify-out/fv-root-cause-20260919/R4_PRECISION_TYPES_20261003.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/R4_PRECISION_TYPES_INITIAL_20261003.log": "2d372432c2c4cf8567a7e8675062a136e1c86b134ed95a4db5f506c3ec1ebe34",
+    "graphify-out/fv-root-cause-20260919/R4_PRECISION_RUNTIME_AUDIT_20261002.json": "0abc82f5d8c0695210b65e7bc59cebe4514c8e53c9a126c87e4c289299c20dfc",
+    "graphify-out/fv-root-cause-20260919/R4_PRECISION_CODE_AST_20261003.json": "f0f9d0c2c449e09dc60e1ec33b4b304730527ad2197f90e5d569b5b1696aa468",
+    "graphify-out/fv-root-cause-20260919/R4_PRECISION_GRAPHIFY_20261003.json": "305f61f0521dd17dbb7e42578abc515f4999ebfa460271fc17d5823711a51c1b",
+    "graphify-out/fv-root-cause-20260919/R4_PRECISION_PREFLIGHT_20261002.json": "cfe0cf47efe770af101fb8a2d7c9dbf0abf916c48ed58449448eb6f6402ca2f7",
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt1/plan.md": "d46e34e1c1de4c2bb2da6d8bfb331495191a273fa7dee14edf80ec7bbb33e968",
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt1/precision.log": "79763a1f4309b8fbed4af14706b38f2d4965c1877a9028724885558ed23100ab",
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt1/precision.resource.json": "e54c668a0261a2086ad7ce96dbdacbb930fe5cabe1d5ae38ea27f55ba9d6fed8",
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt1/precision_probe_source.py": "58d8c1ef9e32f22db5e32224499a9898b2e503a10f0963d7293a104a78da2207",
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt1/preflight.json": "cfe0cf47efe770af101fb8a2d7c9dbf0abf916c48ed58449448eb6f6402ca2f7",
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt2/precision.json": "50267f00fed59074b8d848552fbdde70b3eeda0e25a1f5813fe2dd86d2825442",
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt2/precision.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt2/precision.resource.json": "aac23e4db88132d1243849d8ffc79611cbcdd73aec94f6c401741c9ab3a11f2e",
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt2/precision_probe_source.py": "b2c1b72742bf5d2dba4590f03b2db8d254e43350c31f46a2721fea8725469c60",
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt2/precision_reference_source.py": "5bc30e4beffa153d5fe419483bcc0501354a16d225c49d710666d4b8c3cc24c5",
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt2/preflight.json": "42bec54737349ba33da48b828059f5044e8eca8fba81b9920a114e8944822448",
+    "graphify-out/fv-root-cause-20260919/partial_slice_interval_attempt1/interval.json": "ba942fab6f8ea3ef416a3a06041edd41678988076ff9ef7295019947831cf76c",
+    "graphify-out/fv-root-cause-20260919/partial_slice_interval_attempt1/interval.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/partial_slice_interval_attempt1/interval.resource.json": "4ef4140bd8d20f2899fdf71387d39460d8250ef8da96989a481013c8a422304b",
+    "graphify-out/fv-root-cause-20260919/partial_slice_interval_attempt1/interval_probe_source.py": "334db7f3420efc4f051116eafde58305d1a2885fdca289feb58580138db398a9",
+    "graphify-out/fv-root-cause-20260919/partial_slice_interval_attempt1/interval_reference_source.py": "7db0bc65f409c73eeb468ac9315749d55733fac98ef0bb119c9c4ebe16a3e9be",
+    "graphify-out/fv-root-cause-20260919/partial_slice_interval_attempt1/preflight.json": "4412289d3f8bc2224060b9042128cf73716ea7ef1a10d32b1f20b2f8910e403d",
+    "graphify-out/fv-root-cause-20260919/partial_slice_interval_correction_attempt1/correction.json": "375407c927296a58f59bb6d0286bfb1a2f11a3047a8b3978a113e2ca04476858",
+    "graphify-out/fv-root-cause-20260919/partial_slice_interval_correction_attempt1/correction.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/partial_slice_interval_correction_attempt1/correction.resource.json": "02ba2a346420a91a3e2edd87864b84fee6f05b48c080c5cc4ca0c0c625343113",
+    "graphify-out/fv-root-cause-20260919/partial_slice_interval_correction_attempt1/preflight.json": "bba5087bf241fce74667e26f6a0c4dfb4c2e64154e372d6a1801a8f3d28bae21",
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt1/precision_reference_test_source.py": "01aa67a47230989a4a02ab6e458edcae12dd95cbd09feed8a23b0ec8ecad2a77"
+  },
+  "measured_source_snapshots": {
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt2/precision_probe_source.py": {
+      "original_path": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "sha256": "b2c1b72742bf5d2dba4590f03b2db8d254e43350c31f46a2721fea8725469c60"
+    },
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt2/precision_reference_source.py": {
+      "original_path": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "sha256": "5bc30e4beffa153d5fe419483bcc0501354a16d225c49d710666d4b8c3cc24c5"
+    },
+    "graphify-out/fv-root-cause-20260919/partial_slice_interval_attempt1/interval_probe_source.py": {
+      "original_path": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "sha256": "334db7f3420efc4f051116eafde58305d1a2885fdca289feb58580138db398a9"
+    },
+    "graphify-out/fv-root-cause-20260919/partial_slice_interval_attempt1/interval_reference_source.py": {
+      "original_path": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "sha256": "7db0bc65f409c73eeb468ac9315749d55733fac98ef0bb119c9c4ebe16a3e9be"
+    },
+    "graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt1/precision_reference_test_source.py": {
+      "original_path": "tests/test_fv_slice_precision_reference.py",
+      "sha256": "01aa67a47230989a4a02ab6e458edcae12dd95cbd09feed8a23b0ec8ecad2a77"
+    }
+  },
+  "correction_runtime_source_matches_current": true,
+  "same_point_objective_diagnosis": "closed at captured-input real discrete-equation scope",
+  "fixed_slice_precision_policy": "implemented and one-step verified",
+  "original_FP64_scalar_arithmetic_changed": false,
+  "R4-R": "open",
+  "full_root_claim": false,
+  "response_validation": "not_performed",
+  "whole_CPU_regression": "not rerun; prior full failures remain separately recorded",
+  "review": {
+    "GREEN": "GO: current8 sources and35 evidence pins at review; numerical/identity/scope audit",
+    "RED": "GO: current8 sources and35 evidence pins at review; no fullroot/response or retrospective acceptance claim",
+    "root_additional_snapshot": "one byte-exact original unit source added afterward and matched its preflight SHA256"
+  }
+}

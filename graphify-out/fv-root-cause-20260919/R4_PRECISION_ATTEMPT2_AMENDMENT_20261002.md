@@ -1,0 +1,5 @@
+# Precision attempt 2: correct an audit-metric implementation error
+
+Attempt 1 exited with code 1 after constructing both reference precision levels. It compared the gradient-norm ratio to the archived normalized Armijo ratio; the original refiner divides the former by sqrt(1+2*c1*alpha*normalized_slope). Therefore the failure is in the diagnostic audit, not a new numerical refusal or a result about the objective. No completed output was published.
+
+Preserve attempt 1's log, resource record, preflight, plan and byte-exact producer source snapshot. A regression distinguishes a decreasing norm from a sufficient Armijo decrease. After this audit-only correction, authorize one new attempt with a fresh output directory. Keep original c/p, archived records, all 25 measured sources, independent reference bytes, 50/80 decimal digits and the 120-second/1-GiB sampled guard unchanged. All scope/interpretation limits in R4_PRECISION_DIAGNOSTIC_PLAN_20261002.md remain. No optimization, historical acceptance, tolerance relaxation, response or CI occurs.

@@ -1,0 +1,18 @@
+{
+  "files": [
+    "examples/weather_scenarios/fv_slice_precision_probe.py",
+    "examples/weather_scenarios/fv_slice_precision_reference.py",
+    "examples/weather_scenarios/fv_slice_interval_probe.py",
+    "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+    "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+    "tests/test_fv_slice_precision_probe.py",
+    "tests/test_fv_slice_precision_reference.py",
+    "tests/test_fv_slice_interval_acceptance.py"
+  ],
+  "nodes": 54,
+  "edges": 156,
+  "mode": "changed-source AST only; shared cache retained due known duplicate-key integrity issue",
+  "shared_cache_changed": false,
+  "shared_cache_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "semantic_tokens": 0
+}

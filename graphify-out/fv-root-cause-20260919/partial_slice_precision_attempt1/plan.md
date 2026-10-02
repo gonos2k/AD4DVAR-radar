@@ -1,0 +1,13 @@
+# R4 same-trial objective precision diagnostic
+
+Target: exactly the archived +2eta0, second-Newton, full-step rejected trial. Reconstruct from the saved 25-coordinate tangent and PCG solution through the unchanged chart. The trial is diagnostic-only and remains historically rejected. No GN, optimization, response or change to tolerance is authorized by this plan.
+
+Preserve raw signed-face JSON SHA256 2e331247833dcf9cda71891bc99283551e5490bb9701fbde3b29eb18fcfbaee9 and all 25 measured source hashes. Assert original input identity/runtime, parameter identity, base-control hash and reconstructed trial objective/gradient. Bind new diagnostic source hashes before/after. The reference uses the same captured binary FP64 input and scalar constants, not regenerated observations or a different physical/statistical problem.
+
+Compare three quantities: (1) original PyTorch scalar subtraction, (2) accurate component differences of already rounded FP64 whitened residuals and controls, (3) independent mpmath FV transport and objective at 50/80 decimal digits. Mirror the production softplus threshold, echo-floor constants, bounded flow coefficients, positive-growth SSPRK2, minmod perimeter rule, fixed first/second-stage boundaries, per-frame rank-one symmetric whitener, valid observation mask and zero-centered prior. Assert the 36 analysis-stage branch choices match the production observer for both endpoints. Compare predicted dBZ fields and objective values as primal cross-checks.
+
+Use the saved Newton quadratic model and three-node gradient line-integral estimate only as consistency diagnostics, not an independent numerical error bound. Matching endpoint signatures does not certify every point on the segment. Agreement at two precision levels is a numerical convergence check, not a rigorous interval proof or general reference certification.
+
+Resource contract: one child, CPU only, at most 120 seconds and sampled RSS 1 GiB with 0.25-second monitoring. No automatic repeat after refusal. Preserve exit/resource/numerical outcomes separately. Child must finish and source checks pass before the parent publishes an interpretation. Existing historical artifacts are immutable; output uses a new directory.
+
+Interpretation: if converged independent values contradict the FP64 scalar veto by a margin much larger than reference precision drift, record a scoped objective-evaluation discrepancy. Do not retroactively accept the trial. A future acceptance algorithm must be separately declared and validated. If reference branches disagree or reference uncertainty is insufficient to decide, retain the accuracy item open with the cause. In either outcome full original stationarity/adjoint/reanalysis remain open.

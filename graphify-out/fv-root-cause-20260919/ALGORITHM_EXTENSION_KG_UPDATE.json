@@ -117,7 +117,7 @@
     "product_gn": "default tolerances; step_tolerance_unverified; gradient1.33e-4 despite objective gap6.42e-12",
     "tests": "37 distinct focused tests passed in6.22s; no full CI or old long experiments repeated",
     "record": "MINMOD_SPATIAL_INVERSE_REVIEW.md",
-    "diagnosis": "Exact negative sine perturbation accepted Newton iterates00–05 preserve limiter choices but change face signs; scales shrink1,.5,.25,.125,.03125,.03125. Diagnostic stopped after branch mismatch; no perturbed root claim."
+    "diagnosis": "Exact negative sine perturbation accepted Newton iterates00\u201305 preserve limiter choices but change face signs; scales shrink1,.5,.25,.125,.03125,.03125. Diagnostic stopped after branch mismatch; no perturbed root claim."
   },
   "pr166_followup": {
     "baseline": "main bc63dc05",
@@ -1001,5 +1001,39 @@
     "scope": "no fullroot/response/localmin/cusp/Clarke/limit claim; no same-side zero bracket; R4-R open",
     "records": "R4_SIGNED_FACE_SLICE_ATTEMPT1_RESULTS.md/R4_SIGNED_FACE_SLICE_ATTEMPT1_EVIDENCE.json/partial_signed_face_slices_attempt1",
     "validation": "reusedsource-exact focused6chart+10probechecks, notnew16FVruns; rawGREEN/REDaudit; no CI"
+  },
+  "r4_objective_precision_20261003": {
+    "same_trial_difference_diagnosis": "closed at declared captured-input scope",
+    "native_delta": 1.2712053631958042e-14,
+    "interval_metrics": {
+      "lower": "-0.0000000000000000001327711013362270170917905647236160395688026755600374300380556143720468222840563386515341867554107866",
+      "upper": "-0.0000000000000000001327711013362270170917905647236160395688026755600374300380373633236350787311057254870651011758789263",
+      "width": "1.825104841174355295061316446908557953186027426870819908972775126518066095193775917208855923039868846e-77",
+      "strictly_negative": true,
+      "reference_points_enclosed": false,
+      "original_allowance": "0.0000000000000005901853315912799473283796456457687777729252177373597820775330546894110739231109619140625",
+      "below_original_allowance": true
+    },
+    "finite_point_enclosure": {
+      "50": false,
+      "80": true
+    },
+    "historical_trial_accepted": false,
+    "full_root_claim": false,
+    "response_validation": "not_performed",
+    "precision_attempt2_runtime_check": "post-execution only; future code gate fixed",
+    "scope": "original fixed two-hole case; no optimization/physical skill"
+  },
+  "r4_interval_correction_20261003": {
+    "status": "tangent_stationary_candidate",
+    "newton_iterations": 1,
+    "pcg_iterations": 26,
+    "tangent_gradient_max": 8.341830590001542e-12,
+    "full_gradient_max": 0.0061897982634800605,
+    "true_linear_relative_residual": 1.3586958021141202e-11,
+    "historical_refusal_preserved": true,
+    "original_response": "not_performed",
+    "R4-R": "open",
+    "report": "R4_INTERVAL_CORRECTION_RESULTS_20261003.md"
   }
 }

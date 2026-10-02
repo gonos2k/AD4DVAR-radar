@@ -1,0 +1,69 @@
+/Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_interval_acceptance.py
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_interval_acceptance.py:45:48 - error: Operator "-" not supported for types "ivmpf" and "ivmpf" (reportOperatorIssue)
+/Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_interval_correction_probe.py
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_interval_correction_probe.py:85:45 - error: Argument of type "int" cannot be assigned to parameter "audited_linear_solves" of type "str | dict[Any, str] | dict[str, str] | dict[str, Any] | bool | list[Unknown]" in function "update"
+    Type "int" is not assignable to type "str | dict[Any, str] | dict[str, str] | dict[str, Any] | bool | list[Unknown]"
+      "int" is not assignable to "str"
+      "int" is not assignable to "dict[Any, str]"
+      "int" is not assignable to "dict[str, str]"
+      "int" is not assignable to "dict[str, Any]"
+      "int" is not assignable to "bool"
+      "int" is not assignable to "list[Unknown]" (reportArgumentType)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_interval_correction_probe.py:85:72 - error: Argument of type "int" cannot be assigned to parameter "newton_iterations" of type "str | dict[Any, str] | dict[str, str] | dict[str, Any] | bool | list[Unknown]" in function "update"
+    Type "int" is not assignable to type "str | dict[Any, str] | dict[str, str] | dict[str, Any] | bool | list[Unknown]"
+      "int" is not assignable to "str"
+      "int" is not assignable to "dict[Any, str]"
+      "int" is not assignable to "dict[str, str]"
+      "int" is not assignable to "dict[str, Any]"
+      "int" is not assignable to "bool"
+      "int" is not assignable to "list[Unknown]" (reportArgumentType)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_interval_correction_probe.py:86:33 - error: Argument of type "int" cannot be assigned to parameter "hvp_count" of type "str | dict[Any, str] | dict[str, str] | dict[str, Any] | bool | list[Unknown]" in function "update"
+    Type "int" is not assignable to type "str | dict[Any, str] | dict[str, str] | dict[str, Any] | bool | list[Unknown]"
+      "int" is not assignable to "str"
+      "int" is not assignable to "dict[Any, str]"
+      "int" is not assignable to "dict[str, str]"
+      "int" is not assignable to "dict[str, Any]"
+      "int" is not assignable to "bool"
+      "int" is not assignable to "list[Unknown]" (reportArgumentType)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_interval_correction_probe.py:86:72 - error: Argument of type "float" cannot be assigned to parameter "tangent_gradient_max" of type "str | dict[Any, str] | dict[str, str] | dict[str, Any] | bool | list[Unknown]" in function "update"
+    Type "float" is not assignable to type "str | dict[Any, str] | dict[str, str] | dict[str, Any] | bool | list[Unknown]"
+      "float" is not assignable to "str"
+      "float" is not assignable to "dict[Any, str]"
+      "float" is not assignable to "dict[str, str]"
+      "float" is not assignable to "dict[str, Any]"
+      "float" is not assignable to "bool"
+      "float" is not assignable to "list[Unknown]" (reportArgumentType)
+/Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_interval_probe.py
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_interval_probe.py:43:22 - error: Operator "-" not supported for types "ivmpf" and "ivmpf" (reportOperatorIssue)
+/Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_precision_reference.py
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_precision_reference.py:211:38 - error: Cannot access attribute "log" for class "MPIntervalContext"
+    Attribute "log" is unknown (reportAttributeAccessIssue)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_precision_reference.py:211:46 - error: Cannot access attribute "expm1" for class "MPIntervalContext"
+    Attribute "expm1" is unknown (reportAttributeAccessIssue)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_precision_reference.py:215:49 - error: Cannot access attribute "expm1" for class "MPIntervalContext"
+    Attribute "expm1" is unknown (reportAttributeAccessIssue)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_precision_reference.py:277:41 - error: Cannot access attribute "log1p" for class "MPIntervalContext"
+    Attribute "log1p" is unknown (reportAttributeAccessIssue)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_precision_reference.py:295:33 - error: Operator "/" not supported for types "Literal[1]" and "ivmpf | ivmpc | Any | Unknown"
+    Operator "/" not supported for types "Literal[1]" and "ivmpf"
+    Operator "/" not supported for types "Literal[1]" and "ivmpc" (reportOperatorIssue)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_precision_reference.py:302:13 - error: Operator "**" not supported for types "ivmpf | Unknown" and "Literal[2]"
+    Operator "**" not supported for types "ivmpf" and "Literal[2]" (reportOperatorIssue)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_precision_reference.py:302:38 - error: Operator "+" not supported for types "ivmpf | ivmpc | Any | Unknown" and "Literal[1]"
+    Operator "+" not supported for types "ivmpf" and "Literal[1]"
+    Operator "+" not supported for types "ivmpc" and "Literal[1]" (reportOperatorIssue)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_precision_reference.py:319:21 - error: Operator "+" not supported for types "float" and "ivmpf | Unknown | Any"
+    Operator "+" not supported for types "float" and "ivmpf" (reportOperatorIssue)
+/Users/yhlee/ADVAR/tests/test_fv_slice_interval_acceptance.py
+  /Users/yhlee/ADVAR/tests/test_fv_slice_interval_acceptance.py:8:45 - error: Argument of type "list[Unknown]" cannot be assigned to parameter "x" of type "int" in function "__new__"
+    "list[Unknown]" is not assignable to "int" (reportArgumentType)
+  /Users/yhlee/ADVAR/tests/test_fv_slice_interval_acceptance.py:8:61 - error: Cannot access attribute "_mpi_" for class "ivmpf"
+    Attribute "_mpi_" is unknown (reportAttributeAccessIssue)
+/Users/yhlee/ADVAR/tests/test_fv_slice_precision_reference.py
+  /Users/yhlee/ADVAR/tests/test_fv_slice_precision_reference.py:97:45 - error: Argument of type "float" cannot be assigned to parameter "x" of type "int" in function "__new__"
+    "float" is not assignable to "int" (reportArgumentType)
+  /Users/yhlee/ADVAR/tests/test_fv_slice_precision_reference.py:108:36 - error: Argument of type "list[int]" cannot be assigned to parameter "x" of type "int" in function "__new__"
+    "list[int]" is not assignable to "int" (reportArgumentType)
+  /Users/yhlee/ADVAR/tests/test_fv_slice_precision_reference.py:110:38 - error: Argument of type "list[int]" cannot be assigned to parameter "x" of type "int" in function "__new__"
+    "list[int]" is not assignable to "int" (reportArgumentType)
+19 errors, 0 warnings, 0 notes
