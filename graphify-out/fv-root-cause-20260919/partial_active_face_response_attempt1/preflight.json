@@ -1,0 +1,13 @@
+{
+  "source_sha256": {
+    "examples/weather_scenarios/fv_active_face_response_probe.py": "78772a34c86278704d3ef7542bf822462277755fa288176c61450f836841a652",
+    "examples/weather_scenarios/fv_active_face_binding.py": "d1c6b8a36d9d83c6374322964af234854a5cc57610e0b2f167eefed0a75d8065",
+    "examples/weather_scenarios/fv_active_face_stationarity_probe.py": "98386f9987716aecfc4807e8ee1faaa2ac1da41c5ac71695a396e7cd270be412",
+    "examples/weather_scenarios/fv_active_face_normal_reference.py": "37bef0e54c11bb64e4d447d847b20e69f4193594d5e9489d67ace70602343b69",
+    "examples/weather_scenarios/fv_active_face_normal_probe.py": "b0f8720c0a4c4b9f4d866148f28b6d7a24c2d539e3d9696a67cbacf0c737c26f",
+    "tests/test_fv_active_face_response_probe.py": "dd66c479d2cf2cefd061a05f9c369f2f27ebc67b6560f83517bfff92c46a8cde",
+    "graphify-out/fv-root-cause-20260919/R4_ACTIVE_FACE_RESPONSE_PLAN_20261003.md": "17d501487096da7f65d0214d676d63bef0890a84b6773c9c9e4ee9845b194948"
+  },
+  "wall_seconds": 600,
+  "sampled_rss_bytes": 1073741824
+}

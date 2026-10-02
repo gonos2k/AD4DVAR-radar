@@ -1,0 +1,11 @@
+{
+  "source_sha256": {
+    "examples/weather_scenarios/fv_active_face_normal_probe.py": "b0f8720c0a4c4b9f4d866148f28b6d7a24c2d539e3d9696a67cbacf0c737c26f",
+    "examples/weather_scenarios/fv_active_face_normal_reference.py": "88cd8049e8c18d59a4e2f9768ffb615d3a7570d0592a408e290b09699fe23d5a",
+    "tests/test_fv_active_face_normal_reference.py": "350e168e9689b3779b6a75b0f71577134fcc6466e3d280f26bc0988ebd0d4263",
+    "graphify-out/fv-root-cause-20260919/R4_ACTIVE_FACE_NORMAL_PLAN_20261003.md": "16d8e5452dd96ab4442461c661b6bb7f980961e31dec21ce9e82e21eb4658b52",
+    "graphify-out/fv-root-cause-20260919/R4_ACTIVE_FACE_NORMAL_ATTEMPT2_AMENDMENT_20261003.md": "3bc1f9d6432bb108f376769b5261ef1ea9c58d84a038c5a255ff5687427b2651"
+  },
+  "wall_seconds": 30,
+  "sampled_rss_bytes": 1073741824
+}

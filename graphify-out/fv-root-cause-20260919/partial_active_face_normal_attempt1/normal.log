@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_active_face_normal_probe.py", line 84, in <module>
+    main(parser.parse_args().output)
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_active_face_normal_probe.py", line 55, in main
+    sides = [reference.evaluate_side(data["fixture"], data["tangent"], side, dps=80)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_active_face_normal_reference.py", line 261, in evaluate_side
+    tangent_jets = [_jet(value, side) for value in raw_tangent]
+                    ^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_active_face_normal_reference.py", line 194, in _jet
+    derivative = value.ctx.zero
+                 ^^^^^^^^^
+AttributeError: 'IntervalJet' object has no attribute 'ctx'

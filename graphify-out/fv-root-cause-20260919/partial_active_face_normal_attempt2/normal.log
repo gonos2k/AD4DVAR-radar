@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_active_face_normal_probe.py", line 84, in <module>
+    main(parser.parse_args().output)
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_active_face_normal_probe.py", line 55, in main
+    sides = [reference.evaluate_side(data["fixture"], data["tangent"], side, dps=80)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_active_face_normal_reference.py", line 403, in evaluate_side
+    whitened[t][i][j] = standardized[t][i][j] - coefficient * mode[t][i][j] * projection_value
+                        ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/mpmath/ctx_iv.py", line 257, in lop_real
+    if not isinstance(t, ctx._types): t = ctx.convert(t)
+                                          ^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/mpmath/ctx_iv.py", line 435, in convert
+    a = convert_mpf_(a, ctx.prec, round_floor)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/mpmath/ctx_iv.py", line 35, in convert_mpf_
+    raise NotImplementedError
+NotImplementedError

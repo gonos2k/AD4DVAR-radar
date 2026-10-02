@@ -1,0 +1,13 @@
+{
+  "mode": "bounded2sourceGraphify AST; sharedcacheunchanged",
+  "files": [
+    "examples/weather_scenarios/fv_active_face_binding.py",
+    "tests/test_fv_active_face_binding.py"
+  ],
+  "nodes": 25,
+  "edges": 115,
+  "artifact_sha256": "7891534e3331ece58b36af460fb5bcdce7d76d31fce7fde370fcebb1148f4754",
+  "scope": "coordinate family foundation; no stationarity or response qualification",
+  "sharedcachechanged": false,
+  "semantic_tokens": 0
+}

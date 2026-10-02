@@ -1,0 +1,22 @@
+{
+  "mode": "bounded incremental AST-only Graphify; isolated workspace",
+  "changed_sources": {
+    "examples/weather_scenarios/fv_active_face_binding.py": "d1c6b8a36d9d83c6374322964af234854a5cc57610e0b2f167eefed0a75d8065",
+    "examples/weather_scenarios/fv_active_face_normal_probe.py": "b0f8720c0a4c4b9f4d866148f28b6d7a24c2d539e3d9696a67cbacf0c737c26f",
+    "examples/weather_scenarios/fv_active_face_normal_reference.py": "37bef0e54c11bb64e4d447d847b20e69f4193594d5e9489d67ace70602343b69",
+    "examples/weather_scenarios/fv_active_face_response_probe.py": "78772a34c86278704d3ef7542bf822462277755fa288176c61450f836841a652",
+    "examples/weather_scenarios/fv_active_face_stationarity_probe.py": "98386f9987716aecfc4807e8ee1faaa2ac1da41c5ac71695a396e7cd270be412",
+    "tests/test_fv_active_face_binding.py": "e92a125dc5e59d2a4f0678da01fec7eefd88ef19de28e4574ad2c29f68df365a",
+    "tests/test_fv_active_face_normal_reference.py": "c03cc153cb66a0ba534cf40fd4825cf9e1852b12229d11a6ab1ae61c0ba31ae0",
+    "tests/test_fv_active_face_response_probe.py": "dd66c479d2cf2cefd061a05f9c369f2f27ebc67b6560f83517bfff92c46a8cde",
+    "tests/test_fv_active_face_stationarity_probe.py": "de921f398a017e142f52248350e67e3671a70aac4da6a1237c05d055f3b6e795"
+  },
+  "included_prior_dependency": "fv_slice_precision_reference.py",
+  "nodes": 154,
+  "edges": 1270,
+  "artifact_sha256": "cdbd3a46fd51fb05ebf30eca1fc976644e266af9c379371f734367a7778548f7",
+  "shared_cache_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "shared_cache_changed": false,
+  "shared_cache_limit": "recorded duplicate-key multigraph integrity issue; no shared rebuild",
+  "semantic_tokens": 0
+}
