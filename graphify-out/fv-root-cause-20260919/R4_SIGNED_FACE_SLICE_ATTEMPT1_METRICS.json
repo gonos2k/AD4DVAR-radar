@@ -1,0 +1,71 @@
+{
+  "scope": "branch-local fixed-face-coordinate slices; no fullroot orresponse",
+  "rows": [
+    {
+      "factor": -1.0,
+      "status": "tangent_stationary_candidate",
+      "J": 0.02076465633731918,
+      "slice_gradient_inf": 8.838737792886409e-12,
+      "full_gradient_inf": 0.0007011253449164048,
+      "partial_eta_slope": -0.0004013450812582443,
+      "physical_Q_partial_slope": -0.005016813515728053,
+      "face_margin": 0.00011664748506538671,
+      "branch_signature": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8",
+      "refusal": null,
+      "linear_residuals": [
+        3.662773769450246e-11,
+        9.084348911807606e-11
+      ]
+    },
+    {
+      "factor": -2.0,
+      "status": "tangent_stationary_candidate",
+      "J": 0.02076469707285729,
+      "slice_gradient_inf": 6.351347399402574e-12,
+      "full_gradient_inf": 0.0007639453816774486,
+      "partial_eta_slope": -0.0004373066313739329,
+      "physical_Q_partial_slope": -0.005466332892174161,
+      "face_margin": 0.00023331456747544062,
+      "branch_signature": "695ecd60c15d251527603ff351ce08989a220c9b40f4c30e06efaad5f2672eb8",
+      "refusal": null,
+      "linear_residuals": [
+        2.3704403698573616e-11,
+        3.851502589048909e-11
+      ]
+    },
+    {
+      "factor": 1.0,
+      "status": "tangent_stationary_candidate",
+      "J": 0.020764957902768437,
+      "slice_gradient_inf": 5.0659113189077676e-11,
+      "full_gradient_inf": 0.006125078702845663,
+      "partial_eta_slope": 0.003506154222357243,
+      "physical_Q_partial_slope": 0.043826927779465535,
+      "face_margin": 0.00011662795703966066,
+      "branch_signature": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d",
+      "refusal": null,
+      "linear_residuals": [
+        2.0940132021781675e-11
+      ]
+    },
+    {
+      "factor": 2.0,
+      "status": "slice_refused",
+      "J": 0.020765300308065577,
+      "slice_gradient_inf": 5.4134986353674905e-09,
+      "full_gradient_inf": 0.0061897984324287905,
+      "partial_eta_slope": 0.003543189329735899,
+      "physical_Q_partial_slope": 0.04428986662169874,
+      "face_margin": 0.00023323645542411498,
+      "branch_signature": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d",
+      "refusal": "RefinementNumericalRefusal: stationarity refinement failed to find an admissible step: iteration=2; last_trial_gradient_norm=1.2629369141991457e-08; branch_rejections=0; branch_reason_counts={}; nonfinite_candidate_rejections=0; finite_armijo_rejections=0; policy_rejections=16",
+      "linear_residuals": [
+        1.2625334356192331e-11,
+        1.3586958021141202e-11
+      ]
+    }
+  ],
+  "source/input_before_after_equal": true,
+  "full_root_claim": false,
+  "response_validation": "not_performed"
+}

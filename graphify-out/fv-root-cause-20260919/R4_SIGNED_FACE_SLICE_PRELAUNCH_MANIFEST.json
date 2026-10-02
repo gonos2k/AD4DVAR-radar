@@ -1,0 +1,37 @@
+{
+  "branch": "agent/r4-face-coordinate",
+  "commit": "a414a9bc496a8fd49fd8953d494e0bf5a58c2752",
+  "graphify": {
+    "edges": 786,
+    "graph_json_sha256": "333404255da962b01b7e0ea0168e8d84aabb2f35452142dd324288847d87ac3c",
+    "input": "/private/tmp/advar-r4-signed-slices-graphify/input",
+    "nodes": 66
+  },
+  "limits": [
+    "no FV/research objective execution",
+    "no refiner/PCG solve execution",
+    "no full-root or response claim",
+    "no commit or push"
+  ],
+  "reviews": {
+    "green": "GO",
+    "red": "GO"
+  },
+  "scope": "synthetic checks and static analysis only; no FV trajectory or guarded child launch",
+  "source": {
+    "canonical_pin_sha256": "134fc0419255d3a4a7536be5dd86d98cc304539650b06e8c3d55180f40e49209",
+    "path": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+    "sha256": "347344f54c134f3f624c0f62abd67f26dcf047252726825410fd257deb9b903f"
+  },
+  "test": {
+    "path": "tests/test_fv_partial_signed_face_slices.py",
+    "sha256": "ba2525dd80bf8d8165b5fc4886e4a0b837869a788c670b0fcc33c89c27cabfe1"
+  },
+  "verification": {
+    "basedpyright_log_sha256": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "diff_check_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "focused_tests_log_sha256": "a3848d8e3f6123132c546fb6da65c596703aceeaedb14827babf2a0c861c2f48",
+    "graphify_refresh_log_sha256": "4c25151906e85ee78ba50007f8ba8cbcf99ad3cee79f386fea2c93aa18081ad4"
+  },
+  "worktree": "/private/tmp/advar-r4-face-coordinate-20261001"
+}

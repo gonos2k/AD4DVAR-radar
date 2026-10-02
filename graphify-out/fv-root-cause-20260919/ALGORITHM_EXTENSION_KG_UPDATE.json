@@ -993,5 +993,13 @@
     "limits": "noFVtrajectory/forecast,researchobjective,optimizer/root/response run;conservativeFP64domain;originalfullgradient criterion authoritative;R4-R open",
     "record": "isolated /private/tmp/advar-r4-face-coordinate-20261001/graphify-out/fv-root-cause-20260919/R4_FACE_FLUX_COORDINATE_MANIFEST_20261001.json",
     "next_design": "R4_ORIGINAL_TWO_HOLE_SIGNED_ETA_DESIGN_20261001.md;fourfixedeta25-coordinate slice solves;design only,not executed"
+  },
+  "r4_signed_face_slices_attempt1": {
+    "source": "originaltwoholefixedproblem/params;nativePy3.12.13Torch2.13CPUFP64;source25/raw/inputstable",
+    "execution": "completed189.67s/sampleRSS352174080B below300s/1GiB;parent4endpoints7solvespassed",
+    "numerics": "three tangentstationary -1,-2,+1 eta0; +2refused16objective-increasepolicies; fullgatesfalse all; normalpartial slopes oppositeacrossdistinctsignatures",
+    "scope": "no fullroot/response/localmin/cusp/Clarke/limit claim; no same-side zero bracket; R4-R open",
+    "records": "R4_SIGNED_FACE_SLICE_ATTEMPT1_RESULTS.md/R4_SIGNED_FACE_SLICE_ATTEMPT1_EVIDENCE.json/partial_signed_face_slices_attempt1",
+    "validation": "reusedsource-exact focused6chart+10probechecks, notnew16FVruns; rawGREEN/REDaudit; no CI"
   }
 }

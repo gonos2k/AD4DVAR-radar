@@ -1,0 +1,14 @@
+{
+  "mode": "four changed-source AST delta;sharedcache retained because preexisting duplicatekey integrity issue",
+  "files": [
+    "examples/weather_scenarios/fv_face_flux_coordinates.py",
+    "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+    "tests/test_fv_face_flux_coordinates.py",
+    "tests/test_fv_partial_signed_face_slices.py"
+  ],
+  "nodes": 100,
+  "edges": 374,
+  "cache_sha256_unchanged": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "input_tokens": 0,
+  "output_tokens": 0
+}

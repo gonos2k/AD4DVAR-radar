@@ -1,0 +1,70 @@
+{
+  "nodes": [
+    {
+      "id": "graphify_out_fv_root_cause_20260919_r4_slice_numerical_scale_check_20261002_py",
+      "label": "R4_SLICE_NUMERICAL_SCALE_CHECK_20261002.py",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/R4_SLICE_NUMERICAL_SCALE_CHECK_20261002.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "fv_root_cause_20260919_r4_slice_numerical_scale_check_20261002_rationale_1",
+      "label": "Recalculate saved Newton model scales; no FV evaluation or policy change.",
+      "file_type": "rationale",
+      "source_file": "graphify-out/fv-root-cause-20260919/R4_SLICE_NUMERICAL_SCALE_CHECK_20261002.py",
+      "source_location": "L1"
+    }
+  ],
+  "edges": [
+    {
+      "source": "graphify_out_fv_root_cause_20260919_r4_slice_numerical_scale_check_20261002_py",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/R4_SLICE_NUMERICAL_SCALE_CHECK_20261002.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "graphify_out_fv_root_cause_20260919_r4_slice_numerical_scale_check_20261002_py",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/R4_SLICE_NUMERICAL_SCALE_CHECK_20261002.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "graphify_out_fv_root_cause_20260919_r4_slice_numerical_scale_check_20261002_py",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/R4_SLICE_NUMERICAL_SCALE_CHECK_20261002.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "graphify_out_fv_root_cause_20260919_r4_slice_numerical_scale_check_20261002_py",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/R4_SLICE_NUMERICAL_SCALE_CHECK_20261002.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_r4_slice_numerical_scale_check_20261002_rationale_1",
+      "target": "graphify_out_fv_root_cause_20260919_r4_slice_numerical_scale_check_20261002_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/R4_SLICE_NUMERICAL_SCALE_CHECK_20261002.py",
+      "source_location": "L1",
+      "weight": 1.0
+    }
+  ],
+  "raw_calls": []
+}
