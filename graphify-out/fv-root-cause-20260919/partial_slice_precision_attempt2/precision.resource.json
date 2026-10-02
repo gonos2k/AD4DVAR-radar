@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_slice_precision_probe",
+    "--output",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/partial_slice_precision_attempt2/precision.json"
+  ],
+  "child_pid": 73538,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 3.132230249932036,
+  "sampled_peak_rss_bytes": 325009408,
+  "rss_samples": 12,
+  "wall_limit_seconds": 120,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

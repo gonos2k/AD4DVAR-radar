@@ -1,0 +1,72 @@
+{
+  "created_utc_date": "2026-10-01",
+  "worktree": "/private/tmp/advar-r4-face-coordinate-20261001",
+  "branch": "agent/r4-face-coordinate",
+  "scope": "face-coordinate method foundation only; no source-coordinate or physical-problem change",
+  "control_sha256": "a78d1b8e0cd8f997572f5e2a913f7023dcd6333c124ac4b7c9414358f8484e26",
+  "source_sha256": {
+    "examples/weather_scenarios/fv_face_flux_coordinates.py": "8283f5370766423f2e13f45e6ed7dac2b514b6826429f6a3c011ca58fc4285d5",
+    "tests/test_fv_face_flux_coordinates.py": "11fcdd3984fa2748feecefdb4965dea5129c4b21e315065011656231bf1055e6"
+  },
+  "verification": {
+    "pytest_command": "/Users/yhlee/ADVAR/.venv/bin/python -m pytest tests/test_fv_face_flux_coordinates.py -q",
+    "pytest_result": "6 passed; 18 torch.jit.script deprecation warnings",
+    "basedpyright_version": "1.39.9",
+    "basedpyright_pythonpath": "/Users/yhlee/ADVAR/.venv/bin/python",
+    "basedpyright_level": "error",
+    "basedpyright_result": "0 errors, 0 warnings, 0 notes",
+    "git_diff_check": "clean",
+    "stdout_logs_sha256": {
+      "R4_FACE_FLUX_COORDINATE_PYTEST_20261001.log": "0bc1fc8739e925ff2c6847b7476848e1bda9194a9f9705c9bdfbbb4df5931c7d",
+      "R4_FACE_FLUX_COORDINATE_TYPECHECK_20261001.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c"
+    }
+  },
+  "mathematics": {
+    "normalization": "abs(w_p) * L_p",
+    "forward": "eta = sum_j ((w_j * L_j) / normalization) * tanh(u_j), with nonpivot sum then pivot addition",
+    "inverse": "tanh(u_p) = (eta - sum_{j != p} a_j * tanh(u_j)) / a_p; u_p = atanh(tanh(u_p)) only for strict fraction in (-1,1)",
+    "finite_domain": "fixed products, normalized row and absolute bound must be finite; finite pivot scale must be positive",
+    "fp64_domain_guard": "nonzero pivot contribution must exceed 64*eps times the sum of absolute nonpivot contributions; recovered latent must satisfy a 64*eps-scaled roundtrip tolerance",
+    "metric_and_limits": "normalized signed face-flux metric; FP64 reduction order may differ; conservative guard can reject a control that this particular reduction order could roundtrip; no event or branch certificate",
+    "hessian_chain": "J.T @ H @ J + sum_i g_i * Hess(c_i); transformed Hessian may be indefinite away from an original stationary point",
+    "physical_gate": "original physical full-gradient 1e-10 gate remains authoritative"
+  },
+  "fixture_scope": {
+    "basis": "explicit 5x6 production polynomial basis",
+    "profile_covered": "4x5 only",
+    "default_face": "q_y[2,0], pivot flow index 1",
+    "separate_orientation_test": "q_x[2,2]",
+    "calls": [
+      "bounded_fv_coefficients",
+      "face_volume_fluxes",
+      "analytical toy objective for chart JVP/VJP/Hessian chain checks"
+    ],
+    "not_called": [
+      "FV trajectory or forecast",
+      "FVResearchProblem or FV/research objective",
+      "refiner or PCG",
+      "optimization, root, or response analysis"
+    ],
+    "8x10_chart_domain_coverage": false
+  },
+  "review": {
+    "green": "no blocker",
+    "red": "no remaining correctness blocker; conservative opposing-term restriction is documented",
+    "red_feedback_disposition": "kept the absolute-sum FP64 resolvability gate to account for production reduction-order differences"
+  },
+  "graphify": {
+    "mode": "AST-only; no semantic extraction or clustering",
+    "input_code_files": 2,
+    "nodes": 34,
+    "edges": 78,
+    "artifact": "R4_FACE_FLUX_COORDINATE_AST_20261001.json",
+    "artifact_sha256": "eb2767b77c385167ce6fa7856bceb938ed79cdcc4b1cf81bc10caaa9783241b7",
+    "main_cached_graph_modified": false
+  },
+  "git": {
+    "committed": false,
+    "pushed": false,
+    "root_ci_workspace_modified": false,
+    "status_scope": "verification snapshot before root local checkpoint commit; no push or integration"
+  }
+}

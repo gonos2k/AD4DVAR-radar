@@ -1,0 +1,12 @@
+{
+  "source_sha256": {
+    "examples/weather_scenarios/fv_slice_precision_probe.py": "b2c1b72742bf5d2dba4590f03b2db8d254e43350c31f46a2721fea8725469c60",
+    "examples/weather_scenarios/fv_slice_precision_reference.py": "5bc30e4beffa153d5fe419483bcc0501354a16d225c49d710666d4b8c3cc24c5",
+    "tests/test_fv_slice_precision_reference.py": "01aa67a47230989a4a02ab6e458edcae12dd95cbd09feed8a23b0ec8ecad2a77",
+    "tests/test_fv_slice_precision_probe.py": "0173f3b7f969923dcbee13fe23a735a634175c8788a9d1af2c14f5f49a96899a",
+    "graphify-out/fv-root-cause-20260919/R4_PRECISION_DIAGNOSTIC_PLAN_20261002.md": "d46e34e1c1de4c2bb2da6d8bfb331495191a273fa7dee14edf80ec7bbb33e968",
+    "graphify-out/fv-root-cause-20260919/R4_PRECISION_ATTEMPT2_AMENDMENT_20261002.md": "143934fd05fb5c49d542792e6f8cf581e2cb3ce128514733574795b3a2cce346"
+  },
+  "wall_seconds": 120,
+  "sampled_rss_bytes": 1073741824
+}

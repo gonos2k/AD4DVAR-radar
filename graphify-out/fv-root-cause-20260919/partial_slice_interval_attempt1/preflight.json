@@ -1,0 +1,9 @@
+{
+  "source_sha256": {
+    "examples/weather_scenarios/fv_slice_interval_probe.py": "334db7f3420efc4f051116eafde58305d1a2885fdca289feb58580138db398a9",
+    "examples/weather_scenarios/fv_slice_precision_reference.py": "7db0bc65f409c73eeb468ac9315749d55733fac98ef0bb119c9c4ebe16a3e9be",
+    "graphify-out/fv-root-cause-20260919/R4_INTERVAL_DIAGNOSTIC_PLAN_20261002.md": "bc4db3beff6d381d538d8c3eb332ebd901fc322160646ce2ec8d313bb5a67e60"
+  },
+  "wall_seconds": 120,
+  "sampled_rss_bytes": 1073741824
+}

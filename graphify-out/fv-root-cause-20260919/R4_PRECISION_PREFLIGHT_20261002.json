@@ -1,0 +1,17 @@
+{
+  "scope": "one rejected trial precision diagnosis; no optimization or acceptance",
+  "source_sha256": {
+    "examples/weather_scenarios/fv_slice_precision_probe.py": "58d8c1ef9e32f22db5e32224499a9898b2e503a10f0963d7293a104a78da2207",
+    "examples/weather_scenarios/fv_slice_precision_reference.py": "5bc30e4beffa153d5fe419483bcc0501354a16d225c49d710666d4b8c3cc24c5",
+    "tests/test_fv_slice_precision_reference.py": "01aa67a47230989a4a02ab6e458edcae12dd95cbd09feed8a23b0ec8ecad2a77",
+    "graphify-out/fv-root-cause-20260919/R4_PRECISION_DIAGNOSTIC_PLAN_20261002.md": "d46e34e1c1de4c2bb2da6d8bfb331495191a273fa7dee14edf80ec7bbb33e968"
+  },
+  "local_unit": "1 passed in 0.05s",
+  "type_check": "--level error: 0 errors; filtered output does not establish absence of lower-level warnings",
+  "wall_seconds": 120,
+  "sampled_rss_bytes": 1073741824,
+  "reference_decimal_digits": [
+    50,
+    80
+  ]
+}

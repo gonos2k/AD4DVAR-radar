@@ -1,0 +1,127 @@
+{
+  "raw_sha256": "2e331247833dcf9cda71891bc99283551e5490bb9701fbde3b29eb18fcfbaee9",
+  "scope": "saved-vector arithmetic; not fresh FV evaluation, error bound or accepted endpoint",
+  "linear_term": -2.2161807867895663e-19,
+  "curvature_term": 2.216180786787912e-19,
+  "quadratic_predicted_delta_full_step": -1.1080903933956103e-19,
+  "objective": 0.020765300308065577,
+  "objective_ulp": 3.469446951953614e-18,
+  "predicted_decrease_in_objective_ulps": 0.0319385310898515,
+  "step_l2": 1.2764654029047803e-10,
+  "rhs_l2": 1.2628701546658354e-08,
+  "trials": [
+    {
+      "step_scale": 1.0,
+      "model_delta": -1.1080903933956103e-19,
+      "recorded_objective_delta": 1.2712053631958042e-14,
+      "policy_allowance": 5.901853315912799e-16,
+      "armijo_ratio": 0.0012678976705653648
+    },
+    {
+      "step_scale": 0.5,
+      "model_delta": -8.310677950462941e-20,
+      "recorded_objective_delta": 7.587680483922554e-15,
+      "policy_allowance": 5.901853315911343e-16,
+      "armijo_ratio": 0.500083544508178
+    },
+    {
+      "step_scale": 0.25,
+      "model_delta": -4.847895471102693e-20,
+      "recorded_objective_delta": 9.662409761190816e-15,
+      "policy_allowance": 5.901853315911933e-16,
+      "armijo_ratio": 0.7498651367483263
+    },
+    {
+      "step_scale": 0.125,
+      "model_delta": -2.5970868595191522e-20,
+      "recorded_objective_delta": 7.556455461354972e-15,
+      "policy_allowance": 5.901853315911334e-16,
+      "armijo_ratio": 0.8752164197844289
+    },
+    {
+      "step_scale": 0.0625,
+      "model_delta": -1.3418282107515275e-20,
+      "recorded_objective_delta": 1.2895934320411584e-14,
+      "policy_allowance": 5.901853315912852e-16,
+      "armijo_ratio": 0.937169269142808
+    },
+    {
+      "step_scale": 0.03125,
+      "model_delta": -6.817353006237516e-21,
+      "recorded_objective_delta": 7.029099524658022e-15,
+      "policy_allowance": 5.901853315911184e-16,
+      "armijo_ratio": 0.9689376937865368
+    },
+    {
+      "step_scale": 0.015625,
+      "model_delta": -3.435729491238728e-21,
+      "recorded_objective_delta": 5.1833537462186996e-15,
+      "policy_allowance": 5.90185331591066e-16,
+      "armijo_ratio": 0.9845764617384954
+    },
+    {
+      "step_scale": 0.0078125,
+      "model_delta": -1.7246279926493563e-21,
+      "recorded_objective_delta": 1.2916751002123306e-14,
+      "policy_allowance": 5.901853315912858e-16,
+      "armijo_ratio": 0.9924594860651431
+    },
+    {
+      "step_scale": 0.00390625,
+      "model_delta": -8.640048080821762e-22,
+      "recorded_objective_delta": 1.030078800035028e-14,
+      "policy_allowance": 5.901853315912114e-16,
+      "armijo_ratio": 0.9961358230212792
+    },
+    {
+      "step_scale": 0.001953125,
+      "model_delta": -4.324251069804626e-22,
+      "recorded_objective_delta": 1.1515094433534045e-14,
+      "policy_allowance": 5.901853315912459e-16,
+      "armijo_ratio": 0.9979223307019012
+    },
+    {
+      "step_scale": 0.0009765625,
+      "model_delta": -2.1631822922507494e-22,
+      "recorded_objective_delta": 7.42114703022878e-15,
+      "policy_allowance": 5.901853315911296e-16,
+      "armijo_ratio": 0.9992034249561654
+    },
+    {
+      "step_scale": 0.00048828125,
+      "model_delta": -1.081855335462484e-22,
+      "recorded_objective_delta": 4.6004866582904924e-15,
+      "policy_allowance": 5.901853315910494e-16,
+      "armijo_ratio": 0.9996175589987866
+    },
+    {
+      "step_scale": 0.000244140625,
+      "model_delta": -5.409937150655192e-23,
+      "recorded_objective_delta": 9.364037323322805e-15,
+      "policy_allowance": 5.901853315911848e-16,
+      "armijo_ratio": 0.9996108668620114
+    },
+    {
+      "step_scale": 0.0001220703125,
+      "model_delta": -2.705133693663289e-23,
+      "recorded_objective_delta": 8.670147932932082e-15,
+      "policy_allowance": 5.901853315911651e-16,
+      "armijo_ratio": 1.0001415794339452
+    },
+    {
+      "step_scale": 6.103515625e-05,
+      "model_delta": -1.352608126415568e-23,
+      "recorded_objective_delta": 8.902600878712974e-15,
+      "policy_allowance": 5.901853315911717e-16,
+      "armijo_ratio": 1.0001703065025078
+    },
+    {
+      "step_scale": 3.0517578125e-05,
+      "model_delta": -6.763143831037647e-24,
+      "recorded_objective_delta": 1.1383255449359808e-14,
+      "policy_allowance": 5.901853315912422e-16,
+      "armijo_ratio": 1.0000528663910864
+    }
+  ],
+  "interpretation": "local quadratic predicted decrease is below one objective ulp; observed increase is not proved to be roundoff; original refusal retained"
+}

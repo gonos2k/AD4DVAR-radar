@@ -1,0 +1,1902 @@
+{
+  "nodes": [
+    {
+      "id": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "label": "fv_slice_precision_probe.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_probe_sha",
+      "label": "sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L32"
+    },
+    {
+      "id": "path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L32"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_probe_armijo_ratio",
+      "label": "armijo_ratio()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L36"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_probe_branch_choices",
+      "label": "branch_choices()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L41"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_probe_fixture_for",
+      "label": "fixture_for()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L53"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_probe_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L101"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_probe_rationale_1",
+      "label": "Read-only precision diagnosis of one previously rejected FV slice trial.  This r",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "label": "fv_slice_precision_reference.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_reference_arithmetic",
+      "label": "_arithmetic()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L15"
+    },
+    {
+      "id": "any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L15"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_reference_decide",
+      "label": "_decide()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L30"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_reference_tanh",
+      "label": "_tanh()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L36"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_reference_mp",
+      "label": "_mp()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L43"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_reference_grid",
+      "label": "_grid()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L49"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_reference_cube",
+      "label": "_cube()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L60"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_reference_sign",
+      "label": "_sign()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L67"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_reference_choice",
+      "label": "_choice()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L71"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_reference_softplus",
+      "label": "_softplus()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L81"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "label": "_euler_minmod()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L86"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_reference_evaluate",
+      "label": "evaluate()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L150"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_reference_rationale_1",
+      "label": "Independent mpmath reference for one frozen two-hole FV objective point.  This m",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_precision_reference_rationale_152",
+      "label": "Evaluate the frozen 20+5+1-control, two-interval objective in mpmath.      Float",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L152"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_slice_interval_probe_py",
+      "label": "fv_slice_interval_probe.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_interval_probe_sha",
+      "label": "sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L18"
+    },
+    {
+      "id": "path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L18"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_interval_probe_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L22"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_interval_probe_rationale_1",
+      "label": "Enclose the same rejected-trial objective difference; no PyTorch replay.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_slice_interval_acceptance_py",
+      "label": "fv_slice_interval_acceptance.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_interval_acceptance_decide_enclosure",
+      "label": "decide_enclosure()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L12"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_interval_acceptance_make_gate",
+      "label": "make_gate()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L22"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_interval_acceptance_rationale_1",
+      "label": "Precision-aware objective gate for the declared fixed two-hole slice only.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_interval_acceptance_rationale_23",
+      "label": "Keep the original roundoff budget; leave gradient Armijo to the refiner.      Br",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L23"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "label": "fv_slice_interval_correction_probe.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_interval_correction_probe_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L22"
+    },
+    {
+      "id": "path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L22"
+    },
+    {
+      "id": "weather_scenarios_fv_slice_interval_correction_probe_rationale_1",
+      "label": "One newly declared tangent correction with a precision-aware objective gate.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_test_fv_slice_precision_probe_py",
+      "label": "test_fv_slice_precision_probe.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_precision_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_test_fv_slice_precision_probe_test_norm_decrease_can_still_fail_normalized_armijo",
+      "label": "test_norm_decrease_can_still_fail_normalized_armijo()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_precision_probe.py",
+      "source_location": "L10"
+    },
+    {
+      "id": "tests_test_fv_slice_precision_probe_test_runtime_mismatch_refuses_before_problem_construction",
+      "label": "test_runtime_mismatch_refuses_before_problem_construction()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_precision_probe.py",
+      "source_location": "L19"
+    },
+    {
+      "id": "tests_test_fv_slice_precision_probe_rationale_1",
+      "label": "The precision audit must compare the original normalized Armijo metric.",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_slice_precision_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_test_fv_slice_precision_reference_py",
+      "label": "test_fv_slice_precision_reference.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_test_fv_slice_precision_reference_grid",
+      "label": "_grid()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L11"
+    },
+    {
+      "id": "tests_test_fv_slice_precision_reference_fixture",
+      "label": "_fixture()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L15"
+    },
+    {
+      "id": "tests_test_fv_slice_precision_reference_test_constant_flow_growth_whitener_and_branch_trace_match_closed_form",
+      "label": "test_constant_flow_growth_whitener_and_branch_trace_match_closed_form()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L55"
+    },
+    {
+      "id": "tests_test_fv_slice_precision_reference_test_interval_tanh_encloses_positive_and_negative_values_and_restores_precision",
+      "label": "test_interval_tanh_encloses_positive_and_negative_values_and_restores_precision()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L93"
+    },
+    {
+      "id": "tests_test_fv_slice_precision_reference_test_uncertain_interval_limiter_and_softplus_branches_refuse",
+      "label": "test_uncertain_interval_limiter_and_softplus_branches_refuse()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L105"
+    },
+    {
+      "id": "tests_test_fv_slice_precision_reference_test_interval_result_serializes_and_encloses_point_objective",
+      "label": "test_interval_result_serializes_and_encloses_point_objective()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L113"
+    },
+    {
+      "id": "tests_test_fv_slice_precision_reference_rationale_1",
+      "label": "Small analytic checks for the independent fixed-case FV reference.",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_test_fv_slice_interval_acceptance_py",
+      "label": "test_fv_slice_interval_acceptance.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_test_fv_slice_interval_acceptance_bounds",
+      "label": "bounds()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L8"
+    },
+    {
+      "id": "tests_test_fv_slice_interval_acceptance_test_large_true_decrease_is_allowed_without_an_absolute_decrease_cap",
+      "label": "test_large_true_decrease_is_allowed_without_an_absolute_decrease_cap()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L12"
+    },
+    {
+      "id": "tests_test_fv_slice_interval_acceptance_test_increase_and_unresolved_interval_remain_distinct_refusals",
+      "label": "test_increase_and_unresolved_interval_remain_distinct_refusals()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L16"
+    },
+    {
+      "id": "tests_test_fv_slice_interval_acceptance_rationale_1",
+      "label": "Directed objective decisions keep the existing one-sided budget.",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L1"
+    }
+  ],
+  "edges": [
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "dataclasses",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "platform",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "mpmath",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "advar_physics",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "advar_local_refinement",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "advar_transport",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "weather_scenarios_fv_slice_precision_probe_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_probe_sha",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "weather_scenarios_fv_slice_precision_probe_armijo_ratio",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "weather_scenarios_fv_slice_precision_probe_branch_choices",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "weather_scenarios_fv_slice_precision_probe_fixture_for",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L53",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "target": "weather_scenarios_fv_slice_precision_probe_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_probe_main",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_probe_main",
+      "target": "weather_scenarios_fv_slice_precision_probe_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_probe_main",
+      "target": "path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L111",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_probe_main",
+      "target": "weather_scenarios_fv_slice_precision_probe_fixture_for",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_probe_main",
+      "target": "weather_scenarios_fv_slice_precision_probe_branch_choices",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L136",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_probe_main",
+      "target": "weather_scenarios_fv_slice_precision_probe_armijo_ratio",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L173",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_probe_rationale_1",
+      "target": "examples_weather_scenarios_fv_slice_precision_probe_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_probe.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "collections_abc",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "contextlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "weather_scenarios_fv_slice_precision_reference_arithmetic",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_arithmetic",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "weather_scenarios_fv_slice_precision_reference_decide",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "weather_scenarios_fv_slice_precision_reference_tanh",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_tanh",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_tanh",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_tanh",
+      "target": "any",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "weather_scenarios_fv_slice_precision_reference_mp",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_mp",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_mp",
+      "target": "any",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "weather_scenarios_fv_slice_precision_reference_grid",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_grid",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_grid",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "weather_scenarios_fv_slice_precision_reference_cube",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_cube",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_cube",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "weather_scenarios_fv_slice_precision_reference_sign",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_sign",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "weather_scenarios_fv_slice_precision_reference_choice",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_choice",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_choice",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "weather_scenarios_fv_slice_precision_reference_softplus",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_softplus",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_softplus",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_softplus",
+      "target": "any",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "target": "weather_scenarios_fv_slice_precision_reference_evaluate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L150",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_evaluate",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L150",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_evaluate",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L150",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_grid",
+      "target": "weather_scenarios_fv_slice_precision_reference_mp",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L56",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_cube",
+      "target": "weather_scenarios_fv_slice_precision_reference_grid",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_sign",
+      "target": "weather_scenarios_fv_slice_precision_reference_decide",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_choice",
+      "target": "weather_scenarios_fv_slice_precision_reference_decide",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_softplus",
+      "target": "weather_scenarios_fv_slice_precision_reference_decide",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L83",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "target": "weather_scenarios_fv_slice_precision_reference_choice",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "target": "weather_scenarios_fv_slice_precision_reference_sign",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L118",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_evaluate",
+      "target": "weather_scenarios_fv_slice_precision_reference_arithmetic",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_evaluate",
+      "target": "weather_scenarios_fv_slice_precision_reference_mp",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L167",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_evaluate",
+      "target": "weather_scenarios_fv_slice_precision_reference_grid",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L182",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_evaluate",
+      "target": "weather_scenarios_fv_slice_precision_reference_cube",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L183",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_evaluate",
+      "target": "weather_scenarios_fv_slice_precision_reference_decide",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L209",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_evaluate",
+      "target": "weather_scenarios_fv_slice_precision_reference_softplus",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L212",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_evaluate",
+      "target": "weather_scenarios_fv_slice_precision_reference_tanh",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L222",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_evaluate",
+      "target": "weather_scenarios_fv_slice_precision_reference_euler_minmod",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L267",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_rationale_1",
+      "target": "examples_weather_scenarios_fv_slice_precision_reference_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_precision_reference_rationale_152",
+      "target": "weather_scenarios_fv_slice_precision_reference_evaluate",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_precision_reference.py",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_probe_py",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_probe_py",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_probe_py",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_probe_py",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_probe_py",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_probe_py",
+      "target": "mpmath",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_probe_py",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_probe_py",
+      "target": "weather_scenarios_fv_slice_interval_probe_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_interval_probe_sha",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_probe_py",
+      "target": "weather_scenarios_fv_slice_interval_probe_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_interval_probe_main",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_interval_probe_main",
+      "target": "weather_scenarios_fv_slice_interval_probe_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_interval_probe_main",
+      "target": "path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_interval_probe_rationale_1",
+      "target": "examples_weather_scenarios_fv_slice_interval_probe_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_probe.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_acceptance_py",
+      "target": "copy",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_acceptance_py",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_acceptance_py",
+      "target": "mpmath",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_acceptance_py",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_acceptance_py",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_acceptance_py",
+      "target": "weather_scenarios_fv_slice_interval_acceptance_decide_enclosure",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_acceptance_py",
+      "target": "weather_scenarios_fv_slice_interval_acceptance_make_gate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_interval_acceptance_rationale_1",
+      "target": "examples_weather_scenarios_fv_slice_interval_acceptance_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_interval_acceptance_rationale_23",
+      "target": "weather_scenarios_fv_slice_interval_acceptance_make_gate",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_acceptance.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "target": "advar_local_refinement",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "target": "weather_scenarios_fv_slice_interval_correction_probe_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_interval_correction_probe_main",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_interval_correction_probe_main",
+      "target": "path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_slice_interval_correction_probe_rationale_1",
+      "target": "examples_weather_scenarios_fv_slice_interval_correction_probe_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_slice_interval_correction_probe.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_probe_py",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_probe.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_probe_py",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_probe.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_probe_py",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_probe.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_probe_py",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_probe.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_probe_py",
+      "target": "examples_weather_scenarios_fv_slice_precision_probe",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_probe.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_probe_py",
+      "target": "tests_test_fv_slice_precision_probe_test_norm_decrease_can_still_fail_normalized_armijo",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_probe.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_probe_py",
+      "target": "tests_test_fv_slice_precision_probe_test_runtime_mismatch_refuses_before_problem_construction",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_probe.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_probe_rationale_1",
+      "target": "tests_test_fv_slice_precision_probe_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_probe.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_py",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_py",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_py",
+      "target": "mpmath",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_py",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_py",
+      "target": "examples_weather_scenarios_fv_slice_precision_reference",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_py",
+      "target": "tests_test_fv_slice_precision_reference_grid",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_py",
+      "target": "tests_test_fv_slice_precision_reference_fixture",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_py",
+      "target": "tests_test_fv_slice_precision_reference_test_constant_flow_growth_whitener_and_branch_trace_match_closed_form",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_py",
+      "target": "tests_test_fv_slice_precision_reference_test_interval_tanh_encloses_positive_and_negative_values_and_restores_precision",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_py",
+      "target": "tests_test_fv_slice_precision_reference_test_uncertain_interval_limiter_and_softplus_branches_refuse",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L105",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_py",
+      "target": "tests_test_fv_slice_precision_reference_test_interval_result_serializes_and_encloses_point_objective",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_fixture",
+      "target": "tests_test_fv_slice_precision_reference_grid",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_test_constant_flow_growth_whitener_and_branch_trace_match_closed_form",
+      "target": "tests_test_fv_slice_precision_reference_fixture",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L56",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_test_interval_result_serializes_and_encloses_point_objective",
+      "target": "tests_test_fv_slice_precision_reference_fixture",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_precision_reference_rationale_1",
+      "target": "tests_test_fv_slice_precision_reference_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_precision_reference.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_interval_acceptance_py",
+      "target": "mpmath",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_interval_acceptance_py",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_interval_acceptance_py",
+      "target": "examples_weather_scenarios_fv_slice_interval_acceptance",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_interval_acceptance_py",
+      "target": "tests_test_fv_slice_interval_acceptance_bounds",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_interval_acceptance_py",
+      "target": "tests_test_fv_slice_interval_acceptance_test_large_true_decrease_is_allowed_without_an_absolute_decrease_cap",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_interval_acceptance_py",
+      "target": "tests_test_fv_slice_interval_acceptance_test_increase_and_unresolved_interval_remain_distinct_refusals",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_interval_acceptance_test_large_true_decrease_is_allowed_without_an_absolute_decrease_cap",
+      "target": "tests_test_fv_slice_interval_acceptance_bounds",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_interval_acceptance_test_increase_and_unresolved_interval_remain_distinct_refusals",
+      "target": "tests_test_fv_slice_interval_acceptance_bounds",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_slice_interval_acceptance_rationale_1",
+      "target": "tests_test_fv_slice_interval_acceptance_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_slice_interval_acceptance.py",
+      "source_location": "L1",
+      "weight": 1.0
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_precision_probe.py", line 206, in <module>
+    main(parser.parse_args().output)
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_precision_probe.py", line 165, in main
+    slices._assert_scalar_match("reconstructed trial norm ratio", row["rejected_trials"][0]["armijo_ratio"], norm_ratio)
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_partial_signed_face_slices.py", line 156, in _assert_scalar_match
+    raise SliceAuditRefusal(f"fresh endpoint {name} differs")
+examples.weather_scenarios.fv_partial_signed_face_slices.SliceAuditRefusal: fresh endpoint reconstructed trial norm ratio differs

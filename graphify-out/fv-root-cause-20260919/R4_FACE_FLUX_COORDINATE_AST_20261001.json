@@ -1,0 +1,1030 @@
+{
+  "nodes": [
+    {
+      "id": "private_tmp_advar_r4_face_coordinate_graphify_final_input_fv_face_flux_coordinates_py",
+      "label": "fv_face_flux_coordinates.py",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_face_weights_from_basis",
+      "label": "face_weights_from_basis()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L18",
+      "_origin": "ast"
+    },
+    {
+      "id": "tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L18",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "label": "FVFaceFluxCoordinateChart",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L45",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L71",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_tensor_from_bytes",
+      "label": "._tensor_from_bytes()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L121",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_limits",
+      "label": "._limits()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L125",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_weights",
+      "label": "._weights()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L129",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_basis",
+      "label": ".from_basis()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L133",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_flow_count",
+      "label": ".flow_count()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L150",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_control_count",
+      "label": ".control_count()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L154",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_face_scale",
+      "label": ".face_scale()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L166",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_normalized_weights",
+      "label": ".normalized_weights()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L171",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_layout",
+      "label": ".layout()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L175",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_identity",
+      "label": ".identity()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L190",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_to_face_coordinates",
+      "label": ".to_face_coordinates()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L209",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_face_coordinates",
+      "label": ".from_face_coordinates()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L238",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_check_control",
+      "label": "._check_control()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L256",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_rationale_1",
+      "label": "A local chart that uses one physical FV face flux as a coordinate.  The chart ch",
+      "file_type": "rationale",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_rationale_19",
+      "label": "Return one oriented face-flux weight per production streamfunction basis.",
+      "file_type": "rationale",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_rationale_46",
+      "label": "Replace one flow latent by its normalized signed physical face flux.      ``fiel",
+      "file_type": "rationale",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L46",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_rationale_210",
+      "label": "Map the original complete control vector to the face-flux chart.",
+      "file_type": "rationale",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L210",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_fv_face_flux_coordinates_rationale_239",
+      "label": "Recover the original controls, refusing values outside the chart.",
+      "file_type": "rationale",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L239",
+      "_origin": "ast"
+    },
+    {
+      "id": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "label": "test_fv_face_flux_coordinates.py",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_test_fv_face_flux_coordinates_production_basis_fixture",
+      "label": "_production_basis_fixture()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L27",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_test_fv_face_flux_coordinates_physical_coefficients",
+      "label": "_physical_coefficients()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_test_fv_face_flux_coordinates_chart",
+      "label": "_chart()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L48",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_test_fv_face_flux_coordinates_test_pr227_full_control_roundtrips_and_eta_is_production_face_flux",
+      "label": "test_pr227_full_control_roundtrips_and_eta_is_production_face_flux()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L61",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_test_fv_face_flux_coordinates_test_x_face_uses_production_orientation_and_chart_identity_includes_fixed_data",
+      "label": "test_x_face_uses_production_orientation_and_chart_identity_includes_fixed_data()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L87",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_test_fv_face_flux_coordinates_test_jvp_vjp_and_hessian_follow_the_full_coordinate_chain_rule",
+      "label": "test_jvp_vjp_and_hessian_follow_the_full_coordinate_chain_rule()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L101",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_test_fv_face_flux_coordinates_test_chart_refuses_noninvertible_coordinates_and_protects_fixed_inputs",
+      "label": "test_chart_refuses_noninvertible_coordinates_and_protects_fixed_inputs()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L158",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_test_fv_face_flux_coordinates_test_chart_rejects_saturated_forward_coordinates_and_unrepresentable_scale",
+      "label": "test_chart_rejects_saturated_forward_coordinates_and_unrepresentable_scale()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L188",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_test_fv_face_flux_coordinates_test_normalized_chart_avoids_overflow_from_finite_raw_face_terms",
+      "label": "test_normalized_chart_avoids_overflow_from_finite_raw_face_terms()",
+      "file_type": "code",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L239",
+      "_origin": "ast"
+    },
+    {
+      "id": "final_input_test_fv_face_flux_coordinates_rationale_1",
+      "label": "Local mathematical checks for the FV face-flux coordinate chart.",
+      "file_type": "rationale",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_fv_face_flux_coordinates_py",
+      "target": "dataclasses",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_fv_face_flux_coordinates_py",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_fv_face_flux_coordinates_py",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_fv_face_flux_coordinates_py",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_fv_face_flux_coordinates_py",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_fv_face_flux_coordinates_py",
+      "target": "advar_transport",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_fv_face_flux_coordinates_py",
+      "target": "final_input_fv_face_flux_coordinates_face_weights_from_basis",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_face_weights_from_basis",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_face_weights_from_basis",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_fv_face_flux_coordinates_py",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_init",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_init",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_tensor_from_bytes",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L121",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_tensor_from_bytes",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L121",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_limits",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L125",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_limits",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L125",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_weights",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L129",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_weights",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L129",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_basis",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L133",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_basis",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L133",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_basis",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L133",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_flow_count",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L150",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_control_count",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L154",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_limits",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L158",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_limits",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L158",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_weights",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_weights",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_face_scale",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L166",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_face_scale",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L166",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_normalized_weights",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L171",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_normalized_weights",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L171",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_layout",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L175",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_identity",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L190",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_to_face_coordinates",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L209",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_to_face_coordinates",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L209",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_to_face_coordinates",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L209",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_face_coordinates",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L238",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_face_coordinates",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L238",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_face_coordinates",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L238",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_check_control",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L256",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_check_control",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L256",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_limits",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_tensor_from_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_weights",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_tensor_from_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L130",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_basis",
+      "target": "final_input_fv_face_flux_coordinates_face_weights_from_basis",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_to_face_coordinates",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_check_control",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L211",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_face_coordinates",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_check_control",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L240",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_rationale_1",
+      "target": "private_tmp_advar_r4_face_coordinate_graphify_final_input_fv_face_flux_coordinates_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_rationale_19",
+      "target": "final_input_fv_face_flux_coordinates_face_weights_from_basis",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_rationale_46",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_rationale_210",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_to_face_coordinates",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L210",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_fv_face_flux_coordinates_rationale_239",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_face_coordinates",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/fv_face_flux_coordinates.py",
+      "source_location": "L239",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "types",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "advar_transport",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "final_input_test_fv_face_flux_coordinates_production_basis_fixture",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "final_input_test_fv_face_flux_coordinates_physical_coefficients",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "final_input_test_fv_face_flux_coordinates_chart",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "final_input_test_fv_face_flux_coordinates_test_pr227_full_control_roundtrips_and_eta_is_production_face_flux",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "final_input_test_fv_face_flux_coordinates_test_x_face_uses_production_orientation_and_chart_identity_includes_fixed_data",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "final_input_test_fv_face_flux_coordinates_test_jvp_vjp_and_hessian_follow_the_full_coordinate_chain_rule",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "final_input_test_fv_face_flux_coordinates_test_chart_refuses_noninvertible_coordinates_and_protects_fixed_inputs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L158",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "final_input_test_fv_face_flux_coordinates_test_chart_rejects_saturated_forward_coordinates_and_unrepresentable_scale",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L188",
+      "weight": 1.0
+    },
+    {
+      "source": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "target": "final_input_test_fv_face_flux_coordinates_test_normalized_chart_avoids_overflow_from_finite_raw_face_terms",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L239",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_test_fv_face_flux_coordinates_chart",
+      "target": "final_input_test_fv_face_flux_coordinates_production_basis_fixture",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_test_fv_face_flux_coordinates_test_pr227_full_control_roundtrips_and_eta_is_production_face_flux",
+      "target": "final_input_test_fv_face_flux_coordinates_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_test_fv_face_flux_coordinates_test_pr227_full_control_roundtrips_and_eta_is_production_face_flux",
+      "target": "final_input_test_fv_face_flux_coordinates_physical_coefficients",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_test_fv_face_flux_coordinates_test_x_face_uses_production_orientation_and_chart_identity_includes_fixed_data",
+      "target": "final_input_test_fv_face_flux_coordinates_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L88",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_test_fv_face_flux_coordinates_test_x_face_uses_production_orientation_and_chart_identity_includes_fixed_data",
+      "target": "final_input_test_fv_face_flux_coordinates_physical_coefficients",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L92",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_test_fv_face_flux_coordinates_test_jvp_vjp_and_hessian_follow_the_full_coordinate_chain_rule",
+      "target": "final_input_test_fv_face_flux_coordinates_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_test_fv_face_flux_coordinates_test_chart_refuses_noninvertible_coordinates_and_protects_fixed_inputs",
+      "target": "final_input_test_fv_face_flux_coordinates_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_test_fv_face_flux_coordinates_test_chart_rejects_saturated_forward_coordinates_and_unrepresentable_scale",
+      "target": "final_input_test_fv_face_flux_coordinates_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_test_fv_face_flux_coordinates_rationale_1",
+      "target": "private_tmp_advar_r4_face_coordinate_graphify_final_input_test_fv_face_flux_coordinates_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_test_fv_face_flux_coordinates_test_chart_rejects_saturated_forward_coordinates_and_unrepresentable_scale",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L197",
+      "weight": 1.0
+    },
+    {
+      "source": "final_input_test_fv_face_flux_coordinates_test_normalized_chart_avoids_overflow_from_finite_raw_face_terms",
+      "target": "final_input_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "/private/tmp/advar-r4-face-coordinate-graphify/final-input/test_fv_face_flux_coordinates.py",
+      "source_location": "L240",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

@@ -1,0 +1,22 @@
+{
+  "same_trial_difference_diagnosis": "closed at declared captured-input scope",
+  "native_delta": 1.2712053631958042e-14,
+  "interval_metrics": {
+    "lower": "-0.0000000000000000001327711013362270170917905647236160395688026755600374300380556143720468222840563386515341867554107866",
+    "upper": "-0.0000000000000000001327711013362270170917905647236160395688026755600374300380373633236350787311057254870651011758789263",
+    "width": "1.825104841174355295061316446908557953186027426870819908972775126518066095193775917208855923039868846e-77",
+    "strictly_negative": true,
+    "reference_points_enclosed": false,
+    "original_allowance": "0.0000000000000005901853315912799473283796456457687777729252177373597820775330546894110739231109619140625",
+    "below_original_allowance": true
+  },
+  "finite_point_enclosure": {
+    "50": false,
+    "80": true
+  },
+  "historical_trial_accepted": false,
+  "full_root_claim": false,
+  "response_validation": "not_performed",
+  "precision_attempt2_runtime_check": "post-execution only; future code gate fixed",
+  "scope": "original fixed two-hole case; no optimization/physical skill"
+}

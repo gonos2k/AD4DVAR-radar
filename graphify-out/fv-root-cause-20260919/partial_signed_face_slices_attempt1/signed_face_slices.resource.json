@@ -1,0 +1,25 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/private/tmp/advar-r4-face-coordinate-20261001/examples/weather_scenarios/fv_partial_signed_face_slices.py",
+    "--child",
+    "--output",
+    "/private/tmp/advar-r4-signed-slices-run-20261001-01/signed_face_slices.json",
+    "--expected-plan-sha256",
+    "878d2316bed7e43238c8a4572d9ca865713278ceedf66cd4999729505978540b",
+    "--expected-probe-sha256",
+    "347344f54c134f3f624c0f62abd67f26dcf047252726825410fd257deb9b903f",
+    "--expected-runner-sha256",
+    "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d"
+  ],
+  "child_pid": 4593,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 189.67121600010432,
+  "sampled_peak_rss_bytes": 352174080,
+  "rss_samples": 721,
+  "wall_limit_seconds": 300,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

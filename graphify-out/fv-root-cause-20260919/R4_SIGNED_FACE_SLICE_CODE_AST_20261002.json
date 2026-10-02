@@ -1,0 +1,4457 @@
+{
+  "nodes": [
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates",
+      "label": "fv_face_flux_coordinates.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_face_weights_from_basis",
+      "label": "face_weights_from_basis()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L18",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L18",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "label": "FVFaceFluxCoordinateChart",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L45",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L71",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_tensor_from_bytes",
+      "label": "._tensor_from_bytes()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L121",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_limits",
+      "label": "._limits()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L125",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_weights",
+      "label": "._weights()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L129",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_basis",
+      "label": ".from_basis()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L133",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_flow_count",
+      "label": ".flow_count()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L150",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_control_count",
+      "label": ".control_count()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L154",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_face_scale",
+      "label": ".face_scale()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L166",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_normalized_weights",
+      "label": ".normalized_weights()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L171",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_layout",
+      "label": ".layout()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L175",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_identity",
+      "label": ".identity()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L190",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_to_face_coordinates",
+      "label": ".to_face_coordinates()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L209",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_face_coordinates",
+      "label": ".from_face_coordinates()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L238",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_check_control",
+      "label": "._check_control()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L256",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_rationale_1",
+      "label": "A local chart that uses one physical FV face flux as a coordinate.  The chart ch",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_rationale_19",
+      "label": "Return one oriented face-flux weight per production streamfunction basis.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_rationale_46",
+      "label": "Replace one flow latent by its normalized signed physical face flux.      ``fiel",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L46",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_rationale_210",
+      "label": "Map the original complete control vector to the face-flux chart.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L210",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_face_flux_coordinates_rationale_239",
+      "label": "Recover the original controls, refusing values outside the chart.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L239",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices",
+      "label": "fv_partial_signed_face_slices.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "label": "SliceIdentityRefusal",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L91",
+      "_origin": "ast"
+    },
+    {
+      "id": "valueerror",
+      "label": "ValueError",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_slicebranchrefusal",
+      "label": "SliceBranchRefusal",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L95",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_sliceauditrefusal",
+      "label": "SliceAuditRefusal",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L99",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_sha",
+      "label": "_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L103",
+      "_origin": "ast"
+    },
+    {
+      "id": "path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L103",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_canonical_probe_sha256",
+      "label": "_canonical_probe_sha256()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L107",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_verify_probe_bytes",
+      "label": "_verify_probe_bytes()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L119",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_verify_probe_file",
+      "label": "_verify_probe_file()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L125",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_verify_static_pins",
+      "label": "_verify_static_pins()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L133",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_tensor_sha",
+      "label": "_tensor_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L144",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L144",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_runtime",
+      "label": "_runtime()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L148",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_assert_scalar_match",
+      "label": "_assert_scalar_match()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L152",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_assert_payload_match",
+      "label": "_assert_payload_match()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L159",
+      "_origin": "ast"
+    },
+    {
+      "id": "any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L159",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_wrapper_completion_status",
+      "label": "_wrapper_completion_status()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L177",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_sources",
+      "label": "_sources()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L186",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_fresh_path",
+      "label": "_fresh_path()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L190",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_validate_runtime",
+      "label": "_validate_runtime()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L198",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_current_problem",
+      "label": "_current_problem()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L203",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "label": "_field_endpoint_identity()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L216",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_chart_for_problem",
+      "label": "_chart_for_problem()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L265",
+      "_origin": "ast"
+    },
+    {
+      "id": "fvfacefluxcoordinatechart",
+      "label": "FVFaceFluxCoordinateChart",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L265",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_slice_control",
+      "label": "_slice_control()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L279",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_tangent_coordinates",
+      "label": "_tangent_coordinates()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L289",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "label": "_slice_objective()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L299",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_face_flux",
+      "label": "_face_flux()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L309",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_eta_roundoff_tolerance",
+      "label": "_eta_roundoff_tolerance()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L327",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_branch_summary",
+      "label": "_branch_summary()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L336",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_require_slice_signature",
+      "label": "_require_slice_signature()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L352",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "label": "_endpoint()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L357",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_strict_slice_branch",
+      "label": "_strict_slice_branch()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L430",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_true_residual_monitor",
+      "label": "_true_residual_monitor()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L455",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "label": "_run_slice()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L506",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "label": "_fresh_endpoint_audit()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L650",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_audit_linear_solves",
+      "label": "_audit_linear_solves()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L676",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_audit_candidate_counts",
+      "label": "_audit_candidate_counts()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L755",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_audit_nonfinite_start",
+      "label": "_audit_nonfinite_start()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L773",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "label": "_audit_slice()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L789",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "label": "_run_child()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L894",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "label": "_parent_audit()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1042",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_run_guarded",
+      "label": "run_guarded()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1109",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1180",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_rationale_1",
+      "label": "Four guarded tangent-slice solves for the pinned two-hole FV point.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_rationale_92",
+      "label": "Pinned source, input, runtime, or archive identity did not match.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L92",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_rationale_96",
+      "label": "A fixed-eta trial left its fresh strict branch or chart domain.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L96",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_rationale_100",
+      "label": "A parent recomputation differed from a reported endpoint.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L100",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_rationale_217",
+      "label": "Load the real pinned field endpoint only after archive/source/runtime checks.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L217",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_rationale_330",
+      "label": "Scale FP64 face-coordinate tolerance by the absolute contributing terms.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L330",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_rationale_756",
+      "label": "Require one independently auditable solve and accepted update per Newton step.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L756",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_partial_signed_face_slices_rationale_1043",
+      "label": "Independently recompute every saved endpoint before accepting evidence.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1043",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_face_flux_coordinates",
+      "label": "test_fv_face_flux_coordinates.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_face_flux_coordinates_production_basis_fixture",
+      "label": "_production_basis_fixture()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L27",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_face_flux_coordinates_physical_coefficients",
+      "label": "_physical_coefficients()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_face_flux_coordinates_chart",
+      "label": "_chart()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L48",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_face_flux_coordinates_test_pr227_full_control_roundtrips_and_eta_is_production_face_flux",
+      "label": "test_pr227_full_control_roundtrips_and_eta_is_production_face_flux()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L61",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_face_flux_coordinates_test_x_face_uses_production_orientation_and_chart_identity_includes_fixed_data",
+      "label": "test_x_face_uses_production_orientation_and_chart_identity_includes_fixed_data()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L87",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_face_flux_coordinates_test_jvp_vjp_and_hessian_follow_the_full_coordinate_chain_rule",
+      "label": "test_jvp_vjp_and_hessian_follow_the_full_coordinate_chain_rule()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L101",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_face_flux_coordinates_test_chart_refuses_noninvertible_coordinates_and_protects_fixed_inputs",
+      "label": "test_chart_refuses_noninvertible_coordinates_and_protects_fixed_inputs()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L158",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_face_flux_coordinates_test_chart_rejects_saturated_forward_coordinates_and_unrepresentable_scale",
+      "label": "test_chart_rejects_saturated_forward_coordinates_and_unrepresentable_scale()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L188",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_face_flux_coordinates_test_normalized_chart_avoids_overflow_from_finite_raw_face_terms",
+      "label": "test_normalized_chart_avoids_overflow_from_finite_raw_face_terms()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L239",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_face_flux_coordinates_rationale_1",
+      "label": "Local mathematical checks for the FV face-flux coordinate chart.",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_partial_signed_face_slices",
+      "label": "test_fv_partial_signed_face_slices.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_partial_signed_face_slices_chart",
+      "label": "_chart()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L13",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_partial_signed_face_slices_test_slice_map_preserves_all_nonpivot_slots_and_objective",
+      "label": "test_slice_map_preserves_all_nonpivot_slots_and_objective()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L24",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_partial_signed_face_slices_test_out_of_domain_slice_refuses_without_clipping",
+      "label": "test_out_of_domain_slice_refuses_without_clipping()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L48",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_partial_signed_face_slices_test_archive_runtime_mismatch_is_a_refusal",
+      "label": "test_archive_runtime_mismatch_is_a_refusal()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_partial_signed_face_slices_test_probe_pin_rejects_modified_source_even_when_caller_hashes_it",
+      "label": "test_probe_pin_rejects_modified_source_even_when_caller_hashes_it()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L61",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_partial_signed_face_slices_test_parent_audit_and_within_slice_signature_reject_false_success",
+      "label": "test_parent_audit_and_within_slice_signature_reject_false_success()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L75",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_partial_signed_face_slices_test_parent_completion_cannot_mask_guard_or_audit_failure",
+      "label": "test_parent_completion_cannot_mask_guard_or_audit_failure()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L82",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_partial_signed_face_slices_test_independent_linear_residual_rejects_reported_false_convergence",
+      "label": "test_independent_linear_residual_rejects_reported_false_convergence()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L93",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_partial_signed_face_slices_test_parent_recomputes_exact_tangent_newton_rhs_and_residual",
+      "label": "test_parent_recomputes_exact_tangent_newton_rhs_and_residual()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L115",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_partial_signed_face_slices_test_candidate_audit_requires_one_solve_and_accepted_step_per_iteration",
+      "label": "test_candidate_audit_requires_one_solve_and_accepted_step_per_iteration()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L199",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_partial_signed_face_slices_test_nonfinite_start_refusal_is_recomputed_by_parent",
+      "label": "test_nonfinite_start_refusal_is_recomputed_by_parent()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L211",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_partial_signed_face_slices_rationale_1",
+      "label": "Synthetic-only tests for signed-face slice wiring and false-success gates.",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates",
+      "target": "dataclasses",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates",
+      "target": "advar_transport",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates",
+      "target": "weather_scenarios_fv_face_flux_coordinates_face_weights_from_basis",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_face_weights_from_basis",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_face_weights_from_basis",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_init",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_init",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_tensor_from_bytes",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L121",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_tensor_from_bytes",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L121",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_limits",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L125",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_limits",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L125",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_weights",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L129",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_weights",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L129",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_basis",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L133",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_basis",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L133",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_basis",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L133",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_flow_count",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L150",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_control_count",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L154",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_limits",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L158",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_limits",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L158",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_weights",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_weights",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_face_scale",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L166",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_face_scale",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L166",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_normalized_weights",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L171",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_normalized_weights",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L171",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_layout",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L175",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_identity",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L190",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_to_face_coordinates",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L209",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_to_face_coordinates",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L209",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_to_face_coordinates",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L209",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_face_coordinates",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L238",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_face_coordinates",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L238",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_face_coordinates",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L238",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_check_control",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L256",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_check_control",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L256",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_limits",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_tensor_from_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_weights",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_tensor_from_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L130",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_basis",
+      "target": "weather_scenarios_fv_face_flux_coordinates_face_weights_from_basis",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_to_face_coordinates",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_check_control",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L211",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_face_coordinates",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_check_control",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L240",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_rationale_1",
+      "target": "weather_scenarios_fv_face_flux_coordinates",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_rationale_19",
+      "target": "weather_scenarios_fv_face_flux_coordinates_face_weights_from_basis",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_rationale_46",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_rationale_210",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_to_face_coordinates",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L210",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_rationale_239",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_from_face_coordinates",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L239",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "os",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "platform",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "advar_local_refinement",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "advar_transport",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "examples_weather_scenarios_fv86_resource_runner",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "examples_weather_scenarios_fv_point_sector_policy",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "tests_test_fv_research_partial_observation",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L91",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "target": "valueerror",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L91",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slicebranchrefusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slicebranchrefusal",
+      "target": "valueerror",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceauditrefusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_sliceauditrefusal",
+      "target": "valueerror",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_sha",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_canonical_probe_sha256",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L107",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_verify_probe_bytes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L119",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_verify_probe_file",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L125",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_verify_static_pins",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L133",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_tensor_sha",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_runtime",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_assert_scalar_match",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_assert_payload_match",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_assert_payload_match",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_assert_payload_match",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_wrapper_completion_status",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L177",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_wrapper_completion_status",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L177",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_wrapper_completion_status",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L177",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sources",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_fresh_path",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L190",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_path",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L190",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_validate_runtime",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L198",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_current_problem",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_current_problem",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_current_problem",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_current_problem",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L216",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L216",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L216",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L216",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L216",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_chart_for_problem",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L265",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_chart_for_problem",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L265",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_chart_for_problem",
+      "target": "fvfacefluxcoordinatechart",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L265",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slice_control",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L279",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slice_control",
+      "target": "fvfacefluxcoordinatechart",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L279",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slice_control",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L279",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slice_control",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L279",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slice_control",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L279",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tangent_coordinates",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L289",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_tangent_coordinates",
+      "target": "fvfacefluxcoordinatechart",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L289",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_tangent_coordinates",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L289",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_tangent_coordinates",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L289",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_tangent_coordinates",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L289",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "target": "fvfacefluxcoordinatechart",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_face_flux",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L309",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_face_flux",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L309",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_face_flux",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L309",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_face_flux",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L309",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_eta_roundoff_tolerance",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L327",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_eta_roundoff_tolerance",
+      "target": "fvfacefluxcoordinatechart",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L327",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_eta_roundoff_tolerance",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L327",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_branch_summary",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L336",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_branch_summary",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L336",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_branch_summary",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L336",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_branch_summary",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L336",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_branch_summary",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L336",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_require_slice_signature",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L352",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L357",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L357",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L357",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L357",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "fvfacefluxcoordinatechart",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L357",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L357",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L357",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L357",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L357",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_strict_slice_branch",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L430",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_strict_slice_branch",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L430",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_strict_slice_branch",
+      "target": "fvfacefluxcoordinatechart",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L430",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_strict_slice_branch",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L430",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_true_residual_monitor",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L455",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_true_residual_monitor",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L455",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_true_residual_monitor",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L455",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "fvfacefluxcoordinatechart",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L650",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L650",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L650",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "target": "fvfacefluxcoordinatechart",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L650",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L650",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L650",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_audit_linear_solves",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L676",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_linear_solves",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L676",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_linear_solves",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L676",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_linear_solves",
+      "target": "fvfacefluxcoordinatechart",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L676",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_linear_solves",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L676",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_audit_candidate_counts",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L755",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_candidate_counts",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L755",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_audit_nonfinite_start",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L773",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_nonfinite_start",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L773",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_nonfinite_start",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L773",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_nonfinite_start",
+      "target": "fvfacefluxcoordinatechart",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L773",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_nonfinite_start",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L773",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L789",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L789",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L789",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "fvfacefluxcoordinatechart",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L789",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L789",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L789",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L894",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L894",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L894",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1042",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1042",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1042",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_run_guarded",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1109",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_guarded",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1109",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_guarded",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1109",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1180",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_canonical_probe_sha256",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L112",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_verify_probe_bytes",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_canonical_probe_sha256",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L121",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_verify_probe_bytes",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L122",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_verify_probe_file",
+      "target": "path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_verify_probe_file",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L129",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_verify_probe_file",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_verify_probe_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L130",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_verify_static_pins",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L135",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_verify_static_pins",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L137",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_assert_scalar_match",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceauditrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L156",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_assert_payload_match",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceauditrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L170",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_assert_payload_match",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_assert_scalar_match",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L172",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_sources",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L187",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_path",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L192",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_validate_runtime",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_runtime",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L199",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_validate_runtime",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L200",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_current_problem",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L208",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L219",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L222",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_validate_runtime",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L228",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sources",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L232",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L245",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_chart_for_problem",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L268",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_slice_control",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L283",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_face_flux",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L312",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_branch_summary",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slicebranchrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L341",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_require_slice_signature",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slicebranchrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L354",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L370",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tangent_coordinates",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L375",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_face_flux",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L376",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_eta_roundoff_tolerance",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L377",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceauditrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L380",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slice_control",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L383",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L405",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tangent_coordinates",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L517",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L521",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L530",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_branch_summary",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L534",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_strict_slice_branch",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L541",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_true_residual_monitor",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L578",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slice_control",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L590",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_assert_scalar_match",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L594",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L596",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L656",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceauditrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L657",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_branch_summary",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L660",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tangent_coordinates",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L663",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L664",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_endpoint",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L665",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_assert_payload_match",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L667",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_linear_solves",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L681",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_linear_solves",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceauditrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L689",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_linear_solves",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_assert_scalar_match",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L739",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_candidate_counts",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceauditrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L764",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_nonfinite_start",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tangent_coordinates",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L778",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_nonfinite_start",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slice_objective",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L779",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_nonfinite_start",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceauditrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L786",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceauditrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L795",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slice_control",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L808",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L818",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_face_flux",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L821",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_eta_roundoff_tolerance",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L822",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_branch_summary",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L828",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_audit_nonfinite_start",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L835",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_assert_payload_match",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L851",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_assert_scalar_match",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L852",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_audit_linear_solves",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L860",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_fresh_endpoint_audit",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L873",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_audit_candidate_counts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L875",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_fresh_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L896",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L900",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_runtime",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L908",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_verify_static_pins",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L920",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_verify_probe_file",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L921",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sources",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L923",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L925",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_current_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L926",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L927",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L928",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_branch_summary",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L932",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_chart_for_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L949",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_face_flux",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L951",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_eta_roundoff_tolerance",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L953",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tangent_coordinates",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L958",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slice_control",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L959",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L964",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_run_slice",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1007",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_verify_static_pins",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1044",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_verify_probe_file",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1046",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_current_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1047",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sources",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1049",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1051",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1054",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1056",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceauditrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1065",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1066",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_face_flux",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1069",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_chart_for_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1070",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_assert_scalar_match",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1071",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_audit_slice",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1076",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_guarded",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_fresh_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1116",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_guarded",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_verify_static_pins",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1130",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_guarded",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_verify_probe_file",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1131",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_guarded",
+      "target": "path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1136",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_guarded",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1149",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_guarded",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_wrapper_completion_status",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1157",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_run_guarded",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1165",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_main",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_run_child",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1198",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_main",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_run_guarded",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1202",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_rationale_1",
+      "target": "weather_scenarios_fv_partial_signed_face_slices",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_rationale_92",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceidentityrefusal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L92",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_rationale_96",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_slicebranchrefusal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_rationale_100",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_sliceauditrefusal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_rationale_217",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_field_endpoint_identity",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L217",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_rationale_330",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_eta_roundoff_tolerance",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L330",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_rationale_756",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_audit_candidate_counts",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L756",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_partial_signed_face_slices_rationale_1043",
+      "target": "weather_scenarios_fv_partial_signed_face_slices_parent_audit",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_partial_signed_face_slices.py",
+      "source_location": "L1043",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "types",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "advar_transport",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "tests_test_fv_face_flux_coordinates_production_basis_fixture",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "tests_test_fv_face_flux_coordinates_physical_coefficients",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "tests_test_fv_face_flux_coordinates_chart",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "tests_test_fv_face_flux_coordinates_test_pr227_full_control_roundtrips_and_eta_is_production_face_flux",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "tests_test_fv_face_flux_coordinates_test_x_face_uses_production_orientation_and_chart_identity_includes_fixed_data",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "tests_test_fv_face_flux_coordinates_test_jvp_vjp_and_hessian_follow_the_full_coordinate_chain_rule",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "tests_test_fv_face_flux_coordinates_test_chart_refuses_noninvertible_coordinates_and_protects_fixed_inputs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L158",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "tests_test_fv_face_flux_coordinates_test_chart_rejects_saturated_forward_coordinates_and_unrepresentable_scale",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L188",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "tests_test_fv_face_flux_coordinates_test_normalized_chart_avoids_overflow_from_finite_raw_face_terms",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L239",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates_chart",
+      "target": "tests_test_fv_face_flux_coordinates_production_basis_fixture",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates_test_pr227_full_control_roundtrips_and_eta_is_production_face_flux",
+      "target": "tests_test_fv_face_flux_coordinates_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates_test_pr227_full_control_roundtrips_and_eta_is_production_face_flux",
+      "target": "tests_test_fv_face_flux_coordinates_physical_coefficients",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates_test_x_face_uses_production_orientation_and_chart_identity_includes_fixed_data",
+      "target": "tests_test_fv_face_flux_coordinates_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L88",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates_test_x_face_uses_production_orientation_and_chart_identity_includes_fixed_data",
+      "target": "tests_test_fv_face_flux_coordinates_physical_coefficients",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L92",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates_test_jvp_vjp_and_hessian_follow_the_full_coordinate_chain_rule",
+      "target": "tests_test_fv_face_flux_coordinates_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates_test_chart_refuses_noninvertible_coordinates_and_protects_fixed_inputs",
+      "target": "tests_test_fv_face_flux_coordinates_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates_test_chart_rejects_saturated_forward_coordinates_and_unrepresentable_scale",
+      "target": "tests_test_fv_face_flux_coordinates_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates_rationale_1",
+      "target": "tests_test_fv_face_flux_coordinates",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "types",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "advar_local_refinement",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "tests_test_fv_partial_signed_face_slices_chart",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "tests_test_fv_partial_signed_face_slices_test_slice_map_preserves_all_nonpivot_slots_and_objective",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "tests_test_fv_partial_signed_face_slices_test_out_of_domain_slice_refuses_without_clipping",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "tests_test_fv_partial_signed_face_slices_test_archive_runtime_mismatch_is_a_refusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "tests_test_fv_partial_signed_face_slices_test_probe_pin_rejects_modified_source_even_when_caller_hashes_it",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "tests_test_fv_partial_signed_face_slices_test_parent_audit_and_within_slice_signature_reject_false_success",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L75",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "tests_test_fv_partial_signed_face_slices_test_parent_completion_cannot_mask_guard_or_audit_failure",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L82",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "tests_test_fv_partial_signed_face_slices_test_independent_linear_residual_rejects_reported_false_convergence",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "tests_test_fv_partial_signed_face_slices_test_parent_recomputes_exact_tangent_newton_rhs_and_residual",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L115",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "tests_test_fv_partial_signed_face_slices_test_candidate_audit_requires_one_solve_and_accepted_step_per_iteration",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L199",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "tests_test_fv_partial_signed_face_slices_test_nonfinite_start_refusal_is_recomputed_by_parent",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L211",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices_test_slice_map_preserves_all_nonpivot_slots_and_objective",
+      "target": "tests_test_fv_partial_signed_face_slices_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices_test_out_of_domain_slice_refuses_without_clipping",
+      "target": "tests_test_fv_partial_signed_face_slices_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices_test_parent_recomputes_exact_tangent_newton_rhs_and_residual",
+      "target": "tests_test_fv_partial_signed_face_slices_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices_test_nonfinite_start_refusal_is_recomputed_by_parent",
+      "target": "tests_test_fv_partial_signed_face_slices_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L212",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices_rationale_1",
+      "target": "tests_test_fv_partial_signed_face_slices",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates_test_chart_rejects_saturated_forward_coordinates_and_unrepresentable_scale",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L197",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_face_flux_coordinates_test_normalized_chart_avoids_overflow_from_finite_raw_face_terms",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_face_flux_coordinates.py",
+      "source_location": "L240",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices_chart",
+      "target": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_face_weights_from_basis",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_init",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_face_flux_coordinates_fvfacefluxcoordinatechart_check_control",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "examples/weather_scenarios/fv_face_flux_coordinates.py",
+      "source_location": "L259",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_partial_signed_face_slices_test_probe_pin_rejects_modified_source_even_when_caller_hashes_it",
+      "target": "path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "tests/test_fv_partial_signed_face_slices.py",
+      "source_location": "L62",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
