@@ -1,0 +1,1321 @@
+{
+  "nodes": [
+    {
+      "id": "fv_active_face_binding",
+      "label": "fv_active_face_binding.py",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_active_face_binding_fvactivefacebinding",
+      "label": "FVActiveFaceBinding",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L17",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_active_face_binding_fvactivefacebinding_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L25",
+      "_origin": "ast"
+    },
+    {
+      "id": "fvresearchproblem",
+      "label": "FVResearchProblem",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L25",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_active_face_binding_fvactivefacebinding_support",
+      "label": ".support()",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L63",
+      "_origin": "ast"
+    },
+    {
+      "id": "any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L63",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_active_face_binding_fvactivefacebinding_lift",
+      "label": ".lift()",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L70",
+      "_origin": "ast"
+    },
+    {
+      "id": "tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L70",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_active_face_binding_fvactivefacebinding_tangent_coordinates",
+      "label": ".tangent_coordinates()",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L79",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_active_face_binding_fvactivefacebinding_fixed_state",
+      "label": "._fixed_state()",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L84",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_active_face_binding_fvactivefacebinding_objective",
+      "label": ".objective()",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L93",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "label": ".forecast()",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L101",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_active_face_binding_fvactivefacebinding_score",
+      "label": ".score()",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L113",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_active_face_binding_fvactivefacebinding_face_fluxes",
+      "label": ".face_fluxes()",
+      "file_type": "code",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L116",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_active_face_binding_rationale_1",
+      "label": "Fixed two-hole q_y[2,0]=0 chart binding; no stationarity/response claim.",
+      "file_type": "rationale",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_active_face_binding_rationale_18",
+      "label": "Bind 25 tangent controls to the unchanged 26-control objective at qy[2,0]=0.",
+      "file_type": "rationale",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L18",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_active_face_binding_rationale_71",
+      "label": "Lift [field, nonpivot latents, growth], refusing the original pivot boundary.",
+      "file_type": "rationale",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L71",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_active_face_binding",
+      "label": "test_fv_active_face_binding.py",
+      "file_type": "code",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_active_face_binding_case",
+      "label": "_case()",
+      "file_type": "code",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L11",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_active_face_binding_roundoff_budget",
+      "label": "_roundoff_budget()",
+      "file_type": "code",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L16",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_active_face_binding_test_projected_modes_are_structurally_zero_face_rank_four_and_divergence_free",
+      "label": "test_projected_modes_are_structurally_zero_face_rank_four_and_divergence_free()",
+      "file_type": "code",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L29",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_active_face_binding_test_lift_refuses_original_pivot_latent_boundary_without_clipping",
+      "label": "test_lift_refuses_original_pivot_latent_boundary_without_clipping()",
+      "file_type": "code",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L41",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_active_face_binding_test_objective_lift_keeps_full_prior_and_matches_full_problem_derivatives",
+      "label": "test_objective_lift_keeps_full_prior_and_matches_full_problem_derivatives()",
+      "file_type": "code",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_active_face_binding_rationale_1",
+      "label": "Tests for the fixed q_y[2,0]=0 coordinate binding (no solver use).",
+      "file_type": "rationale",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_active_face_binding_rationale_17",
+      "label": "Two-path gamma_n comparison budget, not a forward-error certificate.      Counts",
+      "file_type": "rationale",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L17",
+      "_origin": "ast"
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "links": [
+    {
+      "source": "fv_active_face_binding",
+      "target": "dataclasses",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding",
+      "target": "advar_fv_research_problem",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding",
+      "target": "advar_physics",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding",
+      "target": "advar_transport",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding",
+      "target": "fv_active_face_binding_fvactivefacebinding",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_init",
+      "target": "fvresearchproblem",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_support",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_support",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_lift",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_lift",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_lift",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_tangent_coordinates",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_tangent_coordinates",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_tangent_coordinates",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_fixed_state",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L84",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_fixed_state",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L84",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_objective",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_objective",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_objective",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_objective",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_score",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_score",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_score",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_score",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_face_fluxes",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_face_fluxes",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_face_fluxes",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_face_fluxes",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_objective",
+      "target": "fv_active_face_binding_fvactivefacebinding_lift",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_objective",
+      "target": "fv_active_face_binding_fvactivefacebinding_fixed_state",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "target": "fv_active_face_binding_fvactivefacebinding_lift",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "target": "fv_active_face_binding_fvactivefacebinding_fixed_state",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_score",
+      "target": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_face_fluxes",
+      "target": "fv_active_face_binding_fvactivefacebinding_lift",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L119",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_rationale_1",
+      "target": "fv_active_face_binding",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_rationale_18",
+      "target": "fv_active_face_binding_fvactivefacebinding",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_rationale_71",
+      "target": "fv_active_face_binding_fvactivefacebinding_lift",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "advar_transport",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "examples_weather_scenarios_fv_active_face_binding",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "tests_test_fv_research_partial_observation",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "test_fv_active_face_binding_case",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "test_fv_active_face_binding_roundoff_budget",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "test_fv_active_face_binding_test_projected_modes_are_structurally_zero_face_rank_four_and_divergence_free",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "test_fv_active_face_binding_test_lift_refuses_original_pivot_latent_boundary_without_clipping",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "test_fv_active_face_binding_test_objective_lift_keeps_full_prior_and_matches_full_problem_derivatives",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_test_projected_modes_are_structurally_zero_face_rank_four_and_divergence_free",
+      "target": "test_fv_active_face_binding_case",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_test_lift_refuses_original_pivot_latent_boundary_without_clipping",
+      "target": "test_fv_active_face_binding_case",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_test_objective_lift_keeps_full_prior_and_matches_full_problem_derivatives",
+      "target": "test_fv_active_face_binding_case",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L56",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_test_objective_lift_keeps_full_prior_and_matches_full_problem_derivatives",
+      "target": "test_fv_active_face_binding_roundoff_budget",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_rationale_1",
+      "target": "test_fv_active_face_binding",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_rationale_17",
+      "target": "test_fv_active_face_binding_roundoff_budget",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_case",
+      "target": "fv_active_face_binding_fvactivefacebinding",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding",
+      "target": "fv_active_face_binding_fvactivefacebinding",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_init",
+      "target": "fvresearchproblem",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_support",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_support",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_lift",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_lift",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_lift",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_tangent_coordinates",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_tangent_coordinates",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_tangent_coordinates",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_fixed_state",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L84",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_fixed_state",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L84",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_objective",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_objective",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_objective",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_objective",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_score",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_score",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_score",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_score",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding",
+      "target": "fv_active_face_binding_fvactivefacebinding_face_fluxes",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_face_fluxes",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_face_fluxes",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_face_fluxes",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_objective",
+      "target": "fv_active_face_binding_fvactivefacebinding_lift",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_objective",
+      "target": "fv_active_face_binding_fvactivefacebinding_fixed_state",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "target": "fv_active_face_binding_fvactivefacebinding_lift",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "target": "fv_active_face_binding_fvactivefacebinding_fixed_state",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_score",
+      "target": "fv_active_face_binding_fvactivefacebinding_forecast",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_fvactivefacebinding_face_fluxes",
+      "target": "fv_active_face_binding_fvactivefacebinding_lift",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L119",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_rationale_1",
+      "target": "fv_active_face_binding",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_rationale_18",
+      "target": "fv_active_face_binding_fvactivefacebinding",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_active_face_binding_rationale_71",
+      "target": "fv_active_face_binding_fvactivefacebinding_lift",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_active_face_binding.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "test_fv_active_face_binding_case",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "test_fv_active_face_binding_roundoff_budget",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "test_fv_active_face_binding_test_projected_modes_are_structurally_zero_face_rank_four_and_divergence_free",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "test_fv_active_face_binding_test_lift_refuses_original_pivot_latent_boundary_without_clipping",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding",
+      "target": "test_fv_active_face_binding_test_objective_lift_keeps_full_prior_and_matches_full_problem_derivatives",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_test_projected_modes_are_structurally_zero_face_rank_four_and_divergence_free",
+      "target": "test_fv_active_face_binding_case",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_test_lift_refuses_original_pivot_latent_boundary_without_clipping",
+      "target": "test_fv_active_face_binding_case",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_test_objective_lift_keeps_full_prior_and_matches_full_problem_derivatives",
+      "target": "test_fv_active_face_binding_case",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L56",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_test_objective_lift_keeps_full_prior_and_matches_full_problem_derivatives",
+      "target": "test_fv_active_face_binding_roundoff_budget",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_rationale_1",
+      "target": "test_fv_active_face_binding",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_rationale_17",
+      "target": "test_fv_active_face_binding_roundoff_budget",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_active_face_binding_case",
+      "target": "fv_active_face_binding_fvactivefacebinding",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "test_fv_active_face_binding.py",
+      "source_location": "L13",
+      "weight": 1.0
+    }
+  ]
+}

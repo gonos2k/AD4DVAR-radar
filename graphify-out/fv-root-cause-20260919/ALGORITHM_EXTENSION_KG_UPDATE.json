@@ -1035,5 +1035,30 @@
     "original_response": "not_performed",
     "R4-R": "open",
     "report": "R4_INTERVAL_CORRECTION_RESULTS_20261003.md"
+  },
+  "r4_active_face_response_20261003": {
+    "status": "restricted_active_face_response_numerically_supported_at_tested_points",
+    "statistical_problem": "original collocated4x5 two-hole; original26 prior and61 parameters unchanged",
+    "tangent_gradient_max": 7.947620860038196e-12,
+    "tangent_hessian_min_eigenvalue": 1.031278100528556,
+    "response": -0.004418014129384397,
+    "adjoint_true_relative_residual": 4.396969025416272e-11,
+    "steps_dbz": [
+      0.00025,
+      0.000125
+    ],
+    "central_relative_errors": [
+      8.448267333021634e-09,
+      2.110809329632842e-09
+    ],
+    "all_four_endpoints_qualified": true,
+    "whole_child_seconds": 234.12348483409733,
+    "sampled_peak_rss_bytes": 354041856,
+    "R4-A": "closed for this conditional branch/direction/two sizes",
+    "R4-R": "classical smooth26 target remains unsupported/open",
+    "exact_root_or_uniform_parameter_ball": false,
+    "physical_validated": false,
+    "verification": "18 focused passed; error-level types0; GREEN/RED GO; no new full CI",
+    "report": "R4_ACTIVE_FACE_RESPONSE_RESULTS_20261003.md"
   }
 }

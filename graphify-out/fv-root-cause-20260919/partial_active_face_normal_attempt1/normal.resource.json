@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_active_face_normal_probe",
+    "--output",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/partial_active_face_normal_attempt1/normal.json"
+  ],
+  "child_pid": 16825,
+  "exit_code": 1,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 0.26488558296114206,
+  "sampled_peak_rss_bytes": 4456448,
+  "rss_samples": 1,
+  "wall_limit_seconds": 30,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

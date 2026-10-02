@@ -1,0 +1,14 @@
+{
+  "scope": "restricted25 root/curvature only; no originalnonsmoothminimum or response",
+  "source_sha256": {
+    "examples/weather_scenarios/fv_active_face_binding.py": "d1c6b8a36d9d83c6374322964af234854a5cc57610e0b2f167eefed0a75d8065",
+    "examples/weather_scenarios/fv_active_face_stationarity_probe.py": "98386f9987716aecfc4807e8ee1faaa2ac1da41c5ac71695a396e7cd270be412",
+    "tests/test_fv_active_face_binding.py": "e92a125dc5e59d2a4f0678da01fec7eefd88ef19de28e4574ad2c29f68df365a",
+    "tests/test_fv_active_face_stationarity_probe.py": "de921f398a017e142f52248350e67e3671a70aac4da6a1237c05d055f3b6e795",
+    "graphify-out/fv-root-cause-20260919/R4_ACTIVE_FACE_STATIONARITY_PLAN_20261003.md": "7a9490a3505c555bc852da7fa831e30de9f0b7c24f6c8bc2d7b9040816dc296e"
+  },
+  "focused_tests": "6 passed,18existingwarnings",
+  "type_check": "0 error-level diagnostics; lower warnings filtered",
+  "wall_seconds": 180,
+  "sampled_rss_bytes": 1073741824
+}
