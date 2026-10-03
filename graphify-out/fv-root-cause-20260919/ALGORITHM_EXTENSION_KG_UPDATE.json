@@ -1060,5 +1060,32 @@
     "physical_validated": false,
     "verification": "18 focused passed; error-level types0; GREEN/RED GO; no new full CI",
     "report": "R4_ACTIVE_FACE_RESPONSE_RESULTS_20261003.md"
+  },
+  "r2_point_active_face_20261003": {
+    "event_diagnosis": "two captured original-input points; exactJ/gradient/signature replay; onlyqx3,4 changes54 times,0limiterdifferences",
+    "binding": "25controls with original26 zero-centered prior,13parameters unchanged",
+    "execution_status": "completed",
+    "numerical_status": "numerical_refusal",
+    "tangent_gradient_max": 0.003145377614094197,
+    "newton_budget": 4,
+    "pcg_iterations": [
+      20,
+      20,
+      20,
+      20
+    ],
+    "child_seconds": 252.83486841712147,
+    "sampled_peak_rss_bytes": 344637440,
+    "candidate_counts": {
+      "total": 26,
+      "accepted": 4,
+      "signature_refused": 15,
+      "margin_refused": 7
+    },
+    "approached_other_face": "qy[3,0], finite-point storedcurl diagnosis only",
+    "response_validation": "not_performed",
+    "R2-O-R": "open",
+    "record": "R2_POINT_ACTIVE_FACE_RESULTS_20261003.md",
+    "verification": "16focusedpassed;types0error-level;GREEN/REDbounded-refusalGO;no fullCI"
   }
 }

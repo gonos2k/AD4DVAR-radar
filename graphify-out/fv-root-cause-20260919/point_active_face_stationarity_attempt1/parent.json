@@ -1,0 +1,24 @@
+{
+  "execution_status": "completed",
+  "numerical_status": "numerical_refusal",
+  "resource": {
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "-m",
+      "examples.weather_scenarios.fv_point_active_face_stationarity",
+      "--output",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/point_active_face_stationarity_attempt1/stationarity.json"
+    ],
+    "child_pid": 7784,
+    "exit_code": 0,
+    "resource_termination": null,
+    "monitor_error": null,
+    "elapsed_seconds": 252.83486841712147,
+    "sampled_peak_rss_bytes": 344637440,
+    "rss_samples": 765,
+    "wall_limit_seconds": 300,
+    "rss_limit_bytes": 1073741824,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+  },
+  "response_validation": "not_performed"
+}
