@@ -1,0 +1,156 @@
+name: Targeted Linux research repair checks
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: targeted-linux-repair-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  targeted-tests:
+    name: Python 3.12.14 CPU · 7 registered cases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Require the registered source tree
+        run: |
+          git fetch --depth=1 origin 42891a34859924ff1bd04a35dc1e8690b8bbe971
+          python -I - <<'PY'
+          import subprocess
+
+          anchor = "42891a34859924ff1bd04a35dc1e8690b8bbe971"
+          allowed = {
+              ".github/workflows/targeted-linux-repair.yml",
+              "graphify-out/fv-root-cause-20260919/RESEARCH_TARGETED_LINUX_REPAIR_PLAN_20261003.md",
+          }
+          changed = set(subprocess.check_output(
+              ["git", "diff", "--name-only", anchor, "HEAD"], text=True,
+          ).splitlines())
+          assert changed <= allowed, f"unregistered source-tree changes: {sorted(changed - allowed)}"
+          PY
+
+      - name: Initialize evidence files
+        run: |
+          touch "$RUNNER_TEMP/targeted-linux-provenance.txt"
+          touch "$RUNNER_TEMP/targeted-linux-pytest.log"
+          touch "$RUNNER_TEMP/targeted-linux-results.xml"
+
+      - name: Set up Python 3.12.14
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12.14"
+
+      - name: Install the hashed Linux CPU closure
+        run: |
+          python -I -m pip install \
+            --require-hashes \
+            --only-binary=:all: \
+            --extra-index-url https://download.pytorch.org/whl/cpu \
+            --requirement requirements/ci-py312-linux.lock
+          python -I -m pip install \
+            --no-build-isolation \
+            --no-deps \
+            --editable .
+
+      - name: Record and assert the tested runtime
+        env:
+          PROVENANCE_PATH: ${{ runner.temp }}/targeted-linux-provenance.txt
+        run: |
+          python -I - <<'PY' | tee "$PROVENANCE_PATH"
+          import hashlib
+          import platform
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          import pytest
+          import torch
+
+          assert sys.version_info[:3] == (3, 12, 14), sys.version
+          assert pytest.__version__ == "9.1.1", pytest.__version__
+          assert torch.__version__ == "2.13.0+cpu", torch.__version__
+          print(f"commit={subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()}")
+          print(f"python={platform.python_version()}")
+          print(f"platform={platform.platform()}")
+          print(f"pytest={pytest.__version__}")
+          print(f"torch={torch.__version__}")
+          expected = {
+              "requirements/ci-py312-linux.lock": "78b6f2a249d00c19d6e21028e025dd716a754e6dbacaf947a8fba11ad5b92718",
+              "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+              "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+              "src/advar/fv_sensitivity.py": "2fdc5d4683fa57ebad9f987e28f92d46ead82f07f751592c98ea98a66dc7905d",
+              "examples/weather_scenarios/fv_minmod_local_path_probe.py": "1ddb5c9b0680c72fb682af6eedaaee44aab87288ae691d12368da5e4fb4f8c05",
+              "tests/test_fv_observation_response.py": "7b7be8f9b73de82b9f2767fa7aec0051102a7747b512af8bbc524d328c719123",
+              "tests/test_fv_research_problem.py": "8d4ecaa3d08d39a0eec6bb36f0434c937504cbab81a03ca63652ee0a689f5011",
+              "tests/test_fv_concurrent_response.py": "6f9e8b850c49b26df9fde907d74a9e467150edd9ba288f8b118c98bf222d1488",
+              "tests/test_fv_partial_face_event_runner.py": "a537533183ddbb40fa82409c9804eb70a0c20da06cec21293261ebcb2e5fc05a",
+              "tests/test_fv_response_job_reconcile.py": "6801a825154fd9bdfe34af2ebcb46a3517898541943f9445e2abb865f60ffd0d",
+              "tests/test_fv_minmod_local_path_probe.py": "3614f5665901c2561df7d87e955b6a4019a406b514d23776e030da31a017d714",
+          }
+          for name, expected_sha256 in expected.items():
+              digest = hashlib.sha256(Path(name).read_bytes()).hexdigest()
+              print(f"sha256:{name}={digest}")
+              assert digest == expected_sha256, f"registered source changed: {name}"
+          dirty = subprocess.check_output(["git", "status", "--porcelain"], text=True).strip()
+          assert not dirty, f"checkout is not clean: {dirty}"
+          PY
+
+      - name: Run the seven registered Linux cases
+        env:
+          OMP_NUM_THREADS: "1"
+          MKL_NUM_THREADS: "1"
+        run: |
+          set -o pipefail
+          timeout --signal=TERM --kill-after=10s 10m \
+            env -u PYTEST_ADDOPTS python -I -m pytest -q \
+              --junitxml="$RUNNER_TEMP/targeted-linux-results.xml" \
+              'tests/test_fv_observation_response.py::test_parameterized_background_matches_polished_centered_reanalysis' \
+              'tests/test_fv_research_problem.py::test_common_objective_score_and_derivatives_match_frozen_reference[4x5]' \
+              'tests/test_fv_concurrent_response.py::test_case_archives_direction_branch_and_nominal_gradient[_small_case-archive_names0-direction_slice0-54]' \
+              'tests/test_fv_partial_face_event_runner.py::test_runner_launches_exact_guarded_command_and_records_completion' \
+              'tests/test_fv_response_job_reconcile.py::test_consistent_terminal_lifecycle_allows_candidate_and_is_idempotent' \
+              'tests/test_fv_minmod_local_path_probe.py::test_new_direction_clears_old_pairs_and_computes_its_cross' \
+              'tests/test_fv_minmod_local_path_probe.py::test_completed_direction_resume_validates_without_repeating_reanalysis' \
+            2>&1 | tee "$RUNNER_TEMP/targeted-linux-pytest.log"
+
+      - name: Require seven passing cases
+        if: success()
+        env:
+          JUNIT_PATH: ${{ runner.temp }}/targeted-linux-results.xml
+        run: |
+          python -I - <<'PY'
+          import os
+          from pathlib import Path
+          from xml.etree import ElementTree
+
+          root = ElementTree.parse(Path(os.environ["JUNIT_PATH"])).getroot()
+          suites = list(root) if root.tag == "testsuites" else [root]
+          cases = [case for suite in suites for case in suite.findall("testcase")]
+          failures = sum(len(case.findall("failure")) for case in cases)
+          errors = sum(len(case.findall("error")) for case in cases)
+          skipped = sum(len(case.findall("skipped")) for case in cases)
+          assert (len(cases), failures, errors, skipped) == (7, 0, 0, 0), (
+              f"expected 7 passing node IDs; cases={len(cases)} "
+              f"failures={failures} errors={errors} skipped={skipped}"
+          )
+          print("exactly seven selected cases passed")
+          PY
+
+      - name: Preserve targeted run evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: targeted-linux-repair-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/targeted-linux-provenance.txt
+            ${{ runner.temp }}/targeted-linux-pytest.log
+            ${{ runner.temp }}/targeted-linux-results.xml
+          if-no-files-found: error
+          retention-days: 7
