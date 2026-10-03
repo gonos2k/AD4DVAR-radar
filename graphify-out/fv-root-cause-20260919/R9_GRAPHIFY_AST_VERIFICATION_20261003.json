@@ -1,0 +1,26 @@
+{
+  "ast_edges": 74,
+  "ast_nodes": 29,
+  "ast_sha256": "65b1ffcfc750abab22c1c7894e4ae0746f439a0ca705fdd4939d554de8f33bd8",
+  "cached_graph_mentions_new_probe_modules": false,
+  "existing_graph_snapshot": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "files": [
+    "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+    "tests/test_fv_point_3h_coupled_original_j_continuation.py"
+  ],
+  "graph_report_sha256_after": "b6c44d3b4c4e8f8821a78e12730a1e376e2a2ccd9cf392d1b7dd675c4ccad885",
+  "graph_report_sha256_before": "b6c44d3b4c4e8f8821a78e12730a1e376e2a2ccd9cf392d1b7dd675c4ccad885",
+  "graph_report_unchanged": true,
+  "graph_sha256_after": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "graph_sha256_before": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "graph_unchanged": true,
+  "scope": "targeted Graphify AST extraction for the new reusable R9 producer/test only; no semantic extraction or graph merge",
+  "source_sha256_after": {
+    "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py": "20b05c592d47d4bab8bc769cc57722a167917cd3a517fb6701d400e787e43920",
+    "tests/test_fv_point_3h_coupled_original_j_continuation.py": "a527349062bcaf4ee06ab167e82f75b1260dc115ce2909ffe6d4ce5dccb7218e"
+  },
+  "source_sha256_before": {
+    "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py": "20b05c592d47d4bab8bc769cc57722a167917cd3a517fb6701d400e787e43920",
+    "tests/test_fv_point_3h_coupled_original_j_continuation.py": "a527349062bcaf4ee06ab167e82f75b1260dc115ce2909ffe6d4ce5dccb7218e"
+  }
+}

@@ -1,0 +1,957 @@
+{
+  "edges": [
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "target": "argparse",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "target": "hashlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "target": "math",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "target": "platform",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "target": "re",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "target": "time",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L5",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L6",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L7",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L8",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L9",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L10",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L11",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L12",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L13",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L14",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L30",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_continuationrefusal",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "inherits",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_continuationrefusal",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L30",
+      "target": "runtimeerror",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L34",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_sha",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L34",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L35",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_tensor_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_tensor_sha",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L35",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L36",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_write",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_write",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L36",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_write",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L36",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L41",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_require_pins",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L47",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_candidate_metrics",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_candidate_metrics",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L47",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_candidate_metrics",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L47",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_candidate_metrics",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L47",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L58",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_accepted_endpoint_stationary",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_accepted_endpoint_stationary",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L58",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L64",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_modified_operator",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_modified_operator",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L64",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L68",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L68",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L68",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L68",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L68",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L86",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_refusal_message",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_refusal_message",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L86",
+      "target": "exception",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L96",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L96",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L96",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_require_pins",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L43",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L70",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_continuationrefusal",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L98",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_require_pins",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L104",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_tensor_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L111",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L133",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_write",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L139",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_continuationrefusal",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L160",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L164",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_modified_operator",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L181",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_candidate_metrics",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L195",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_accepted_endpoint_stationary",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L201",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_refusal_message",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_rationale_1",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L1",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_rationale_31",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L31",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_continuationrefusal",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L2",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "target": "pytest",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L5",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L7",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L10",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_indefinite",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L17",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_pinned_r8_start_and_fixed_input_contract",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L30",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_dynamics_shift_makes_indefinite_original_system_preconditionable",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L44",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_mu_zero_is_used_only_for_resolved_full_and_schur_spd",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L51",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_original_objective_armijo_and_refusal_message_scope",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L65",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_candidate_metrics_serializes_nonfinite_and_propagates_bad_shapes",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L73",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_accepted_epoch_four_can_finish_from_its_measured_gradient",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L81",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_fresh_hessian_is_recomputed_at_each_current_control",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation_test_dynamics_shift_makes_indefinite_original_system_preconditionable",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L31",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_indefinite",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation_test_original_objective_armijo_and_refusal_message_scope",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L52",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_indefinite",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation_rationale_1",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L1",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "nodes": [
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "label": "fv_point_3h_coupled_original_j_continuation.py",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_continuationrefusal",
+      "label": "ContinuationRefusal",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L30"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "runtimeerror",
+      "label": "RuntimeError",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_sha",
+      "label": "sha()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L34"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "path",
+      "label": "Path",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L34"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_tensor_sha",
+      "label": "tensor_sha()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L35"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tensor",
+      "label": "Tensor",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L35"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_write",
+      "label": "write()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L36"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "any",
+      "label": "Any",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L36"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_require_pins",
+      "label": "require_pins()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L41"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_candidate_metrics",
+      "label": "candidate_metrics()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L47"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_accepted_endpoint_stationary",
+      "label": "accepted_endpoint_stationary()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L58"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_modified_operator",
+      "label": "modified_operator()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L64"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "label": "choose_dynamics_shift()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L68"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_refusal_message",
+      "label": "refusal_message()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L86"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "exception",
+      "label": "Exception",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L86"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "label": "run()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L96"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_rationale_1",
+      "label": "At most four original-J Armijo epochs with fresh modified-H block solves.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_rationale_31",
+      "label": "Declared curvature, linear-solve, line-search, branch or budget refusal.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L31"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "label": "test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_indefinite",
+      "label": "_indefinite()",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L10"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_pinned_r8_start_and_fixed_input_contract",
+      "label": "test_pinned_r8_start_and_fixed_input_contract()",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L17"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_dynamics_shift_makes_indefinite_original_system_preconditionable",
+      "label": "test_dynamics_shift_makes_indefinite_original_system_preconditionable()",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L30"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_mu_zero_is_used_only_for_resolved_full_and_schur_spd",
+      "label": "test_mu_zero_is_used_only_for_resolved_full_and_schur_spd()",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L44"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_original_objective_armijo_and_refusal_message_scope",
+      "label": "test_original_objective_armijo_and_refusal_message_scope()",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L51"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_candidate_metrics_serializes_nonfinite_and_propagates_bad_shapes",
+      "label": "test_candidate_metrics_serializes_nonfinite_and_propagates_bad_shapes()",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L65"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_accepted_epoch_four_can_finish_from_its_measured_gradient",
+      "label": "test_accepted_epoch_four_can_finish_from_its_measured_gradient()",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L73"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_fresh_hessian_is_recomputed_at_each_current_control",
+      "label": "test_fresh_hessian_is_recomputed_at_each_current_control()",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L81"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_rationale_1",
+      "label": "Synthetic coupled-J/modified-operator continuation checks; no FV execution.",
+      "source_file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L1"
+    }
+  ],
+  "output_tokens": 0
+}
