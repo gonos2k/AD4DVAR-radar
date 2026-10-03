@@ -1,0 +1,491 @@
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	﻿2026-10-03T04:46:55.0593459Z Current runner version: '2.337.0'
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0635350Z ##[group]Runner Image Provisioner
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0636901Z Hosted Compute Agent
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0638271Z Version: 20260901.588
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0639510Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0641065Z Build Date: 2026-09-01T19:56:44Z
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0642470Z Worker ID: {189f686d-b4ac-414e-815a-15a24c82ac73}
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0643791Z Azure Region: westus2
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0645006Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0648158Z ##[group]Operating System
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0649545Z Ubuntu
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0650532Z 24.04.5
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0651395Z LTS
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0652523Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0653538Z ##[group]Runner Image
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0654681Z Image: ubuntu-24.04
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0655655Z Version: 20260927.320.1
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0657961Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0661232Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0663124Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0665069Z ##[group]GITHUB_TOKEN Permissions
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0669688Z Contents: read
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0670896Z Metadata: read
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0672031Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0675283Z Secret source: Actions
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0676848Z Cache mode: write
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.0678915Z Prepare workflow directory
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.1155507Z Prepare all required actions
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.1205334Z Getting action download info
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.4662281Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.5967450Z Download action repository 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1' (SHA:ece7cb06caefa5fff74198d8649806c4678c61a1)
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.7021847Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up job	2026-10-03T04:46:55.9233780Z Complete job name: Python 3.12.14 CPU · 2 unresolved resume cases
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	﻿2026-10-03T04:46:56.0034771Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0035893Z with:
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0036363Z   repository: gonos2k/AD4DVAR-radar
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0040720Z   token: ***
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0041158Z   ssh-strict: true
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0041588Z   ssh-user: git
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0042032Z   persist-credentials: true
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0042529Z   clean: true
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0042970Z   sparse-checkout-cone-mode: true
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0043497Z   fetch-depth: 1
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0043921Z   fetch-tags: false
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0044361Z   show-progress: true
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0044807Z   lfs: false
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0045244Z   submodules: false
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0045691Z   set-safe-directory: true
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0046196Z   allow-unsafe-pr-checkout: false
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.0047021Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1211451Z Syncing repository: gonos2k/AD4DVAR-radar
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1214688Z ##[group]Getting Git version info
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1216167Z Working directory is '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1218358Z [command]/usr/bin/git version
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1356673Z git version 2.55.0
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1409639Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1416108Z Temporarily overriding HOME='/home/runner/work/_temp/08bf3424-2178-4539-aa1c-0270fcf2ac9d' before making global git config changes
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1418671Z Adding repository directory to the temporary git global config as a safe directory
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1420602Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1498433Z Deleting the contents of '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1502415Z ##[group]Determining repository object format
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1511161Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1512541Z ##[group]Initializing the repository
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1513920Z [command]/usr/bin/git init /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1697237Z hint: Using 'master' as the name for the initial branch. This default branch name
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1725821Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1727274Z hint: to use in all of your new repositories, which will suppress this warning,
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1729094Z hint: call:
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1729847Z hint:
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1730740Z hint: 	git config --global init.defaultBranch <name>
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1731830Z hint:
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1732806Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1734405Z hint: 'development'. The just-created branch can be renamed via this command:
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1735865Z hint:
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1736878Z hint: 	git branch -m <name>
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1738084Z hint:
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1739513Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1741311Z Initialized empty Git repository in /home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1744266Z [command]/usr/bin/git remote add origin https://github.com/gonos2k/AD4DVAR-radar
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1775360Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1776620Z ##[group]Disabling automatic garbage collection
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1778853Z [command]/usr/bin/git config --local gc.auto 0
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1824556Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1826147Z ##[group]Setting up auth
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1826993Z Removing SSH command configuration
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1831253Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.1868582Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.2273974Z Removing HTTP extra header
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.2280141Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.2318181Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.2549724Z Removing includeIf entries pointing to credentials config files
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.2555669Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.2599306Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.2841210Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-e12bb2b5-ca4c-45b8-aae2-86502ac57f4f.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.2885073Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path /home/runner/work/_temp/git-credentials-e12bb2b5-ca4c-45b8-aae2-86502ac57f4f.config
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.2922284Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-e12bb2b5-ca4c-45b8-aae2-86502ac57f4f.config
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.2965422Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-e12bb2b5-ca4c-45b8-aae2-86502ac57f4f.config
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.3008496Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-e12bb2b5-ca4c-45b8-aae2-86502ac57f4f.config
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.3041748Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.3042561Z ##[group]Fetching the repository
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:56.3051787Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +121ef5ad50eb8c08437f819bc3a468b96a9663b1:refs/remotes/origin/main
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:57.9240434Z From https://github.com/gonos2k/AD4DVAR-radar
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:57.9243543Z  * [new ref]         121ef5ad50eb8c08437f819bc3a468b96a9663b1 -> origin/main
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:57.9251088Z [command]/usr/bin/git branch --list --remote origin/main
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:57.9281263Z   origin/main
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:57.9289837Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:57.9316014Z 121ef5ad50eb8c08437f819bc3a468b96a9663b1
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:57.9321737Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:57.9323004Z ##[group]Determining the checkout info
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:57.9324690Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:57.9326220Z [command]/usr/bin/git sparse-checkout disable
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:57.9382539Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:57.9422061Z ##[group]Checking out the ref
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:57.9424968Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:58.1805106Z Switched to a new branch 'main'
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:58.1810498Z branch 'main' set up to track 'origin/main'.
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:58.1839102Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:58.1892817Z [command]/usr/bin/git log -1 --format=%H
+Python 3.12.14 CPU · 2 unresolved resume cases	Check out source	2026-10-03T04:46:58.1923399Z 121ef5ad50eb8c08437f819bc3a468b96a9663b1
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	﻿2026-10-03T04:46:58.2153842Z ##[group]Run git fetch --depth=1 origin 42891a34859924ff1bd04a35dc1e8690b8bbe971
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2154655Z [36;1mgit fetch --depth=1 origin 42891a34859924ff1bd04a35dc1e8690b8bbe971[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2155126Z [36;1mpython -I - <<'PY'[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2155435Z [36;1mimport subprocess[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2155723Z [36;1m[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2156056Z [36;1manchor = "42891a34859924ff1bd04a35dc1e8690b8bbe971"[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2156446Z [36;1mallowed = {[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2156784Z [36;1m    ".github/workflows/targeted-linux-repair.yml",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2157387Z [36;1m    "graphify-out/fv-root-cause-20260919/RESEARCH_TARGETED_LINUX_REPAIR_PLAN_20261003.md",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2158189Z [36;1m    "tests/test_fv_minmod_local_path_probe.py",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2158556Z [36;1m}[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2158858Z [36;1mchanged = set(subprocess.check_output([0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2159312Z [36;1m    ["git", "diff", "--name-only", anchor, "HEAD"], text=True,[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2159763Z [36;1m).splitlines())[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2160242Z [36;1massert changed <= allowed, f"unregistered source-tree changes: {sorted(changed - allowed)}"[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2160748Z [36;1mPY[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2442946Z shell: /usr/bin/bash -e {0}
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.2443459Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.8595952Z From https://github.com/gonos2k/AD4DVAR-radar
+Python 3.12.14 CPU · 2 unresolved resume cases	Require the registered source tree	2026-10-03T04:46:58.8596813Z  * branch            42891a34859924ff1bd04a35dc1e8690b8bbe971 -> FETCH_HEAD
+Python 3.12.14 CPU · 2 unresolved resume cases	Initialize evidence files	﻿2026-10-03T04:46:58.8933054Z ##[group]Run touch "$RUNNER_TEMP/targeted-linux-provenance.txt"
+Python 3.12.14 CPU · 2 unresolved resume cases	Initialize evidence files	2026-10-03T04:46:58.8933663Z [36;1mtouch "$RUNNER_TEMP/targeted-linux-provenance.txt"[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Initialize evidence files	2026-10-03T04:46:58.8934090Z [36;1mtouch "$RUNNER_TEMP/targeted-linux-pytest.log"[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Initialize evidence files	2026-10-03T04:46:58.8934484Z [36;1mtouch "$RUNNER_TEMP/targeted-linux-results.xml"[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Initialize evidence files	2026-10-03T04:46:58.9001802Z shell: /usr/bin/bash -e {0}
+Python 3.12.14 CPU · 2 unresolved resume cases	Initialize evidence files	2026-10-03T04:46:58.9002274Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up Python 3.12.14	﻿2026-10-03T04:46:58.9230441Z ##[group]Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up Python 3.12.14	2026-10-03T04:46:58.9230900Z with:
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up Python 3.12.14	2026-10-03T04:46:58.9231124Z   python-version: 3.12.14
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up Python 3.12.14	2026-10-03T04:46:58.9231373Z   check-latest: false
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up Python 3.12.14	2026-10-03T04:46:58.9234102Z   token: ***
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up Python 3.12.14	2026-10-03T04:46:58.9234335Z   update-environment: true
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up Python 3.12.14	2026-10-03T04:46:58.9234584Z   allow-prereleases: false
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up Python 3.12.14	2026-10-03T04:46:58.9234835Z   freethreaded: false
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up Python 3.12.14	2026-10-03T04:46:58.9235052Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up Python 3.12.14	2026-10-03T04:46:59.0573184Z ##[group]Installed versions
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up Python 3.12.14	2026-10-03T04:46:59.0615507Z Successfully set up CPython (3.12.14)
+Python 3.12.14 CPU · 2 unresolved resume cases	Set up Python 3.12.14	2026-10-03T04:46:59.0617148Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	﻿2026-10-03T04:46:59.0753733Z ##[group]Run python -I -m pip install \
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0754149Z [36;1mpython -I -m pip install \[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0754483Z [36;1m  --require-hashes \[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0754742Z [36;1m  --only-binary=:all: \[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0755134Z [36;1m  --extra-index-url https://download.pytorch.org/whl/cpu \[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0755581Z [36;1m  --requirement requirements/ci-py312-linux.lock[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0755932Z [36;1mpython -I -m pip install \[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0756216Z [36;1m  --no-build-isolation \[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0756491Z [36;1m  --no-deps \[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0756734Z [36;1m  --editable .[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0839196Z shell: /usr/bin/bash -e {0}
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0839824Z env:
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0840349Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0841188Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0841970Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0842716Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0843389Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0844062Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:46:59.0844630Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:00.5332542Z Looking in indexes: https://pypi.org/simple, https://download.pytorch.org/whl/cpu
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:00.8783510Z Collecting basedpyright==1.39.9 (from -r requirements/ci-py312-linux.lock (line 5))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:00.9418021Z   Downloading basedpyright-1.39.9-py3-none-any.whl (13.4 MB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:01.1923401Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.4/13.4 MB 59.0 MB/s  0:00:00
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:01.4911012Z Collecting boolean-py==5.0 (from -r requirements/ci-py312-linux.lock (line 9))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:01.4981142Z   Downloading boolean_py-5.0-py3-none-any.whl (26 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:01.7569504Z Collecting build==1.5.0 (from -r requirements/ci-py312-linux.lock (line 13))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:01.7657200Z   Downloading build-1.5.0-py3-none-any.whl (26 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:02.0280154Z Collecting cachecontrol==0.14.4 (from -r requirements/ci-py312-linux.lock (line 17))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:02.0355554Z   Downloading cachecontrol-0.14.4-py3-none-any.whl (22 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:02.0733575Z Collecting certifi==2026.7.22 (from -r requirements/ci-py312-linux.lock (line 21))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:02.0814476Z   Downloading certifi-2026.7.22-py3-none-any.whl (136 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:02.4532142Z Collecting cffi==2.1.1 (from -r requirements/ci-py312-linux.lock (line 25))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:02.4616885Z   Downloading cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:02.6086990Z Collecting charset-normalizer==3.5.1 (from -r requirements/ci-py312-linux.lock (line 127))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:02.6193891Z   Downloading charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (248 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.0523286Z Collecting cryptography==50.0.0 (from -r requirements/ci-py312-linux.lock (line 301))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.0596166Z   Downloading cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.0931589Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.7/4.7 MB 146.7 MB/s  0:00:00
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.2295494Z Collecting cyclonedx-python-lib==11.12.0 (from -r requirements/ci-py312-linux.lock (line 351))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.2371411Z   Downloading cyclonedx_python_lib-11.12.0-py3-none-any.whl (529 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.2424937Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 529.5/529.5 kB 95.2 MB/s  0:00:00
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.4776824Z Collecting defusedxml==0.7.1 (from -r requirements/ci-py312-linux.lock (line 355))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.4853544Z   Downloading defusedxml-0.7.1-py2.py3-none-any.whl (25 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.5440392Z Collecting filelock==3.32.3 (from -r requirements/ci-py312-linux.lock (line 359))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.5510270Z   Downloading filelock-3.32.3-py3-none-any.whl (98 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.5974631Z Collecting fsspec==2026.7.0 (from -r requirements/ci-py312-linux.lock (line 367))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.6054593Z   Downloading fsspec-2026.7.0-py3-none-any.whl (206 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.6522916Z Collecting idna==3.18 (from -r requirements/ci-py312-linux.lock (line 371))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.6595540Z   Downloading idna-3.18-py3-none-any.whl (65 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.7645958Z Collecting iniconfig==2.3.0 (from -r requirements/ci-py312-linux.lock (line 375))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.7728714Z   Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.8067868Z Collecting jinja2==3.1.6 (from -r requirements/ci-py312-linux.lock (line 379))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:03.8138081Z   Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.0671195Z Collecting license-expression==30.4.4 (from -r requirements/ci-py312-linux.lock (line 383))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.0742902Z   Downloading license_expression-30.4.4-py3-none-any.whl (120 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.1826334Z Collecting markdown-it-py==4.2.0 (from -r requirements/ci-py312-linux.lock (line 387))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.1899670Z   Downloading markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.3415902Z Collecting markupsafe==3.0.3 (from -r requirements/ci-py312-linux.lock (line 391))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.3494540Z   Downloading markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.4612065Z Collecting mdurl==0.1.2 (from -r requirements/ci-py312-linux.lock (line 482))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.4717647Z   Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.5050616Z Collecting mpmath==1.3.0 (from -r requirements/ci-py312-linux.lock (line 486))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.5123946Z   Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.5182584Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 87.7 MB/s  0:00:00
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.7032360Z Collecting msgpack==1.2.1 (from -r requirements/ci-py312-linux.lock (line 490))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.7108596Z   Downloading msgpack-1.2.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (419 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.7670491Z Collecting networkx==3.6.1 (from -r requirements/ci-py312-linux.lock (line 558))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.7745785Z   Downloading networkx-3.6.1-py3-none-any.whl (2.1 MB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:04.8738284Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 18.9 MB/s  0:00:00
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:05.0512987Z Collecting nodejs-wheel-binaries==24.16.0 (from -r requirements/ci-py312-linux.lock (line 562))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:05.0597403Z   Downloading nodejs_wheel_binaries-24.16.0-py2.py3-none-manylinux_2_28_x86_64.whl (60.7 MB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:06.0689251Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 60.7/60.7 MB 60.1 MB/s  0:00:01
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:06.9428364Z Collecting numpy==2.2.6 (from -r requirements/ci-py312-linux.lock (line 573))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:06.9514795Z   Downloading numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.5 MB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:07.0175470Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.5/16.5 MB 260.5 MB/s  0:00:00
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:07.1929098Z Collecting packageurl-python==0.17.6 (from -r requirements/ci-py312-linux.lock (line 632))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:07.1998532Z   Downloading packageurl_python-0.17.6-py3-none-any.whl (36 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:07.2344035Z Collecting packaging==26.3 (from -r requirements/ci-py312-linux.lock (line 636))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:07.2417893Z   Downloading packaging-26.3-py3-none-any.whl (129 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:07.2478024Z Requirement already satisfied: pip==26.2.1 in /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages (from -r requirements/ci-py312-linux.lock (line 645)) (26.2.1)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:07.4930401Z Collecting pip-api==0.0.34 (from -r requirements/ci-py312-linux.lock (line 649))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:07.5175789Z   Downloading pip_api-0.0.34-py3-none-any.whl (120 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:07.7832535Z Collecting pip-audit==2.10.1 (from -r requirements/ci-py312-linux.lock (line 653))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:07.7904581Z   Downloading pip_audit-2.10.1-py3-none-any.whl (62 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:07.9022652Z Collecting pip-requirements-parser==32.0.1 (from -r requirements/ci-py312-linux.lock (line 657))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:07.9092508Z   Downloading pip_requirements_parser-32.0.1-py3-none-any.whl (35 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:08.0407408Z Collecting platformdirs==4.11.3 (from -r requirements/ci-py312-linux.lock (line 661))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:08.0482178Z   Downloading platformdirs-4.11.3-py3-none-any.whl (23 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:08.2820471Z Collecting pluggy==1.6.0 (from -r requirements/ci-py312-linux.lock (line 665))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:08.2888676Z   Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:08.3930046Z Collecting py-serializable==2.1.0 (from -r requirements/ci-py312-linux.lock (line 669))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:08.4002901Z   Downloading py_serializable-2.1.0-py3-none-any.whl (23 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:08.5032208Z Collecting pycparser==3.0 (from -r requirements/ci-py312-linux.lock (line 673))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:08.5107586Z   Downloading pycparser-3.0-py3-none-any.whl (48 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:08.7733351Z Collecting pygments==2.20.0 (from -r requirements/ci-py312-linux.lock (line 677))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:08.7805564Z   Downloading pygments-2.20.0-py3-none-any.whl (1.2 MB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:08.7873826Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 216.8 MB/s  0:00:00
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:08.9061305Z Collecting pyparsing==3.3.2 (from -r requirements/ci-py312-linux.lock (line 683))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:08.9133919Z   Downloading pyparsing-3.3.2-py3-none-any.whl (122 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.0204851Z Collecting pyproject-hooks==1.2.0 (from -r requirements/ci-py312-linux.lock (line 687))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.0275541Z   Downloading pyproject_hooks-1.2.0-py3-none-any.whl (10 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.1380599Z Collecting pytest==9.1.1 (from -r requirements/ci-py312-linux.lock (line 691))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.1458284Z   Downloading pytest-9.1.1-py3-none-any.whl (386 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.1872783Z Collecting requests==2.34.2 (from -r requirements/ci-py312-linux.lock (line 695))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.1943708Z   Downloading requests-2.34.2-py3-none-any.whl (73 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.4730249Z Collecting rich==15.0.0 (from -r requirements/ci-py312-linux.lock (line 701))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.4808383Z   Downloading rich-15.0.0-py3-none-any.whl (310 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.5852421Z Collecting setuptools==84.0.0 (from -r requirements/ci-py312-linux.lock (line 705))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.5927803Z   Downloading setuptools-84.0.0-py3-none-any.whl (818 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.5988515Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 818.2/818.2 kB 154.0 MB/s  0:00:00
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.7173291Z Collecting sortedcontainers==2.4.0 (from -r requirements/ci-py312-linux.lock (line 711))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.7242782Z   Downloading sortedcontainers-2.4.0-py2.py3-none-any.whl (29 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.7617806Z Collecting sympy==1.14.0 (from -r requirements/ci-py312-linux.lock (line 715))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.7685435Z   Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.7912760Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 304.1 MB/s  0:00:00
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.9224656Z Collecting tomli==2.4.1 (from -r requirements/ci-py312-linux.lock (line 719))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:09.9301371Z   Downloading tomli-2.4.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (253 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:10.0348739Z Collecting tomli-w==1.2.0 (from -r requirements/ci-py312-linux.lock (line 768))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:10.0423714Z   Downloading tomli_w-1.2.0-py3-none-any.whl (6.7 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:10.1940647Z Collecting torch==2.13.0+cpu (from -r requirements/ci-py312-linux.lock (line 772))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:10.2735426Z   Downloading torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl (191.8 MB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:11.1188017Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 191.8/191.8 MB 231.5 MB/s  0:00:00
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:11.3614651Z Collecting typing-extensions==4.16.0 (from -r requirements/ci-py312-linux.lock (line 807))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:11.3704132Z   Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:11.4088904Z Collecting urllib3==2.8.0 (from -r requirements/ci-py312-linux.lock (line 813))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:11.4176202Z   Downloading urllib3-2.8.0-py3-none-any.whl (135 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:11.6795904Z Collecting wheel==0.46.3 (from -r requirements/ci-py312-linux.lock (line 817))
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:11.6882055Z   Downloading wheel-0.46.3-py3-none-any.whl (30 kB)
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:12.0319352Z Installing collected packages: sortedcontainers, mpmath, boolean-py, urllib3, typing-extensions, tomli-w, tomli, sympy, setuptools, pyproject-hooks, pyparsing, pygments, pycparser, pluggy, platformdirs, pip-api, packaging, packageurl-python, numpy, nodejs-wheel-binaries, networkx, msgpack, mdurl, markupsafe, license-expression, iniconfig, idna, fsspec, filelock, defusedxml, charset-normalizer, certifi, wheel, requests, pytest, py-serializable, pip-requirements-parser, markdown-it-py, jinja2, cffi, build, basedpyright, torch, rich, cyclonedx-python-lib, cryptography, cachecontrol, pip-audit
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:40.6743368Z 
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:40.6792747Z Successfully installed basedpyright-1.39.9 boolean-py-5.0 build-1.5.0 cachecontrol-0.14.4 certifi-2026.7.22 cffi-2.1.1 charset-normalizer-3.5.1 cryptography-50.0.0 cyclonedx-python-lib-11.12.0 defusedxml-0.7.1 filelock-3.32.3 fsspec-2026.7.0 idna-3.18 iniconfig-2.3.0 jinja2-3.1.6 license-expression-30.4.4 markdown-it-py-4.2.0 markupsafe-3.0.3 mdurl-0.1.2 mpmath-1.3.0 msgpack-1.2.1 networkx-3.6.1 nodejs-wheel-binaries-24.16.0 numpy-2.2.6 packageurl-python-0.17.6 packaging-26.3 pip-api-0.0.34 pip-audit-2.10.1 pip-requirements-parser-32.0.1 platformdirs-4.11.3 pluggy-1.6.0 py-serializable-2.1.0 pycparser-3.0 pygments-2.20.0 pyparsing-3.3.2 pyproject-hooks-1.2.0 pytest-9.1.1 requests-2.34.2 rich-15.0.0 setuptools-84.0.0 sortedcontainers-2.4.0 sympy-1.14.0 tomli-2.4.1 tomli-w-1.2.0 torch-2.13.0+cpu typing-extensions-4.16.0 urllib3-2.8.0 wheel-0.46.3
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:41.1820212Z Obtaining file:///home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:41.1830556Z   Checking if build backend supports build_editable: started
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:41.3889025Z   Checking if build backend supports build_editable: finished with status 'done'
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:41.3898184Z   Preparing editable metadata (pyproject.toml): started
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:41.6485332Z   Preparing editable metadata (pyproject.toml): finished with status 'done'
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:41.6590369Z Building wheels for collected packages: advar-radar-nowcast
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:41.6597450Z   Building editable for advar-radar-nowcast (pyproject.toml): started
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:41.9582682Z   Building editable for advar-radar-nowcast (pyproject.toml): finished with status 'done'
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:41.9590224Z   Created wheel for advar-radar-nowcast: filename=advar_radar_nowcast-0.114.0-0.editable-py3-none-any.whl size=63186 sha256=895887ed9597ee252313c77dfabdbaf94b1d651fee0c2e4eb703d3f38bbe7066
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:41.9593722Z   Stored in directory: /tmp/pip-ephem-wheel-cache-pbcvhttn/wheels/1b/17/88/759e7a703f550adf36506436df8ea413a3c2e2eb8d99fc9f9a
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:41.9684853Z Successfully built advar-radar-nowcast
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:41.9794875Z Installing collected packages: advar-radar-nowcast
+Python 3.12.14 CPU · 2 unresolved resume cases	Install the hashed Linux CPU closure	2026-10-03T04:47:41.9910996Z Successfully installed advar-radar-nowcast-0.114.0
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	﻿2026-10-03T04:47:42.0380263Z ##[group]Run python -I - <<'PY' | tee "$PROVENANCE_PATH"
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0380765Z [36;1mpython -I - <<'PY' | tee "$PROVENANCE_PATH"[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0381087Z [36;1mimport hashlib[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0381321Z [36;1mimport platform[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0381555Z [36;1mimport subprocess[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0381790Z [36;1mimport sys[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0382021Z [36;1mfrom pathlib import Path[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0382270Z [36;1m[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0382462Z [36;1mimport pytest[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0382691Z [36;1mimport torch[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0383081Z [36;1m[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0383344Z [36;1massert sys.version_info[:3] == (3, 12, 14), sys.version[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0383763Z [36;1massert pytest.__version__ == "9.1.1", pytest.__version__[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0384184Z [36;1massert torch.__version__ == "2.13.0+cpu", torch.__version__[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0384719Z [36;1mprint(f"commit={subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()}")[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0385291Z [36;1mprint(f"python={platform.python_version()}")[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0385640Z [36;1mprint(f"platform={platform.platform()}")[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0385968Z [36;1mprint(f"pytest={pytest.__version__}")[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0386272Z [36;1mprint(f"torch={torch.__version__}")[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0386550Z [36;1mexpected = {[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0387028Z [36;1m    "requirements/ci-py312-linux.lock": "78b6f2a249d00c19d6e21028e025dd716a754e6dbacaf947a8fba11ad5b92718",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0388313Z [36;1m    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0389059Z [36;1m    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0389763Z [36;1m    "src/advar/fv_sensitivity.py": "2fdc5d4683fa57ebad9f987e28f92d46ead82f07f751592c98ea98a66dc7905d",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0390585Z [36;1m    "examples/weather_scenarios/fv_minmod_local_path_probe.py": "1ddb5c9b0680c72fb682af6eedaaee44aab87288ae691d12368da5e4fb4f8c05",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0391479Z [36;1m    "tests/test_fv_observation_response.py": "7b7be8f9b73de82b9f2767fa7aec0051102a7747b512af8bbc524d328c719123",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0392264Z [36;1m    "tests/test_fv_research_problem.py": "8d4ecaa3d08d39a0eec6bb36f0434c937504cbab81a03ca63652ee0a689f5011",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0393032Z [36;1m    "tests/test_fv_concurrent_response.py": "6f9e8b850c49b26df9fde907d74a9e467150edd9ba288f8b118c98bf222d1488",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0393819Z [36;1m    "tests/test_fv_partial_face_event_runner.py": "a537533183ddbb40fa82409c9804eb70a0c20da06cec21293261ebcb2e5fc05a",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0394628Z [36;1m    "tests/test_fv_response_job_reconcile.py": "6801a825154fd9bdfe34af2ebcb46a3517898541943f9445e2abb865f60ffd0d",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0395421Z [36;1m    "tests/test_fv_minmod_local_path_probe.py": "bc9a37f5c1df1f7a7821bc34d17d8629837e2e46bc86447345ebf4ac283825c8",[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0395946Z [36;1m}[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0396201Z [36;1mfor name, expected_sha256 in expected.items():[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0396617Z [36;1m    digest = hashlib.sha256(Path(name).read_bytes()).hexdigest()[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0397002Z [36;1m    print(f"sha256:{name}={digest}")[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0397406Z [36;1m    assert digest == expected_sha256, f"registered source changed: {name}"[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0398188Z [36;1mdirty = subprocess.check_output(["git", "status", "--porcelain"], text=True).strip()[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0398687Z [36;1massert not dirty, f"checkout is not clean: {dirty}"[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0399009Z [36;1mPY[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0465114Z shell: /usr/bin/bash -e {0}
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0465383Z env:
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0465658Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0466114Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0466569Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0467332Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0468103Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0468517Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0468962Z   PROVENANCE_PATH: /home/runner/work/_temp/targeted-linux-provenance.txt
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:42.0469346Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0485368Z commit=121ef5ad50eb8c08437f819bc3a468b96a9663b1
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0485787Z python=3.12.14
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0486357Z platform=Linux-6.17.0-1022-azure-x86_64-with-glibc2.39
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0486696Z pytest=9.1.1
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0486891Z torch=2.13.0+cpu
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0487339Z sha256:requirements/ci-py312-linux.lock=78b6f2a249d00c19d6e21028e025dd716a754e6dbacaf947a8fba11ad5b92718
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0488405Z sha256:src/advar/transport.py=604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0489113Z sha256:src/advar/variational.py=e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0489786Z sha256:src/advar/fv_sensitivity.py=2fdc5d4683fa57ebad9f987e28f92d46ead82f07f751592c98ea98a66dc7905d
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0490562Z sha256:examples/weather_scenarios/fv_minmod_local_path_probe.py=1ddb5c9b0680c72fb682af6eedaaee44aab87288ae691d12368da5e4fb4f8c05
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0491443Z sha256:tests/test_fv_observation_response.py=7b7be8f9b73de82b9f2767fa7aec0051102a7747b512af8bbc524d328c719123
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0492183Z sha256:tests/test_fv_research_problem.py=8d4ecaa3d08d39a0eec6bb36f0434c937504cbab81a03ca63652ee0a689f5011
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0493627Z sha256:tests/test_fv_concurrent_response.py=6f9e8b850c49b26df9fde907d74a9e467150edd9ba288f8b118c98bf222d1488
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0494557Z sha256:tests/test_fv_partial_face_event_runner.py=a537533183ddbb40fa82409c9804eb70a0c20da06cec21293261ebcb2e5fc05a
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0495305Z sha256:tests/test_fv_response_job_reconcile.py=6801a825154fd9bdfe34af2ebcb46a3517898541943f9445e2abb865f60ffd0d
+Python 3.12.14 CPU · 2 unresolved resume cases	Record and assert the tested runtime	2026-10-03T04:47:44.0496062Z sha256:tests/test_fv_minmod_local_path_probe.py=bc9a37f5c1df1f7a7821bc34d17d8629837e2e46bc86447345ebf4ac283825c8
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	﻿2026-10-03T04:47:44.3559088Z ##[group]Run set -o pipefail
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3559428Z [36;1mset -o pipefail[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3559729Z [36;1mtimeout --signal=TERM --kill-after=10s 10m \[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3560117Z [36;1m  env -u PYTEST_ADDOPTS python -I -m pytest -q \[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3560536Z [36;1m    --junitxml="$RUNNER_TEMP/targeted-linux-results.xml" \[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3561218Z [36;1m    'tests/test_fv_minmod_local_path_probe.py::test_new_direction_clears_old_pairs_and_computes_its_cross' \[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3562012Z [36;1m    'tests/test_fv_minmod_local_path_probe.py::test_completed_direction_resume_validates_without_repeating_reanalysis' \[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3562629Z [36;1m  2>&1 | tee "$RUNNER_TEMP/targeted-linux-pytest.log"[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3627296Z shell: /usr/bin/bash -e {0}
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3627733Z env:
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3628017Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3628490Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3628979Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3629372Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3629765Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3630155Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3630497Z   OMP_NUM_THREADS: 1
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3630707Z   MKL_NUM_THREADS: 1
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:44.3630919Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:52.7214289Z ..                                                                       [100%]
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:52.7215046Z =============================== warnings summary ===============================
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:52.7215682Z tests/test_fv_minmod_local_path_probe.py: 18 warnings
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:52.7217331Z   /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:52.7219303Z     warnings.warn(
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:52.7219522Z 
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:52.7219852Z -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+Python 3.12.14 CPU · 2 unresolved resume cases	Run the two unresolved resume cases	2026-10-03T04:47:52.7220496Z 2 passed, 18 warnings in 7.84s
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	﻿2026-10-03T04:47:53.3163771Z ##[group]Run python -I - <<'PY'
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3165519Z [36;1mpython -I - <<'PY'[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3166288Z [36;1mimport os[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3166695Z [36;1mfrom pathlib import Path[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3167180Z [36;1mfrom xml.etree import ElementTree[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3167919Z [36;1m[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3168465Z [36;1mroot = ElementTree.parse(Path(os.environ["JUNIT_PATH"])).getroot()[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3169284Z [36;1msuites = list(root) if root.tag == "testsuites" else [root][0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3170143Z [36;1mcases = [case for suite in suites for case in suite.findall("testcase")][0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3171002Z [36;1mfailures = sum(len(case.findall("failure")) for case in cases)[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3171796Z [36;1merrors = sum(len(case.findall("error")) for case in cases)[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3172664Z [36;1mskipped = sum(len(case.findall("skipped")) for case in cases)[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3173603Z [36;1massert (len(cases), failures, errors, skipped) == (2, 0, 0, 0), ([0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3174457Z [36;1m    f"expected 2 passing node IDs; cases={len(cases)} "[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3175225Z [36;1m    f"failures={failures} errors={errors} skipped={skipped}"[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3175829Z [36;1m)[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3176232Z [36;1mprint("exactly two selected cases passed")[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3176736Z [36;1mPY[0m
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3269065Z shell: /usr/bin/bash -e {0}
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3269492Z env:
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3269950Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3270726Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3271515Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3272207Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3272892Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3273607Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3274368Z   JUNIT_PATH: /home/runner/work/_temp/targeted-linux-results.xml
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3274974Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Require two passing cases	2026-10-03T04:47:53.3632897Z exactly two selected cases passed
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	﻿2026-10-03T04:47:53.3742871Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3743301Z with:
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3743617Z   name: targeted-linux-repair-121ef5ad50eb8c08437f819bc3a468b96a9663b1
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3744467Z   path: /home/runner/work/_temp/targeted-linux-provenance.txt
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	/home/runner/work/_temp/targeted-linux-pytest.log
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	/home/runner/work/_temp/targeted-linux-results.xml
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3745184Z   if-no-files-found: error
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3745416Z   retention-days: 7
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3745626Z   compression-level: 6
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3745839Z   overwrite: false
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3746050Z   include-hidden-files: false
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3746289Z   archive: true
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3746481Z env:
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3746733Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3747180Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3747862Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3748291Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3748680Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3749068Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.3749392Z ##[endgroup]
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.5279513Z Multiple search paths detected. Calculating the least common ancestor of all paths
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.5281245Z The least common ancestor is /home/runner/work/_temp. This will be the root directory of the artifact
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.5282127Z With the provided path, there will be 3 files uploaded
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.5285233Z Artifact name is valid!
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.5286021Z Root directory input is valid!
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.9115364Z Uploading artifact: targeted-linux-repair-121ef5ad50eb8c08437f819bc3a468b96a9663b1.zip
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:53.9160955Z Beginning upload of artifact content to blob storage
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:54.2362513Z Uploaded bytes 1779
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:54.3120656Z Finished uploading artifact content to blob storage!
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:54.3122270Z SHA256 digest of uploaded artifact is d9fd7d12b9234550649765f98dbf867001f2517aad5baa678710959d885cb5da
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:54.3123491Z Finalizing artifact upload
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:54.7146436Z Artifact targeted-linux-repair-121ef5ad50eb8c08437f819bc3a468b96a9663b1 successfully finalized. Artifact ID 11264827585
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:54.7148714Z Artifact targeted-linux-repair-121ef5ad50eb8c08437f819bc3a468b96a9663b1 has been successfully uploaded! Final size is 1779 bytes. Artifact ID is 11264827585
+Python 3.12.14 CPU · 2 unresolved resume cases	Preserve targeted run evidence	2026-10-03T04:47:54.7150287Z Artifact download URL: https://github.com/gonos2k/AD4DVAR-radar/actions/runs/37097672788/artifacts/11264827585
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Set up Python 3.12.14	﻿2026-10-03T04:47:54.7316545Z Post job cleanup.
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	﻿2026-10-03T04:47:54.8811866Z Post job cleanup.
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:54.9778908Z [command]/usr/bin/git version
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:54.9834122Z git version 2.55.0
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:54.9890803Z Temporarily overriding HOME='/home/runner/work/_temp/240141da-f0f0-405e-85ce-616e5df8ed3a' before making global git config changes
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:54.9892460Z Adding repository directory to the temporary git global config as a safe directory
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:54.9898613Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:54.9945716Z Removing SSH command configuration
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:54.9968543Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:54.9992328Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0271623Z Removing HTTP extra header
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0277972Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0332624Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0610157Z Removing includeIf entries pointing to credentials config files
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0617911Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0659819Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0662454Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0663655Z includeif.gitdir:/github/workspace/.git.path
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0664654Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0675170Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0712417Z /home/runner/work/_temp/git-credentials-e12bb2b5-ca4c-45b8-aae2-86502ac57f4f.config
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0726796Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-e12bb2b5\-ca4c\-45b8\-aae2\-86502ac57f4f\.config
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0778132Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0813355Z /home/runner/work/_temp/git-credentials-e12bb2b5-ca4c-45b8-aae2-86502ac57f4f.config
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0823982Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-e12bb2b5\-ca4c\-45b8\-aae2\-86502ac57f4f\.config
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0877804Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0907335Z /github/runner_temp/git-credentials-e12bb2b5-ca4c-45b8-aae2-86502ac57f4f.config
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0915849Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-e12bb2b5\-ca4c\-45b8\-aae2\-86502ac57f4f\.config
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0954259Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0984292Z /github/runner_temp/git-credentials-e12bb2b5-ca4c-45b8-aae2-86502ac57f4f.config
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.0991577Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-e12bb2b5\-ca4c\-45b8\-aae2\-86502ac57f4f\.config
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.1039119Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Python 3.12.14 CPU · 2 unresolved resume cases	Post Check out source	2026-10-03T04:47:55.1308109Z Removing credentials config '/home/runner/work/_temp/git-credentials-e12bb2b5-ca4c-45b8-aae2-86502ac57f4f.config'
+Python 3.12.14 CPU · 2 unresolved resume cases	Complete job	﻿2026-10-03T04:47:55.1480900Z Cleaning up orphan processes

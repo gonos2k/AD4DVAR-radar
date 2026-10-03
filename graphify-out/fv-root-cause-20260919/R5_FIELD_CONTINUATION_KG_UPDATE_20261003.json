@@ -1,0 +1,52 @@
+{
+  "record": "FV_POINT_3H_FIELD_CONTINUATION_RESULTS_20261003.md,point_3h_field_continuation_attempt1",
+  "status": "one guarded four-update field-only continuation completed; iteration-limit refusal; no field issuance",
+  "baseline": "S4 attempt1 raw field refinement 99dbc6f9b6813c81d9981f77616eef0519b3e688eee247a72d5183856d67a062; accepted trial full-control SHA b7a3e0274e99b299576457105010cceb247e4aba0edde6bbbc3e78dede868739",
+  "method": "fresh 20-dimensional field Hessian with 20 exact JVP columns and independent 21st minimum-eigenpair HVP; unchanged refine_stationary solver; fixed parameters and six dynamics controls; strict 3600-stage endpoint checks; independently audited field PCG residuals",
+  "execution": {
+    "status": "completed",
+    "wall_seconds": 1326.6122184998821,
+    "sampled_peak_rss_bytes": 367935488,
+    "wall_limit_seconds": 1800,
+    "sampled_rss_limit_bytes": 1073741824,
+    "resource_termination": null,
+    "exit_code": 0
+  },
+  "numerical": {
+    "status": "continuation_refused",
+    "reason": "four-iteration stationarity refinement limit; last accepted field-gradient maximum 0.35437176602311615 exceeds 1e-10",
+    "field_issuance": false,
+    "pcg_iterations": [26, 29, 27, 27],
+    "independent_true_relative_residuals": [2.918190416064318e-11, 5.694575351292001e-13, 3.0737068242206926e-11, 8.17717415450866e-12],
+    "accepted_step_sizes": [0.125, 0.5, 0.25, 1.0],
+    "objective_start": 0.16435002216168038,
+    "objective_last_accepted": 0.13370236346624992,
+    "field_gradient_max_last_accepted": 0.35437176602311615,
+    "dynamics_gradient_max_last_accepted": 3.9165024619846056,
+    "full_gradient_max_last_accepted": 3.9165024619846056
+  },
+  "fresh_start_hff": {
+    "hvp_columns": 20,
+    "independent_eigenpair_hvp": true,
+    "lambda_min": 0.6656854871301745,
+    "lambda_max": 1673.3924657001078,
+    "condition": 2513.7884151782278,
+    "symmetry_relative": 1.2211069816630324e-15,
+    "eigenpair_relative_residual": 4.175961156522542e-16
+  },
+  "provenance": {
+    "source_bytes_unchanged": true,
+    "input_identity_unchanged": true,
+    "raw_attempt_unchanged": true,
+    "parameters_unchanged": true,
+    "dynamics_unchanged": true,
+    "strict_endpoint_branch_passed": true
+  },
+  "claims": {
+    "full_root": false,
+    "response": false,
+    "score": false,
+    "physical_validation": false
+  },
+  "next_scientific_step": "A separately reviewed field-only continuation plan would be needed before using additional Newton updates from the last accepted diagnostic candidate; do not infer full-control stationarity from the field block."
+}

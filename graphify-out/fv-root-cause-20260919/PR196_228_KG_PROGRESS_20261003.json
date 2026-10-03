@@ -1,0 +1,226 @@
+{
+  "scope": "Research checklist progress; execution, stationarity, response accuracy and physical skill are separate",
+  "cached_graph": {
+    "path": "graphify-out/graph.json",
+    "sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+    "limit": "Preexisting duplicate multigraph keys; shared cache is not rebuilt. Changed-code AST refresh is isolated."
+  },
+  "S1": {
+    "status": "fresh block diagnostic completed",
+    "raw": "partial_schur_diagnostic_attempt1/schur.json",
+    "sha256": "0eb9beb677c4a72a5b0d8559c0a94482faef29ab582a389ecb6a7a9878b8bbd4",
+    "mathematics": "S=Hdd-Hdf Hff^-1 Hfd; RHS=-gd+Hdf Hff^-1 gf; recover df including gf",
+    "scope_limit": "PR227 endpoint unchanged; no applied step, full root or response",
+    "reviews": "GREEN/RED GO"
+  },
+  "R2-O-A": {
+    "status": "conditional original-statistical-problem response validated at tested points",
+    "raw": "point_single_qx_response_attempt2/response.json",
+    "sha256": "cb3283e0ee70518700a6ee5e2ade3f118683a42bbede26433e9e96aed231a59f",
+    "mathematics": "25 tangent controls on qx[3,4]=0; original26 zero-centered priors retained; qy released after its negative one-sided derivative",
+    "parameters": 13,
+    "direction": "four middle-time observed dBZ values, +1 each",
+    "step_sizes_dbz": [
+      0.00025,
+      0.000125
+    ],
+    "relative_errors": [
+      4.9100245247033094e-08,
+      1.2187962594056804e-08
+    ],
+    "scope_limit": "Own normal/curvature/branch audits at four actual-p endpoints; no full26 classical root, uniform ball, 3hour, finite-impact or physical claim",
+    "reviews": "GREEN/RED GO"
+  },
+  "S4": {
+    "status": "fresh terminal block/Schur diagnostic completed; three-hour root and response remain open",
+    "raw": "point_3h_terminal_block_schur_attempt1/block_schur.json",
+    "sha256": "ca04e5f9712667cee95de69121d889dd8f2d33f81192b70e3724ee6fa52f224b",
+    "endpoint_control_sha256": "602b08828b92508dfaed3605f4626882a1cf70646730da1cb866416dd15cf0b9",
+    "mathematics": "fresh H26 eigensystem; f=20,d=6, Hff SPD solve, S=Hdd-Hdf Hff^-1 Hfd and rd=gd-Hdf Hff^-1 gf",
+    "scope_limit": "latest PR204-tail endpoint only; full gradient nonstationary; no applied step, exact root, response, or physical claim"
+  },
+  "Linux": {
+    "historical_full_run": "36836402831: failed after2311 disjoint node IDs; preserved",
+    "targeted_attempt1": "37095628674: selector collection failure; no tests executed",
+    "targeted_attempt2": "37096279408 at 7b18c2d: five passed, two resume-controller test-helper path failures; theta case passed with opt-in 1e-12 adjoint tolerance",
+    "targeted_attempt3": "37097672788 at 121ef5a: two corrected resume-controller tests passed; JUnit 2/2 with zero failures, errors, or skips",
+    "targeted_attempt3_artifact": {
+      "id": 11264827585,
+      "sha256": "d9fd7d12b9234550649765f98dbf867001f2517aad5baa678710959d885cb5da",
+      "path": "graphify-out/fv-root-cause-20260919/linux_targeted_repair_attempt3"
+    },
+    "scope_limit": "Attempts 2 and 3 are different commits; historical run 36836402831 remains failed, no whole-Linux pass or tolerance-causality claim; exact archive/cache production contracts remain unchanged"
+  },
+  "remaining": [
+    "Original classical full26 smooth-root response contracts remain unsupported at selected events",
+    "Original 3hour point endpoint remains nonstationary; stationary root and response remain open after the fresh block/Schur diagnostic",
+    "Real native radar/product provenance and independent future targets remain external input requirements"
+  ],
+  "S4_one_step": {
+    "status": "original J descent candidate; not stationary",
+    "raw": "point_3h_schur_newton_step_attempt1/newton_step.json",
+    "sha256": "b71411024191756d27bc30982800207a392e31d5b60862229ab24c181aa3fdbd",
+    "pcg_iterations": 1,
+    "true_relative_residual": 2.206950439777628e-13,
+    "J_before": 0.9314353874766477,
+    "J_after": 0.42545277019202327,
+    "gradient_inf_after": 22.08953658329717,
+    "phi_after": 485.72930980855153,
+    "limit": "Changed strict endpoint branch; no inherited curvature, root, score, response or physical claim",
+    "reviews": "GREEN/RED GO"
+  },
+  "S4_accepted_point_audit": {
+    "status": "fresh original-point curvature diagnostic completed; full Hessian indefinite",
+    "raw": "point_3h_accepted_endpoint_audit_attempt1/audit.json",
+    "sha256": "b20c5f85cc8921d8cbff69eddac6167c453739906b7a05f5ac1737df405147e6",
+    "full_hessian_minimum": -21.827023402108015,
+    "hff_minimum": 0.4920280467423301,
+    "hff_condition": 3347.065365832031,
+    "schur_minimum": -406.3280417272395,
+    "next": "field-only precision correction at unchanged dynamics; original full root/response still open",
+    "reviews": "GREEN/RED GO"
+  },
+  "S4_field_continuation": {
+    "record": "FV_POINT_3H_FIELD_CONTINUATION_RESULTS_20261003.md,point_3h_field_continuation_attempt1",
+    "status": "one guarded four-update field-only continuation completed; iteration-limit refusal; no field issuance",
+    "baseline": "S4 attempt1 raw field refinement 99dbc6f9b6813c81d9981f77616eef0519b3e688eee247a72d5183856d67a062; accepted trial full-control SHA b7a3e0274e99b299576457105010cceb247e4aba0edde6bbbc3e78dede868739",
+    "method": "fresh 20-dimensional field Hessian with 20 exact JVP columns and independent 21st minimum-eigenpair HVP; unchanged refine_stationary solver; fixed parameters and six dynamics controls; strict 3600-stage endpoint checks; independently audited field PCG residuals",
+    "execution": {
+      "status": "completed",
+      "wall_seconds": 1326.6122184998821,
+      "sampled_peak_rss_bytes": 367935488,
+      "wall_limit_seconds": 1800,
+      "sampled_rss_limit_bytes": 1073741824,
+      "resource_termination": null,
+      "exit_code": 0
+    },
+    "numerical": {
+      "status": "continuation_refused",
+      "reason": "four-iteration stationarity refinement limit; last accepted field-gradient maximum 0.35437176602311615 exceeds 1e-10",
+      "field_issuance": false,
+      "pcg_iterations": [
+        26,
+        29,
+        27,
+        27
+      ],
+      "independent_true_relative_residuals": [
+        2.918190416064318e-11,
+        5.694575351292001e-13,
+        3.0737068242206926e-11,
+        8.17717415450866e-12
+      ],
+      "accepted_step_sizes": [
+        0.125,
+        0.5,
+        0.25,
+        1.0
+      ],
+      "objective_start": 0.16435002216168038,
+      "objective_last_accepted": 0.13370236346624992,
+      "field_gradient_max_last_accepted": 0.35437176602311615,
+      "dynamics_gradient_max_last_accepted": 3.9165024619846056,
+      "full_gradient_max_last_accepted": 3.9165024619846056
+    },
+    "fresh_start_hff": {
+      "hvp_columns": 20,
+      "independent_eigenpair_hvp": true,
+      "lambda_min": 0.6656854871301745,
+      "lambda_max": 1673.3924657001078,
+      "condition": 2513.7884151782278,
+      "symmetry_relative": 1.2211069816630324e-15,
+      "eigenpair_relative_residual": 4.175961156522542e-16
+    },
+    "provenance": {
+      "source_bytes_unchanged": true,
+      "input_identity_unchanged": true,
+      "raw_attempt_unchanged": true,
+      "parameters_unchanged": true,
+      "dynamics_unchanged": true,
+      "strict_endpoint_branch_passed": true
+    },
+    "claims": {
+      "full_root": false,
+      "response": false,
+      "score": false,
+      "physical_validation": false
+    },
+    "next_scientific_step": "A separately reviewed field-only continuation plan would be needed before using additional Newton updates from the last accepted diagnostic candidate; do not infer full-control stationarity from the field block."
+  },
+  "S4_field_precision_continuation": {
+    "record": "FV_POINT_3H_FIELD_PRECISION_CONTINUATION_RESULTS_20261003.md,field_precision_continuation_attempt1",
+    "status": "one guarded six-iteration-cap field-precision continuation completed with internal-budget refusal during solve 6; no field issuance",
+    "baseline": "R5 raw field continuation a5759c3eca7ca537e0038b3dbe95f3ff67abdabcc43f5f5a2b3aa3cc5982fb1b; sole warm control ecfbbbd4919b8b783c93dce4a8dbb27598eac8eb9ca698bcf7ecd510f737b38b",
+    "method": "unchanged original 26-control objective restricted to 20 field controls; fixed 13 parameters and six dynamics controls; fresh 20-column Hff plus 21st eigenpair HVP; unchanged refine_stationary, six Newton updates max, 16 backtracks, 104 PCG iterations; strict pointwise branch checks and independent true-residual audits",
+    "execution": {
+      "status": "completed",
+      "wall_seconds": 1725.364026500145,
+      "sampled_peak_rss_bytes": 377978880,
+      "wall_limit_seconds": 1800,
+      "sampled_rss_limit_bytes": 1073741824,
+      "resource_termination": null,
+      "monitor_error": null,
+      "exit_code": 0
+    },
+    "numerical": {
+      "status": "continuation_refused",
+      "reason": "1680-second internal budget exhausted during the sixth PCG solve after 10 operator calls, before a solution or sixth accepted field update",
+      "field_issuance": false,
+      "accepted_updates": 5,
+      "accepted_step_sizes": [
+        0.0625,
+        0.125,
+        0.25,
+        0.0625,
+        0.125
+      ],
+      "pcg_iterations_completed": [
+        29,
+        27,
+        25,
+        27,
+        27
+      ],
+      "independent_true_relative_residuals": [
+        2.1748386161060516e-11,
+        6.303048487013739e-11,
+        1.517200828189637e-11,
+        2.8159026098982005e-11,
+        1.848818015003999e-12
+      ],
+      "objective_warm": 0.13370236346624992,
+      "objective_last_accepted": 0.1309895304274461,
+      "field_gradient_max_last_accepted": 0.3194945915850606,
+      "flow_gradient_max_last_accepted": 1.8843089157460973,
+      "dynamics_gradient_max_last_accepted": 3.7797112232858865,
+      "full_gradient_max_last_accepted": 3.7797112232858865,
+      "full_gradient_phi_last_accepted": 9.654944138546513
+    },
+    "fresh_warm_hff": {
+      "hvp_columns": 20,
+      "independent_eigenpair_hvp": true,
+      "lambda_min": 0.8733561496470447,
+      "lambda_max": 1656.4803259120224,
+      "condition": 1896.6836457056688,
+      "symmetry_relative": 1.0321596346023682e-15,
+      "eigenpair_relative_residual": 6.949640715313501e-17
+    },
+    "provenance": {
+      "source_paths_byte_unchanged": 52,
+      "input_identity_unchanged": true,
+      "prior_attempt_unchanged": true,
+      "parameters_unchanged": true,
+      "dynamics_unchanged": true,
+      "terminal_diagnostics_completed": true,
+      "terminal_field_gradient_gate_passed": false
+    },
+    "claims": {
+      "full_root": false,
+      "full_minimum": false,
+      "response": false,
+      "score": false,
+      "physical_validation": false
+    },
+    "next_scientific_step": "No further field-only run in this stage; any next diagnostic needs a separate math review at the recorded terminal point."
+  }
+}

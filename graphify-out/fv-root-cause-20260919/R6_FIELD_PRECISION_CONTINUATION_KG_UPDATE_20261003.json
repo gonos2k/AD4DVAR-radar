@@ -1,0 +1,58 @@
+{
+  "record": "FV_POINT_3H_FIELD_PRECISION_CONTINUATION_RESULTS_20261003.md,field_precision_continuation_attempt1",
+  "status": "one guarded six-iteration-cap field-precision continuation completed with internal-budget refusal during solve 6; no field issuance",
+  "baseline": "R5 raw field continuation a5759c3eca7ca537e0038b3dbe95f3ff67abdabcc43f5f5a2b3aa3cc5982fb1b; sole warm control ecfbbbd4919b8b783c93dce4a8dbb27598eac8eb9ca698bcf7ecd510f737b38b",
+  "method": "unchanged original 26-control objective restricted to 20 field controls; fixed 13 parameters and six dynamics controls; fresh 20-column Hff plus 21st eigenpair HVP; unchanged refine_stationary, six Newton updates max, 16 backtracks, 104 PCG iterations; strict pointwise branch checks and independent true-residual audits",
+  "execution": {
+    "status": "completed",
+    "wall_seconds": 1725.364026500145,
+    "sampled_peak_rss_bytes": 377978880,
+    "wall_limit_seconds": 1800,
+    "sampled_rss_limit_bytes": 1073741824,
+    "resource_termination": null,
+    "monitor_error": null,
+    "exit_code": 0
+  },
+  "numerical": {
+    "status": "continuation_refused",
+    "reason": "1680-second internal budget exhausted during the sixth PCG solve after 10 operator calls, before a solution or sixth accepted field update",
+    "field_issuance": false,
+    "accepted_updates": 5,
+    "accepted_step_sizes": [0.0625, 0.125, 0.25, 0.0625, 0.125],
+    "pcg_iterations_completed": [29, 27, 25, 27, 27],
+    "independent_true_relative_residuals": [2.1748386161060516e-11, 6.303048487013739e-11, 1.517200828189637e-11, 2.8159026098982005e-11, 1.848818015003999e-12],
+    "objective_warm": 0.13370236346624992,
+    "objective_last_accepted": 0.1309895304274461,
+    "field_gradient_max_last_accepted": 0.3194945915850606,
+    "flow_gradient_max_last_accepted": 1.8843089157460973,
+    "dynamics_gradient_max_last_accepted": 3.7797112232858865,
+    "full_gradient_max_last_accepted": 3.7797112232858865,
+    "full_gradient_phi_last_accepted": 9.654944138546513
+  },
+  "fresh_warm_hff": {
+    "hvp_columns": 20,
+    "independent_eigenpair_hvp": true,
+    "lambda_min": 0.8733561496470447,
+    "lambda_max": 1656.4803259120224,
+    "condition": 1896.6836457056688,
+    "symmetry_relative": 1.0321596346023682e-15,
+    "eigenpair_relative_residual": 6.949640715313501e-17
+  },
+  "provenance": {
+    "source_paths_byte_unchanged": 52,
+    "input_identity_unchanged": true,
+    "prior_attempt_unchanged": true,
+    "parameters_unchanged": true,
+    "dynamics_unchanged": true,
+    "terminal_diagnostics_completed": true,
+    "terminal_field_gradient_gate_passed": false
+  },
+  "claims": {
+    "full_root": false,
+    "full_minimum": false,
+    "response": false,
+    "score": false,
+    "physical_validation": false
+  },
+  "next_scientific_step": "No further field-only run in this stage; any next diagnostic needs a separate math review at the recorded terminal point."
+}

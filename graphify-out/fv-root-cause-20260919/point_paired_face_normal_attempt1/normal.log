@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_paired_face_normal_probe.py", line 200, in <module>
+    run(parser.parse_args().output)
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_paired_face_normal_probe.py", line 164, in run
+    row = reference.evaluate(data["fixture"],data["tangent"],axis,(sx,sy),dps=80)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_paired_face_normal_reference.py", line 342, in evaluate
+    if any(not _certify(value <= 1) for row in quality_mp for value in row):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_paired_face_normal_reference.py", line 342, in <genexpr>
+    if any(not _certify(value <= 1) for row in quality_mp for value in row):
+                        ^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_active_face_normal_reference.py", line 112, in __le__
+    return self._order(other) <= 0
+           ^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_active_face_normal_reference.py", line 105, in _order
+    raise ValueError("nonsmooth tie is not the tagged selected face event")
+ValueError: nonsmooth tie is not the tagged selected face event

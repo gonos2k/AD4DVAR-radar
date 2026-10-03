@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_point_3h_field_refinement",
+    "--output",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/point_3h_field_refinement_attempt1/field_refinement.json"
+  ],
+  "child_pid": 68601,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 554.1187909159344,
+  "sampled_peak_rss_bytes": 372146176,
+  "rss_samples": 2091,
+  "wall_limit_seconds": 600,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

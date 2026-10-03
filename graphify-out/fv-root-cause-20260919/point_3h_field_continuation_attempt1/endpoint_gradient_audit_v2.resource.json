@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "graphify-out/fv-root-cause-20260919/point_3h_field_continuation_attempt1/endpoint_gradient_audit_v2.py"
+  ],
+  "child_pid": 98906,
+  "exit_code": 1,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 5.686412291834131,
+  "sampled_peak_rss_bytes": 343605248,
+  "rss_samples": 22,
+  "wall_limit_seconds": 240,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

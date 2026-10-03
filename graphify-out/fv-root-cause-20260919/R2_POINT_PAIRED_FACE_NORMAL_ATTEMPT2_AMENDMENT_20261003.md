@@ -1,0 +1,3 @@
+# Independent normal attempt2 setup correction
+
+Attempt1 exited1 in fixed-input validation because quality=1 was compared as a tagged-jet branch. No completed normal result was returned; exact source/test snapshots and log/resource/preflight are retained. Fixed-quality primal interval validation now accepts the native allowed upper bound; untagged model/state ties still refuse. The original fixture, normal plan, eight sectors, precision and60s/256MiB budgets are unchanged. This is a programming/setup correction, not a tolerance or statistical problem change and not a retry of a scientific refusal.

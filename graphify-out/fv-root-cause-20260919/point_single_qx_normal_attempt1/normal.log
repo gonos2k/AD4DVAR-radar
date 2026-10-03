@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_single_qx_normal_probe.py", line 163, in <module>
+    run(parser.parse_args().output)
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_single_qx_normal_probe.py", line 132, in run
+    row=evaluate_side(data["fixture"],data["tangent"],side)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_single_qx_normal_probe.py", line 97, in evaluate_side
+    return reference.evaluate(fixture,tangent,side,dps=80)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_single_face_normal_reference.py", line 90, in evaluate
+    weights = [reference._mp(value, mp) for value in _WEIGHTS]
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_slice_precision_reference.py", line 45, in _mp
+    raise TypeError("fixture numbers and controls must be int, float, or decimal strings")
+TypeError: fixture numbers and controls must be int, float, or decimal strings

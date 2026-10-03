@@ -1,0 +1,332 @@
+{
+  "archive_comparison": "exact pinned CPU FP64 J, dynamics gradient, field-gradient norms",
+  "block_residual_absolute": 3.795666081938539e-17,
+  "block_residual_relative": 3.8807033094601864e-19,
+  "branch": {
+    "euler_stages": 54,
+    "minimum_scaled_face_flux_margin": 0.00011662714171735749,
+    "minimum_scaled_slope_margin": 0.00040608748624064856,
+    "signature_sha256": "50d3b1a4bad6761b14806c62708400d87d16e506ab08ef545f7ba9d870bece6d"
+  },
+  "control_sha256": "a78d1b8e0cd8f997572f5e2a913f7023dcd6333c124ac4b7c9414358f8484e26",
+  "direct_step": [
+    4.698440320009645e-06,
+    7.444913270993306e-06,
+    1.731656590958959e-05,
+    1.3976691277208013e-05,
+    2.2901918623208925e-06,
+    -3.45154367959551e-06,
+    -5.792856486211138e-06,
+    -4.4437804389113915e-06,
+    1.6234404522400561e-06,
+    -8.54043329228726e-06,
+    -2.815761950420021e-05,
+    -7.219493775099605e-06,
+    -3.741800573861782e-06,
+    3.2520617812022443e-06,
+    -9.48566634312159e-06,
+    1.0872577852988951e-05,
+    -2.8009389968810707e-06,
+    1.8743525357775395e-06,
+    1.7810178882296143e-05,
+    -1.0677939290138458e-05,
+    -0.00047234272010173047,
+    0.002971955510874298,
+    0.003818973545428234,
+    0.0007420735292833282,
+    -0.0008472371347260546,
+    -1.909091166871679e-05
+  ],
+  "endpoint_raw_sha256_before_after": [
+    "8ad5b5e3d56a074ad79a28fa0f23c0cbdae745c26efed5101cd826fe2d9442cf",
+    "8ad5b5e3d56a074ad79a28fa0f23c0cbdae745c26efed5101cd826fe2d9442cf"
+  ],
+  "field_gradient_inf": 7.032988341010293e-12,
+  "field_stationarity_tolerance": 1e-10,
+  "fixed_input_sha256": "838fcf77a43b209b53dfe62f6a1657d0f8eba5a41797e431451059f3f8d18158",
+  "full_newton_absolute_difference": 6.956791805639263e-19,
+  "full_newton_relative_difference": 1.3938339580067352e-16,
+  "gradient": [
+    7.032988341010293e-12,
+    9.635291696452608e-13,
+    4.665684071730736e-13,
+    -2.4402648413253403e-12,
+    4.260781397841251e-12,
+    -7.05543696383204e-13,
+    -2.767011663198926e-12,
+    -3.83775910356432e-13,
+    1.703391334234583e-12,
+    2.113336307167646e-12,
+    -9.337123088593025e-13,
+    -1.9975241079273065e-12,
+    -9.476451741374792e-13,
+    -3.058788248730404e-12,
+    4.813745973011874e-13,
+    -1.6778368652119527e-12,
+    8.224431335621118e-13,
+    -3.750455458348401e-12,
+    -1.1623575366104255e-12,
+    1.950438508618868e-12,
+    3.686879971331186e-06,
+    -0.003499631172517193,
+    -0.006128402556589675,
+    -0.0008784049907372554,
+    -0.0026197628948153168,
+    4.110871123716442e-06
+  ],
+  "hessian_eigenvalues": [
+    1.0167709269980394,
+    1.0317090915209246,
+    1.1527478462888467,
+    1.591545315342444,
+    5.942531972746159,
+    13.830863672664476,
+    158.82842798586816,
+    3012.7586923408862,
+    3151.8302794768083,
+    4305.25421202347,
+    4463.35915106325,
+    4492.749678573878,
+    4509.116712426077,
+    4570.293821793768,
+    4576.818344185088,
+    4586.036400147505,
+    4655.589850428542,
+    4674.229622027384,
+    4685.955824410016,
+    4711.698658521809,
+    4730.167068458122,
+    4739.448968497507,
+    4745.169677710397,
+    4753.678858163489,
+    4762.1027057163055,
+    4772.7243379353795
+  ],
+  "hff_condition": 122.95627495153143,
+  "hff_cross_solve_absolute": 1.0506620713867847e-12,
+  "hff_cross_solve_relative": 3.7718056738648867e-17,
+  "hff_eigenvalues": [
+    38.81446632086355,
+    3012.745130471539,
+    3151.8067812143154,
+    4304.8327019284125,
+    4462.919853520185,
+    4492.743410597989,
+    4507.955816458794,
+    4570.2225889918345,
+    4576.381773785884,
+    4584.855824475454,
+    4655.392731207768,
+    4671.911496039125,
+    4685.444224776279,
+    4711.5103241421575,
+    4729.719893216013,
+    4739.352458349322,
+    4745.1153838723285,
+    4753.363893789097,
+    4762.050120919219,
+    4772.482193044858
+  ],
+  "hff_gradient_solve_absolute": 2.0594775804069925e-27,
+  "hff_gradient_solve_relative": 3.29936833302587e-17,
+  "hvp_columns": 26,
+  "input_before_after": {
+    "current_problem_identity": {
+      "fixed_problem_sha256": "838fcf77a43b209b53dfe62f6a1657d0f8eba5a41797e431451059f3f8d18158",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    },
+    "fixed_input_fields": {
+      "common_bias_std_dbz": 0.25,
+      "missing_indices": [
+        [
+          1,
+          1,
+          2
+        ],
+        [
+          2,
+          2,
+          3
+        ]
+      ],
+      "observation_counts": {
+        "censored": 0,
+        "missing": 2,
+        "qc_rejected": 0,
+        "valid": 58
+      },
+      "tensor_sha256": {
+        "direction": "f75710a114ba2fb0ad1013ccaa15729e7d69b05031ea1b3537a519be77611a38",
+        "missing_mask": "21257c511085d4ac7cf048aa8d526556286321fad5f9d4235c7d239ad785199a",
+        "observation_dbz": "fc89685ee7bb07f7c3dcd5eb45fc6a6bb90bf73dae5500a6453c563e33c08a12",
+        "parameters": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+        "valid_mask": "6d2c1c3e23427974a855012eb8885dbb00c357f53dc4e4ab38bc58864fe20aec",
+        "verification": "b6e21eabc83a8a3588a2ebd893b63d2d1d7afa7500bb83fe57a13584cb8350a9",
+        "warm_start_control": "b61e49b6f5daded19ea1375dc37e3959c1673503309ce6c68cf1deda195462b5",
+        "whitener_mode": "2b9b699f1aa5d630bac602ec23f2889b53b79c539aef63018b440a310ae1fb72"
+      },
+      "verification_constructor": "tests.test_fv_research_partial_observation._problem: warm-start partial forecast dBZ + 0.1 * fixed pattern, then detach",
+      "warm_start_branch": {
+        "euler_stages": 54,
+        "minimum_scaled_face_flux_margin": 0.007752734889703382,
+        "minimum_scaled_slope_margin": 0.0007615693500034068,
+        "signature_sha256": "3c5e5433d3d74a8f840bdd28834b2a73c98edf3b3fc4b46c5ab89567b1e4c70d"
+      },
+      "warm_start_gradient_max": 1.083842990538571,
+      "warm_start_objective": 0.02127260121736458
+    },
+    "historical_manifest_sha256": "6d859284dbb737910e2a94252e37cf87322924cae2fa9e88381f9e29dd18a5a3",
+    "historical_preflight_sha256": "4a2fd9c57e6f271e0505e6ffb9bb7bc9bca66fff724ce0d6e885df90d7a7657b",
+    "historical_problem_identity": {
+      "fixed_problem_sha256": "ffc5a82cb9e4cda7667378b1932c6703e61a6a0c2d16d37ca1c6268b2f860e48",
+      "scope": "fixed-input identity; caller must also bind code, parameters, control and branch for cache reuse"
+    }
+  },
+  "objective": 0.020764957942635602,
+  "parameters_sha256": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9",
+  "plan_sha256_before_after": [
+    "a54b05464a0e2315df9163595dc405d8c011c01e0a0849d5767dae1ad2a0da26",
+    "a54b05464a0e2315df9163595dc405d8c011c01e0a0849d5767dae1ad2a0da26"
+  ],
+  "rhs": [
+    -3.6868799354012365e-06,
+    0.003499631172509439,
+    0.006128402556625829,
+    0.0008784049907092111,
+    0.0026197628948940333,
+    -4.110871122432874e-06
+  ],
+  "runtime": {
+    "device": "CPU FP64",
+    "python": "3.12.13",
+    "torch": "2.13.0"
+  },
+  "schur": [
+    [
+      1.1492359980606417,
+      -0.003654102092080627,
+      0.26569556171041664,
+      -0.11560968132664828,
+      0.45364320749280374,
+      -0.28579779780435494
+    ],
+    [
+      -0.0036541020920813194,
+      1.076447944498776,
+      0.11957055489316307,
+      0.10942373725397742,
+      0.2760476483504507,
+      0.2728860271006291
+    ],
+    [
+      0.26569556171041375,
+      0.11957055489316529,
+      1.9143242832325855,
+      -0.060322880480311675,
+      1.6129435795085016,
+      0.04717082397976585
+    ],
+    [
+      -0.11560968132665111,
+      0.1094237372539753,
+      -0.060322880480317864,
+      1.4178116308298536,
+      0.3680522812258228,
+      0.5932831088957157
+    ],
+    [
+      0.45364320749279363,
+      0.27604764835044393,
+      1.6129435795084937,
+      0.36805228122582634,
+      5.2030574646301435,
+      0.5788401333018315
+    ],
+    [
+      -0.28579779780442616,
+      0.2728860271005007,
+      0.047170823979676285,
+      0.5932831088957446,
+      0.5788401333020701,
+      56.57663156872094
+    ]
+  ],
+  "schur_condition": 55.65865851248169,
+  "schur_eigenvalues": [
+    1.016778251617984,
+    1.031722849314647,
+    1.1528013201281262,
+    1.5918739371467514,
+    5.951819042041746,
+    56.592513489723686
+  ],
+  "schur_solve_absolute": 1.04285210776639e-18,
+  "schur_solve_relative": 3.57330539238271e-18,
+  "schur_symmetry_relative": 7.35024182425933e-15,
+  "scientific_refusal_reason": null,
+  "source_before_after": {
+    "examples/weather_scenarios/fv86_resource_runner.py": "6242598d8b11a74ed44fcd419d83fd14cfcd637f34ee4746e1f5432554aeeb6d",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_partial_alternate_root_probe.py": "9956ab6382aeaccd03c8e25535af0af0826c9589df80087f972ddacbec2066b4",
+    "examples/weather_scenarios/fv_partial_alternate_root_runner.py": "dc0d5942c34da40ab7ed584b9e2640188e49d34d828c2e20d332d0e6da05b87d",
+    "examples/weather_scenarios/fv_partial_alternate_seed_gate.py": "443d7225b5322c9a2d9e89f22b1993d2c878f5c3e98186d6e7b9cf8a7d3dfff0",
+    "examples/weather_scenarios/fv_partial_alternate_seed_runner.py": "5c7cf933ffa0dfc4a2a51e4e35193580702e3671fa6d51323a335e9d0bfd5cd9",
+    "examples/weather_scenarios/fv_partial_field_correction_probe.py": "30c6c1177e0a001a37751aa4f0396cb616f2f2e1d0c76f5b47472246f0373c18",
+    "examples/weather_scenarios/fv_partial_reanalysis_preflight.py": "758397e502b1f7821cc62fe9f1cf47b440cabdc4933596a3076ef762ad282f0e",
+    "examples/weather_scenarios/fv_partial_reanalysis_probe.py": "7756da5561f67d47d1a813cc2cd720931b3ba29d132758e16e2628db6fe220c8",
+    "examples/weather_scenarios/fv_partial_sector_root_probe.py": "fddc3ddb20a3a961f73eb2d40dd379b25e87cd6109ca836476f45a1408350ccc",
+    "examples/weather_scenarios/fv_partial_sector_root_runner.py": "2bc6607a1bc4c369cd11edbd359d7a3754352dc7df2b7377944811161e37b18e",
+    "examples/weather_scenarios/fv_point_basin_probe.py": "f27a0370e1a81de14c4ae4a592fa866407b05864ab7c988516e30193271867f7",
+    "examples/weather_scenarios/fv_point_merit_root_probe.py": "2621bcc1f005746f877d9c3db7d9b3b72c4fd4df784b2c82cd6a405b0358a082",
+    "examples/weather_scenarios/fv_point_sector_policy.py": "1a154b247aa994a851c25b4686d31f4d0ca83be03677ab39607892c84b6bb75b",
+    "src/advar/fv_research_problem.py": "487a429dadd1179db9d4e27a2523bf64e81fffe90c955ef46ea392aae313c3af",
+    "src/advar/local_refinement.py": "47366f828777b6fc322386b6dda8209916310ec2d06590767c1a9512ac344321",
+    "src/advar/local_response.py": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "src/advar/nowcast.py": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b",
+    "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "tests/test_fv_research_partial_observation.py": "c777790d90cc532701cadc8ccc6131a379adc6ddf1b1d063def95e17e40d791d"
+  },
+  "source_self_sha256_before_after": [
+    "2c60602cc5ea9ff3e3998e964c73086522b49243a810da82fa73d9f2869684d6",
+    "2c60602cc5ea9ff3e3998e964c73086522b49243a810da82fa73d9f2869684d6"
+  ],
+  "status": "diagnostic_completed",
+  "step": [
+    4.69844032000955e-06,
+    7.44491327099321e-06,
+    1.7316565909589485e-05,
+    1.397669127720791e-05,
+    2.290191862320797e-06,
+    -3.4515436795956057e-06,
+    -5.792856486211234e-06,
+    -4.443780438911484e-06,
+    1.6234404522399602e-06,
+    -8.540433292287354e-06,
+    -2.8157619504200304e-05,
+    -7.219493775099699e-06,
+    -3.741800573861877e-06,
+    3.252061781202148e-06,
+    -9.485666343121685e-06,
+    1.0872577852988858e-05,
+    -2.800938996881165e-06,
+    1.8743525357774455e-06,
+    1.781017888229605e-05,
+    -1.067793929013855e-05,
+    -0.0004723427201017304,
+    0.0029719555108742982,
+    0.003818973545428234,
+    0.000742073529283328,
+    -0.0008472371347260548,
+    -1.9090911668716663e-05
+  ],
+  "symmetry_relative": 2.0681780295278637e-16,
+  "test_sha256_before_after": [
+    "9d1fe1a28eec25b5a8f24de8a7ce394e8d2f7ecb5dcadadf093f82cef7a89fe4",
+    "9d1fe1a28eec25b5a8f24de8a7ce394e8d2f7ecb5dcadadf093f82cef7a89fe4"
+  ],
+  "true_hx_plus_g_absolute": 4.2506137616623216e-17,
+  "true_hx_plus_g_relative": 4.345843532077878e-19
+}
