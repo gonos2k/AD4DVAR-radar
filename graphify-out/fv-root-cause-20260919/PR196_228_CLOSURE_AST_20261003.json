@@ -3833,7 +3833,7 @@
       "_origin": "ast"
     },
     {
-      "id": "exception",
+      "id": "examples_weather_scenarios_fv_point_3h_block_modified_newton_search_py_exception",
       "label": "Exception",
       "file_type": "code",
       "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_block_modified_newton_search.py",
@@ -3933,6 +3933,238 @@
       "label": "Synthetic shifted-block PCG/Armijo checks; no FV model execution.",
       "file_type": "rationale",
       "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_block_modified_newton_search.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "label": "fv_point_3h_coupled_original_j_continuation.py",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_continuationrefusal",
+      "label": "ContinuationRefusal",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L30",
+      "_origin": "ast"
+    },
+    {
+      "id": "runtimeerror",
+      "label": "RuntimeError",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_sha",
+      "label": "sha()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L34",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L34",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_tensor_sha",
+      "label": "tensor_sha()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L35",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L35",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_write",
+      "label": "write()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_require_pins",
+      "label": "require_pins()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L41",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_candidate_metrics",
+      "label": "candidate_metrics()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L47",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_accepted_endpoint_stationary",
+      "label": "accepted_endpoint_stationary()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L58",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_modified_operator",
+      "label": "modified_operator()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L64",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "label": "choose_dynamics_shift()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L68",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_refusal_message",
+      "label": "refusal_message()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L86",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_exception",
+      "label": "Exception",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L86",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L96",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_rationale_1",
+      "label": "At most four original-J Armijo epochs with fresh modified-H block solves.",
+      "file_type": "rationale",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_rationale_31",
+      "label": "Declared curvature, linear-solve, line-search, branch or budget refusal.",
+      "file_type": "rationale",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L31",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "label": "test_fv_point_3h_coupled_original_j_continuation.py",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_indefinite",
+      "label": "_indefinite()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L10",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_pinned_r8_start_and_fixed_input_contract",
+      "label": "test_pinned_r8_start_and_fixed_input_contract()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L17",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_dynamics_shift_makes_indefinite_original_system_preconditionable",
+      "label": "test_dynamics_shift_makes_indefinite_original_system_preconditionable()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L30",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_mu_zero_is_used_only_for_resolved_full_and_schur_spd",
+      "label": "test_mu_zero_is_used_only_for_resolved_full_and_schur_spd()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L44",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_original_objective_armijo_and_refusal_message_scope",
+      "label": "test_original_objective_armijo_and_refusal_message_scope()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L51",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_candidate_metrics_serializes_nonfinite_and_propagates_bad_shapes",
+      "label": "test_candidate_metrics_serializes_nonfinite_and_propagates_bad_shapes()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L65",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_accepted_epoch_four_can_finish_from_its_measured_gradient",
+      "label": "test_accepted_epoch_four_can_finish_from_its_measured_gradient()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L73",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_test_fresh_hessian_is_recomputed_at_each_current_control",
+      "label": "test_fresh_hessian_is_recomputed_at_each_current_control()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L81",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_coupled_original_j_continuation_rationale_1",
+      "label": "Synthetic coupled-J/modified-operator continuation checks; no FV execution.",
+      "file_type": "rationale",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
       "source_location": "L1",
       "_origin": "ast"
     }
@@ -16991,7 +17223,7 @@
     },
     {
       "source": "weather_scenarios_fv_point_3h_block_modified_newton_search_refusal_message",
-      "target": "exception",
+      "target": "examples_weather_scenarios_fv_point_3h_block_modified_newton_search_py_exception",
       "relation": "references",
       "context": "parameter_type",
       "confidence": "EXTRACTED",
@@ -17365,6 +17597,723 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_block_modified_newton_search.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "platform",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "re",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_continuationrefusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_continuationrefusal",
+      "target": "runtimeerror",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_sha",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_tensor_sha",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_write",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_write",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_write",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_require_pins",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_candidate_metrics",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_candidate_metrics",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_candidate_metrics",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_candidate_metrics",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_accepted_endpoint_stationary",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_accepted_endpoint_stationary",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_modified_operator",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_modified_operator",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_refusal_message",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_refusal_message",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_exception",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "target": "examples_weather_scenarios_fv_point_3h_coupled_original_j_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_require_pins",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_continuationrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_require_pins",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L98",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L111",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L133",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_continuationrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L139",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_choose_dynamics_shift",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L160",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_modified_operator",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L164",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_candidate_metrics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L181",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_accepted_endpoint_stationary",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L195",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_refusal_message",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L201",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_rationale_31",
+      "target": "weather_scenarios_fv_point_3h_coupled_original_j_continuation_continuationrefusal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_indefinite",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_pinned_r8_start_and_fixed_input_contract",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_dynamics_shift_makes_indefinite_original_system_preconditionable",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_mu_zero_is_used_only_for_resolved_full_and_schur_spd",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_original_objective_armijo_and_refusal_message_scope",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_candidate_metrics_serializes_nonfinite_and_propagates_bad_shapes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_accepted_epoch_four_can_finish_from_its_measured_gradient",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L73",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_test_fresh_hessian_is_recomputed_at_each_current_control",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation_test_dynamics_shift_makes_indefinite_original_system_preconditionable",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_indefinite",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation_test_original_objective_armijo_and_refusal_message_scope",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation_indefinite",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_coupled_original_j_continuation_rationale_1",
+      "target": "tests_test_fv_point_3h_coupled_original_j_continuation",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-precision-ast-20261003-_m2zq30p/tests/test_fv_point_3h_coupled_original_j_continuation.py",
       "source_location": "L1",
       "weight": 1.0
     },

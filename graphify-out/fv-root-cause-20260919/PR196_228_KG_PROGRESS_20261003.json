@@ -309,5 +309,133 @@
     "objective_changed": false,
     "root_claim": false,
     "search_or_response_executed": false
+  },
+  "S4_block_modified_search": {
+    "record": "FV_POINT_3H_BLOCK_MODIFIED_NEWTON_SEARCH_RESULTS_20261003.md,block_modified_newton_search_attempt1",
+    "status": "one original-J block-modified Newton search step accepted; no root/response claim",
+    "baseline": "R7 terminal full-Hessian/Schur audit e8e0d395a212a37227185b40ccb977f26023795527a9c820e414ed46b6202cf9; terminal control a890f344503cb3da02919de45f1c5b244beac300b1d4d2ca36f403c653e42b6d",
+    "method": "A_mu v = H_true v + (0, mu v_d), mu=max(0,1-lambda_min(S))=8.061261479935727; exact SPD inverse from shifted Hff and S+mu I used as preconditioner only; original unmodified J Armijo and strict branch checks; at most one accepted step",
+    "execution": {
+      "status": "completed",
+      "wall_seconds": 66.38455716706812,
+      "sampled_peak_rss_bytes": 374226944,
+      "wall_limit_seconds": 300,
+      "sampled_rss_limit_bytes": 1073741824,
+      "resource_termination": null,
+      "monitor_error": null,
+      "exit_code": 0,
+      "git_head": "480f1cebdb485f451498f99893442b096a9259be"
+    },
+    "numerical": {
+      "status": "one_original_J_step_accepted",
+      "optimizer_steps": 1,
+      "accepted_alpha": 0.0625,
+      "modified_system_pcg_iterations": 1,
+      "modified_system_true_relative_residual": 5.720802120839878e-13,
+      "g_dot_s": -0.5340019509775075,
+      "original_hessian_relative_residual": 1.1280007604576934,
+      "base_objective": 0.1309895304274461,
+      "armijo_limit": 0.1309861929152525,
+      "accepted_objective": 0.10775705191091639,
+      "base_phi": 9.654944138546513,
+      "accepted_phi": 18.59197598217965,
+      "accepted_full_gradient_max": 3.472450615259103
+    },
+    "provenance": {
+      "source_paths_byte_unchanged": 60,
+      "terminal_input_identity_unchanged": true,
+      "parameters_unchanged": true,
+      "git_head_unchanged": true,
+      "candidate_strict_branch_passed": true,
+      "all_original_priors_retained": true
+    },
+    "claims": {
+      "full_root": false,
+      "original_newton_convergence": false,
+      "adjoint": false,
+      "response": false,
+      "score": false,
+      "physical_validity": false
+    },
+    "next_scientific_step": "Requires a separate root decision; this search is not a stationarity or response computation."
+  },
+  "S4_coupled_continuation": {
+    "record": "FV_POINT_3H_COUPLED_ORIGINAL_J_CONTINUATION_RESULTS_20261003.md,coupled_original_j_continuation_attempt1",
+    "status": "one reusable four-epoch original-J coupled continuation completed at epoch limit; no stationarity candidate",
+    "baseline": "R8 one-step original-J search raw 73b4e51c76ad6fb6f7ffe0721e1a4b509d6e4371b667734c68b8789ed47dffb7; accepted control 3aa913cd71d5916b4f3146efad75b0f5dd6766f6bdc81ee6e8c6706cee03fc32",
+    "method": "fresh 26-column Hessian plus independent 27th eigenpair HVP each epoch; Hff and Schur block qualification; dynamics-only mu shift for the modified A_mu solve; shifted SPD block inverse preconditioner; unchanged original-J Armijo and strict endpoint branch checks; one absolute 1200s internal budget over four epochs",
+    "execution": {
+      "status": "completed",
+      "wall_seconds": 992.6428074580617,
+      "sampled_peak_rss_bytes": 375242752,
+      "wall_limit_seconds": 1500,
+      "sampled_rss_limit_bytes": 1073741824,
+      "resource_termination": null,
+      "monitor_error": null,
+      "exit_code": 0,
+      "git_head": "3cf06409c2982db0a39909921eeb50b640a507bf"
+    },
+    "numerical": {
+      "status": "epoch_limit",
+      "accepted_epochs": 4,
+      "accepted_alphas": [
+        0.125,
+        0.015625,
+        0.0625,
+        0.0625
+      ],
+      "dynamics_shifts": [
+        11.92543489671013,
+        36.976236891348684,
+        17.271012965213167,
+        8.905756268851583
+      ],
+      "modified_pcg_iterations": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "modified_system_true_relative_residuals": [
+        1.0553352445670177e-12,
+        4.422749906353922e-12,
+        2.0735389773205618e-12,
+        2.0725684674441314e-13
+      ],
+      "original_hessian_relative_residuals": [
+        0.42553142753844325,
+        12.028847779601621,
+        0.5963002718635685,
+        0.5239058578816089
+      ],
+      "objective_start": 0.10775705191091639,
+      "objective_last_accepted": 0.08389718093130327,
+      "phi_start": 18.59197598217965,
+      "phi_last_accepted": 1.7635966239794696,
+      "full_gradient_max_last_accepted": 1.0588168237438937,
+      "stationarity_tolerance": 1e-10,
+      "stationarity_candidate_issued": false
+    },
+    "provenance": {
+      "source_paths_byte_unchanged": 64,
+      "input_identity_unchanged": true,
+      "r8_raw_unchanged": true,
+      "parameters_unchanged": true,
+      "original_objective_and_priors_unchanged": true,
+      "git_head_unchanged": true,
+      "r8_source_test_byte_unchanged": true,
+      "graphify_ast_nodes": 29,
+      "graphify_ast_edges": 74,
+      "shared_graph_unchanged": true
+    },
+    "claims": {
+      "full_root": false,
+      "stationarity": false,
+      "adjoint": false,
+      "response": false,
+      "score": false,
+      "physical_validity": false
+    },
+    "next_scientific_step": "No follow-on phase is authorized by this result; await a separate root decision."
   }
 }

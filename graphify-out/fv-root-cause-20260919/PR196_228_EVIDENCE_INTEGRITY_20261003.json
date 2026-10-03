@@ -99,6 +99,24 @@
       "source_map_file_count": 56,
       "current_source_changed": [],
       "current_source_missing": []
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/block_modified_newton_search_attempt1/block_modified_newton_search.json",
+      "sha256": "73b4e51c76ad6fb6f7ffe0721e1a4b509d6e4371b667734c68b8789ed47dffb7",
+      "source_schema": "separate source_before/source_after maps",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 60,
+      "current_source_changed": [],
+      "current_source_missing": []
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/coupled_original_j_continuation_attempt1/coupled_original_j_continuation.json",
+      "sha256": "3e2e1e247be0de1c6b5e27d4c835dbbe6b456f7a0c0dc2e0e90ac18d71fd8385",
+      "source_schema": "separate source_before/source_after maps",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 64,
+      "current_source_changed": [],
+      "current_source_missing": []
     }
   ],
   "all_current_mapped_sources_match": true,

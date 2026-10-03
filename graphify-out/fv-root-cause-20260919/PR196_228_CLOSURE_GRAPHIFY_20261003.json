@@ -35,12 +35,14 @@
     "examples/weather_scenarios/fv_point_3h_precision_hessian_audit.py": "cc9fb064cb0e80d6d76339fd8d6d65c1754712eaa3deb2de5b6189c482e6aa9e",
     "tests/test_fv_point_3h_precision_hessian_audit.py": "bb816c1da2196a80c17fa4bba219710f5ca8367159ad8e5d48b06cd874f67cf3",
     "examples/weather_scenarios/fv_point_3h_block_modified_newton_search.py": "8b9e0c0b40fb7d7f053be0f3b54d84e5c65a5c316d9741f58d0fe0a0c059700a",
-    "tests/test_fv_point_3h_block_modified_newton_search.py": "e9a8d17711166c04990c69eb3495f7727ff7e4cfce71529c3f4a0a55d0c4ecab"
+    "tests/test_fv_point_3h_block_modified_newton_search.py": "e9a8d17711166c04990c69eb3495f7727ff7e4cfce71529c3f4a0a55d0c4ecab",
+    "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py": "20b05c592d47d4bab8bc769cc57722a167917cd3a517fb6701d400e787e43920",
+    "tests/test_fv_point_3h_coupled_original_j_continuation.py": "a527349062bcaf4ee06ab167e82f75b1260dc115ce2909ffe6d4ce5dccb7218e"
   },
   "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
   "mode": "isolated changed-source AST extraction only; no semantic rebuild",
-  "nodes": 492,
-  "edges": 1433,
+  "nodes": 521,
+  "edges": 1507,
   "shared_cache_unchanged": true,
-  "graph_sha256": "3acbd5f49cbe4930f714d76946b97921f112023421f367eb8b1e3c19d5154683"
+  "graph_sha256": "f24ea0e85bdf1779d88a52cd9be5d7f81deda26a691e95b7ca951b36a6842886"
 }
