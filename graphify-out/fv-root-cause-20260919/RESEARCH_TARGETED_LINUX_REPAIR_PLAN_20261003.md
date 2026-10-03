@@ -2,21 +2,23 @@
 
 ## Registration
 
-Purpose: check whether the seven previously failing cases pass on the Linux CPU
-runtime that produced run `36836402831`. This is research evidence only. The
-historical run remains failed (2,311 IDs, 87 failed/error); this plan does not
-replace or relabel it. No deployment or full-suite claim follows from seven
-tests.
+Purpose: verify only the two resume-controller cases still failing in targeted
+Linux run 37096279408. This is research evidence only. The historical full
+Linux run `36836402831` remains failed (2,311 IDs, 87 failed/error); this plan
+does not replace or relabel it. No deployment or full-suite claim follows from
+two tests.
 
 Source anchor: current main commit
 `42891a34859924ff1bd04a35dc1e8690b8bbe971` (as inspected 2026-10-03). The
-workflow records the actual checked-out commit separately, fetches the exact anchor,
-and requires its Git tree to differ only in this workflow and plan. It asserts SHA-256
-fingerprints for the lockfile, three FV implementation files, local-path
-probe, and six target test files against this anchor before running tests.
-This permits the workflow and plan to be checked in without silently changing
-the registered test sources. Any target-source or lockfile change requires a
-new registration.
+workflow records the actual checked-out commit separately, fetches the exact
+anchor, and permits changes only to this workflow, this plan, and
+`tests/test_fv_minmod_local_path_probe.py`. It asserts SHA-256 fingerprints for
+the lockfile, FV implementation sources, local-path probe, and exact current
+test source (`bc9a37f5c1df1f7a7821bc34d17d8629837e2e46bc86447345ebf4ac283825c8`)
+before running. The one test-file change is the registered
+cross-checkout fixture correction below; production sources and cache
+certificates stay byte-identical to the anchor. Any further target-source or
+lockfile change requires a new registration.
 
 Environment: GitHub-hosted `ubuntu-24.04`; CPython `3.12.14`; pytest `9.1.1`;
 PyTorch `2.13.0+cpu`; dependencies from the hash-pinned
@@ -28,32 +30,28 @@ read-only Actions metadata; recent PR CI runs skipped CPU jobs.
 
 ## Fixed test inventory
 
-Run exactly these seven pytest node IDs, with no selector or retry:
+Run exactly these two pytest node IDs, with no selector or retry:
 
-1. `tests/test_fv_observation_response.py::test_parameterized_background_matches_polished_centered_reanalysis`
-2. `tests/test_fv_research_problem.py::test_common_objective_score_and_derivatives_match_frozen_reference[4x5]`
-3. `tests/test_fv_concurrent_response.py::test_portable_case_uses_frozen_control_data_with_current_inputs[fv4x5-archive_names0-direction_slice0-54]`
-4. `tests/test_fv_partial_face_event_runner.py::test_runner_launches_exact_guarded_command_and_records_completion`
-5. `tests/test_fv_response_job_reconcile.py::test_consistent_terminal_lifecycle_allows_candidate_and_is_idempotent`
-6. `tests/test_fv_minmod_local_path_probe.py::test_new_direction_clears_old_pairs_and_computes_its_cross`
-7. `tests/test_fv_minmod_local_path_probe.py::test_completed_direction_resume_validates_without_repeating_reanalysis`
+1. `tests/test_fv_minmod_local_path_probe.py::test_new_direction_clears_old_pairs_and_computes_its_cross`
+2. `tests/test_fv_minmod_local_path_probe.py::test_completed_direction_resume_validates_without_repeating_reanalysis`
 
-These sample the cancellation-sensitive adjoint tolerance, portable identity,
-archived input fixture, synthetic runner and lifecycle fixtures, and both
-resume controller cases. The last two exercise current-runtime synthetic
-checkpoints; archived p-tensor and saved-report hashes remain exact cache
-contracts and are checked by their separate tests. Do not replace the test
-fixtures with saved certificates or weaken/rebind cache identity.
+The previous targeted run 37096279408 already passed the theta, portable
+identity, 4x5 input fixture, runner, and lifecycle cases; this attempt must not
+repeat those five. Both remaining tests exercise controller behavior with
+current-runtime synthetic checkpoints. They must keep archived p-tensor,
+saved-report, source, and cache payload checks exact. Do not weaken or rebind
+the production cache identity.
 
 ## Budget and result rules
 
 One manually dispatched job; 15-minute hosted-job maximum, 10-minute pytest
-maximum, no retry, no full-suite, package, wheel, UI, deployment, or extra job.
-The workflow installs only the locked test closure and editable source needed
-for imports, then runs the fixed seven-node command. Preserve the provenance
-and pytest logs as a seven-day artifact.
+maximum, no retry, no rerun of the five passed cases, and no full-suite,
+package, wheel, UI, deployment, or extra job. The workflow installs only the
+locked test closure and editable source needed for imports, then runs the two
+registered IDs. Preserve the provenance and pytest logs as a seven-day
+artifact.
 
-Pass requires JUnit to report exactly seven cases with zero failures, errors,
+Pass requires JUnit to report exactly two cases with zero failures, errors,
 or skips, plus expected runtime and source hashes and no timeout. Failure,
 timeout, or wrong runtime is reported without retries as a failed/incomplete
 targeted check. In all cases, run `36836402831` remains failed and no
@@ -80,15 +78,47 @@ archived input/hash rejection checks. This is the registered portable-fixture
 repair case, not a replay or certification of the historical response.
 
 Workflow-equivalent local collection-only command, `.venv/bin/python -I -m
-pytest --collect-only -q`, with the corrected seven selectors collected
-exactly seven node IDs in 0.70 seconds; no tests executed. The failed Linux
-attempt remains failed, and no retry has been dispatched. Any later dispatch
-must use this corrected registered list.
+pytest --collect-only -q`, with the corrected selectors collected exactly seven
+node IDs in 0.70 seconds; no tests executed. Attempt 1 remains a failed
+collection record. Run 37096279408 was the subsequent targeted attempt and is
+documented in Amendment A2; the current registration now contains only its two
+remaining failures.
+
+## Amendment A2: localized resume-test source identity
+
+Run `37096279408` at source `7b18c2d6d462ca9a4c4734761b23e15cf1726cf7`
+collected and executed all seven cases. Five passed. Only the two registered
+resume cases failed, both with `KeyError` while the test helper indexed saved
+source hashes by an absolute checkout path. The runtime, lock, and registered
+source fingerprints passed. The complete run metadata, log, and uploaded
+provenance, pytest, and JUnit artifacts are preserved under
+`graphify-out/fv-root-cause-20260919/linux_targeted_repair_attempt2/`.
+
+Both failures were reproduced with the repository's existing `.venv` Python
+from a temporary copied checkout rooted at a different absolute path. The
+helper no longer finds the original archived machine's absolute path and
+raises the same `KeyError` before controller validation. The test-only repair
+copies the archived JSON into `tmp_path`, localizes only its `source_sha256`
+keys by known repository-relative suffixes, and points controller tests at
+that copy. Stored hash values and all numerical/certificate fields are
+preserved; the raw archived JSON is never rewritten. The synthetic resume
+checkpoint derives its saved-report digest and path map from the localized
+copy. An alternate-root regression checks this mapping explicitly.
+
+The focused current-root run passed 8 tests in 3.76 seconds, including both
+resume cases, alternate-root mapping, exact legacy archive anchoring, versioned
+payload mutation rejection, and source/branch/fixture drift gates. The same
+three resume and alternate-root tests passed from the temporary checkout in
+3.13 seconds. Isolated basedpyright 1.39.9 reported 0 errors (403 warnings).
+No production file or archived evidence changed. No new Linux run has been
+dispatched. After GREEN/RED review, the next Linux attempt must run only the
+two IDs above; the five cases from run 37096279408 are already passed evidence.
 
 ## Available command after review
 
-After this workflow is checked in, a manual dispatch on a ref containing the
-workflow and the registered target-source fingerprints can be made with:
+After the test-source update is reviewed and checked in, one manual dispatch
+on a ref containing the workflow and registered fingerprints can be made
+with:
 
 ```sh
 gh workflow run targeted-linux-repair.yml --ref <workflow-bearing-ref>

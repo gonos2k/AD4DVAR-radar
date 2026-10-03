@@ -111,17 +111,61 @@ def _synthetic_resume_checkpoint(path, *, selected_direction, pairs):
     return path
 
 
-def _install_archived_source_identity_for_controller_test(monkeypatch):
-    """Isolate resume orchestration from the separately tested archive gate."""
-    saved = json.loads(PROBE.SAVED.read_text())
+_CONTROLLER_SOURCE_PATHS = (
+    Path("examples/weather_scenarios/fv_minmod_inverse_probe.py"),
+    Path("src/advar/transport.py"),
+    Path("src/advar/variational.py"),
+    Path("examples/weather_scenarios/fv_sensitivity_probe.py"),
+)
+
+
+def _localized_source_identity(source_sha256, root: Path) -> dict[str, str]:
+    """Rebase certificate source keys for a test checkout without changing digests."""
+    normalized = {str(Path(name)).replace("\\", "/"): digest
+                  for name, digest in source_sha256.items()}
+    localized = {}
+    for relative in _CONTROLLER_SOURCE_PATHS:
+        suffix = relative.as_posix()
+        matches = [digest for name, digest in normalized.items()
+                   if name.endswith("/" + suffix)]
+        if len(matches) != 1:
+            raise AssertionError(f"expected one archived source hash for {suffix}")
+        localized[str(root / relative)] = matches[0]
+    if len(localized) != len(source_sha256):
+        raise AssertionError("archived source identity has missing or unexpected paths")
+    return localized
+
+
+def _localized_controller_saved_report(tmp_path: Path, root: Path) -> Path:
+    """Copy the archived report for controller tests, rewriting path keys only."""
+    archived = json.loads(PROBE.SAVED.read_text())
+    localized = dict(archived)
+    localized["source_sha256"] = _localized_source_identity(
+        archived["source_sha256"], root,
+    )
+    report_path = tmp_path / "controller" / "minmod_spatial_inverse.json"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(localized))
+    return report_path
+
+
+def _install_archived_source_identity_for_controller_test(monkeypatch, tmp_path):
+    """Isolate resume orchestration from archive gates using a rooted copy."""
+    localized_saved = _localized_controller_saved_report(tmp_path, PROBE.ROOT)
+    saved = json.loads(localized_saved.read_text())
     trusted_identity = saved["source_sha256"]
     original_hash = PROBE._hash
+    source_paths = {str(PROBE.ROOT / relative) for relative in _CONTROLLER_SOURCE_PATHS}
+    monkeypatch.setattr(PROBE, "SAVED", localized_saved)
     monkeypatch.setattr(PROBE, "MEASURED_PROBE", PROBE.PROBE)
+
     def identity_hash(path):
         if str(path) in trusted_identity:
             return trusted_identity[str(path)]
         if path == PROBE.MEASURED_PROBE:
-            return trusted_identity[str(PROBE.PROBE)]
+            return trusted_identity[str(PROBE.ROOT / _CONTROLLER_SOURCE_PATHS[0])]
+        if str(path) in source_paths:
+            raise AssertionError(f"missing localized source identity for {path}")
         return original_hash(path)
 
     monkeypatch.setattr(PROBE, "_hash", identity_hash)
@@ -136,6 +180,20 @@ def _install_archived_source_identity_for_controller_test(monkeypatch):
         return module
 
     monkeypatch.setattr(PROBE, "_load_module", load)
+
+
+def test_controller_source_identity_follows_an_alternate_checkout_root(tmp_path):
+    archived = json.loads(PROBE.SAVED.read_text())
+    original_source_sha256 = dict(archived["source_sha256"])
+    alternate_root = tmp_path / "different-checkout"
+
+    localized = _localized_source_identity(original_source_sha256, alternate_root)
+
+    assert set(localized) == {
+        str(alternate_root / relative) for relative in _CONTROLLER_SOURCE_PATHS
+    }
+    assert sorted(localized.values()) == sorted(original_source_sha256.values())
+    assert json.loads(PROBE.SAVED.read_text())["source_sha256"] == original_source_sha256
 
 
 def test_measured_cached_linearization_is_resolved(system):
@@ -285,7 +343,7 @@ def test_new_direction_clears_old_pairs_and_computes_its_cross(tmp_path, monkeyp
         return original_jvp(func, primals, tangents, **kwargs)
     monkeypatch.setattr(PROBE, '_load_module', load)
     monkeypatch.setattr(torch.func, 'jvp', jvp)
-    _install_archived_source_identity_for_controller_test(monkeypatch)
+    _install_archived_source_identity_for_controller_test(monkeypatch, tmp_path)
     resume = _synthetic_resume_checkpoint(
         tmp_path / "resume.json", selected_direction="observation_sine60",
         pairs=[{"j": 2, "predictors_ok": True, "endpoints": [
@@ -315,7 +373,7 @@ def test_completed_direction_resume_validates_without_repeating_reanalysis(tmp_p
             module.polish = unexpected
         return module
     monkeypatch.setattr(PROBE, '_load_module', load)
-    _install_archived_source_identity_for_controller_test(monkeypatch)
+    _install_archived_source_identity_for_controller_test(monkeypatch, tmp_path)
     source = _synthetic_resume_checkpoint(
         tmp_path / "theta.json", selected_direction="theta",
         pairs=[{"j": j, "predictors_ok": True, "endpoints": [
@@ -343,7 +401,7 @@ def test_run_rejects_changed_core_source_identity(tmp_path, monkeypatch):
 
 
 def test_run_rejects_changed_nominal_branch_signature(tmp_path, monkeypatch):
-    _install_archived_source_identity_for_controller_test(monkeypatch)
+    _install_archived_source_identity_for_controller_test(monkeypatch, tmp_path)
     original_load = PROBE._load_module
 
     def load(path, name):
@@ -361,7 +419,7 @@ def test_run_rejects_changed_nominal_branch_signature(tmp_path, monkeypatch):
 
 
 def test_run_rejects_changed_measured_fixture_identity(tmp_path, monkeypatch):
-    _install_archived_source_identity_for_controller_test(monkeypatch)
+    _install_archived_source_identity_for_controller_test(monkeypatch, tmp_path)
     measured_fixture = tmp_path / "measured_fixture.py"
     measured_fixture.write_text(PROBE.PROBE.read_text())
     monkeypatch.setattr(PROBE, "MEASURED_PROBE", measured_fixture)
