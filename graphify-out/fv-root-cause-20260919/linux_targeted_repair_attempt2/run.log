@@ -1,0 +1,570 @@
+Python 3.12.14 CPU · 7 registered cases	Set up job	﻿2026-10-03T04:21:46.7123310Z Current runner version: '2.337.0'
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7158576Z ##[group]Runner Image Provisioner
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7160102Z Hosted Compute Agent
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7161148Z Version: 20260901.588
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7162232Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7163534Z Build Date: 2026-09-01T19:56:44Z
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7164659Z Worker ID: {8abb9fb0-86d4-4212-b0c9-760508952599}
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7165964Z Azure Region: eastus
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7166926Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7169856Z ##[group]Operating System
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7170953Z Ubuntu
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7171794Z 24.04.5
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7172756Z LTS
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7173608Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7174647Z ##[group]Runner Image
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7175703Z Image: ubuntu-24.04
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7177229Z Version: 20260927.320.1
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7179482Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7182569Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7184266Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7186098Z ##[group]GITHUB_TOKEN Permissions
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7189282Z Contents: read
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7190340Z Metadata: read
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7191298Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7194361Z Secret source: Actions
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7195973Z Cache mode: write
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7197554Z Prepare workflow directory
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7674251Z Prepare all required actions
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.7747204Z Getting action download info
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:46.9843587Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:47.0873875Z Download action repository 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1' (SHA:ece7cb06caefa5fff74198d8649806c4678c61a1)
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:47.1607012Z Download action repository 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' (SHA:043fb46d1a93c77aae656e7c1c64a875d1fc6a0a)
+Python 3.12.14 CPU · 7 registered cases	Set up job	2026-10-03T04:21:47.3461438Z Complete job name: Python 3.12.14 CPU · 7 registered cases
+Python 3.12.14 CPU · 7 registered cases	Check out source	﻿2026-10-03T04:21:47.4237116Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4238445Z with:
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4238919Z   repository: gonos2k/AD4DVAR-radar
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4242958Z   token: ***
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4243398Z   ssh-strict: true
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4243837Z   ssh-user: git
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4244282Z   persist-credentials: true
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4244776Z   clean: true
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4245222Z   sparse-checkout-cone-mode: true
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4245742Z   fetch-depth: 1
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4246184Z   fetch-tags: false
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4246635Z   show-progress: true
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4247079Z   lfs: false
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4247492Z   submodules: false
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4248171Z   set-safe-directory: true
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4248685Z   allow-unsafe-pr-checkout: false
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.4249506Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5234035Z Syncing repository: gonos2k/AD4DVAR-radar
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5236392Z ##[group]Getting Git version info
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5237330Z Working directory is '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5238647Z [command]/usr/bin/git version
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5364850Z git version 2.55.0
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5393454Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5407171Z Temporarily overriding HOME='/home/runner/work/_temp/79c917a2-207e-4428-afc1-514e23da7725' before making global git config changes
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5408803Z Adding repository directory to the temporary git global config as a safe directory
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5414283Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5463525Z Deleting the contents of '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar'
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5466352Z ##[group]Determining repository object format
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5468502Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5469632Z ##[group]Initializing the repository
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5473271Z [command]/usr/bin/git init /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5597741Z hint: Using 'master' as the name for the initial branch. This default branch name
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5599958Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5601595Z hint: to use in all of your new repositories, which will suppress this warning,
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5602898Z hint: call:
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5603571Z hint:
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5604301Z hint: 	git config --global init.defaultBranch <name>
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5605524Z hint:
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5606161Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5607489Z hint: 'development'. The just-created branch can be renamed via this command:
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5609010Z hint:
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5609492Z hint: 	git branch -m <name>
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5610016Z hint:
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5610664Z hint: Disable this message with "git config set advice.defaultBranchName false"
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5611731Z Initialized empty Git repository in /home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5624709Z [command]/usr/bin/git remote add origin https://github.com/gonos2k/AD4DVAR-radar
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5680866Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5682184Z ##[group]Disabling automatic garbage collection
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5683215Z [command]/usr/bin/git config --local gc.auto 0
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5720948Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5722720Z ##[group]Setting up auth
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5723863Z Removing SSH command configuration
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5730098Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.5770263Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6173001Z Removing HTTP extra header
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6179240Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6216705Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6433696Z Removing includeIf entries pointing to credentials config files
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6439158Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6474043Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6719414Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-4ecedb95-e29a-4603-9fdd-652bca35874c.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6766992Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path /home/runner/work/_temp/git-credentials-4ecedb95-e29a-4603-9fdd-652bca35874c.config
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6802690Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-4ecedb95-e29a-4603-9fdd-652bca35874c.config
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6840638Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-4ecedb95-e29a-4603-9fdd-652bca35874c.config
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6880462Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-4ecedb95-e29a-4603-9fdd-652bca35874c.config
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6914450Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6915815Z ##[group]Fetching the repository
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:47.6922420Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +7b18c2d6d462ca9a4c4734761b23e15cf1726cf7:refs/remotes/origin/main
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.1781653Z From https://github.com/gonos2k/AD4DVAR-radar
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.1784915Z  * [new ref]         7b18c2d6d462ca9a4c4734761b23e15cf1726cf7 -> origin/main
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.1790497Z [command]/usr/bin/git branch --list --remote origin/main
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.1815652Z   origin/main
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.1825393Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.1852430Z 7b18c2d6d462ca9a4c4734761b23e15cf1726cf7
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.1858342Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.1860226Z ##[group]Determining the checkout info
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.1862377Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.1863840Z [command]/usr/bin/git sparse-checkout disable
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.1916470Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.1951482Z ##[group]Checking out the ref
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.1954148Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.4222664Z Switched to a new branch 'main'
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.4227045Z branch 'main' set up to track 'origin/main'.
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.4251414Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.4303116Z [command]/usr/bin/git log -1 --format=%H
+Python 3.12.14 CPU · 7 registered cases	Check out source	2026-10-03T04:21:49.4331520Z 7b18c2d6d462ca9a4c4734761b23e15cf1726cf7
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	﻿2026-10-03T04:21:49.4546339Z ##[group]Run git fetch --depth=1 origin 42891a34859924ff1bd04a35dc1e8690b8bbe971
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4547117Z [36;1mgit fetch --depth=1 origin 42891a34859924ff1bd04a35dc1e8690b8bbe971[0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4547577Z [36;1mpython -I - <<'PY'[0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4547877Z [36;1mimport subprocess[0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4548486Z [36;1m[0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4548817Z [36;1manchor = "42891a34859924ff1bd04a35dc1e8690b8bbe971"[0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4549199Z [36;1mallowed = {[0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4549533Z [36;1m    ".github/workflows/targeted-linux-repair.yml",[0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4550128Z [36;1m    "graphify-out/fv-root-cause-20260919/RESEARCH_TARGETED_LINUX_REPAIR_PLAN_20261003.md",[0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4550641Z [36;1m}[0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4550943Z [36;1mchanged = set(subprocess.check_output([0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4551383Z [36;1m    ["git", "diff", "--name-only", anchor, "HEAD"], text=True,[0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4551793Z [36;1m).splitlines())[0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4552277Z [36;1massert changed <= allowed, f"unregistered source-tree changes: {sorted(changed - allowed)}"[0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4552822Z [36;1mPY[0m
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4849658Z shell: /usr/bin/bash -e {0}
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.4850070Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.7656660Z From https://github.com/gonos2k/AD4DVAR-radar
+Python 3.12.14 CPU · 7 registered cases	Require the registered source tree	2026-10-03T04:21:49.7722717Z  * branch            42891a34859924ff1bd04a35dc1e8690b8bbe971 -> FETCH_HEAD
+Python 3.12.14 CPU · 7 registered cases	Initialize evidence files	﻿2026-10-03T04:21:49.7977817Z ##[group]Run touch "$RUNNER_TEMP/targeted-linux-provenance.txt"
+Python 3.12.14 CPU · 7 registered cases	Initialize evidence files	2026-10-03T04:21:49.7978734Z [36;1mtouch "$RUNNER_TEMP/targeted-linux-provenance.txt"[0m
+Python 3.12.14 CPU · 7 registered cases	Initialize evidence files	2026-10-03T04:21:49.7979239Z [36;1mtouch "$RUNNER_TEMP/targeted-linux-pytest.log"[0m
+Python 3.12.14 CPU · 7 registered cases	Initialize evidence files	2026-10-03T04:21:49.7979672Z [36;1mtouch "$RUNNER_TEMP/targeted-linux-results.xml"[0m
+Python 3.12.14 CPU · 7 registered cases	Initialize evidence files	2026-10-03T04:21:49.8044108Z shell: /usr/bin/bash -e {0}
+Python 3.12.14 CPU · 7 registered cases	Initialize evidence files	2026-10-03T04:21:49.8044450Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Set up Python 3.12.14	﻿2026-10-03T04:21:49.8256415Z ##[group]Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+Python 3.12.14 CPU · 7 registered cases	Set up Python 3.12.14	2026-10-03T04:21:49.8256905Z with:
+Python 3.12.14 CPU · 7 registered cases	Set up Python 3.12.14	2026-10-03T04:21:49.8257155Z   python-version: 3.12.14
+Python 3.12.14 CPU · 7 registered cases	Set up Python 3.12.14	2026-10-03T04:21:49.8257439Z   check-latest: false
+Python 3.12.14 CPU · 7 registered cases	Set up Python 3.12.14	2026-10-03T04:21:49.8260587Z   token: ***
+Python 3.12.14 CPU · 7 registered cases	Set up Python 3.12.14	2026-10-03T04:21:49.8260879Z   update-environment: true
+Python 3.12.14 CPU · 7 registered cases	Set up Python 3.12.14	2026-10-03T04:21:49.8261179Z   allow-prereleases: false
+Python 3.12.14 CPU · 7 registered cases	Set up Python 3.12.14	2026-10-03T04:21:49.8261482Z   freethreaded: false
+Python 3.12.14 CPU · 7 registered cases	Set up Python 3.12.14	2026-10-03T04:21:49.8261737Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Set up Python 3.12.14	2026-10-03T04:21:49.9551940Z ##[group]Installed versions
+Python 3.12.14 CPU · 7 registered cases	Set up Python 3.12.14	2026-10-03T04:21:49.9596539Z Successfully set up CPython (3.12.14)
+Python 3.12.14 CPU · 7 registered cases	Set up Python 3.12.14	2026-10-03T04:21:49.9597775Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	﻿2026-10-03T04:21:49.9754982Z ##[group]Run python -I -m pip install \
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9755951Z [36;1mpython -I -m pip install \[0m
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9756379Z [36;1m  --require-hashes \[0m
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9756692Z [36;1m  --only-binary=:all: \[0m
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9757121Z [36;1m  --extra-index-url https://download.pytorch.org/whl/cpu \[0m
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9757609Z [36;1m  --requirement requirements/ci-py312-linux.lock[0m
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9758220Z [36;1mpython -I -m pip install \[0m
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9758661Z [36;1m  --no-build-isolation \[0m
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9758961Z [36;1m  --no-deps \[0m
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9759230Z [36;1m  --editable .[0m
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9837564Z shell: /usr/bin/bash -e {0}
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9837908Z env:
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9838409Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9838952Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9839441Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9839971Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9840425Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9840866Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:49.9841234Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.0660015Z Looking in indexes: https://pypi.org/simple, https://download.pytorch.org/whl/cpu
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.1977566Z Collecting basedpyright==1.39.9 (from -r requirements/ci-py312-linux.lock (line 5))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.2510554Z   Downloading basedpyright-1.39.9-py3-none-any.whl (13.4 MB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.3576599Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.4/13.4 MB 168.9 MB/s  0:00:00
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.4353800Z Collecting boolean-py==5.0 (from -r requirements/ci-py312-linux.lock (line 9))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.4391259Z   Downloading boolean_py-5.0-py3-none-any.whl (26 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.4740649Z Collecting build==1.5.0 (from -r requirements/ci-py312-linux.lock (line 13))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.4776491Z   Downloading build-1.5.0-py3-none-any.whl (26 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.5287354Z Collecting cachecontrol==0.14.4 (from -r requirements/ci-py312-linux.lock (line 17))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.5326660Z   Downloading cachecontrol-0.14.4-py3-none-any.whl (22 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.5555934Z Collecting certifi==2026.7.22 (from -r requirements/ci-py312-linux.lock (line 21))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.5600540Z   Downloading certifi-2026.7.22-py3-none-any.whl (136 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.6789155Z Collecting cffi==2.1.1 (from -r requirements/ci-py312-linux.lock (line 25))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.6829630Z   Downloading cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.8103138Z Collecting charset-normalizer==3.5.1 (from -r requirements/ci-py312-linux.lock (line 127))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:51.8145485Z   Downloading charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (248 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.0056474Z Collecting cryptography==50.0.0 (from -r requirements/ci-py312-linux.lock (line 301))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.0097793Z   Downloading cryptography-50.0.0-cp311-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.0431838Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.7/4.7 MB 176.2 MB/s  0:00:00
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.0854412Z Collecting cyclonedx-python-lib==11.12.0 (from -r requirements/ci-py312-linux.lock (line 351))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.0895805Z   Downloading cyclonedx_python_lib-11.12.0-py3-none-any.whl (529 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.0949159Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 529.5/529.5 kB 88.2 MB/s  0:00:00
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.1197894Z Collecting defusedxml==0.7.1 (from -r requirements/ci-py312-linux.lock (line 355))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.1235152Z   Downloading defusedxml-0.7.1-py2.py3-none-any.whl (25 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.1620204Z Collecting filelock==3.32.3 (from -r requirements/ci-py312-linux.lock (line 359))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.1665926Z   Downloading filelock-3.32.3-py3-none-any.whl (98 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.1989006Z Collecting fsspec==2026.7.0 (from -r requirements/ci-py312-linux.lock (line 367))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.2027880Z   Downloading fsspec-2026.7.0-py3-none-any.whl (206 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.2420617Z Collecting idna==3.18 (from -r requirements/ci-py312-linux.lock (line 371))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.2456698Z   Downloading idna-3.18-py3-none-any.whl (65 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.2742614Z Collecting iniconfig==2.3.0 (from -r requirements/ci-py312-linux.lock (line 375))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.2779664Z   Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.2992278Z Collecting jinja2==3.1.6 (from -r requirements/ci-py312-linux.lock (line 379))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.3031897Z   Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.3316704Z Collecting license-expression==30.4.4 (from -r requirements/ci-py312-linux.lock (line 383))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.3354047Z   Downloading license_expression-30.4.4-py3-none-any.whl (120 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.3775659Z Collecting markdown-it-py==4.2.0 (from -r requirements/ci-py312-linux.lock (line 387))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.3825215Z   Downloading markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.4600495Z Collecting markupsafe==3.0.3 (from -r requirements/ci-py312-linux.lock (line 391))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.4638631Z   Downloading markupsafe-3.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.5001031Z Collecting mdurl==0.1.2 (from -r requirements/ci-py312-linux.lock (line 482))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.5034821Z   Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.5260476Z Collecting mpmath==1.3.0 (from -r requirements/ci-py312-linux.lock (line 486))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.5296989Z   Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.5355318Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 89.0 MB/s  0:00:00
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.6409252Z Collecting msgpack==1.2.1 (from -r requirements/ci-py312-linux.lock (line 490))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.6461119Z   Downloading msgpack-1.2.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (419 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.6839405Z Collecting networkx==3.6.1 (from -r requirements/ci-py312-linux.lock (line 558))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.6881629Z   Downloading networkx-3.6.1-py3-none-any.whl (2.1 MB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.6976571Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 267.0 MB/s  0:00:00
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.7726014Z Collecting nodejs-wheel-binaries==24.16.0 (from -r requirements/ci-py312-linux.lock (line 562))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:52.7779105Z   Downloading nodejs_wheel_binaries-24.16.0-py2.py3-none-manylinux_2_28_x86_64.whl (60.7 MB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:53.2376121Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 60.7/60.7 MB 132.3 MB/s  0:00:00
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:53.7561781Z Collecting numpy==2.2.6 (from -r requirements/ci-py312-linux.lock (line 573))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:53.7616451Z   Downloading numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.5 MB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:53.9423442Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.5/16.5 MB 91.3 MB/s  0:00:00
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.0058499Z Collecting packageurl-python==0.17.6 (from -r requirements/ci-py312-linux.lock (line 632))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.0093032Z   Downloading packageurl_python-0.17.6-py3-none-any.whl (36 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.0312074Z Collecting packaging==26.3 (from -r requirements/ci-py312-linux.lock (line 636))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.0348464Z   Downloading packaging-26.3-py3-none-any.whl (129 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.0395350Z Requirement already satisfied: pip==26.2.1 in /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages (from -r requirements/ci-py312-linux.lock (line 645)) (26.2.1)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.0642959Z Collecting pip-api==0.0.34 (from -r requirements/ci-py312-linux.lock (line 649))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.0677617Z   Downloading pip_api-0.0.34-py3-none-any.whl (120 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.0996496Z Collecting pip-audit==2.10.1 (from -r requirements/ci-py312-linux.lock (line 653))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.1030828Z   Downloading pip_audit-2.10.1-py3-none-any.whl (62 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.1293999Z Collecting pip-requirements-parser==32.0.1 (from -r requirements/ci-py312-linux.lock (line 657))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.1328536Z   Downloading pip_requirements_parser-32.0.1-py3-none-any.whl (35 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.1836442Z Collecting platformdirs==4.11.3 (from -r requirements/ci-py312-linux.lock (line 661))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.1962728Z   Downloading platformdirs-4.11.3-py3-none-any.whl (23 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.2527413Z Collecting pluggy==1.6.0 (from -r requirements/ci-py312-linux.lock (line 665))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.2568786Z   Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.2963058Z Collecting py-serializable==2.1.0 (from -r requirements/ci-py312-linux.lock (line 669))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.3001210Z   Downloading py_serializable-2.1.0-py3-none-any.whl (23 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.3250500Z Collecting pycparser==3.0 (from -r requirements/ci-py312-linux.lock (line 673))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.3284126Z   Downloading pycparser-3.0-py3-none-any.whl (48 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.3628624Z Collecting pygments==2.20.0 (from -r requirements/ci-py312-linux.lock (line 677))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.3665147Z   Downloading pygments-2.20.0-py3-none-any.whl (1.2 MB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.3732307Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 221.8 MB/s  0:00:00
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.4085175Z Collecting pyparsing==3.3.2 (from -r requirements/ci-py312-linux.lock (line 683))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.4146261Z   Downloading pyparsing-3.3.2-py3-none-any.whl (122 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.4419029Z Collecting pyproject-hooks==1.2.0 (from -r requirements/ci-py312-linux.lock (line 687))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.4460630Z   Downloading pyproject_hooks-1.2.0-py3-none-any.whl (10 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.4846731Z Collecting pytest==9.1.1 (from -r requirements/ci-py312-linux.lock (line 691))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.4888898Z   Downloading pytest-9.1.1-py3-none-any.whl (386 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.5166656Z Collecting requests==2.34.2 (from -r requirements/ci-py312-linux.lock (line 695))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.5202448Z   Downloading requests-2.34.2-py3-none-any.whl (73 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.5793819Z Collecting rich==15.0.0 (from -r requirements/ci-py312-linux.lock (line 701))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.5833970Z   Downloading rich-15.0.0-py3-none-any.whl (310 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.6751457Z Collecting setuptools==84.0.0 (from -r requirements/ci-py312-linux.lock (line 705))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.6789107Z   Downloading setuptools-84.0.0-py3-none-any.whl (818 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.6848062Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 818.2/818.2 kB 168.3 MB/s  0:00:00
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.7227193Z Collecting sortedcontainers==2.4.0 (from -r requirements/ci-py312-linux.lock (line 711))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.7267855Z   Downloading sortedcontainers-2.4.0-py2.py3-none-any.whl (29 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.7551514Z Collecting sympy==1.14.0 (from -r requirements/ci-py312-linux.lock (line 715))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.7589708Z   Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.7842181Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 281.0 MB/s  0:00:00
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.8300731Z Collecting tomli==2.4.1 (from -r requirements/ci-py312-linux.lock (line 719))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.8353894Z   Downloading tomli-2.4.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (253 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.8640358Z Collecting tomli-w==1.2.0 (from -r requirements/ci-py312-linux.lock (line 768))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:54.8687384Z   Downloading tomli_w-1.2.0-py3-none-any.whl (6.7 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:55.0069984Z Collecting torch==2.13.0+cpu (from -r requirements/ci-py312-linux.lock (line 772))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:55.0761443Z   Downloading torch-2.13.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl (191.8 MB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:55.8554791Z      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 191.8/191.8 MB 248.6 MB/s  0:00:00
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:56.0855362Z Collecting typing-extensions==4.16.0 (from -r requirements/ci-py312-linux.lock (line 807))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:56.0893023Z   Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:56.1136690Z Collecting urllib3==2.8.0 (from -r requirements/ci-py312-linux.lock (line 813))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:56.1172830Z   Downloading urllib3-2.8.0-py3-none-any.whl (135 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:56.1503769Z Collecting wheel==0.46.3 (from -r requirements/ci-py312-linux.lock (line 817))
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:56.1539498Z   Downloading wheel-0.46.3-py3-none-any.whl (30 kB)
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:21:56.4785768Z Installing collected packages: sortedcontainers, mpmath, boolean-py, urllib3, typing-extensions, tomli-w, tomli, sympy, setuptools, pyproject-hooks, pyparsing, pygments, pycparser, pluggy, platformdirs, pip-api, packaging, packageurl-python, numpy, nodejs-wheel-binaries, networkx, msgpack, mdurl, markupsafe, license-expression, iniconfig, idna, fsspec, filelock, defusedxml, charset-normalizer, certifi, wheel, requests, pytest, py-serializable, pip-requirements-parser, markdown-it-py, jinja2, cffi, build, basedpyright, torch, rich, cyclonedx-python-lib, cryptography, cachecontrol, pip-audit
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:23.9119389Z 
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:23.9164326Z Successfully installed basedpyright-1.39.9 boolean-py-5.0 build-1.5.0 cachecontrol-0.14.4 certifi-2026.7.22 cffi-2.1.1 charset-normalizer-3.5.1 cryptography-50.0.0 cyclonedx-python-lib-11.12.0 defusedxml-0.7.1 filelock-3.32.3 fsspec-2026.7.0 idna-3.18 iniconfig-2.3.0 jinja2-3.1.6 license-expression-30.4.4 markdown-it-py-4.2.0 markupsafe-3.0.3 mdurl-0.1.2 mpmath-1.3.0 msgpack-1.2.1 networkx-3.6.1 nodejs-wheel-binaries-24.16.0 numpy-2.2.6 packageurl-python-0.17.6 packaging-26.3 pip-api-0.0.34 pip-audit-2.10.1 pip-requirements-parser-32.0.1 platformdirs-4.11.3 pluggy-1.6.0 py-serializable-2.1.0 pycparser-3.0 pygments-2.20.0 pyparsing-3.3.2 pyproject-hooks-1.2.0 pytest-9.1.1 requests-2.34.2 rich-15.0.0 setuptools-84.0.0 sortedcontainers-2.4.0 sympy-1.14.0 tomli-2.4.1 tomli-w-1.2.0 torch-2.13.0+cpu typing-extensions-4.16.0 urllib3-2.8.0 wheel-0.46.3
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:24.3609111Z Obtaining file:///home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:24.3619739Z   Checking if build backend supports build_editable: started
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:24.5352592Z   Checking if build backend supports build_editable: finished with status 'done'
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:24.5361314Z   Preparing editable metadata (pyproject.toml): started
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:24.7847858Z   Preparing editable metadata (pyproject.toml): finished with status 'done'
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:24.7951307Z Building wheels for collected packages: advar-radar-nowcast
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:24.7959203Z   Building editable for advar-radar-nowcast (pyproject.toml): started
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:25.0809460Z   Building editable for advar-radar-nowcast (pyproject.toml): finished with status 'done'
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:25.0816162Z   Created wheel for advar-radar-nowcast: filename=advar_radar_nowcast-0.114.0-0.editable-py3-none-any.whl size=63186 sha256=2b5f1d6b38e6f3890a7f4fbe8a96c4996e8951518195fa5e9a0da305ef4bc185
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:25.0817891Z   Stored in directory: /tmp/pip-ephem-wheel-cache-7385ubgo/wheels/1b/17/88/759e7a703f550adf36506436df8ea413a3c2e2eb8d99fc9f9a
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:25.0906991Z Successfully built advar-radar-nowcast
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:25.1014142Z Installing collected packages: advar-radar-nowcast
+Python 3.12.14 CPU · 7 registered cases	Install the hashed Linux CPU closure	2026-10-03T04:22:25.1130427Z Successfully installed advar-radar-nowcast-0.114.0
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	﻿2026-10-03T04:22:25.1566617Z ##[group]Run python -I - <<'PY' | tee "$PROVENANCE_PATH"
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1567131Z [36;1mpython -I - <<'PY' | tee "$PROVENANCE_PATH"[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1567450Z [36;1mimport hashlib[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1567678Z [36;1mimport platform[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1567907Z [36;1mimport subprocess[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1568338Z [36;1mimport sys[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1568563Z [36;1mfrom pathlib import Path[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1568808Z [36;1m[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1568992Z [36;1mimport pytest[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1569217Z [36;1mimport torch[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1569416Z [36;1m[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1569689Z [36;1massert sys.version_info[:3] == (3, 12, 14), sys.version[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1570288Z [36;1massert pytest.__version__ == "9.1.1", pytest.__version__[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1570706Z [36;1massert torch.__version__ == "2.13.0+cpu", torch.__version__[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1571255Z [36;1mprint(f"commit={subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()}")[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1571807Z [36;1mprint(f"python={platform.python_version()}")[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1572159Z [36;1mprint(f"platform={platform.platform()}")[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1572499Z [36;1mprint(f"pytest={pytest.__version__}")[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1572806Z [36;1mprint(f"torch={torch.__version__}")[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1573092Z [36;1mexpected = {[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1573563Z [36;1m    "requirements/ci-py312-linux.lock": "78b6f2a249d00c19d6e21028e025dd716a754e6dbacaf947a8fba11ad5b92718",[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1574307Z [36;1m    "src/advar/transport.py": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1574997Z [36;1m    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1575688Z [36;1m    "src/advar/fv_sensitivity.py": "2fdc5d4683fa57ebad9f987e28f92d46ead82f07f751592c98ea98a66dc7905d",[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1576492Z [36;1m    "examples/weather_scenarios/fv_minmod_local_path_probe.py": "1ddb5c9b0680c72fb682af6eedaaee44aab87288ae691d12368da5e4fb4f8c05",[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1577354Z [36;1m    "tests/test_fv_observation_response.py": "7b7be8f9b73de82b9f2767fa7aec0051102a7747b512af8bbc524d328c719123",[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1578265Z [36;1m    "tests/test_fv_research_problem.py": "8d4ecaa3d08d39a0eec6bb36f0434c937504cbab81a03ca63652ee0a689f5011",[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1579020Z [36;1m    "tests/test_fv_concurrent_response.py": "6f9e8b850c49b26df9fde907d74a9e467150edd9ba288f8b118c98bf222d1488",[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1579793Z [36;1m    "tests/test_fv_partial_face_event_runner.py": "a537533183ddbb40fa82409c9804eb70a0c20da06cec21293261ebcb2e5fc05a",[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1580590Z [36;1m    "tests/test_fv_response_job_reconcile.py": "6801a825154fd9bdfe34af2ebcb46a3517898541943f9445e2abb865f60ffd0d",[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1581351Z [36;1m    "tests/test_fv_minmod_local_path_probe.py": "3614f5665901c2561df7d87e955b6a4019a406b514d23776e030da31a017d714",[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1581852Z [36;1m}[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1582100Z [36;1mfor name, expected_sha256 in expected.items():[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1582501Z [36;1m    digest = hashlib.sha256(Path(name).read_bytes()).hexdigest()[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1582881Z [36;1m    print(f"sha256:{name}={digest}")[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1583271Z [36;1m    assert digest == expected_sha256, f"registered source changed: {name}"[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1583816Z [36;1mdirty = subprocess.check_output(["git", "status", "--porcelain"], text=True).strip()[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1584307Z [36;1massert not dirty, f"checkout is not clean: {dirty}"[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1584618Z [36;1mPY[0m
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1649695Z shell: /usr/bin/bash -e {0}
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1649946Z env:
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1650217Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1650675Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1651113Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1651700Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1652085Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1652465Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1652901Z   PROVENANCE_PATH: /home/runner/work/_temp/targeted-linux-provenance.txt
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:25.1653276Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0154570Z commit=7b18c2d6d462ca9a4c4734761b23e15cf1726cf7
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0155170Z python=3.12.14
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0155611Z platform=Linux-6.17.0-1022-azure-x86_64-with-glibc2.39
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0156105Z pytest=9.1.1
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0156709Z torch=2.13.0+cpu
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0157385Z sha256:requirements/ci-py312-linux.lock=78b6f2a249d00c19d6e21028e025dd716a754e6dbacaf947a8fba11ad5b92718
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0158727Z sha256:src/advar/transport.py=604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0159744Z sha256:src/advar/variational.py=e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0160775Z sha256:src/advar/fv_sensitivity.py=2fdc5d4683fa57ebad9f987e28f92d46ead82f07f751592c98ea98a66dc7905d
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0161982Z sha256:examples/weather_scenarios/fv_minmod_local_path_probe.py=1ddb5c9b0680c72fb682af6eedaaee44aab87288ae691d12368da5e4fb4f8c05
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0163238Z sha256:tests/test_fv_observation_response.py=7b7be8f9b73de82b9f2767fa7aec0051102a7747b512af8bbc524d328c719123
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0164346Z sha256:tests/test_fv_research_problem.py=8d4ecaa3d08d39a0eec6bb36f0434c937504cbab81a03ca63652ee0a689f5011
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0165451Z sha256:tests/test_fv_concurrent_response.py=6f9e8b850c49b26df9fde907d74a9e467150edd9ba288f8b118c98bf222d1488
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0166585Z sha256:tests/test_fv_partial_face_event_runner.py=a537533183ddbb40fa82409c9804eb70a0c20da06cec21293261ebcb2e5fc05a
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0167724Z sha256:tests/test_fv_response_job_reconcile.py=6801a825154fd9bdfe34af2ebcb46a3517898541943f9445e2abb865f60ffd0d
+Python 3.12.14 CPU · 7 registered cases	Record and assert the tested runtime	2026-10-03T04:22:27.0169063Z sha256:tests/test_fv_minmod_local_path_probe.py=3614f5665901c2561df7d87e955b6a4019a406b514d23776e030da31a017d714
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	﻿2026-10-03T04:22:27.2981265Z ##[group]Run set -o pipefail
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.2981623Z [36;1mset -o pipefail[0m
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.2981929Z [36;1mtimeout --signal=TERM --kill-after=10s 10m \[0m
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.2982320Z [36;1m  env -u PYTEST_ADDOPTS python -I -m pytest -q \[0m
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.2982750Z [36;1m    --junitxml="$RUNNER_TEMP/targeted-linux-results.xml" \[0m
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.2983367Z [36;1m    'tests/test_fv_observation_response.py::test_parameterized_background_matches_polished_centered_reanalysis' \[0m
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.2984158Z [36;1m    'tests/test_fv_research_problem.py::test_common_objective_score_and_derivatives_match_frozen_reference[4x5]' \[0m
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.2985063Z [36;1m    'tests/test_fv_concurrent_response.py::test_portable_case_uses_frozen_control_data_with_current_inputs[fv4x5-archive_names0-direction_slice0-54]' \[0m
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.2985969Z [36;1m    'tests/test_fv_partial_face_event_runner.py::test_runner_launches_exact_guarded_command_and_records_completion' \[0m
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.2986792Z [36;1m    'tests/test_fv_response_job_reconcile.py::test_consistent_terminal_lifecycle_allows_candidate_and_is_idempotent' \[0m
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.2987551Z [36;1m    'tests/test_fv_minmod_local_path_probe.py::test_new_direction_clears_old_pairs_and_computes_its_cross' \[0m
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.2988655Z [36;1m    'tests/test_fv_minmod_local_path_probe.py::test_completed_direction_resume_validates_without_repeating_reanalysis' \[0m
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.2989276Z [36;1m  2>&1 | tee "$RUNNER_TEMP/targeted-linux-pytest.log"[0m
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.3054094Z shell: /usr/bin/bash -e {0}
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.3054352Z env:
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.3054623Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.3055071Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.3055510Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.3055913Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.3056320Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.3056711Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.3057039Z   OMP_NUM_THREADS: 1
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.3057252Z   MKL_NUM_THREADS: 1
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:22:27.3057451Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2814135Z .....FF                                                                  [100%]
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2815022Z =================================== FAILURES ===================================
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2816249Z __________ test_new_direction_clears_old_pairs_and_computes_its_cross __________
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2816871Z 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2817301Z tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_new_direction_clears_old_0')
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2818343Z monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f40b40f20f0>
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2818790Z 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2819073Z     def test_new_direction_clears_old_pairs_and_computes_its_cross(tmp_path, monkeypatch):
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2819724Z         # Stop before optimization: exercise actual preparation/cache/JVP wiring.
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2820215Z         class ReachedCorrector(BaseException):
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2820528Z             pass
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2820767Z         original_load = PROBE._load_module
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2821067Z         observed = []
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2821309Z         def load(path, name):
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2821598Z             module = original_load(path, name)
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2821929Z             if path == PROBE.ORACLE:
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2822279Z                 def stop(objective, predictor, changed, **kwargs):
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2822655Z                     observed.append(changed)
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2822970Z                     raise ReachedCorrector
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2823278Z                 module.polish = stop
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2823555Z             return module
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2823813Z         original_jvp = torch.func.jvp
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2824358Z         directions = []
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2824635Z         def jvp(func, primals, tangents, **kwargs):
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2824981Z             if primals[0].shape == (61,):
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2825306Z                 directions.append(tangents[0].clone())
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2825683Z             return original_jvp(func, primals, tangents, **kwargs)
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2826067Z         monkeypatch.setattr(PROBE, '_load_module', load)
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2826422Z         monkeypatch.setattr(torch.func, 'jvp', jvp)
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2826808Z         _install_archived_source_identity_for_controller_test(monkeypatch)
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2827197Z         resume = _synthetic_resume_checkpoint(
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2827561Z             tmp_path / "resume.json", selected_direction="observation_sine60",
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2827983Z             pairs=[{"j": 2, "predictors_ok": True, "endpoints": [
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2828527Z                 {"same_local_branch": True}, {"same_local_branch": True},
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2828878Z             ], "derivative_pass": True}],
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2829142Z         )
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2829336Z         output = tmp_path / 'new.json'
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2829615Z         with pytest.raises(ReachedCorrector):
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2829907Z >           PROBE.run(output, resume=resume,
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2830206Z                       direction_name='middle_time_bias')
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2830410Z 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2830536Z tests/test_fv_minmod_local_path_probe.py:297: 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2830874Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2831289Z examples/weather_scenarios/fv_minmod_local_path_probe.py:228: in run
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2831654Z     str(path): _hash(path)
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2831873Z                ^^^^^^^^^^^
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2832137Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2832371Z 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2832743Z path = PosixPath('/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/examples/weather_scenarios/fv_minmod_inverse_probe.py')
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2833213Z 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2833303Z     def identity_hash(path):
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2833559Z         if str(path) in trusted_identity:
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2833840Z             return trusted_identity[str(path)]
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2834127Z         if path == PROBE.MEASURED_PROBE:
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2834423Z >           return trusted_identity[str(PROBE.PROBE)]
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2834878Z                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2835505Z E           KeyError: '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/examples/weather_scenarios/fv_minmod_inverse_probe.py'
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2835957Z 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2836088Z tests/test_fv_minmod_local_path_probe.py:124: KeyError
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2836514Z ____ test_completed_direction_resume_validates_without_repeating_reanalysis ____
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2836825Z 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2837060Z tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_completed_direction_resum0')
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2837594Z monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f40b327b860>
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2837888Z 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2838306Z     def test_completed_direction_resume_validates_without_repeating_reanalysis(tmp_path, monkeypatch):
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2838795Z         original_load = PROBE._load_module
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2839066Z         def load(path, name):
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2839325Z             module = original_load(path, name)
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2839606Z             if path == PROBE.ORACLE:
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2839874Z                 def unexpected(*args, **kwargs):
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2840241Z                     pytest.fail('completed direction must not repeat reanalysis')
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2840608Z                 module.polish = unexpected
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2840869Z             return module
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2841173Z         monkeypatch.setattr(PROBE, '_load_module', load)
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2841795Z         _install_archived_source_identity_for_controller_test(monkeypatch)
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2842181Z         source = _synthetic_resume_checkpoint(
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2842515Z             tmp_path / "theta.json", selected_direction="theta",
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2842879Z             pairs=[{"j": j, "predictors_ok": True, "endpoints": [
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2843255Z                 {"same_local_branch": True}, {"same_local_branch": True},
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2843622Z             ], "derivative_pass": True} for j in (0, 1)],
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2843898Z         )
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2844234Z >       result = PROBE.run(tmp_path / 'validated.json', resume=source, direction_name='theta')
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2844698Z                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2844944Z 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2845062Z tests/test_fv_minmod_local_path_probe.py:325: 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2845409Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2845830Z examples/weather_scenarios/fv_minmod_local_path_probe.py:228: in run
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2846193Z     str(path): _hash(path)
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2846412Z                ^^^^^^^^^^^
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2846749Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2846986Z 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2847348Z path = PosixPath('/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/examples/weather_scenarios/fv_minmod_inverse_probe.py')
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2847817Z 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2847908Z     def identity_hash(path):
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2848279Z         if str(path) in trusted_identity:
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2848568Z             return trusted_identity[str(path)]
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2848855Z         if path == PROBE.MEASURED_PROBE:
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2849151Z >           return trusted_identity[str(PROBE.PROBE)]
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2849448Z                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2849977Z E           KeyError: '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/examples/weather_scenarios/fv_minmod_inverse_probe.py'
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2850433Z 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2850565Z tests/test_fv_minmod_local_path_probe.py:124: KeyError
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2850918Z =============================== warnings summary ===============================
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2851270Z tests/test_fv_observation_response.py: 18 warnings
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2852178Z   /opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2853138Z     warnings.warn(
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2853259Z 
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2853468Z -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2853912Z =========================== short test summary info ============================
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2854955Z FAILED tests/test_fv_minmod_local_path_probe.py::test_new_direction_clears_old_pairs_and_computes_its_cross - KeyError: '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/examples/weather_scenarios/fv_minmod_inverse_probe.py'
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2856495Z FAILED tests/test_fv_minmod_local_path_probe.py::test_completed_direction_resume_validates_without_repeating_reanalysis - KeyError: '/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/examples/weather_scenarios/fv_minmod_inverse_probe.py'
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.2857496Z 2 failed, 5 passed, 18 warnings in 192.55s (0:03:12)
+Python 3.12.14 CPU · 7 registered cases	Run the seven registered Linux cases	2026-10-03T04:25:40.7766126Z ##[error]Process completed with exit code 1.
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	﻿2026-10-03T04:25:40.7854926Z ##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7855348Z with:
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7855661Z   name: targeted-linux-repair-7b18c2d6d462ca9a4c4734761b23e15cf1726cf7
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7856483Z   path: /home/runner/work/_temp/targeted-linux-provenance.txt
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	/home/runner/work/_temp/targeted-linux-pytest.log
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	/home/runner/work/_temp/targeted-linux-results.xml
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7857185Z   if-no-files-found: error
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7857419Z   retention-days: 7
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7857627Z   compression-level: 6
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7857838Z   overwrite: false
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7858224Z   include-hidden-files: false
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7858454Z   archive: true
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7858637Z env:
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7858878Z   pythonLocation: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7859318Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib/pkgconfig
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7859725Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7860125Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7860497Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.12.14/x64
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7860871Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.12.14/x64/lib
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.7861193Z ##[endgroup]
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.9325643Z Multiple search paths detected. Calculating the least common ancestor of all paths
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.9328912Z The least common ancestor is /home/runner/work/_temp. This will be the root directory of the artifact
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.9330325Z With the provided path, there will be 3 files uploaded
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.9335067Z Artifact name is valid!
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:40.9335574Z Root directory input is valid!
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:41.1278446Z Uploading artifact: targeted-linux-repair-7b18c2d6d462ca9a4c4734761b23e15cf1726cf7.zip
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:41.1323880Z Beginning upload of artifact content to blob storage
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:41.1971625Z Uploaded bytes 4393
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:41.2111976Z Finished uploading artifact content to blob storage!
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:41.2113208Z SHA256 digest of uploaded artifact is ee846c7ca31e6db7da34a907512d9b6f300fee2f509e628c13dcc0dc6fbcdc87
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:41.2114135Z Finalizing artifact upload
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:41.4111062Z Artifact targeted-linux-repair-7b18c2d6d462ca9a4c4734761b23e15cf1726cf7 successfully finalized. Artifact ID 11264397826
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:41.4112597Z Artifact targeted-linux-repair-7b18c2d6d462ca9a4c4734761b23e15cf1726cf7 has been successfully uploaded! Final size is 4393 bytes. Artifact ID is 11264397826
+Python 3.12.14 CPU · 7 registered cases	Preserve targeted run evidence	2026-10-03T04:25:41.4115768Z Artifact download URL: https://github.com/gonos2k/AD4DVAR-radar/actions/runs/37096279408/artifacts/11264397826
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	﻿2026-10-03T04:25:41.4326320Z Post job cleanup.
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5198627Z [command]/usr/bin/git version
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5234799Z git version 2.55.0
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5285358Z Temporarily overriding HOME='/home/runner/work/_temp/b39e70ba-905c-4030-b574-77c51d793b5c' before making global git config changes
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5287066Z Adding repository directory to the temporary git global config as a safe directory
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5291957Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/AD4DVAR-radar/AD4DVAR-radar
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5327391Z Removing SSH command configuration
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5335089Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5381515Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5634303Z Removing HTTP extra header
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5641687Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5682285Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5937231Z Removing includeIf entries pointing to credentials config files
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5945530Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5981128Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5982364Z includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5983492Z includeif.gitdir:/github/workspace/.git.path
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5984265Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.5990853Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.6018976Z /home/runner/work/_temp/git-credentials-4ecedb95-e29a-4603-9fdd-652bca35874c.config
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.6041376Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-4ecedb95\-e29a\-4603\-9fdd\-652bca35874c\.config
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.6095846Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.6126520Z /home/runner/work/_temp/git-credentials-4ecedb95-e29a-4603-9fdd-652bca35874c.config
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.6136751Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/AD4DVAR-radar/AD4DVAR-radar/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-4ecedb95\-e29a\-4603\-9fdd\-652bca35874c\.config
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.6189467Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.6217009Z /github/runner_temp/git-credentials-4ecedb95-e29a-4603-9fdd-652bca35874c.config
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.6224683Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-4ecedb95\-e29a\-4603\-9fdd\-652bca35874c\.config
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.6263699Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.6293530Z /github/runner_temp/git-credentials-4ecedb95-e29a-4603-9fdd-652bca35874c.config
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.6304635Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-4ecedb95\-e29a\-4603\-9fdd\-652bca35874c\.config
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.6349399Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Python 3.12.14 CPU · 7 registered cases	Post Check out source	2026-10-03T04:25:41.6600271Z Removing credentials config '/home/runner/work/_temp/git-credentials-4ecedb95-e29a-4603-9fdd-652bca35874c.config'
+Python 3.12.14 CPU · 7 registered cases	Complete job	﻿2026-10-03T04:25:41.6747893Z Cleaning up orphan processes

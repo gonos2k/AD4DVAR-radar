@@ -1,0 +1,15 @@
+# R2 paired-face independent one-sided normal plan (2026-10-03)
+
+Evaluate only the numerical24-control tangent root in the pinned pairedreport/input. Original26-prior/point13-parameter likelihood is unchanged. No optimization, tangent response, nativePCG or nonlinear parameterreanalysis in this step.
+
+Independent binary-captured-input equations: reuse independent minmod-Euler arithmetic and first-order interval jets, with exactrationalvalidation of pairedprojection, weights,pivotblock and bothflux identities. Reconstruct originalpivotalpha0/1 with normalizedphysical facecoordinates; bothopen originalbounds and full26latent prior remain. Fixed4pointDBZbilinearcoordinates operate afterecho-to-DBZ conversion, quality/std precede the capturedfixednative symmetric correlationwhitener. Capturing itsbinary coefficients keeps the alreadydeclared erroroperator; do notsubstitute Cholesky or recompute the matrix in a newcoordinate convention.
+
+Run allfour orthants(sx,sy) in{-1,+1}², and scalar directionaljet normal_axis0 or1: eight80-digit interval evaluations. Eventtags are restricted to exactzero selectedQx34 andQy30; sector sign controls their upwind extension, including the zero-derivative other event. Allarithmetic/unary operations strip tags. Otherzero/tied limiter comparisons and ambiguousinterval branches failclosed. Exactnormalflux derivative is selected scale(.11 or.08) in itsownaxis, zero inotheraxis. Ordinary model/state comparisons do notinherit eventtags.
+
+Audit all36objective-analysis rows against the nativepaired trace: limiter operand/inputsign choices mustremain asdeclared, all47 otherface signs remain unchanged, two selected signs match the chosenorthant. For eachnormal+side, require agreeing derivative intervals across theother event's sides (or explicit overlap); allfour orthants' primalJ intervals mustoverlap. Record authoritativeexactbinaryIV endpoints and presentationdecimalbounds. Check measurednormalorientation separately: sigma_left<0<sigma_right for BOTH coordinates. Nonpositive/ambiguous signs are an explicit unsupported-normal outcome, not a passedminimum or response.
+
+Even strictsigns and numericalSPD/tangentgradient do notprove an exactroot/uniformparameterball/globalminimum. They numericallysupport the selectedpaired active-face localconditions at this capturedpoint only. The firstvariation additivity follows from zero selectedflux primals: products of onefluxperturbation with another's statechange are secondorder; no otherbranch tie isadmitted. Do not transfer R4 evidence. Laterparameter endpoints requiretheir ownfour normal signs.
+
+One independentCPU child under60s wall, sampled256MiBRSS/.25s. Pin input/report/plan/producer/reference/test/helper sources and runtime beforeafter; retain any setup/errorattempt separately; no automatic scientificrepeat. Parentassigns executionstatus afteractualexit/resource/sourcechecks. No wholeCPU/package/deploymentCI.
+
+Normal input SHA256: dd9caee732c44ed0961cadd5265005ddfa95bbd5b1d61abab2a08ff6d24a4320

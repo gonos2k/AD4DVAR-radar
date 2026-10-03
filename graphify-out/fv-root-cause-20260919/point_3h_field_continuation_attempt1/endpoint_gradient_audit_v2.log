@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/point_3h_field_continuation_attempt1/endpoint_gradient_audit_v2.py", line 43, in <module>
+    print(json.dumps({k:report[k] for k in ("execution_status","numerical_status","field_gradient_max","dynamics_gradient_max","full_gradient_max","objective","field_stationarity_gate_passed","fixed_dynamics_unchanged","strict_endpoint_branch_recorded")},indent=2,sort_keys=True))
+                        ~~~~~~^^^
+KeyError: 'objective'

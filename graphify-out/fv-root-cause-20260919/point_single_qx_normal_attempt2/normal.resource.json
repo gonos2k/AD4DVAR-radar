@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_point_single_qx_normal_probe",
+    "--output",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/point_single_qx_normal_attempt2/normal.json"
+  ],
+  "child_pid": 78290,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 0.5220196251757443,
+  "sampled_peak_rss_bytes": 29671424,
+  "rss_samples": 2,
+  "wall_limit_seconds": 60,
+  "rss_limit_bytes": 268435456,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

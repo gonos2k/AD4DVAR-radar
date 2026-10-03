@@ -1,0 +1,34 @@
+{
+  "execution_status": "completed",
+  "numerical_status": "tangent_stationary_candidate",
+  "preflight_pins_unchanged": true,
+  "provenance_correction": {
+    "actual_attempt1_paired_root_sha256": "d38d1cec4550a6347ceb14db23395679a59a7cad89f09096ec7185f984f6a8cf",
+    "actual_attempt1_release_sha256": "896b38c34fdc87fbaaa4ec51d271522942d96e1c4cddfcdf2901d087b35fd462",
+    "actual_meaning": "attempt1 release report SHA-256",
+    "recorded_value": "896b38c34fdc87fbaaa4ec51d271522942d96e1c4cddfcdf2901d087b35fd462",
+    "scope": "metadata-label correction only; frozen snapshot bytes unchanged",
+    "snapshot_key": "paired_report_sha256"
+  },
+  "release_report_sha256": "e3f4f083ac9bfb002d38e4e2a0352672f179775d18b22fbf26fd294bedd2ad24",
+  "resource": {
+    "child_pid": 67758,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "-m",
+      "examples.weather_scenarios.fv_point_qy_release_probe",
+      "--output",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/point_qy_release_attempt2/release.json"
+    ],
+    "elapsed_seconds": 84.8046537078917,
+    "exit_code": 0,
+    "monitor_error": null,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 324,
+    "sampled_peak_rss_bytes": 350502912,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 120
+  },
+  "response_validation": "not_performed"
+}

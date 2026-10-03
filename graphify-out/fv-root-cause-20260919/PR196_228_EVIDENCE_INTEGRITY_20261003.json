@@ -1,0 +1,125 @@
+{
+  "scope": "file integrity and saved source-map audit only; no numerical recomputation or FV execution",
+  "records": [
+    {
+      "path": "graphify-out/fv-root-cause-20260919/partial_schur_diagnostic_attempt1/schur.json",
+      "sha256": "0eb9beb677c4a72a5b0d8559c0a94482faef29ab582a389ecb6a7a9878b8bbd4",
+      "reported_source_before_after_equal": null,
+      "source_map_file_count": 23,
+      "current_source_changed": [],
+      "current_source_missing": [],
+      "source_schema": "combined source_before_after map; equality enforced by producer, not separately serialized"
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/point_qy_release_attempt2/release.json",
+      "sha256": "e3f4f083ac9bfb002d38e4e2a0352672f179775d18b22fbf26fd294bedd2ad24",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 46,
+      "current_source_changed": [],
+      "current_source_missing": [],
+      "source_schema": "separate source_before/source_after maps"
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/point_single_qx_normal_attempt2/normal.json",
+      "sha256": "ae6e65aaab17de0ab5e8d578dcba6d61e220e4365e46fd096a0dcc507974fb38",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 50,
+      "current_source_changed": [],
+      "current_source_missing": [],
+      "source_schema": "separate source_before/source_after maps"
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/point_single_qx_response_attempt2/response.json",
+      "sha256": "cb3283e0ee70518700a6ee5e2ade3f118683a42bbede26433e9e96aed231a59f",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 53,
+      "current_source_changed": [],
+      "current_source_missing": [],
+      "source_schema": "separate source_before/source_after maps"
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/point_3h_terminal_block_schur_attempt1/block_schur.json",
+      "sha256": "ca04e5f9712667cee95de69121d889dd8f2d33f81192b70e3724ee6fa52f224b",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 27,
+      "current_source_changed": [],
+      "current_source_missing": [],
+      "source_schema": "separate source_before/source_after maps"
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/point_3h_schur_newton_step_attempt1/newton_step.json",
+      "sha256": "b71411024191756d27bc30982800207a392e31d5b60862229ab24c181aa3fdbd",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 29,
+      "current_source_changed": [],
+      "current_source_missing": [],
+      "source_schema": "separate source_before/source_after maps"
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/point_3h_accepted_endpoint_audit_attempt1/audit.json",
+      "sha256": "b20c5f85cc8921d8cbff69eddac6167c453739906b7a05f5ac1737df405147e6",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 40,
+      "current_source_changed": [],
+      "current_source_missing": [],
+      "source_schema": "separate source_before/source_after maps"
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/point_3h_field_refinement_attempt1/field_refinement.json",
+      "sha256": "99dbc6f9b6813c81d9981f77616eef0519b3e688eee247a72d5183856d67a062",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 44,
+      "current_source_changed": [],
+      "current_source_missing": [],
+      "source_schema": "separate source_before/source_after maps"
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/point_3h_field_continuation_attempt1/field_continuation.json",
+      "sha256": "a5759c3eca7ca537e0038b3dbe95f3ff67abdabcc43f5f5a2b3aa3cc5982fb1b",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 48,
+      "current_source_changed": [],
+      "current_source_missing": [],
+      "source_schema": "separate source_before/source_after maps"
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/field_precision_continuation_attempt1/field_precision_continuation.json",
+      "sha256": "e8e0d395a212a37227185b40ccb977f26023795527a9c820e414ed46b6202cf9",
+      "source_schema": "separate source_before/source_after maps",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 52,
+      "current_source_changed": [],
+      "current_source_missing": []
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/precision_terminal_hessian_audit_attempt1/precision_hessian_audit.json",
+      "sha256": "eb0f716bb36743ccaeb9e42845debedbbf92c110f49e2a4779184541a0e263af",
+      "source_schema": "separate source_before/source_after maps",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 56,
+      "current_source_changed": [],
+      "current_source_missing": []
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/block_modified_newton_search_attempt1/block_modified_newton_search.json",
+      "sha256": "73b4e51c76ad6fb6f7ffe0721e1a4b509d6e4371b667734c68b8789ed47dffb7",
+      "source_schema": "separate source_before/source_after maps",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 60,
+      "current_source_changed": [],
+      "current_source_missing": []
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/coupled_original_j_continuation_attempt1/coupled_original_j_continuation.json",
+      "sha256": "3e2e1e247be0de1c6b5e27d4c835dbbe6b456f7a0c0dc2e0e90ac18d71fd8385",
+      "source_schema": "separate source_before/source_after maps",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 64,
+      "current_source_changed": [],
+      "current_source_missing": []
+    }
+  ],
+  "all_current_mapped_sources_match": true,
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "separately_serialized_source_maps_equal": true
+}

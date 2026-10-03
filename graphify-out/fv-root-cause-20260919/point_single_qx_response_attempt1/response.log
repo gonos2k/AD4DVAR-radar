@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_single_qx_response_probe.py", line 399, in <module>
+    run(parser.parse_args().output)
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_single_qx_response_probe.py", line 259, in run
+    base_normal = _normal_pair(problem, parameters, tangent, trace, captured["fixture"], binding)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_single_qx_response_probe.py", line 98, in _normal_pair
+    fixture = _fixture(problem, parameters, captured)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_single_qx_response_probe.py", line 82, in _fixture
+    fixture["point_dbz"] = problem._observation_values(parameters).tolist()
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'FVPointResearchProblem' object has no attribute '_observation_values'. Did you mean: 'observation_status'?

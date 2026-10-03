@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/point_3h_field_continuation_attempt1/endpoint_gradient_audit.py", line 5, in <module>
+    from examples.weather_scenarios import fv_point_3h_field_continuation as probe
+ModuleNotFoundError: No module named 'examples'

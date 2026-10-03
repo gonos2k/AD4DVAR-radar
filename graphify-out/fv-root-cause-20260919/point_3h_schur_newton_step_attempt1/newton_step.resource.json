@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_point_3h_schur_newton_step",
+    "--output",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/point_3h_schur_newton_step_attempt1/newton_step.json"
+  ],
+  "child_pid": 38983,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 37.054642874980345,
+  "sampled_peak_rss_bytes": 367050752,
+  "rss_samples": 139,
+  "wall_limit_seconds": 360,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

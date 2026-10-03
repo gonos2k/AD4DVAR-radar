@@ -1,0 +1,54 @@
+{
+  "record": "FV_POINT_3H_COUPLED_ORIGINAL_J_CONTINUATION_RESULTS_20261003.md,coupled_original_j_continuation_attempt1",
+  "status": "one reusable four-epoch original-J coupled continuation completed at epoch limit; no stationarity candidate",
+  "baseline": "R8 one-step original-J search raw 73b4e51c76ad6fb6f7ffe0721e1a4b509d6e4371b667734c68b8789ed47dffb7; accepted control 3aa913cd71d5916b4f3146efad75b0f5dd6766f6bdc81ee6e8c6706cee03fc32",
+  "method": "fresh 26-column Hessian plus independent 27th eigenpair HVP each epoch; Hff and Schur block qualification; dynamics-only mu shift for the modified A_mu solve; shifted SPD block inverse preconditioner; unchanged original-J Armijo and strict endpoint branch checks; one absolute 1200s internal budget over four epochs",
+  "execution": {
+    "status": "completed",
+    "wall_seconds": 992.6428074580617,
+    "sampled_peak_rss_bytes": 375242752,
+    "wall_limit_seconds": 1500,
+    "sampled_rss_limit_bytes": 1073741824,
+    "resource_termination": null,
+    "monitor_error": null,
+    "exit_code": 0,
+    "git_head": "3cf06409c2982db0a39909921eeb50b640a507bf"
+  },
+  "numerical": {
+    "status": "epoch_limit",
+    "accepted_epochs": 4,
+    "accepted_alphas": [0.125, 0.015625, 0.0625, 0.0625],
+    "dynamics_shifts": [11.92543489671013, 36.976236891348684, 17.271012965213167, 8.905756268851583],
+    "modified_pcg_iterations": [1, 1, 1, 1],
+    "modified_system_true_relative_residuals": [1.0553352445670177e-12, 4.422749906353922e-12, 2.0735389773205618e-12, 2.0725684674441314e-13],
+    "original_hessian_relative_residuals": [0.42553142753844325, 12.028847779601621, 0.5963002718635685, 0.5239058578816089],
+    "objective_start": 0.10775705191091639,
+    "objective_last_accepted": 0.08389718093130327,
+    "phi_start": 18.59197598217965,
+    "phi_last_accepted": 1.7635966239794696,
+    "full_gradient_max_last_accepted": 1.0588168237438937,
+    "stationarity_tolerance": 1e-10,
+    "stationarity_candidate_issued": false
+  },
+  "provenance": {
+    "source_paths_byte_unchanged": 64,
+    "input_identity_unchanged": true,
+    "r8_raw_unchanged": true,
+    "parameters_unchanged": true,
+    "original_objective_and_priors_unchanged": true,
+    "git_head_unchanged": true,
+    "r8_source_test_byte_unchanged": true,
+    "graphify_ast_nodes": 29,
+    "graphify_ast_edges": 74,
+    "shared_graph_unchanged": true
+  },
+  "claims": {
+    "full_root": false,
+    "stationarity": false,
+    "adjoint": false,
+    "response": false,
+    "score": false,
+    "physical_validity": false
+  },
+  "next_scientific_step": "No follow-on phase is authorized by this result; await a separate root decision."
+}

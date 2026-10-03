@@ -10,7 +10,8 @@ reanalysis, and physical skill. Prior evidence remains in
 | R1 | Preserve completed scope | Verify PR #177–#195 main integration, regular 3-hour forward result, fixed-control point likelihood and derivative tests, and process-isolated local responses without adding them as one success rate | Done at their reported scopes; no new FV run implied |
 | R2 | A full-valid correlated point profile needs a stationary response | In one declared 4×5 synthetic point problem, verify a qualified stationary point, true adjoint residual and full parameter gradient, then signed nonlinear reanalysis at two local sizes | **Closed for the constructed fixed centered-prior profile only.** One 26-control/13-parameter root, full VJP and four signed endpoints passed; see `FV_POINT_CENTERED_PRIOR_RESPONSE_RESULTS.md`. This is a different statistical problem from R2-O |
 | R2-O-D | Original zero-centered-prior correlated point input needs an explicit support decision | Preserve bounded attempts and input identity; separate child exit, numerical refusal and response non-issuance without claiming root absence | **Closed as current-policy refusal for this exact input.** The last two source-bound sector attempts each refused all 16 seventh-step candidates with maximum gradients above `1e-10`. See `FV_POINT_ORIGINAL_POLICY_RESULTS.md` |
-| R2-O-R | Original correlated point input's qualified response | Find a fresh stationary root under a separately justified nominal method, then exact adjoint/VJP and signed reanalysis | **Open.** Fresh saved-point re-evaluation isolates qx[3,4] as the sole54-stage switch. An original-prior25D structural-face correction accepts4 steps but refuses stationarity at0.003145; approaching qy[3,0] constrains the remaining fixed branch. No normal/response issued; see `R2_POINT_ACTIVE_FACE_RESULTS_20261003.md` |
+| R2-O-R | Original correlated point input's classical full26 smooth-root response | Qualify the original full smooth stationary API without borrowing a constructed prior | **Unsupported at the selected qx zero event; classical target remains open.** The unchanged statistical problem now has the separately scoped R2-O-A conditional response. Historical smooth/one-face refusals remain preserved. |
+| R2-O-A | Conditional selected-qx-face response for the original zero-prior point input | Preserve all26 prior terms and13p; qualify25D tangent stationarity/curvature plus own one-sided normal signs, adjoint/VJP and actual signed reanalysis | **Closed at one approximate numerical branch, one direction and two sizes.** Positiveqy release2 has tangent gradient1.97e-12; all four actual-p endpoints pass fresh25D curvature/normal/branch gates. Relative FD errors4.91e-8/1.22e-8; no full26 classical, exact-root, uniform-ball, physical or3hour claim. See `R2_POINT_SINGLE_QX_RESPONSE_RESULTS_20261003.md` |
 | R3-M | One missing point needs a stationary response | Under complete model state/boundaries, bind status 1 and a selected correlation submatrix to a qualified point root, full VJP, inactive-slot check and signed endpoints | **Closed for the constructed fixed-centered-prior profile with one middle-time point missing.** Full 13-vector and two signed pairs passed; see `FV_POINT_MISSING_CENTERED_RESPONSE_RESULTS.md` |
 | R3-Q | QC-excluded point profile needs a stationary response | Keep external QC status distinct from missing and clear sky; qualify a fixed-mask root, full VJP and signed endpoints | **Closed for the constructed status-2 external-QC profile.** Full VJP, zero inactive slot and two signed pairs passed; numerics match R3-M under the same active mask, while identity differs. See `FV_POINT_QC_CENTERED_RESPONSE_RESULTS.md` |
 | R3-E | One wholly empty observation time needs a stationary response | Preserve time integration and external background while qualifying root, VJP and signed endpoints | **Closed for the constructed exactly-one-empty-first-time profile.** Four inactive first-time slots, nonzero theta path, full VJP and two signed pairs passed; see `FV_POINT_EMPTY_TIME_CENTERED_RESPONSE_RESULTS.md` |
@@ -19,7 +20,7 @@ reanalysis, and physical skill. Prior evidence remains in
 | R4-A | Conditional selected-active-face response for the original two-hole input | Keep original full26 prior/data/score; qualify tangent stationarity, positive tangent curvature and one-sided normal signs, then adjoint/full VJP and signed reanalysis | **Closed at one approximate numerical branch, one direction and two sizes.** Four signed endpoints pass fresh tangent/curvature/normal/branch gates and score differences; no exact-root, uniform-neighborhood, global-minimum or physical claim. See `R4_ACTIVE_FACE_RESPONSE_RESULTS_20261003.md` |
 | R5-F | Point observations and 3-hour leads need a combined forward path | Preserve the one-lead reference and use a regular 18-lead terminal score with matching point observation, boundary/time and resource contracts | **Closed for one fixed same-operator 4×5 forward case.** Point observations and 18-lead terminal FV field pass; strict branch refuses, so no long response. See `FV_POINT_3H_FORWARD_RESULTS.md` |
 | R5-R-D | Fixed 3-hour point input needs a response-support decision | Keep its forward success separate from strict branch eligibility and response publication | **Closed for the exact PR #204 input/control as current-gate refusal.** The strict branch rejected before an admitted stage; no sensitivity was issued. See `FV_POINT_3H_RESPONSE_POLICY_RESULTS.md` |
-| R5-R-R | Qualified point-observation 3-hour stationary response | Find a strict long-horizon branch and stationary analysis, then full adjoint/VJP and signed endpoints without changing the time/score contract | **Open.** The PR #223 search refused its eight-trial alpha grid; a separately pinned smaller-alpha tail accepted two changed-branch steps, but final gradient maximum `0.8720` remains above handoff and stationarity gates. No response was issued. See `FV_POINT_3H_MERIT_TAIL_RESULTS.md` |
+| R5-R-R | Qualified point-observation 3-hour stationary response | Find a strict long-horizon branch and stationary analysis, then full adjoint/VJP and signed endpoints without changing the time/score contract | **Open.** Four fresh-curvature coupled original-J epochs lowered J to `0.083897`, but final full gradient maximum=`1.058817` remains above `1e-10`; epoch limit, no stationary candidate or response. No old Hessian is inherited at final `cd6b` point. See `FV_POINT_3H_COUPLED_ORIGINAL_J_CONTINUATION_RESULTS_20261003.md`. |
 | R6 | General observation products remain unsupported | Bind product-defined footprint/coordinate, censoring/QC provenance and covariance semantics separately; do not infer physical measurements from prepared synthetic masks | **Open.** The [minimum external-input contract](FV_REAL_PRODUCT_AND_INDEPENDENT_VALIDATION_INPUTS.md) requires a selected product/version/decoder and trust-root-authorized native volume; calibrated dBZ with explicit echo/clear/censored meaning; signed grid/time identity; cell-level QC/source evidence; and preregistered error/covariance semantics. Typed repository contracts do not validate those product-specific facts. |
 | R7-L | Fixed-case response job lifecycle | Keep forward AD in separate workers; verify two-job cancellation, resource accounting, worker/diagnostic completion and atomic result publication | **Closed for two fixed fv4x5 research jobs.** One qualified response published after child exit; the other was cancelled and never published. See `FV_RESPONSE_JOB_LIFECYCLE_RESULTS.md` |
 | R7-P | Production concurrency and recovery | Add general request/input contracts, durable queue/recovery, full concurrent GN/refinement and supported in-process policy only if verified | **Open.** Same-host duplicate launch is excluded; a durable attempt manifest binds one fixed response to its raw/resource/publication records, and read-only triage classifies them. One actual fixed FV v2 run passed. This is not authenticated recovery or a general service; see `FV_RESPONSE_JOB_ATTEMPT_BINDING_RESULTS.md` |
@@ -175,11 +176,28 @@ historical numerical reports; new attempts must have distinct records.
   alpha. Both first-alpha endpoints were strict and lowered J/Phi, but
   final `||g||_inf=0.87197938` is not stationary or response-qualified
   (`FV_POINT_3H_MERIT_TAIL_RESULTS.md`).
-- [ ] Starting from a declared branch-supported seed, establish an
-  eligible long-horizon stationary point whose **final** strict branch
-  passes, then compute the adjoint/full VJP and signed nonlinear
-  reanalysis. The alternate seed passes the branch only; no
-  stationarity, adjoint or reanalysis has been run.
+- [x] At the latest tail endpoint, rebuild the full Hessian and the
+  20+6 Schur system, including the nonzero field-gradient correction.
+  One original-HVP Newton step with a block preconditioner decreased J;
+  fresh curvature at its changed-branch endpoint then proved indefinite.
+  Earlier SPD evidence is not inherited
+  (`FV_POINT_3H_ACCEPTED_ENDPOINT_AUDIT_RESULTS_20261003.md`).
+- [x] At fixed original dynamics and parameters, perform bounded field
+  correction and a four-update continuation using the original full
+  objective. The last accepted point has J `0.133702`, field gradient
+  maximum `0.354372`, and dynamics/full maximum `3.916502`. Execution
+  completed; the numerical result refused at the iteration limit and
+  issued no corrected field or sensitivity
+  (`FV_POINT_3H_FIELD_CONTINUATION_RESULTS_20261003.md`).
+- [x] Preserve the separately bounded five-update precision continuation and
+  its internal-budget refusal during solve 6. Terminal full-gradient
+  diagnostics remain nonstationary; all five completed linear residuals
+  pass and no field or response is issued
+  (`FV_POINT_3H_FIELD_PRECISION_CONTINUATION_RESULTS_20261003.md`).
+- [ ] Establish an eligible full long-horizon stationary point whose
+  **final** strict branch passes, then compute adjoint/full VJP and
+  signed nonlinear reanalysis. Field correction has been attempted;
+  full stationarity, adjoint and reanalysis remain unqualified.
 
 ## R4 original two-hole collocated partial input
 

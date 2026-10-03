@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "--rootdir=/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7",
+    "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/tests/test_fv_minmod_local_path_probe.py::test_new_direction_clears_old_pairs_and_computes_its_cross",
+    "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/tests/test_fv_minmod_local_path_probe.py::test_completed_direction_resume_validates_without_repeating_reanalysis"
+  ],
+  "returncode": 1
+}

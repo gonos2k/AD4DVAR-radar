@@ -1,0 +1,106 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__________ test_new_direction_clears_old_pairs_and_computes_its_cross __________
+
+tmp_path = PosixPath('/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/pytest-of-yhlee/pytest-2031/test_new_direction_clears_old_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10673d130>
+
+    def test_new_direction_clears_old_pairs_and_computes_its_cross(tmp_path, monkeypatch):
+        # Stop before optimization: exercise actual preparation/cache/JVP wiring.
+        class ReachedCorrector(BaseException):
+            pass
+        original_load = PROBE._load_module
+        observed = []
+        def load(path, name):
+            module = original_load(path, name)
+            if path == PROBE.ORACLE:
+                def stop(objective, predictor, changed, **kwargs):
+                    observed.append(changed)
+                    raise ReachedCorrector
+                module.polish = stop
+            return module
+        original_jvp = torch.func.jvp
+        directions = []
+        def jvp(func, primals, tangents, **kwargs):
+            if primals[0].shape == (61,):
+                directions.append(tangents[0].clone())
+            return original_jvp(func, primals, tangents, **kwargs)
+        monkeypatch.setattr(PROBE, '_load_module', load)
+        monkeypatch.setattr(torch.func, 'jvp', jvp)
+        _install_archived_source_identity_for_controller_test(monkeypatch)
+        resume = _synthetic_resume_checkpoint(
+            tmp_path / "resume.json", selected_direction="observation_sine60",
+            pairs=[{"j": 2, "predictors_ok": True, "endpoints": [
+                {"same_local_branch": True}, {"same_local_branch": True},
+            ], "derivative_pass": True}],
+        )
+        output = tmp_path / 'new.json'
+        with pytest.raises(ReachedCorrector):
+>           PROBE.run(output, resume=resume,
+                      direction_name='middle_time_bias')
+
+/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/tests/test_fv_minmod_local_path_probe.py:297: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/examples/weather_scenarios/fv_minmod_local_path_probe.py:228: in run
+    str(path): _hash(path)
+               ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/examples/weather_scenarios/fv_minmod_inverse_probe.py')
+
+    def identity_hash(path):
+        if str(path) in trusted_identity:
+            return trusted_identity[str(path)]
+        if path == PROBE.MEASURED_PROBE:
+>           return trusted_identity[str(PROBE.PROBE)]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: '/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/examples/weather_scenarios/fv_minmod_inverse_probe.py'
+
+/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/tests/test_fv_minmod_local_path_probe.py:124: KeyError
+____ test_completed_direction_resume_validates_without_repeating_reanalysis ____
+
+tmp_path = PosixPath('/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/pytest-of-yhlee/pytest-2031/test_completed_direction_resum0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10bfdbb30>
+
+    def test_completed_direction_resume_validates_without_repeating_reanalysis(tmp_path, monkeypatch):
+        original_load = PROBE._load_module
+        def load(path, name):
+            module = original_load(path, name)
+            if path == PROBE.ORACLE:
+                def unexpected(*args, **kwargs):
+                    pytest.fail('completed direction must not repeat reanalysis')
+                module.polish = unexpected
+            return module
+        monkeypatch.setattr(PROBE, '_load_module', load)
+        _install_archived_source_identity_for_controller_test(monkeypatch)
+        source = _synthetic_resume_checkpoint(
+            tmp_path / "theta.json", selected_direction="theta",
+            pairs=[{"j": j, "predictors_ok": True, "endpoints": [
+                {"same_local_branch": True}, {"same_local_branch": True},
+            ], "derivative_pass": True} for j in (0, 1)],
+        )
+>       result = PROBE.run(tmp_path / 'validated.json', resume=source, direction_name='theta')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/tests/test_fv_minmod_local_path_probe.py:325: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/examples/weather_scenarios/fv_minmod_local_path_probe.py:228: in run
+    str(path): _hash(path)
+               ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/examples/weather_scenarios/fv_minmod_inverse_probe.py')
+
+    def identity_hash(path):
+        if str(path) in trusted_identity:
+            return trusted_identity[str(path)]
+        if path == PROBE.MEASURED_PROBE:
+>           return trusted_identity[str(PROBE.PROBE)]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: '/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/examples/weather_scenarios/fv_minmod_inverse_probe.py'
+
+/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/tests/test_fv_minmod_local_path_probe.py:124: KeyError
+=========================== short test summary info ============================
+FAILED ../../../var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/tests/test_fv_minmod_local_path_probe.py::test_new_direction_clears_old_pairs_and_computes_its_cross
+FAILED ../../../var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-minmod-alt-root-rfon7za7/tests/test_fv_minmod_local_path_probe.py::test_completed_direction_resume_validates_without_repeating_reanalysis
+2 failed in 1.84s

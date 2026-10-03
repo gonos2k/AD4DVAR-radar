@@ -1,0 +1,23 @@
+{
+  "audit_sha256": "27b23612252900fc98f4086939244c543be29869a2c85e84e62d1b4125c11b22",
+  "calculation_status": "completed_and_serialized",
+  "checks": {
+    "fixed_parameters_and_dynamics": true,
+    "gradient_block_lengths": [
+      20,
+      6
+    ],
+    "objective_matches_saved_terminal_trial": true,
+    "reported_maxima_recomputed_from_vectors": true,
+    "source_bytes_match_preflight": true,
+    "stationary_gate_passed": false,
+    "strict_endpoint_branch_recorded": true
+  },
+  "dynamics_gradient_max": 3.9165024619846056,
+  "field_gradient_max": 0.35437176602311615,
+  "full_gradient_max": 3.9165024619846056,
+  "full_phi": 10.157207761767332,
+  "wrapper_issue": "console summary indexed a nonexistent top-level objective key; scientific audit JSON was written before this print-only exception",
+  "wrapper_resource_report_sha256": "9f44166eddd692f213b1c2b034997c1be2c12bc28370d7919f1282660cb747fc",
+  "wrapper_status": "exit_1_after_json_write"
+}
