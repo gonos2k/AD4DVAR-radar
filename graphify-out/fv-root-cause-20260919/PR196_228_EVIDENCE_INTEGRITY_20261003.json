@@ -90,6 +90,15 @@
       "source_map_file_count": 52,
       "current_source_changed": [],
       "current_source_missing": []
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/precision_terminal_hessian_audit_attempt1/precision_hessian_audit.json",
+      "sha256": "eb0f716bb36743ccaeb9e42845debedbbf92c110f49e2a4779184541a0e263af",
+      "source_schema": "separate source_before/source_after maps",
+      "reported_source_before_after_equal": true,
+      "source_map_file_count": 56,
+      "current_source_changed": [],
+      "current_source_missing": []
     }
   ],
   "all_current_mapped_sources_match": true,

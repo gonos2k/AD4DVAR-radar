@@ -1,0 +1,66 @@
+{
+  "record": "FV_POINT_3H_PRECISION_TERMINAL_SCHUR_AUDIT_RESULTS_20261003.md,precision_terminal_hessian_audit_attempt1",
+  "status": "one guarded read-only terminal full-Hessian/20+6 Schur diagnostic completed",
+  "baseline": "R6 precision continuation raw e8e0d395a212a37227185b40ccb977f26023795527a9c820e414ed46b6202cf9; terminal control a890f344503cb3da02919de45f1c5b244beac300b1d4d2ca36f403c653e42b6d",
+  "method": "reproduced original J/Phi/full gradient and strict 3600-stage branch at exact terminal control; 26 full-J Hessian HVP columns plus independent 27th eigenpair HVP; existing block Schur diagnostic; no step",
+  "execution": {
+    "status": "completed",
+    "wall_seconds": 207.1314257911872,
+    "sampled_peak_rss_bytes": 359923712,
+    "wall_limit_seconds": 300,
+    "sampled_rss_limit_bytes": 1073741824,
+    "resource_termination": null,
+    "monitor_error": null,
+    "exit_code": 0,
+    "git_head": "207da941937821fa2c61c07dadfee37c066964e9"
+  },
+  "curvature": {
+    "status": "schur_evaluated",
+    "full_hessian_hvp_columns": 26,
+    "full_hessian_hvp_calls_with_eigenpair": 27,
+    "full_hessian_symmetry_relative": 1.023739224370098e-15,
+    "independent_eigenpair_relative_residual": 2.196524761393221e-16,
+    "full_hessian_eigenvalue_min": -1.3265156772173243,
+    "full_hessian_eigenvalue_max": 3868.3247951357635,
+    "hff_eigenvalue_min": 0.9733095914093642,
+    "hff_eigenvalue_max": 1629.6660808410597,
+    "hff_condition": 1674.3553081412495,
+    "schur_eigenvalues": [-7.061261479935728, -1.522835148969031, 0.8851468176953725, 0.898668351405547, 29.752540743761983, 210.7989983962366]
+  },
+  "terminal": {
+    "objective": 0.1309895304274461,
+    "full_phi": 9.654944138546513,
+    "field_gradient_max": 0.3194945915850606,
+    "dynamics_gradient_max": 3.7797112232858865,
+    "full_gradient_max": 3.7797112232858865,
+    "linearized_eliminated_dynamics_residual": [-0.5807904337778815, 0.30235997267262804, 0.3924617820637878, 0.5455692302010448, 1.7238276473846212, 2.9772967823134966],
+    "residual_scope": "g_d - H_df H_ff^-1 g_f; linearized Newton residual, not a profiled gradient because g_f is nonzero"
+  },
+  "provenance": {
+    "source_paths_byte_unchanged": 56,
+    "input_identity_unchanged": true,
+    "runtime_unchanged": true,
+    "git_head_unchanged": true,
+    "saved_matrix_and_corrected_rhs_independently_recomputed": true,
+    "executed_producer_literal_sha256": "cc9fb064cb0e80d6d76339fd8d6d65c1754712eaa3deb2de5b6189c482e6aa9e",
+    "executed_producer_canonical_sha256": "493d95ec3fe43a10f2e8d42951b99279310ef9e4c39e30f9bae112c13a6d335b",
+    "executed_test_sha256": "bb816c1da2196a80c17fa4bba219710f5ca8367159ad8e5d48b06cd874f67cf3",
+    "executed_plan_sha256": "0228acc3f56d9d580d2273abf40935aff8192334e18735b0b6be8ddfc0d2e005",
+    "prewording_reviewed_producer_literal_sha256": "e7297c99a606a3b8781cb8e78aa6c62fc700459ff8ad5f040d91e6a30ee80c67",
+    "prewording_reviewed_producer_canonical_sha256": "fdee4fcbed3d70712c6d06255934945ac0082fbb3c9428410a97f442c9d6e65c",
+    "prewording_reviewed_plan_sha256": "13c80a3c34cbdf28e46b476f00125b735f88c7656e79fe13b9acc0e9a805ac06",
+    "test_sha_unchanged_across_wording_delta": true,
+    "only_self_and_plan_pin_literals_changed_in_producer": true,
+    "final_plan_wording_delta_only": true,
+    "require_pins_passed_before_launch": true
+  },
+  "claims": {
+    "optimizer_step": false,
+    "score": false,
+    "adjoint": false,
+    "response": false,
+    "full_root": false,
+    "objective_minimum": false,
+    "physical_validity": false
+  }
+}

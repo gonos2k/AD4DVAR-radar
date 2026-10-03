@@ -1,0 +1,12 @@
+{
+  "scope": "source byte reconstruction only; no FV/HVP/gradient execution",
+  "reviewed_producer_sha256": "e7297c99a606a3b8781cb8e78aa6c62fc700459ff8ad5f040d91e6a30ee80c67",
+  "executed_producer_sha256": "cc9fb064cb0e80d6d76339fd8d6d65c1754712eaa3deb2de5b6189c482e6aa9e",
+  "reconstructed_reviewed_sha256": "e7297c99a606a3b8781cb8e78aa6c62fc700459ff8ad5f040d91e6a30ee80c67",
+  "producer_changes_only": [
+    "PLAN_SHA literal after wording clarification",
+    "SELF_SHA canonical pin"
+  ],
+  "control_flow_unchanged": true,
+  "test_sha256": "bb816c1da2196a80c17fa4bba219710f5ca8367159ad8e5d48b06cd874f67cf3"
+}
