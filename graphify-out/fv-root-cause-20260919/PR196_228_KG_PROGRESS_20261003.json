@@ -304,7 +304,7 @@
     }
   },
   "S4_next_policy": {
-    "status": "GREEN/RED math reviewed; authoring only",
+    "status": "math and final source GREEN/RED reviewed; one bounded execution pending",
     "plan": "S4_BLOCK_MODIFIED_NEWTON_SEARCH_PLAN_20261003.md",
     "objective_changed": false,
     "root_claim": false,
