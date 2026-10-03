@@ -32,7 +32,7 @@ Run exactly these seven pytest node IDs, with no selector or retry:
 
 1. `tests/test_fv_observation_response.py::test_parameterized_background_matches_polished_centered_reanalysis`
 2. `tests/test_fv_research_problem.py::test_common_objective_score_and_derivatives_match_frozen_reference[4x5]`
-3. `tests/test_fv_concurrent_response.py::test_case_archives_direction_branch_and_nominal_gradient[_small_case-archive_names0-direction_slice0-54]`
+3. `tests/test_fv_concurrent_response.py::test_portable_case_uses_frozen_control_data_with_current_inputs[fv4x5-archive_names0-direction_slice0-54]`
 4. `tests/test_fv_partial_face_event_runner.py::test_runner_launches_exact_guarded_command_and_records_completion`
 5. `tests/test_fv_response_job_reconcile.py::test_consistent_terminal_lifecycle_allows_candidate_and_is_idempotent`
 6. `tests/test_fv_minmod_local_path_probe.py::test_new_direction_clears_old_pairs_and_computes_its_cross`
@@ -58,6 +58,32 @@ or skips, plus expected runtime and source hashes and no timeout. Failure,
 timeout, or wrong runtime is reported without retries as a failed/incomplete
 targeted check. In all cases, run `36836402831` remains failed and no
 whole-Linux-pass claim is made.
+
+## Amendment A1: corrected selector after collection failure
+
+Run `37095628674` checked out source `0238b78fd886806eda5402117d97ed7b9a24b548`.
+The lock, runtime, and source fingerprints passed, but pytest exited 4 with no
+tests run because the third selector named the removed
+`test_case_archives_direction_branch_and_nominal_gradient` function. This is a
+selector/collection failure, not a numerical failure. The run JSON, full log,
+and uploaded provenance, pytest log, and empty JUnit report are preserved under
+`graphify-out/fv-root-cause-20260919/linux_targeted_repair_attempt1/`.
+
+The current 4x5 test is
+`test_portable_case_uses_frozen_control_data_with_current_inputs[fv4x5-archive_names0-direction_slice0-54]`.
+It retains the two exact archived-report SHA checks, archived 26-control seed,
+middle-time direction slice, and 54-stage branch count, while constructing
+verification and parameters from current inputs. It intentionally no longer
+claims that regenerated inputs reproduce the archived branch signature or
+stationary gradient. The separate production constructors retain exact
+archived input/hash rejection checks. This is the registered portable-fixture
+repair case, not a replay or certification of the historical response.
+
+Workflow-equivalent local collection-only command, `.venv/bin/python -I -m
+pytest --collect-only -q`, with the corrected seven selectors collected
+exactly seven node IDs in 0.70 seconds; no tests executed. The failed Linux
+attempt remains failed, and no retry has been dispatched. Any later dispatch
+must use this corrected registered list.
 
 ## Available command after review
 

@@ -113,7 +113,7 @@ jobs:
               --junitxml="$RUNNER_TEMP/targeted-linux-results.xml" \
               'tests/test_fv_observation_response.py::test_parameterized_background_matches_polished_centered_reanalysis' \
               'tests/test_fv_research_problem.py::test_common_objective_score_and_derivatives_match_frozen_reference[4x5]' \
-              'tests/test_fv_concurrent_response.py::test_case_archives_direction_branch_and_nominal_gradient[_small_case-archive_names0-direction_slice0-54]' \
+              'tests/test_fv_concurrent_response.py::test_portable_case_uses_frozen_control_data_with_current_inputs[fv4x5-archive_names0-direction_slice0-54]' \
               'tests/test_fv_partial_face_event_runner.py::test_runner_launches_exact_guarded_command_and_records_completion' \
               'tests/test_fv_response_job_reconcile.py::test_consistent_terminal_lifecycle_allows_candidate_and_is_idempotent' \
               'tests/test_fv_minmod_local_path_probe.py::test_new_direction_clears_old_pairs_and_computes_its_cross' \
