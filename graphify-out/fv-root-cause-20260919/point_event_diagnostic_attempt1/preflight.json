@@ -1,0 +1,9 @@
+{
+  "source_sha256": {
+    "examples/weather_scenarios/fv_point_event_diagnostic.py": "a6e07579eeea9d06ca28ba634893f1f5aa520213d19dc7ba24f0331edc675d3c",
+    "tests/test_fv_point_event_diagnostic.py": "54b1eb58701eb9410b4b7d03096a4b6a705396760122516b6c9a40b9ca46488b",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_EVENT_DIAGNOSTIC_PLAN_20261003.md": "0f5995d73c2245934acf5869111e7112b8f3953f6b70c3051247b0f22a40eab5"
+  },
+  "wall_seconds": 60,
+  "rss_bytes": 1073741824
+}

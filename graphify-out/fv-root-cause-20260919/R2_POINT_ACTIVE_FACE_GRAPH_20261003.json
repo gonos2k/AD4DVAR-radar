@@ -1,0 +1,2951 @@
+{
+  "nodes": [
+    {
+      "id": "r2_point_active_face_flow_postcheck_20261003",
+      "label": "R2_POINT_ACTIVE_FACE_FLOW_POSTCHECK_20261003.py",
+      "file_type": "code",
+      "source_file": "R2_POINT_ACTIVE_FACE_FLOW_POSTCHECK_20261003.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "r2_point_active_face_flow_postcheck_20261003_flux",
+      "label": "flux()",
+      "file_type": "code",
+      "source_file": "R2_POINT_ACTIVE_FACE_FLOW_POSTCHECK_20261003.py",
+      "source_location": "L12",
+      "_origin": "ast"
+    },
+    {
+      "id": "r2_point_active_face_flow_postcheck_20261003_rationale_1",
+      "label": "Stored-control discrete-curl arithmetic only: no trajectory or optimizer.",
+      "file_type": "rationale",
+      "source_file": "R2_POINT_ACTIVE_FACE_FLOW_POSTCHECK_20261003.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding",
+      "label": "fv_point_active_face_binding.py",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "label": "FVPointActiveFaceBinding",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L16",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding_fvpointactivefacebinding_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L24",
+      "_origin": "ast"
+    },
+    {
+      "id": "fvpointresearchproblem",
+      "label": "FVPointResearchProblem",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L24",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding_fvpointactivefacebinding_support",
+      "label": ".support()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L76",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L76",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding_fvpointactivefacebinding_lift",
+      "label": ".lift()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L85",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L85",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding_fvpointactivefacebinding_tangent_coordinates",
+      "label": ".tangent_coordinates()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L93",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding_fvpointactivefacebinding_objective",
+      "label": ".objective()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L98",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding_fvpointactivefacebinding_forecast",
+      "label": ".forecast()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L104",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding_fvpointactivefacebinding_score",
+      "label": ".score()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L108",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding_fvpointactivefacebinding_face_fluxes",
+      "label": ".face_fluxes()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L112",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding_rationale_1",
+      "label": "Fixed point-problem binding to the structural q_x[3,4]=0 face.",
+      "file_type": "rationale",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_binding_rationale_17",
+      "label": "Bind 25 tangent controls to the unchanged 26-control point objective.",
+      "file_type": "rationale",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L17",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_stationarity",
+      "label": "fv_point_active_face_stationarity.py",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_stationarity_pointfacerefusal",
+      "label": "PointFaceRefusal",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L39",
+      "_origin": "ast"
+    },
+    {
+      "id": "valueerror",
+      "label": "ValueError",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_stationarity_sha",
+      "label": "sha()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L43",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_stationarity_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L43",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_stationarity_stage_record",
+      "label": "stage_record()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L47",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_stationarity_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L47",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_stationarity_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L47",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_stationarity_trace",
+      "label": "trace()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L70",
+      "_origin": "ast"
+    },
+    {
+      "id": "fvpointactivefacebinding",
+      "label": "FVPointActiveFaceBinding",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L70",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_stationarity_curvature",
+      "label": "curvature()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L109",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_stationarity_audit_solves",
+      "label": "audit_solves()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L132",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_stationarity_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L160",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_stationarity_rationale_1",
+      "label": "One fixed-branch tangent correction for the original R2 point input.",
+      "file_type": "rationale",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_active_face_stationarity_rationale_40",
+      "label": "A known numerical branch or restricted-curvature qualification refusal.",
+      "file_type": "rationale",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic",
+      "label": "fv_point_event_diagnostic.py",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_sha",
+      "label": "_sha()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L42",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L42",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_tensor_sha",
+      "label": "_tensor_sha()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L46",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L46",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_canonical_source_sha256",
+      "label": "canonical_source_sha256()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L50",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_require_self_source_pin",
+      "label": "require_self_source_pin()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L57",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_require_source_unchanged",
+      "label": "require_source_unchanged()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L62",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_changed_source_paths",
+      "label": "changed_source_paths()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L68",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_validate_trace",
+      "label": "validate_trace()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L74",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L74",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_compare_traces",
+      "label": "compare_traces()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L90",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_stage_snapshot",
+      "label": "_stage_snapshot()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L114",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_trace_point",
+      "label": "_trace_point()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L151",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_core_trace_matches",
+      "label": "core_trace_matches()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L166",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_check_core_match",
+      "label": "_check_core_match()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L187",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_gradient_budget",
+      "label": "_gradient_budget()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L192",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_metric_check",
+      "label": "_metric_check()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L196",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L203",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_point_event_diagnostic_rationale_1",
+      "label": "Compare two archived R2-O controls across the fixed 54-stage point branch.",
+      "file_type": "rationale",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_binding",
+      "label": "test_fv_point_active_face_binding.py",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_binding_case",
+      "label": "case()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L13",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_binding_budget",
+      "label": "_budget()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L18",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_binding_test_projected_basis_has_structural_zero_rank_four_and_divergence_free",
+      "label": "test_projected_basis_has_structural_zero_rank_four_and_divergence_free()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L24",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_binding_test_original_pivot_boundary_is_refused_by_all_public_evaluators",
+      "label": "test_original_pivot_boundary_is_refused_by_all_public_evaluators()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_binding_test_dependent_projected_modes_refuse_even_when_point_layout_is_unchanged",
+      "label": "test_dependent_projected_modes_refuse_even_when_point_layout_is_unchanged()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_binding_test_reduced_problem_plus_missing_pivot_prior_matches_original_primal_gradient_and_hvp",
+      "label": "test_reduced_problem_plus_missing_pivot_prior_matches_original_primal_gradient_and_hvp()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L67",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_binding_rationale_1",
+      "label": "Fixed point active-face binding checks; no optimization or response run.",
+      "file_type": "rationale",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_stationarity",
+      "label": "test_fv_point_active_face_stationarity.py",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_stationarity_stage",
+      "label": "_stage()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L10",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_stationarity_test_only_named_structural_zero_is_exempt_from_other_face_margin",
+      "label": "test_only_named_structural_zero_is_exempt_from_other_face_margin()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_stationarity_test_limiter_refusal_is_numeric_but_broken_structural_zero_is_invariant_error",
+      "label": "test_limiter_refusal_is_numeric_but_broken_structural_zero_is_invariant_error()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L29",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_stationarity_test_known_pivot_domain_refuses_but_unrelated_program_error_propagates",
+      "label": "test_known_pivot_domain_refuses_but_unrelated_program_error_propagates()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L38",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_stationarity_test_zero_rhs_cannot_pass_true_relative_residual_audit_as_nan",
+      "label": "test_zero_rhs_cannot_pass_true_relative_residual_audit_as_nan()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L52",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_stationarity_test_saved_newton_branch_or_budget_metadata_cannot_be_rebound",
+      "label": "test_saved_newton_branch_or_budget_metadata_cannot_be_rebound()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L61",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_stationarity_test_curvature_gate_distinguishes_known_positive_and_negative_direction",
+      "label": "test_curvature_gate_distinguishes_known_positive_and_negative_direction()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L69",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_stationarity_test_initial_expected_refusal_keeps_terminal_record_without_optimization",
+      "label": "test_initial_expected_refusal_keeps_terminal_record_without_optimization()",
+      "file_type": "code",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L80",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_active_face_stationarity_rationale_1",
+      "label": "Small branch/domain/linear-audit regressions; no FV optimization.",
+      "file_type": "rationale",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_event_diagnostic",
+      "label": "test_fv_point_event_diagnostic.py",
+      "file_type": "code",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_event_diagnostic_trace",
+      "label": "_trace()",
+      "file_type": "code",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L11",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_event_diagnostic_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L11",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_event_diagnostic_test_unchanged_trace_and_repeated_named_upwind_flip",
+      "label": "test_unchanged_trace_and_repeated_named_upwind_flip()",
+      "file_type": "code",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L22",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_event_diagnostic_test_limiter_selector_or_input_sign_change_is_reported_and_not_single_face_event",
+      "label": "test_limiter_selector_or_input_sign_change_is_reported_and_not_single_face_event()",
+      "file_type": "code",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L43",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_event_diagnostic_test_malformed_stage_count_and_source_pin_mutation_refuse",
+      "label": "test_malformed_stage_count_and_source_pin_mutation_refuse()",
+      "file_type": "code",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L57",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_event_diagnostic_test_stage_snapshot_indexes_nearest_qx_face_without_running_model",
+      "label": "test_stage_snapshot_indexes_nearest_qx_face_without_running_model()",
+      "file_type": "code",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L70",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_event_diagnostic_test_snapshot_matches_original_core_oracle_list_of_two_axis_maps",
+      "label": "test_snapshot_matches_original_core_oracle_list_of_two_axis_maps()",
+      "file_type": "code",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L82",
+      "_origin": "ast"
+    },
+    {
+      "id": "test_fv_point_event_diagnostic_rationale_1",
+      "label": "Synthetic branch-trace comparison and source-pin tests; no FV execution.",
+      "file_type": "rationale",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "links": [
+    {
+      "source": "r2_point_active_face_flow_postcheck_20261003",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "R2_POINT_ACTIVE_FACE_FLOW_POSTCHECK_20261003.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "r2_point_active_face_flow_postcheck_20261003",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "R2_POINT_ACTIVE_FACE_FLOW_POSTCHECK_20261003.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "r2_point_active_face_flow_postcheck_20261003",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "R2_POINT_ACTIVE_FACE_FLOW_POSTCHECK_20261003.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "r2_point_active_face_flow_postcheck_20261003",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "R2_POINT_ACTIVE_FACE_FLOW_POSTCHECK_20261003.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "r2_point_active_face_flow_postcheck_20261003",
+      "target": "r2_point_active_face_flow_postcheck_20261003_flux",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "R2_POINT_ACTIVE_FACE_FLOW_POSTCHECK_20261003.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "r2_point_active_face_flow_postcheck_20261003_rationale_1",
+      "target": "r2_point_active_face_flow_postcheck_20261003",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "R2_POINT_ACTIVE_FACE_FLOW_POSTCHECK_20261003.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding",
+      "target": "dataclasses",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding",
+      "target": "advar_fv_point_research_problem",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding",
+      "target": "advar_transport",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_init",
+      "target": "fvpointresearchproblem",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding_support",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L76",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_support",
+      "target": "fv_point_active_face_binding_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L76",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding_lift",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L85",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_lift",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L85",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_lift",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L85",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding_tangent_coordinates",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_tangent_coordinates",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_tangent_coordinates",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding_objective",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L98",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_objective",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L98",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_objective",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L98",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_objective",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L98",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding_forecast",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_forecast",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_forecast",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_forecast",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding_score",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_score",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_score",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_score",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding_face_fluxes",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L112",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_face_fluxes",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L112",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_face_fluxes",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L112",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_face_fluxes",
+      "target": "fv_point_active_face_binding_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L112",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_objective",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding_lift",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_forecast",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding_lift",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L105",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_score",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding_lift",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_face_fluxes",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding_lift",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_rationale_1",
+      "target": "fv_point_active_face_binding",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_rationale_17",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "os",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "platform",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "advar_local_refinement",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "advar_transport",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "examples_weather_scenarios_fv_active_face_stationarity_probe",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "examples_weather_scenarios_fv_partial_signed_face_slices",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "examples_weather_scenarios_fv_point_active_face_binding",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "fv_point_active_face_stationarity_pointfacerefusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_pointfacerefusal",
+      "target": "valueerror",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "fv_point_active_face_stationarity_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_sha",
+      "target": "fv_point_active_face_stationarity_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "fv_point_active_face_stationarity_stage_record",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_stage_record",
+      "target": "fv_point_active_face_stationarity_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_stage_record",
+      "target": "fv_point_active_face_stationarity_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_stage_record",
+      "target": "fv_point_active_face_stationarity_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_stage_record",
+      "target": "fv_point_active_face_stationarity_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "fv_point_active_face_stationarity_trace",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_trace",
+      "target": "fvpointactivefacebinding",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_trace",
+      "target": "fv_point_active_face_stationarity_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_trace",
+      "target": "fv_point_active_face_stationarity_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_trace",
+      "target": "fv_point_active_face_stationarity_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_trace",
+      "target": "fv_point_active_face_stationarity_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "fv_point_active_face_stationarity_curvature",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_curvature",
+      "target": "fv_point_active_face_stationarity_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_curvature",
+      "target": "fv_point_active_face_stationarity_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_curvature",
+      "target": "fv_point_active_face_stationarity_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_curvature",
+      "target": "fv_point_active_face_stationarity_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "fv_point_active_face_stationarity_audit_solves",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L132",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_audit_solves",
+      "target": "fv_point_active_face_stationarity_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L132",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_audit_solves",
+      "target": "fv_point_active_face_stationarity_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L132",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_audit_solves",
+      "target": "fv_point_active_face_stationarity_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L132",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity",
+      "target": "fv_point_active_face_stationarity_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L160",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_run",
+      "target": "fv_point_active_face_stationarity_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L160",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_run",
+      "target": "fv_point_active_face_stationarity_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L160",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_stage_record",
+      "target": "fv_point_active_face_stationarity_pointfacerefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_trace",
+      "target": "fv_point_active_face_stationarity_pointfacerefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L76",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_trace",
+      "target": "fv_point_active_face_stationarity_stage_record",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_curvature",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L115",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_curvature",
+      "target": "fv_point_active_face_stationarity_pointfacerefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L117",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_audit_solves",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L137",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_run",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_run",
+      "target": "fv_point_active_face_stationarity_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L163",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_run",
+      "target": "fvpointactivefacebinding",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L180",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_run",
+      "target": "fv_point_active_face_stationarity_trace",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L223",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_run",
+      "target": "fv_point_active_face_stationarity_curvature",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L228",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_run",
+      "target": "fv_point_active_face_stationarity_pointfacerefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L230",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_run",
+      "target": "fv_point_active_face_stationarity_audit_solves",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L250",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_rationale_1",
+      "target": "fv_point_active_face_stationarity",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_rationale_40",
+      "target": "fv_point_active_face_stationarity_pointfacerefusal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "os",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "platform",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "re",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_sha",
+      "target": "fv_point_event_diagnostic_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_tensor_sha",
+      "target": "fv_point_event_diagnostic_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_canonical_source_sha256",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_require_self_source_pin",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_require_source_unchanged",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_changed_source_paths",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_validate_trace",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_validate_trace",
+      "target": "fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_compare_traces",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_compare_traces",
+      "target": "fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_compare_traces",
+      "target": "fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_compare_traces",
+      "target": "fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_stage_snapshot",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_stage_snapshot",
+      "target": "fv_point_event_diagnostic_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_stage_snapshot",
+      "target": "fv_point_event_diagnostic_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_stage_snapshot",
+      "target": "fv_point_event_diagnostic_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_stage_snapshot",
+      "target": "fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_trace_point",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L151",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_trace_point",
+      "target": "fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L151",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_trace_point",
+      "target": "fv_point_event_diagnostic_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L151",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_trace_point",
+      "target": "fv_point_event_diagnostic_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L151",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_trace_point",
+      "target": "fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L151",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_trace_point",
+      "target": "fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L151",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_core_trace_matches",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L166",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_core_trace_matches",
+      "target": "fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L166",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_core_trace_matches",
+      "target": "fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L166",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_check_core_match",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L187",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_check_core_match",
+      "target": "fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L187",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_check_core_match",
+      "target": "fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L187",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_gradient_budget",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L192",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_metric_check",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L196",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic",
+      "target": "fv_point_event_diagnostic_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_run",
+      "target": "fv_point_event_diagnostic_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_run",
+      "target": "fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_require_self_source_pin",
+      "target": "fv_point_event_diagnostic_canonical_source_sha256",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_require_source_unchanged",
+      "target": "fv_point_event_diagnostic_changed_source_paths",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_compare_traces",
+      "target": "fv_point_event_diagnostic_validate_trace",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L91",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_trace_point",
+      "target": "fv_point_event_diagnostic_validate_trace",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_check_core_match",
+      "target": "fv_point_event_diagnostic_core_trace_matches",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L188",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_metric_check",
+      "target": "fv_point_event_diagnostic_gradient_budget",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L197",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_run",
+      "target": "fv_point_event_diagnostic_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L206",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_run",
+      "target": "fv_point_event_diagnostic_require_self_source_pin",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L218",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_run",
+      "target": "fv_point_event_diagnostic_changed_source_paths",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L219",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_run",
+      "target": "fv_point_event_diagnostic_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L248",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_run",
+      "target": "fv_point_event_diagnostic_trace_point",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L255",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_run",
+      "target": "fv_point_event_diagnostic_check_core_match",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L256",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_run",
+      "target": "fv_point_event_diagnostic_metric_check",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L265",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_run",
+      "target": "fv_point_event_diagnostic_compare_traces",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L303",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_run",
+      "target": "fv_point_event_diagnostic_require_source_unchanged",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L310",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_rationale_1",
+      "target": "fv_point_event_diagnostic",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding",
+      "target": "dataclasses",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding",
+      "target": "advar_transport",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding",
+      "target": "examples_weather_scenarios_fv_point_active_face_binding",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding",
+      "target": "examples_weather_scenarios_fv_point_response_preflight",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding",
+      "target": "test_fv_point_active_face_binding_case",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding",
+      "target": "test_fv_point_active_face_binding_budget",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding",
+      "target": "test_fv_point_active_face_binding_test_projected_basis_has_structural_zero_rank_four_and_divergence_free",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding",
+      "target": "test_fv_point_active_face_binding_test_original_pivot_boundary_is_refused_by_all_public_evaluators",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding",
+      "target": "test_fv_point_active_face_binding_test_dependent_projected_modes_refuse_even_when_point_layout_is_unchanged",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding",
+      "target": "test_fv_point_active_face_binding_test_reduced_problem_plus_missing_pivot_prior_matches_original_primal_gradient_and_hvp",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding_test_reduced_problem_plus_missing_pivot_prior_matches_original_primal_gradient_and_hvp",
+      "target": "test_fv_point_active_face_binding_budget",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L78",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_binding_rationale_1",
+      "target": "test_fv_point_active_face_binding",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_binding.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity",
+      "target": "test_fv_point_active_face_stationarity_stage",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity",
+      "target": "test_fv_point_active_face_stationarity_test_only_named_structural_zero_is_exempt_from_other_face_margin",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity",
+      "target": "test_fv_point_active_face_stationarity_test_limiter_refusal_is_numeric_but_broken_structural_zero_is_invariant_error",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity",
+      "target": "test_fv_point_active_face_stationarity_test_known_pivot_domain_refuses_but_unrelated_program_error_propagates",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity",
+      "target": "test_fv_point_active_face_stationarity_test_zero_rhs_cannot_pass_true_relative_residual_audit_as_nan",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity",
+      "target": "test_fv_point_active_face_stationarity_test_saved_newton_branch_or_budget_metadata_cannot_be_rebound",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity",
+      "target": "test_fv_point_active_face_stationarity_test_curvature_gate_distinguishes_known_positive_and_negative_direction",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity",
+      "target": "test_fv_point_active_face_stationarity_test_initial_expected_refusal_keeps_terminal_record_without_optimization",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L80",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity_test_only_named_structural_zero_is_exempt_from_other_face_margin",
+      "target": "test_fv_point_active_face_stationarity_stage",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity_test_limiter_refusal_is_numeric_but_broken_structural_zero_is_invariant_error",
+      "target": "test_fv_point_active_face_stationarity_stage",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_active_face_stationarity_rationale_1",
+      "target": "test_fv_point_active_face_stationarity",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_active_face_stationarity.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic",
+      "target": "test_fv_point_event_diagnostic_trace",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic_trace",
+      "target": "test_fv_point_event_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic",
+      "target": "test_fv_point_event_diagnostic_test_unchanged_trace_and_repeated_named_upwind_flip",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic",
+      "target": "test_fv_point_event_diagnostic_test_limiter_selector_or_input_sign_change_is_reported_and_not_single_face_event",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic",
+      "target": "test_fv_point_event_diagnostic_test_malformed_stage_count_and_source_pin_mutation_refuse",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic",
+      "target": "test_fv_point_event_diagnostic_test_stage_snapshot_indexes_nearest_qx_face_without_running_model",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic",
+      "target": "test_fv_point_event_diagnostic_test_snapshot_matches_original_core_oracle_list_of_two_axis_maps",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L82",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic_test_unchanged_trace_and_repeated_named_upwind_flip",
+      "target": "test_fv_point_event_diagnostic_trace",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic_test_limiter_selector_or_input_sign_change_is_reported_and_not_single_face_event",
+      "target": "test_fv_point_event_diagnostic_trace",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic_test_malformed_stage_count_and_source_pin_mutation_refuse",
+      "target": "test_fv_point_event_diagnostic_trace",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic_test_snapshot_matches_original_core_oracle_list_of_two_axis_maps",
+      "target": "test_fv_point_event_diagnostic_trace",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L83",
+      "weight": 1.0
+    },
+    {
+      "source": "test_fv_point_event_diagnostic_rationale_1",
+      "target": "test_fv_point_event_diagnostic",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "test_fv_point_event_diagnostic.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_stationarity_pointfacerefusal",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L22",
+      "weight": 0.8
+    },
+    {
+      "source": "fv_point_active_face_stationarity_py_path",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L22",
+      "weight": 0.8
+    },
+    {
+      "source": "fv_point_active_face_stationarity_py_tensor",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L22",
+      "weight": 0.8
+    },
+    {
+      "source": "fv_point_active_face_stationarity_py_any",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L22",
+      "weight": 0.8
+    },
+    {
+      "source": "fvpointactivefacebinding",
+      "target": "fv_point_active_face_binding_fvpointactivefacebinding",
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "fv_point_active_face_stationarity.py",
+      "source_location": "L22",
+      "weight": 0.8
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_init",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_active_face_binding_fvpointactivefacebinding_lift",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "fv_point_active_face_binding.py",
+      "source_location": "L88",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_canonical_source_sha256",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L53",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_require_self_source_pin",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_require_source_unchanged",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_changed_source_paths",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_validate_trace",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L76",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_stage_snapshot",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L137",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_check_core_match",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_point_event_diagnostic_run",
+      "target": "valueerror",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "fv_point_event_diagnostic.py",
+      "source_location": "L205",
+      "weight": 1.0
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "mode": "bounded changed-code AST fragment; no semantic rebuild",
+  "nodes": 80,
+  "edges": 236,
+  "artifact_sha256": "6c7376566a464e682ec57930826caf087538c49db1ebf46126977a9b787cb920",
+  "shared_cache_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "shared_cache_changed": false,
+  "semantic_tokens": 0
+}

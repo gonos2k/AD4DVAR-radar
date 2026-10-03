@@ -1,0 +1,47 @@
+{
+  "base_main": "87805b8bc470a422e99e526a4848eb844be7ecd5",
+  "scope": "event diagnosis and original-prior one-face tangent refusal; not a stationary response",
+  "files": {
+    "examples/weather_scenarios/fv_point_event_diagnostic.py": "a6e07579eeea9d06ca28ba634893f1f5aa520213d19dc7ba24f0331edc675d3c",
+    "examples/weather_scenarios/fv_point_active_face_binding.py": "0269a9a92825a7cf278077246769df2d23e194350ffa9cba204631245651905a",
+    "examples/weather_scenarios/fv_point_active_face_stationarity.py": "4147c0fc4957520bc71aca9012e1a3e4c4e0dbaf1a17cd2b0bd3f6f5afedee7d",
+    "tests/test_fv_point_event_diagnostic.py": "54b1eb58701eb9410b4b7d03096a4b6a705396760122516b6c9a40b9ca46488b",
+    "tests/test_fv_point_active_face_binding.py": "fcfcd9b7d8861665878f93ce83a7341d3d79f1890bdf039e9fd2ad8cca5dfa26",
+    "tests/test_fv_point_active_face_stationarity.py": "11e32816add4665310dc93c6c72944b888cb42be96035af1385e60dea923da95",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_ACTIVE_FACE_FINAL_TESTS_20261003.log": "06f2c21f5c7fe0072894e939ca3ed48ac9f407d7bc542027b91e72aaf010e124",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_ACTIVE_FACE_FINAL_TYPES_20261003.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_ACTIVE_FACE_FLOW_POSTCHECK_20261003.json": "357b7e475293a94c4e89a7492f459ec8dc1be49de66464bc4f074ecff980299d",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_ACTIVE_FACE_FLOW_POSTCHECK_20261003.py": "559bee07fd87807c7403a716ce0022404e13545f9bd05ab7eb67d98fdb1aa8dc",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_ACTIVE_FACE_FOCUSED_TESTS_20261003.log": "31d8d5c300f3f06aab7557aeddda06ea1bb45144a9178a97d52015d4eceae4f2",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_ACTIVE_FACE_GRAPHIFY_20261003.json": "35b96612c15905b8c736b814250f13938d78d4a3cca449b7818638235f7a24c4",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_ACTIVE_FACE_GRAPH_20261003.json": "6c7376566a464e682ec57930826caf087538c49db1ebf46126977a9b787cb920",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_ACTIVE_FACE_GREEN_RED_20261003.md": "597cf60bcadf314cd9d1b06c6c425662bc75937f62ac2ca74331b9682c577b99",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_ACTIVE_FACE_PREFLIGHT_CONTRACT_20261003.md": "c17ff6fd3a59c85049e645cc25807e8ae62369f74cda738810b5e3d38966c81f",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_ACTIVE_FACE_RESULTS_20261003.md": "d8c3451b21dbad8eec5d532f89d617887a7b8a3eb29c319f255b86c3672f378b",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_ACTIVE_FACE_STATIONARITY_PLAN_20261003.md": "1887d997f68305bb9a5ebe156c2d89c506edeef5d4d3bceefe06b31b2a3fd278",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_ACTIVE_FACE_TYPES_20261003.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/R2_POINT_EVENT_DIAGNOSTIC_PLAN_20261003.md": "0f5995d73c2245934acf5869111e7112b8f3953f6b70c3051247b0f22a40eab5",
+    "graphify-out/fv-root-cause-20260919/PR177_195_REVIEW_RESOLUTION.md": "0f3262a697c6973d4bf0292a90f93d14514a3fd3f89fe2ddfbf2a37e5494c3e9",
+    "graphify-out/fv-root-cause-20260919/ALGORITHM_EXTENSION_KG_UPDATE.json": "8a58e291ae46c8d5dcbfaa61cf0b0ce33fdf5f7dbafd0cc94b5af09fc6cc49f8",
+    "graphify-out/fv-root-cause-20260919/point_event_diagnostic_attempt1/event.json": "fde001e2f2de78f2a812437c7f485826621a0f7004060c19a0e57788901b82b9",
+    "graphify-out/fv-root-cause-20260919/point_event_diagnostic_attempt1/event.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/point_event_diagnostic_attempt1/event.resource.json": "55080e2ccd3272f1190b0d023891bada2a6398ed7adf2198d25c88a7dc7eeba4",
+    "graphify-out/fv-root-cause-20260919/point_event_diagnostic_attempt1/preflight.json": "de300ac3cd4d957c254efd4bbe1d25543473d11894190f13ad215b58d0650516",
+    "graphify-out/fv-root-cause-20260919/point_active_face_stationarity_attempt1/parent.json": "48c1aeb6c5f395f58d00359a52266071f1eb337c68e20272a58a3b844e21dbb6",
+    "graphify-out/fv-root-cause-20260919/point_active_face_stationarity_attempt1/preflight.json": "6c68389c83d009bb08081f290aa05f7711e80ca0cd13d6b5e9b8e3c650b8c2cc",
+    "graphify-out/fv-root-cause-20260919/point_active_face_stationarity_attempt1/stationarity.json": "b26f361becce01db9782138b0832c470dc9ec026322e0b7a816cc50a9867f194",
+    "graphify-out/fv-root-cause-20260919/point_active_face_stationarity_attempt1/stationarity.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/point_active_face_stationarity_attempt1/stationarity.resource.json": "e15e688ba8d209a6b94f375ad1819b227689c5fb7948c02a8604efd923e99d9a"
+  },
+  "geometry_binding": {
+    "producer_sha256": "559bee07fd87807c7403a716ce0022404e13545f9bd05ab7eb67d98fdb1aa8dc",
+    "output_sha256": "357b7e475293a94c4e89a7492f459ec8dc1be49de66464bc4f074ecff980299d",
+    "raw_sha256": "b26f361becce01db9782138b0832c470dc9ec026322e0b7a816cc50a9867f194",
+    "scope": "stored coefficient curl only, no rejected limiter replay"
+  },
+  "review": {
+    "GREEN": "GO bounded numerical refusal",
+    "RED": "GO bounded numerical refusal"
+  },
+  "ci_policy": "no full CPU/package/deployment rerun requested"
+}

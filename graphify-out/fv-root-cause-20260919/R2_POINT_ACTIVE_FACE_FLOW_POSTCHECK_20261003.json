@@ -1,0 +1,275 @@
+{
+  "scope": "stored tangent coefficients and declared projected basis only; rejected limiter choices not replayed",
+  "raw_sha256": "b26f361becce01db9782138b0832c470dc9ec026322e0b7a816cc50a9867f194",
+  "rows": [
+    {
+      "iteration": 1,
+      "backtrack": 0,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 2.7587092674950537e-05,
+      "other_face_scaled_margin": 0.006033690731098112
+    },
+    {
+      "iteration": 1,
+      "backtrack": 1,
+      "accepted": true,
+      "branch_reason": null,
+      "changed_flux_flat_indices": [],
+      "qy_3_0": -1.859148358816223e-06,
+      "other_face_scaled_margin": 0.0004077087645037865
+    },
+    {
+      "iteration": 2,
+      "backtrack": 0,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 2.7585428574400037e-05,
+      "other_face_scaled_margin": 0.006033367379495841
+    },
+    {
+      "iteration": 2,
+      "backtrack": 1,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 1.2863139016634252e-05,
+      "other_face_scaled_margin": 0.0028171151303298734
+    },
+    {
+      "iteration": 2,
+      "backtrack": 2,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 5.50199505036696e-06,
+      "other_face_scaled_margin": 0.0012057767779232718
+    },
+    {
+      "iteration": 2,
+      "backtrack": 3,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 1.8214232754202968e-06,
+      "other_face_scaled_margin": 0.00039930267349728293
+    },
+    {
+      "iteration": 2,
+      "backtrack": 4,
+      "accepted": false,
+      "branch_reason": "point nonselected face/limiter lacks the original 1e-4 margin",
+      "changed_flux_flat_indices": [],
+      "qy_3_0": -1.8862559375771096e-08,
+      "other_face_scaled_margin": 4.135845262800658e-06
+    },
+    {
+      "iteration": 2,
+      "backtrack": 5,
+      "accepted": true,
+      "branch_reason": null,
+      "changed_flux_flat_indices": [],
+      "qy_3_0": -9.390054635271313e-07,
+      "other_face_scaled_margin": 0.00020590550062791587
+    },
+    {
+      "iteration": 3,
+      "backtrack": 0,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 2.758539480952134e-05,
+      "other_face_scaled_margin": 0.006033360820645504
+    },
+    {
+      "iteration": 3,
+      "backtrack": 1,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 1.3323193650313214e-05,
+      "other_face_scaled_margin": 0.002917749084513347
+    },
+    {
+      "iteration": 3,
+      "backtrack": 2,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 6.192093832492257e-06,
+      "other_face_scaled_margin": 0.00135692909244096
+    },
+    {
+      "iteration": 3,
+      "backtrack": 3,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 2.6265441186036197e-06,
+      "other_face_scaled_margin": 0.0005757638646255038
+    },
+    {
+      "iteration": 3,
+      "backtrack": 4,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 8.437693109863802e-07,
+      "other_face_scaled_margin": 0.0001849922296620793
+    },
+    {
+      "iteration": 3,
+      "backtrack": 5,
+      "accepted": false,
+      "branch_reason": "point nonselected face/limiter lacks the original 1e-4 margin",
+      "changed_flux_flat_indices": [],
+      "qy_3_0": -4.761808041842466e-08,
+      "other_face_scaled_margin": 1.0440869754466356e-05
+    },
+    {
+      "iteration": 3,
+      "backtrack": 6,
+      "accepted": true,
+      "branch_reason": null,
+      "changed_flux_flat_indices": [],
+      "qy_3_0": -4.933117730109016e-07,
+      "other_face_scaled_margin": 0.0001081692432823323
+    },
+    {
+      "iteration": 4,
+      "backtrack": 0,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 2.7585378845062418e-05,
+      "other_face_scaled_margin": 0.006033357719573938
+    },
+    {
+      "iteration": 4,
+      "backtrack": 1,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 1.354603254568004e-05,
+      "other_face_scaled_margin": 0.002966490638006448
+    },
+    {
+      "iteration": 4,
+      "backtrack": 2,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 6.526360133760024e-06,
+      "other_face_scaled_margin": 0.0014301366517100683
+    },
+    {
+      "iteration": 4,
+      "backtrack": 3,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 3.016524116607102e-06,
+      "other_face_scaled_margin": 0.0006612279251130166
+    },
+    {
+      "iteration": 4,
+      "backtrack": 4,
+      "accepted": false,
+      "branch_reason": "point nonselected branch changed in fixed-face correction",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 1.2616061557785795e-06,
+      "other_face_scaled_margin": 0.00027659042521144175
+    },
+    {
+      "iteration": 4,
+      "backtrack": 5,
+      "accepted": false,
+      "branch_reason": "point nonselected face/limiter lacks the original 1e-4 margin",
+      "changed_flux_flat_indices": [
+        39
+      ],
+      "qy_3_0": 3.8414718736925514e-07,
+      "other_face_scaled_margin": 8.422586567451085e-05
+    },
+    {
+      "iteration": 4,
+      "backtrack": 6,
+      "accepted": false,
+      "branch_reason": "point nonselected face/limiter lacks the original 1e-4 margin",
+      "changed_flux_flat_indices": [],
+      "qy_3_0": -5.4582293825987047e-08,
+      "other_face_scaled_margin": 1.1967869671871056e-05
+    },
+    {
+      "iteration": 4,
+      "backtrack": 7,
+      "accepted": false,
+      "branch_reason": "point nonselected face/limiter lacks the original 1e-4 margin",
+      "changed_flux_flat_indices": [],
+      "qy_3_0": -2.739470336698708e-07,
+      "other_face_scaled_margin": 6.006760163725316e-05
+    },
+    {
+      "iteration": 4,
+      "backtrack": 8,
+      "accepted": false,
+      "branch_reason": "point nonselected face/limiter lacks the original 1e-4 margin",
+      "changed_flux_flat_indices": [],
+      "qy_3_0": -3.836294034031615e-07,
+      "other_face_scaled_margin": 8.411818374270372e-05
+    },
+    {
+      "iteration": 4,
+      "backtrack": 9,
+      "accepted": false,
+      "branch_reason": "point nonselected face/limiter lacks the original 1e-4 margin",
+      "changed_flux_flat_indices": [],
+      "qy_3_0": -4.384705882228609e-07,
+      "other_face_scaled_margin": 9.61436538323868e-05
+    },
+    {
+      "iteration": 4,
+      "backtrack": 10,
+      "accepted": true,
+      "branch_reason": null,
+      "changed_flux_flat_indices": [],
+      "qy_3_0": -4.6589118062089277e-07,
+      "other_face_scaled_margin": 0.0001021564336372276
+    }
+  ],
+  "last_qy_3_0": -4.6589118062089277e-07,
+  "full_root_claim": false,
+  "normal_validation": "not_performed"
+}
