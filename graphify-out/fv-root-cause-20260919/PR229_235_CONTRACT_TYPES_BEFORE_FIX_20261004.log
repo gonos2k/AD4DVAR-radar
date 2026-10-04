@@ -1,0 +1,20 @@
+/Users/yhlee/ADVAR/examples/weather_scenarios/fv_archived_response_contract.py
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_archived_response_contract.py:196:71 - error: "local_evidence_path" is possibly unbound (reportPossiblyUnboundVariable)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_archived_response_contract.py:197:68 - error: "local_evidence_sha" is possibly unbound (reportPossiblyUnboundVariable)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_archived_response_contract.py:243:28 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_archived_response_contract.py:245:24 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_archived_response_contract.py:246:46 - error: "get" is not a known attribute of "None" (reportOptionalMemberAccess)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_archived_response_contract.py:247:26 - error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_archived_response_contract.py:248:94 - error: Operator "in" not supported for types "Literal['gradient_max', 'pcg_iterations', 'pcg_relative_residual', 'true_adjoint_relative_residual', 'true_adjoint_residual', 'hvp_count']" and "Any | None"
+    Operator "in" not supported for types "Literal['gradient_max']" and "None"
+    Operator "in" not supported for types "Literal['pcg_iterations']" and "None"
+    Operator "in" not supported for types "Literal['pcg_relative_residual']" and "None"
+    Operator "in" not supported for types "Literal['true_adjoint_relative_residual']" and "None"
+    Operator "in" not supported for types "Literal['true_adjoint_residual']" and "None"
+    Operator "in" not supported for types "Literal['hvp_count']" and "None" (reportOperatorIssue)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_archived_response_contract.py:250:38 - error: Argument of type "Any | None" cannot be assigned to parameter "tangent_predictor" of type "dict[Any, Any | Unknown]" in function "update"
+    Type "Any | None" is not assignable to type "dict[Any, Any | Unknown]"
+      "None" is not assignable to "dict[Any, Any | Unknown]" (reportArgumentType)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_archived_response_contract.py:250:79 - error: "get" is not a known attribute of "None" (reportOptionalMemberAccess)
+  /Users/yhlee/ADVAR/examples/weather_scenarios/fv_archived_response_contract.py:251:61 - error: "get" is not a known attribute of "None" (reportOptionalMemberAccess)
+10 errors, 0 warnings, 0 notes
