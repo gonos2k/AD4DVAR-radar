@@ -62,14 +62,15 @@ def _identity(name: str, value: Mapping[str, Any]) -> dict[str, Any]:
     return dict(value)
 
 
-def _point_evidence(row: Mapping[str, Any], point_sha: str) -> dict[str, Any]:
+def _point_evidence(row: Mapping[str, Any], point_sha: str, parameters_sha: str) -> dict[str, Any]:
     evidence = _identity("normal evidence", row)
-    if evidence.get("control_sha256") != point_sha or not evidence.get("scope"):
-        raise ValueError("normal evidence must identify the response point and its scope")
+    if (evidence.get("control_sha256") != point_sha
+            or evidence.get("parameters_sha256") != parameters_sha or not evidence.get("scope")):
+        raise ValueError("normal evidence must identify the response control, parameters, and scope")
     return evidence
 
 
-def _validation(row: Mapping[str, Any], point_sha: str) -> dict[str, Any]:
+def _validation(row: Mapping[str, Any], point_sha: str, parameters_sha: str) -> dict[str, Any]:
     result = dict(row)
     status = result.get("status")
     if (result.get("control_sha256") != point_sha
@@ -77,6 +78,12 @@ def _validation(row: Mapping[str, Any], point_sha: str) -> dict[str, Any]:
             or not result.get("scope")
             or status not in {"not_run", "passed", "failed", "inconclusive"}):
         raise ValueError("validation requires a direction, point, scope, and explicit status")
+    base_parameters_sha = result.get("parameters_sha256")
+    if status != "not_run":
+        if base_parameters_sha != parameters_sha:
+            raise ValueError("performed validation must identify the response base parameters")
+    elif base_parameters_sha is not None and base_parameters_sha != parameters_sha:
+        raise ValueError("unrun validation parameter identity differs from the response base")
     steps = result.get("step_sizes", [])
     endpoints = result.get("endpoint_control_sha256", [])
     if not isinstance(steps, Sequence) or isinstance(steps, (str, bytes)):
@@ -188,8 +195,14 @@ def response_envelope(*, kind: ResponseKind, execution_status: str,
                 or normal_evidence.get("control_sha256") != point_sha
                 or not normal_evidence.get("scope")):
             raise ValueError("selected-face response requires an explicit normal-evidence status and scope")
+        normal_parameters_sha = normal_evidence.get("parameters_sha256")
+        if normal_evidence["status"] == "measured":
+            if normal_parameters_sha != ids["parameters"]["sha256"]:
+                raise ValueError("measured normal evidence must identify the response base parameters")
+        elif normal_parameters_sha is not None and normal_parameters_sha != ids["parameters"]["sha256"]:
+            raise ValueError("unmeasured normal evidence parameter identity differs from the response base")
         if normal_evidence["status"] in {"not_run", "refused"}:
-            allowed = {"status", "control_sha256", "scope", "references", "plan"}
+            allowed = {"status", "control_sha256", "parameters_sha256", "scope", "references", "plan"}
             if set(normal_evidence) - allowed:
                 raise ValueError("unmeasured normal evidence cannot carry inline measured values")
         refs = normal_evidence.get("references")
@@ -203,7 +216,7 @@ def response_envelope(*, kind: ResponseKind, execution_status: str,
         for item in refs:
             if not isinstance(item, Mapping):
                 raise ValueError("normal evidence entries must be mappings")
-            checked_refs.append(_point_evidence(item, point_sha))
+            checked_refs.append(_point_evidence(item, point_sha, str(ids["parameters"]["sha256"])))
         geometry = {"selected_face": dict(selected_face), "chart": dict(chart),
                     "normal_evidence": {**dict(normal_evidence),
                         "references": checked_refs}}
@@ -213,7 +226,7 @@ def response_envelope(*, kind: ResponseKind, execution_status: str,
         geometry = {"selected_face": None, "chart": None, "normal_evidence": None}
     if not isinstance(validations, Sequence) or not validations:
         raise ValueError("at least one independent direction/step validation record is required")
-    checked_validations = [_validation(row, point_sha) for row in validations]
+    checked_validations = [_validation(row, point_sha, str(ids["parameters"]["sha256"])) for row in validations]
     return {
         "schema": "advar.response-envelope.v1",
         "kind": kind,

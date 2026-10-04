@@ -136,7 +136,7 @@ def _source_records(archive_dir: Path, raw: dict[str, Any], profile: dict[str, A
 
 
 def _stationarity_gate(archive_dir: Path, raw: dict[str, Any], profile: dict[str, Any],
-                       source_refs: dict[str, str]) -> dict[str, Any]:
+                       source_refs: dict[str, str], root: Path) -> dict[str, Any]:
     """Read the fixed gate from the archived source identity; never infer a new tolerance."""
     local_evidence_path: Path | None = None
     local_evidence_sha: str | None = None
@@ -146,11 +146,11 @@ def _stationarity_gate(archive_dir: Path, raw: dict[str, Any], profile: dict[str
         snapshot_name = source_name
         gate_sha = manifest["sha256"][snapshot_name]
         source_text = (archive_dir / snapshot_name).read_text()
-        local_evidence_path = _ROOT / _EVIDENCE / "FV_POINT_CENTERED_PRIOR_RESPONSE_EVIDENCE.json"
+        local_evidence_path = root / _EVIDENCE / "FV_POINT_CENTERED_PRIOR_RESPONSE_EVIDENCE.json"
         local_evidence, local_evidence_sha = _read_json(local_evidence_path)
         local_source_name = "src/advar/local_response.py"
         local_sha = local_evidence["sha256"][local_source_name]
-        source_ref_name = str(archive_dir.relative_to(_ROOT) / snapshot_name)
+        source_ref_name = str(archive_dir.relative_to(root) / snapshot_name)
         local_ref_name = local_source_name
         expected_expression = "gradient_max >= 1e-10"
     elif profile["name"] == "point_single_qx_response_attempt2":
@@ -166,7 +166,7 @@ def _stationarity_gate(archive_dir: Path, raw: dict[str, Any], profile: dict[str
             raise ValueError("archived qx gate does not show the fixed comparison")
     else:
         source_name = profile["gate_path"]
-        source_text = (Path(_ROOT) / source_name).read_text()
+        source_text = (root / source_name).read_text()
         gate_sha = hashlib.sha256(source_text.encode()).hexdigest()
         if raw["diagnostic_source_before"].get(source_name) != gate_sha:
             raise ValueError("partial-face stationarity source differs from the archived source SHA")
@@ -189,7 +189,7 @@ def _stationarity_gate(archive_dir: Path, raw: dict[str, Any], profile: dict[str
         raise ValueError("archived source does not establish the fixed 1e-10 stationarity gate")
     local_evidence_reference: dict[str, Any] = {}
     if local_evidence_path is not None and local_evidence_sha is not None:
-        local_evidence_reference = {"evidence_record_path": str(local_evidence_path.relative_to(_ROOT)),
+        local_evidence_reference = {"evidence_record_path": str(local_evidence_path.relative_to(root)),
                                    "evidence_record_sha256": local_evidence_sha}
     return {"tolerance": 1e-10, "comparison": "pass iff gradient_max < tolerance",
             "objective_control_units": "archived profile units; no rescaling applied",
@@ -203,7 +203,7 @@ def _stationarity_gate(archive_dir: Path, raw: dict[str, Any], profile: dict[str
 
 
 def _validation_rows(raw: dict[str, Any], profile: dict[str, Any], point_sha: str,
-                     direction_sha: str) -> list[dict[str, Any]]:
+                     parameter_sha: str, direction_sha: str) -> list[dict[str, Any]]:
     pairs = raw.get("score_finite_difference", raw.get("pairs", []))
     endpoints = raw.get("endpoints", [])
     rows = []
@@ -212,7 +212,8 @@ def _validation_rows(raw: dict[str, Any], profile: dict[str, Any], point_sha: st
         matched = [endpoint for endpoint in endpoints
                    if abs(float(endpoint.get("step", endpoint.get("h", 0.0)))) == h]
         rows.append({
-            "control_sha256": point_sha, "direction_sha256": direction_sha,
+            "control_sha256": point_sha, "parameters_sha256": parameter_sha,
+            "direction_sha256": direction_sha,
             "scope": profile["direction_scope"], "status": "passed" if pair["passed"] else "failed",
             "method": "central_finite_difference",
             "step_sizes": [h],
@@ -291,7 +292,7 @@ def render_archived_response(path: str | Path, *, root: str | Path = _ROOT) -> d
                      **nominal["hessian_audit"]}
         branch = nominal["branch"]
         direction = nominal["direction"]
-        validations = _validation_rows(raw, profile, point_sha, direction_sha)
+        validations = _validation_rows(raw, profile, point_sha, parameter_sha, direction_sha)
         exec_status = "completed" if run.get("execution_status") == "completed" else run.get("execution_status", "not_recorded")
         numerical = ("eligible" if run.get("response_validation") == "passed"
                      and run.get("numerical_status") == "eligible" else "not_evaluated")
@@ -335,7 +336,7 @@ def render_archived_response(path: str | Path, *, root: str | Path = _ROOT) -> d
         curvature_raw = raw.get("base_curvature", raw.get("base_hessian", {}))
         curvature = {"space": "tangent", "status": "reported archived curvature audit",
                      **curvature_raw}
-        validations = _validation_rows(raw, profile, point_sha, direction_sha)
+        validations = _validation_rows(raw, profile, point_sha, parameter_sha, direction_sha)
         coordinate = {**profile["chart"], "lift_sha256": profile["chart"]["lift_sha256"]}
     identities = {
         "problem": {"sha256": problem_sha, "scope": "archived fixed input identity"},
@@ -347,7 +348,7 @@ def render_archived_response(path: str | Path, *, root: str | Path = _ROOT) -> d
         "runtime": {"sha256": runtime_sha, "recorded": runtime or None},
         "plan": {"sha256": plan_sha},
     }
-    gate = _stationarity_gate(archive_dir, raw, profile, source_refs)
+    gate = _stationarity_gate(archive_dir, raw, profile, source_refs, root_path)
     gate_passed = math.isfinite(float(gradient_value)) and float(gradient_value) < gate["tolerance"]
     payload = _response_payload(raw, profile)
     payload["archive"] = {"path": archive_path.relative_to(root_path).as_posix(), "sha256": archive_sha,
@@ -360,6 +361,7 @@ def render_archived_response(path: str | Path, *, root: str | Path = _ROOT) -> d
             raise ValueError("response archive lacks its inline base normal block")
         normal_sha = _canonical_sha(normal_block)
         normal_evidence = {"status": "measured", "control_sha256": point_sha,
+                           "parameters_sha256": parameter_sha,
                            "scope": normal_block.get("scope", "inline normal at archived base point"),
                            "references": [{"sha256": normal_sha, "control_sha256": point_sha,
                                            "archive_sha256": archive_sha,

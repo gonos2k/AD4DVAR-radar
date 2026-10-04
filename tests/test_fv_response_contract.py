@@ -177,6 +177,7 @@ def _envelope_kwargs(kind: str = "selected_face_conditional") -> dict[str, Any]:
         ("problem", "control", "parameters", "code", "branch", "source", "runtime", "plan"),
         "abcdefgh", strict=True)}
     point = identities["control"]["sha256"]
+    parameters = identities["parameters"]["sha256"]
     return {
         "kind": kind,
         "execution_status": "completed",
@@ -197,9 +198,10 @@ def _envelope_kwargs(kind: str = "selected_face_conditional") -> dict[str, Any]:
         "claims": {"full_root_supported": False, "physical_validation_supported": False},
         "selected_face": {"axis": "x", "row": 3, "column": 4},
         "chart": {"sha256": _hash("k"), "pivot": 0},
-        "normal_evidence": {"status": "measured", "control_sha256": point,
+        "normal_evidence": {"status": "measured", "control_sha256": point, "parameters_sha256": parameters,
                             "scope": "finite-point two-sided interval normal",
                             "references": [{"sha256": _hash("o"), "control_sha256": point,
+                                            "parameters_sha256": parameters,
                                             "scope": "two-sided interval normal at base point"}]},
     }
 
@@ -223,6 +225,7 @@ def test_common_envelope_keeps_response_kinds_and_assessments_separate():
 def test_conditional_response_can_record_unrun_normal_without_claiming_eligibility():
     kwargs = _envelope_kwargs()
     kwargs["normal_evidence"] = {"status": "not_run", "control_sha256": kwargs["identities"]["control"]["sha256"],
+                                 "parameters_sha256": kwargs["identities"]["parameters"]["sha256"],
                                  "scope": "one-sided finite-point check pending", "references": []}
     kwargs["numerical_status"] = "not_evaluated"
     envelope = response_envelope(**kwargs)
@@ -275,7 +278,8 @@ def test_smooth_kind_rejects_reduced_tangent_record():
 def test_passed_central_validation_pins_both_endpoints_for_each_h():
     kwargs = _envelope_kwargs()
     point = kwargs["identities"]["control"]["sha256"]
-    row = {"control_sha256": point, "direction_sha256": _hash("l"), "scope": "same selected face",
+    row = {"control_sha256": point, "parameters_sha256": kwargs["identities"]["parameters"]["sha256"],
+           "direction_sha256": _hash("l"), "scope": "same selected face",
            "status": "passed", "method": "central_finite_difference", "step_sizes": [0.01, 0.005],
            "endpoint_control_sha256": [_hash(c) for c in "mnop"],
            "endpoint_parameters_sha256": [_hash(c) for c in "qrst"],
@@ -304,5 +308,45 @@ def test_execution_and_numerical_statuses_remain_independent(execution: str, num
 def test_common_envelope_rejects_normal_evidence_from_a_different_point():
     kwargs = _envelope_kwargs()
     kwargs["normal_evidence"]["references"][0]["control_sha256"] = _hash("p")
-    with pytest.raises(ValueError, match="response point"):
+    with pytest.raises(ValueError, match="response control"):
+        response_envelope(**kwargs)
+
+
+@pytest.mark.parametrize("location", ["top", "reference"])
+@pytest.mark.parametrize("mode", ["missing", "mismatched"])
+def test_measured_normal_must_bind_the_same_base_parameters(location: str, mode: str):
+    kwargs = _envelope_kwargs()
+    record = kwargs["normal_evidence"] if location == "top" else kwargs["normal_evidence"]["references"][0]
+    if mode == "missing":
+        record.pop("parameters_sha256")
+    else:
+        record["parameters_sha256"] = _hash("f")
+    with pytest.raises(ValueError, match="parameters|SHA-256"):
+        response_envelope(**kwargs)
+
+
+@pytest.mark.parametrize("status", ["passed", "failed", "inconclusive"])
+@pytest.mark.parametrize("mode", ["missing", "mismatched"])
+def test_performed_validation_must_bind_the_same_base_parameters(status: str, mode: str):
+    kwargs = _envelope_kwargs()
+    row = {"control_sha256": kwargs["identities"]["control"]["sha256"],
+           "direction_sha256": _hash("l"), "scope": "performed response validation", "status": status,
+           "method": "directional_check", "step_sizes": [0.01], "endpoint_control_sha256": [_hash("m")],
+           "criterion": {"tolerance": 1e-4}, "error": {"absolute": 0.0}}
+    if mode == "mismatched":
+        row["parameters_sha256"] = _hash("f")
+    kwargs["validations"] = [row]
+    with pytest.raises(ValueError, match="base parameters"):
+        response_envelope(**kwargs)
+
+
+@pytest.mark.parametrize("record", ["normal", "validation"])
+def test_unrun_optional_parameter_identity_must_match_base(record: str):
+    kwargs = _envelope_kwargs()
+    if record == "normal":
+        kwargs["normal_evidence"] = {"status": "not_run", "control_sha256": kwargs["identities"]["control"]["sha256"],
+                                     "parameters_sha256": _hash("f"), "scope": "pending", "references": []}
+    else:
+        kwargs["validations"][0]["parameters_sha256"] = _hash("f")
+    with pytest.raises(ValueError, match="parameter identity differs"):
         response_envelope(**kwargs)

@@ -1,0 +1,23 @@
+{
+  "scope": "narrow P2 evidence-input and caller-root fix; no FV rerun",
+  "files": {
+    "examples/weather_scenarios/fv_archived_response_contract.py": "b616a5aa9e0b78fe47b776d11c929477319d7b4ac5c12a811c1ab2913854e31f",
+    "examples/weather_scenarios/fv_response_contract.py": "86fdf4a9650e336c40a1a47d66b83b082733a986f101c01d0f023a831c33424b",
+    "graphify-out/fv-root-cause-20260919/PR236_P2_AST_20261004.json": "9b34ca64dd5d9726992310e646fc30346689c12588aa7d6bdaf1db166fcda284",
+    "graphify-out/fv-root-cause-20260919/PR236_P2_GRAPHIFY_20261004.json": "7984450402fe4565307af94bea32f487e86e0a198f5ee491a71966f00bca7ed6",
+    "graphify-out/fv-root-cause-20260919/PR236_P2_KG_UPDATE_20261004.json": "8ca6ebacc2d93465d72a098166731b19996d3ae2f49ec8a9be900e47c9b8530c",
+    "graphify-out/fv-root-cause-20260919/PR236_P2_RESOLUTION_20261004.md": "56b0dd1363c3dced960df17082d03d3aa4e159873f0a4b5b57f2726d1bafbb9c",
+    "graphify-out/fv-root-cause-20260919/PR236_P2_TESTS_20261004.log": "6ce92b52d07e45b312b652db1b1615741e9ce9addfc6d42035652610978f6f71",
+    "graphify-out/fv-root-cause-20260919/PR236_P2_TYPES_20261004.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/response_contract_p2_20261004/partial_selected_qy.json": "bc97d30ada9c793a7a976a11a5ecc66486e152b8fa306f995450835d901e1f19",
+    "graphify-out/fv-root-cause-20260919/response_contract_p2_20261004/point_selected_qx.json": "51896e7870a93fbe43fc1cb128a1c2b20f5ae06fd5b40367517f2514e1d309fb",
+    "graphify-out/fv-root-cause-20260919/response_contract_p2_20261004/render_result.json": "7db2024781d8d13c6431affb287cb8f53a0bd8c92457bb81409998011f4ce44a",
+    "graphify-out/fv-root-cause-20260919/response_contract_p2_20261004/smooth_constructed_prior.json": "85a4421e2cfea78d8eaf8c6ec594057a4d85f1fdb657004eae1017e908e785c8",
+    "tests/test_fv_archived_response_contract.py": "5395bf4c68543ed4cb0d48d8731473597bb53c7c4b88b72e1e4676d937d28fc7",
+    "tests/test_fv_response_contract.py": "04b9d24fed102d322ef10be541b3dc33e602c47575e6e74f119dbc18b5e511a9"
+  },
+  "new_tests_passed": 44,
+  "old_raw_and_PR236_exports_preserved": true,
+  "shared_graph_and_report_unchanged_this_fix": true,
+  "user_files_excluded": true
+}

@@ -1,0 +1,15 @@
+{
+  "scope": "isolated four-file AST only; no shared graph/report mutation",
+  "files": {
+    "examples/weather_scenarios/fv_response_contract.py": "86fdf4a9650e336c40a1a47d66b83b082733a986f101c01d0f023a831c33424b",
+    "examples/weather_scenarios/fv_archived_response_contract.py": "b616a5aa9e0b78fe47b776d11c929477319d7b4ac5c12a811c1ab2913854e31f",
+    "tests/test_fv_response_contract.py": "04b9d24fed102d322ef10be541b3dc33e602c47575e6e74f119dbc18b5e511a9",
+    "tests/test_fv_archived_response_contract.py": "5395bf4c68543ed4cb0d48d8731473597bb53c7c4b88b72e1e4676d937d28fc7"
+  },
+  "nodes": 67,
+  "edges": 238,
+  "ast_sha256": "9b34ca64dd5d9726992310e646fc30346689c12588aa7d6bdaf1db166fcda284",
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "shared_report_sha256": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491",
+  "shared_graph_and_report_unchanged": true
+}
