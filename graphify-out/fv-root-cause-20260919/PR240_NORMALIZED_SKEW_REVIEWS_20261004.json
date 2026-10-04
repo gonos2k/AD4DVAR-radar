@@ -1,0 +1,26 @@
+{
+  "GREEN": {
+    "agent": "r4_schur_review",
+    "decision": "GO",
+    "scope": "pre-symmetry QR congruence skew guard, exact two repros, scope and future checkpoint proposal"
+  },
+  "RED": {
+    "agent": "r4_field_red",
+    "decision": "GO",
+    "scope": "independent two original loss cases vs fixed refusals and final source/evidence records"
+  },
+  "source_sha256": {
+    "examples/weather_scenarios/fv_chart_diagnostics.py": "f4b33bb087dc06af9ab2ccd1325144f92265aff6ccef61ee668600676426fdee",
+    "tests/test_fv_chart_diagnostics.py": "49471bcc466450a2e564dd03e30fa867cd5fd2636d92f63fe1e43907895af959"
+  },
+  "verification": {
+    "focused_passed": 30,
+    "typecheck_error_level_errors": 0,
+    "exact_input_fraction_reference": true
+  },
+  "limits": [
+    "not comprehensive underflow protection",
+    "resumable checkpoint is proposal only",
+    "no new FV/HVP/curvature/root/response claim"
+  ]
+}

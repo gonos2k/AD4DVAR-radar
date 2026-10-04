@@ -1,0 +1,1101 @@
+{
+  "nodes": [
+    {
+      "id": "weather_scenarios_fv_chart_diagnostics",
+      "label": "fv_chart_diagnostics.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_chart_diagnostics_stable_frobenius_norm",
+      "label": "_stable_frobenius_norm()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L10",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_chart_diagnostics_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L10",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_chart_diagnostics_stable_symmetric_part",
+      "label": "_stable_symmetric_part()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_chart_diagnostics_relative_frobenius_skew",
+      "label": "_relative_frobenius_skew()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L28",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "label": "tangent_metric_diagnostics()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L39",
+      "_origin": "ast"
+    },
+    {
+      "id": "any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L39",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_chart_diagnostics_rationale_1",
+      "label": "Coordinate-aware diagnostics for a full-rank chart Jacobian.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_chart_diagnostics_rationale_11",
+      "label": "Compute a Frobenius norm without squaring the input's physical scale.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L11",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_chart_diagnostics_rationale_20",
+      "label": "Average mirrored entries without overflowing or erasing small pairs.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L20",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_chart_diagnostics_rationale_29",
+      "label": "Return a dimensionless skew norm after removing the matrix's scale.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L29",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_chart_diagnostics_rationale_45",
+      "label": "Measure the ambient-Euclidean tangent gradient in chart coordinates.      ``jaco",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L45",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics",
+      "label": "test_fv_chart_diagnostics.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_plane_chart",
+      "label": "_plane_chart()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L13",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L13",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_kkt_tangent_gradient",
+      "label": "_kkt_tangent_gradient()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L31",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_metric_norm_matches_kkt_projection_across_scales_and_pivots",
+      "label": "test_metric_norm_matches_kkt_projection_across_scales_and_pivots()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L38",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_generalized_curvature_is_pivot_invariant_at_a_constrained_stationary_point",
+      "label": "test_generalized_curvature_is_pivot_invariant_at_a_constrained_stationary_point()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L53",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_nonlinear_chart_metric_does_not_turn_coordinate_rescaling_into_stationarity",
+      "label": "test_nonlinear_chart_metric_does_not_turn_coordinate_rescaling_into_stationarity()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L75",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_nonzero_pivot_curvature_uses_the_composed_nonlinear_chart_hessian",
+      "label": "test_nonzero_pivot_curvature_uses_the_composed_nonlinear_chart_hessian()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L99",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_uniformly_rescaled_full_rank_chart_is_not_rejected_by_absolute_units",
+      "label": "test_uniformly_rescaled_full_rank_chart_is_not_rejected_by_absolute_units()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L134",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_near_rank_loss_is_refused_using_a_relative_fp64_threshold",
+      "label": "test_near_rank_loss_is_refused_using_a_relative_fp64_threshold()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L145",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_stable_tangent_norm_retains_small_nonzero_components",
+      "label": "test_stable_tangent_norm_retains_small_nonzero_components()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L152",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_finite_inputs_that_overflow_the_tangent_metric_are_refused",
+      "label": "test_finite_inputs_that_overflow_the_tangent_metric_are_refused()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L162",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_hessian_is_symmetrized_for_spectrum_and_asymmetry_is_reported",
+      "label": "test_hessian_is_symmetrized_for_spectrum_and_asymmetry_is_reported()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L169",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_invalid_jacobian_is_refused",
+      "label": "test_invalid_jacobian_is_refused()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L193",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_nonfinite_optional_hessian_is_refused",
+      "label": "test_nonfinite_optional_hessian_is_refused()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L199",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_large_but_representable_hessian_norm_is_retained",
+      "label": "test_large_but_representable_hessian_norm_is_retained()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L207",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_tiny_hessian_with_material_relative_skew_is_refused_at_any_chart_scale",
+      "label": "test_tiny_hessian_with_material_relative_skew_is_refused_at_any_chart_scale()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L217",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_triangular_solve_skew_is_refused_before_symmetric_projection",
+      "label": "test_triangular_solve_skew_is_refused_before_symmetric_projection()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L231",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_true_curvature_eigenvalue_overflow_is_refused",
+      "label": "test_true_curvature_eigenvalue_overflow_is_refused()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L242",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_symmetrization_preserves_mixed_scale_diagonal_curvature",
+      "label": "test_symmetrization_preserves_mixed_scale_diagonal_curvature()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L251",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_symmetrization_preserves_representable_subnormal_diagonal_entries",
+      "label": "test_symmetrization_preserves_representable_subnormal_diagonal_entries()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L262",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_finite_hessian_with_overflowing_coordinate_normalization_is_refused",
+      "label": "test_finite_hessian_with_overflowing_coordinate_normalization_is_refused()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L272",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_test_materially_asymmetric_hessian_is_rejected_with_a_relative_tolerance",
+      "label": "test_materially_asymmetric_hessian_is_rejected_with_a_relative_tolerance()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L280",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_chart_diagnostics_rationale_1",
+      "label": "Small algebra checks for chart-metric diagnostics; no FV execution.",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics",
+      "target": "weather_scenarios_fv_chart_diagnostics_stable_frobenius_norm",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_stable_frobenius_norm",
+      "target": "examples_weather_scenarios_fv_chart_diagnostics_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_stable_frobenius_norm",
+      "target": "examples_weather_scenarios_fv_chart_diagnostics_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics",
+      "target": "weather_scenarios_fv_chart_diagnostics_stable_symmetric_part",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_stable_symmetric_part",
+      "target": "examples_weather_scenarios_fv_chart_diagnostics_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_stable_symmetric_part",
+      "target": "examples_weather_scenarios_fv_chart_diagnostics_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics",
+      "target": "weather_scenarios_fv_chart_diagnostics_relative_frobenius_skew",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_relative_frobenius_skew",
+      "target": "examples_weather_scenarios_fv_chart_diagnostics_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_relative_frobenius_skew",
+      "target": "examples_weather_scenarios_fv_chart_diagnostics_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "target": "examples_weather_scenarios_fv_chart_diagnostics_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "target": "examples_weather_scenarios_fv_chart_diagnostics_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "target": "examples_weather_scenarios_fv_chart_diagnostics_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_relative_frobenius_skew",
+      "target": "weather_scenarios_fv_chart_diagnostics_stable_frobenius_norm",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "target": "weather_scenarios_fv_chart_diagnostics_stable_frobenius_norm",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L91",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "target": "weather_scenarios_fv_chart_diagnostics_relative_frobenius_skew",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L117",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "target": "weather_scenarios_fv_chart_diagnostics_stable_symmetric_part",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L122",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_rationale_1",
+      "target": "weather_scenarios_fv_chart_diagnostics",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_rationale_11",
+      "target": "weather_scenarios_fv_chart_diagnostics_stable_frobenius_norm",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_rationale_20",
+      "target": "weather_scenarios_fv_chart_diagnostics_stable_symmetric_part",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_rationale_29",
+      "target": "weather_scenarios_fv_chart_diagnostics_relative_frobenius_skew",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_chart_diagnostics_rationale_45",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_chart_diagnostics.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "examples_weather_scenarios_fv_chart_diagnostics",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "examples_weather_scenarios_fv_response_contract",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_plane_chart",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_plane_chart",
+      "target": "tests_test_fv_chart_diagnostics_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_kkt_tangent_gradient",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_kkt_tangent_gradient",
+      "target": "tests_test_fv_chart_diagnostics_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_kkt_tangent_gradient",
+      "target": "tests_test_fv_chart_diagnostics_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_metric_norm_matches_kkt_projection_across_scales_and_pivots",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_generalized_curvature_is_pivot_invariant_at_a_constrained_stationary_point",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L53",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_nonlinear_chart_metric_does_not_turn_coordinate_rescaling_into_stationarity",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L75",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_nonzero_pivot_curvature_uses_the_composed_nonlinear_chart_hessian",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_uniformly_rescaled_full_rank_chart_is_not_rejected_by_absolute_units",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L134",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_near_rank_loss_is_refused_using_a_relative_fp64_threshold",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L145",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_stable_tangent_norm_retains_small_nonzero_components",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_finite_inputs_that_overflow_the_tangent_metric_are_refused",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_hessian_is_symmetrized_for_spectrum_and_asymmetry_is_reported",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L169",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_invalid_jacobian_is_refused",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L193",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_invalid_jacobian_is_refused",
+      "target": "tests_test_fv_chart_diagnostics_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L193",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_nonfinite_optional_hessian_is_refused",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L199",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_large_but_representable_hessian_norm_is_retained",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L207",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_tiny_hessian_with_material_relative_skew_is_refused_at_any_chart_scale",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L217",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_triangular_solve_skew_is_refused_before_symmetric_projection",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L231",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_true_curvature_eigenvalue_overflow_is_refused",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L242",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_symmetrization_preserves_mixed_scale_diagonal_curvature",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L251",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_symmetrization_preserves_representable_subnormal_diagonal_entries",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L262",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_finite_hessian_with_overflowing_coordinate_normalization_is_refused",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L272",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "tests_test_fv_chart_diagnostics_test_materially_asymmetric_hessian_is_rejected_with_a_relative_tolerance",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L280",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_metric_norm_matches_kkt_projection_across_scales_and_pivots",
+      "target": "tests_test_fv_chart_diagnostics_plane_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_metric_norm_matches_kkt_projection_across_scales_and_pivots",
+      "target": "tests_test_fv_chart_diagnostics_kkt_tangent_gradient",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_generalized_curvature_is_pivot_invariant_at_a_constrained_stationary_point",
+      "target": "tests_test_fv_chart_diagnostics_plane_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_uniformly_rescaled_full_rank_chart_is_not_rejected_by_absolute_units",
+      "target": "tests_test_fv_chart_diagnostics_plane_chart",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L135",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_uniformly_rescaled_full_rank_chart_is_not_rejected_by_absolute_units",
+      "target": "tests_test_fv_chart_diagnostics_kkt_tangent_gradient",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L139",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_rationale_1",
+      "target": "tests_test_fv_chart_diagnostics",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_generalized_curvature_is_pivot_invariant_at_a_constrained_stationary_point",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_nonzero_pivot_curvature_uses_the_composed_nonlinear_chart_hessian",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L125",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_uniformly_rescaled_full_rank_chart_is_not_rejected_by_absolute_units",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L138",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_near_rank_loss_is_refused_using_a_relative_fp64_threshold",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L149",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_stable_tangent_norm_retains_small_nonzero_components",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L155",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_finite_inputs_that_overflow_the_tangent_metric_are_refused",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L166",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_hessian_is_symmetrized_for_spectrum_and_asymmetry_is_reported",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L175",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_nonfinite_optional_hessian_is_refused",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L204",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_large_but_representable_hessian_norm_is_retained",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L212",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_true_curvature_eigenvalue_overflow_is_refused",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L247",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_symmetrization_preserves_representable_subnormal_diagonal_entries",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L267",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_finite_hessian_with_overflowing_coordinate_normalization_is_refused",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L277",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_materially_asymmetric_hessian_is_rejected_with_a_relative_tolerance",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L285",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_metric_norm_matches_kkt_projection_across_scales_and_pivots",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_nonlinear_chart_metric_does_not_turn_coordinate_rescaling_into_stationarity",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L85",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_invalid_jacobian_is_refused",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L196",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_tiny_hessian_with_material_relative_skew_is_refused_at_any_chart_scale",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L224",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_triangular_solve_skew_is_refused_before_symmetric_projection",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L239",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_chart_diagnostics_test_symmetrization_preserves_mixed_scale_diagonal_curvature",
+      "target": "weather_scenarios_fv_chart_diagnostics_tangent_metric_diagnostics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/test_fv_chart_diagnostics.py",
+      "source_location": "L255",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

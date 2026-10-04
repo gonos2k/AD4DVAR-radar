@@ -1,0 +1,41 @@
+{
+  "baseline": {
+    "PR240_head": "9920a232",
+    "main": "0f533851"
+  },
+  "resolved": [
+    "P2-N normalized-Hessian pre-symmetrization skew guard"
+  ],
+  "verification": {
+    "focused_passed": 30,
+    "existing_warnings": 18,
+    "typecheck_error_level_errors": 0,
+    "old_and_fixed_repro_with_exact_FP64_input_fraction": true,
+    "previous_mixed_scale_subnormal_diagonal_pivot_tests_retained": true,
+    "64_original_numerical_sources_unchanged": true,
+    "other_PR240_owned_files_preserved": {
+      "examples/weather_scenarios/fv_diagnostic_guard.py": "a1c6b71dcaa4a16952658c9057839cef405238390908476b04e793710f6d275c",
+      "examples/weather_scenarios/fv_point_3h_endpoint_diagnostics.py": "5b27a4dd454749318b8eba9cfae329807816164131a616160673dd758c67e7fa",
+      "tests/test_fv_diagnostic_guard.py": "70b91717617dfb1b32dcee5d7cb1b90c355fa09d143047c9b30c262043c437ec",
+      "tests/test_fv_point_3h_endpoint_diagnostics.py": "6151d8c672b1283ad5269a00d4bb5ab52c3c4bdb9a04f3c6fbeac9660ef89be1",
+      "graphify-out/fv-root-cause-20260919/PR239_TEAM_AUDIT_20261004.md": "fc18bf3b83ead55a2bc43e60f3ca206bb9e0ef99ecfea630378c7758c5d09c4c",
+      "graphify-out/fv-root-cause-20260919/PR239_TEAM_NUMERICAL_REPRO_20261004.json": "3688a58057356b47bcb486f77807b87939905143be7afc801abb2496eb051964",
+      "graphify-out/fv-root-cause-20260919/PR239_TEAM_TESTS_20261004.log": "1c06708770983c42937acd936878173d8fd64b6fe3fa3e22efcc23481db87ef3",
+      "graphify-out/fv-root-cause-20260919/PR239_TEAM_TYPES_20261004.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+      "graphify-out/fv-root-cause-20260919/PR239_TEAM_CHART_TESTS_20261004.log": "56f83265566c5d6625bf3d69217c602b7c3ef0184e5bb92ff45b4b32048f72b8",
+      "graphify-out/fv-root-cause-20260919/PR239_TEAM_AST_20261004.json": "7fa84c5473f3249c97a6808bfcae323418603fe49e4bb3cb4bb79c41305b23ce",
+      "graphify-out/fv-root-cause-20260919/PR239_TEAM_GRAPHIFY_20261004.json": "7a97135f95f7b45e815deda6fe227c24279e35f8d56cdaf0cc5978fcb6ff8e0b",
+      "graphify-out/fv-root-cause-20260919/PR239_TEAM_KG_UPDATE_20261004.json": "8fb378b8a3a2471d8a7b6b8534cf2ed354ad9de973218a4e704c8829fc9a076d",
+      "graphify-out/fv-root-cause-20260919/PR239_TEAM_REVIEWS_20261004.json": "873e2d60bf257b4dbc18ccd406c4254dc0e556b3c8e683560537901e11cd133d"
+    },
+    "no_FV_GN_HVP_PCG_reanalysis": true,
+    "shared_graph_report_unchanged": true
+  },
+  "limits": [
+    "guard rejects identified cases but does not certify all underflow modes",
+    "input skew vs post-solve numerical skew have different cause",
+    "resumable-curvature document is a reviewed proposal, not checkpoint implementation",
+    "fresh3h curvature/normal-point response and independent meteorology remain unverified",
+    "old legacyguard adoption/fullLinux/GraphReport original-text recovery remain prior limits"
+  ]
+}

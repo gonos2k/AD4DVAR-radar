@@ -176,11 +176,14 @@ def test_hessian_is_symmetrized_for_spectrum_and_asymmetry_is_reported():
     symmetric = 0.5 * (hessian + hessian.mT)
     assert torch.allclose(result["coordinate_normalized_hessian_eigenvalues"],
                           torch.linalg.eigvalsh(symmetric))
-    assert result["hessian_asymmetry_relative"] > 0
-    assert result["hessian_asymmetry_relative"] <= result["hessian_asymmetry_relative_tolerance"]
-    assert result["hessian_asymmetry_relative_tolerance"] == pytest.approx(
+    assert result["hessian_input_asymmetry_relative"] > 0
+    assert result["hessian_input_asymmetry_relative"] <= result[
+        "hessian_input_asymmetry_relative_tolerance"
+    ]
+    assert result["hessian_input_asymmetry_relative_tolerance"] == pytest.approx(
         64 * torch.finfo(torch.float64).eps * 2
     )
+    assert result["coordinate_normalized_hessian_pre_symmetry_asymmetry_relative"] == 0
 
 
 @pytest.mark.parametrize("bad", [
@@ -218,6 +221,21 @@ def test_tiny_hessian_with_material_relative_skew_is_refused_at_any_chart_scale(
     hessian = physical_hessian * chart_scale**2
     assert bool(torch.isfinite(hessian).all())
     with pytest.raises(ValueError, match="asymmetry exceeds"):
+        tangent_metric_diagnostics(jacobian, gradient, hessian=hessian)
+
+
+@pytest.mark.parametrize(("diagonal", "off_diagonal"), [
+    ((1e6, 1e-8), 1e-320),
+    ((2.0, 0.5), 5e-324),
+])
+def test_triangular_solve_skew_is_refused_before_symmetric_projection(
+    diagonal: tuple[float, float], off_diagonal: float,
+):
+    jacobian = torch.diag(torch.tensor(diagonal, dtype=torch.float64))
+    gradient = torch.zeros(2, dtype=torch.float64)
+    hessian = torch.tensor([[0.0, off_diagonal], [off_diagonal, 0.0]], dtype=torch.float64)
+    assert bool(torch.isfinite(jacobian).all() & torch.isfinite(hessian).all())
+    with pytest.raises(ValueError, match="coordinate-normalized hessian asymmetry"):
         tangent_metric_diagnostics(jacobian, gradient, hessian=hessian)
 
 
