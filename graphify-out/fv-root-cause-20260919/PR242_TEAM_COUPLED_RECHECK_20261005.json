@@ -1,0 +1,24 @@
+{
+  "scope": "stored matrix-only coupled curvature recheck; no new FV/HVP/optimization",
+  "original_hessian_byte_sha256": "9abaf1e5d643bce7c2d1426245d64c04feec119b7eddecdc3853a40dbb297003",
+  "hdd_eigenvalue_range": [
+    1.0351592078716332,
+    2912.3183077618096
+  ],
+  "normalized_coupling_singular_values": [
+    1.548567448388474,
+    0.9806062481572382,
+    0.9109592967864684,
+    0.8358064568780803,
+    0.5137175870930871,
+    0.234111527262692
+  ],
+  "schur_negative_direction_terms": {
+    "field": 120.842335185112,
+    "cross": -241.68467037022583,
+    "dynamics": 93.34101471956522,
+    "sum": -27.501320465548602
+  },
+  "interpretation": "positive separate A,D blocks but cross coupling yields one negative direction; optimization curvature, not atmospheric instability",
+  "proposal_applied": false
+}

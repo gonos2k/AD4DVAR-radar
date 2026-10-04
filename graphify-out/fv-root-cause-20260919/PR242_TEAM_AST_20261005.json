@@ -1,0 +1,3517 @@
+{
+  "nodes": [
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint",
+      "label": "fv_hessian_checkpoint.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_checkpointrefusal",
+      "label": "CheckpointRefusal",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L23",
+      "_origin": "ast"
+    },
+    {
+      "id": "runtimeerror",
+      "label": "RuntimeError",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_checkpointrefusal_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L26",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L26",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_budgetrefusal",
+      "label": "BudgetRefusal",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L31",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_receiptrefusal",
+      "label": "ReceiptRefusal",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L38",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_numericalrefusal",
+      "label": "NumericalRefusal",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L42",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_tensor_sha",
+      "label": "tensor_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L46",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L46",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_validate_tensor",
+      "label": "_validate_tensor()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L50",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_validate_parameters",
+      "label": "_validate_parameters()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L56",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_receipt",
+      "label": "_receipt()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L62",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_progress",
+      "label": "_progress()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L79",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L79",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_save",
+      "label": "_save()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L88",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_header",
+      "label": "_header()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L94",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_canonical_sha",
+      "label": "_canonical_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L104",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_reservation_path",
+      "label": "_reservation_path()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L109",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_write_reservation",
+      "label": "_write_reservation()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L113",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_writerclaim",
+      "label": "_WriterClaim",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L133",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_writerclaim_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L136",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_writerclaim_release",
+      "label": ".release()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L143",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_checkpoint_state",
+      "label": "_checkpoint_state()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L152",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_validate_checkpoint",
+      "label": "_validate_checkpoint()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L157",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_make_state",
+      "label": "_make_state()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L266",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_record_refusal",
+      "label": "_record_refusal()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L271",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_attempt_status",
+      "label": "_attempt_status()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L283",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_basis",
+      "label": "_basis()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L293",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_apply_hvp",
+      "label": "_apply_hvp()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L299",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_build_final",
+      "label": "_build_final()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L305",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_verify_completed",
+      "label": "_verify_completed()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L333",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "label": "checkpoint_hessian()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L377",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_rationale_1",
+      "label": "Receipt-bound, resumable matrix-free Hessian checkpointing for 26 controls.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_rationale_24",
+      "label": "A typed resume/qualification refusal carrying committed progress.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L24",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_rationale_32",
+      "label": "The absolute deadline, attempt cap or attempt quota stopped progress.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L32",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_rationale_39",
+      "label": "Control, parameters, gradient or caller identity changed across an HVP.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L39",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_rationale_43",
+      "label": "A finite, symmetry or independent eigenpair qualification failed.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L43",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_rationale_63",
+      "label": "Bind caller-attested objective/data identity to live numerical inputs.      The",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L63",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_rationale_115",
+      "label": "Persist an exclusive attempt anchor before the mutable checkpoint row.      The",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L115",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_rationale_134",
+      "label": "Exclusive lock; only this process's clean claim is removed.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L134",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_rationale_335",
+      "label": "Authenticate cached completion against committed columns and audit HVP.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L335",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_hessian_checkpoint_rationale_381",
+      "label": "Resume a receipt-bound 26-column Hessian and independent 27th HVP audit.      ``",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L381",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_checkpoint_experiment",
+      "label": "fv_checkpoint_experiment.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_checkpoint_experiment_sha",
+      "label": "_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_checkpoint_experiment_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_checkpoint_experiment_write",
+      "label": "_write()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_checkpoint_experiment_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_checkpoint_experiment_relative_hashes",
+      "label": "_relative_hashes()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L44",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_checkpoint_experiment_fresh",
+      "label": "_fresh()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L48",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_checkpoint_experiment_run_checkpoint_experiment",
+      "label": "run_checkpoint_experiment()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L52",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_checkpoint_experiment_rationale_1",
+      "label": "One-shot, three-launch coordinator for the pinned cd6b Hessian experiment.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_checkpoint_experiment_rationale_57",
+      "label": "Run the frozen same-point experiment once; every guarded launch is durable.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L57",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint",
+      "label": "test_fv_hessian_checkpoint.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_toy_problem",
+      "label": "_toy_problem()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L16",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_call",
+      "label": "_call()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L41",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L41",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L41",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_interrupted_basis_work_resumes_7_12_7_without_recomputation",
+      "label": "test_interrupted_basis_work_resumes_7_12_7_without_recomputation()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_checkpoint_identity_change_refuses_without_committing_hvp",
+      "label": "test_checkpoint_identity_change_refuses_without_committing_hvp()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L87",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_changed_objective_with_new_attestation_refuses_old_cache",
+      "label": "test_changed_objective_with_new_attestation_refuses_old_cache()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L103",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_deadline_after_column_26_leaves_only_independent_audit_pending",
+      "label": "test_deadline_after_column_26_leaves_only_independent_audit_pending()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L123",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_audit_hvp_owner_is_bound_to_its_reservation",
+      "label": "test_audit_hvp_owner_is_bound_to_its_reservation()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L157",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_unexpected_hvp_error_is_terminal_and_retry_does_not_run",
+      "label": "test_unexpected_hvp_error_is_terminal_and_retry_does_not_run()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L195",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_mismatched_query_preserves_completed_checkpoint_and_correct_reuse",
+      "label": "test_mismatched_query_preserves_completed_checkpoint_and_correct_reuse()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L223",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_receipt_change_across_hvp_does_not_commit_that_product",
+      "label": "test_receipt_change_across_hvp_does_not_commit_that_product()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L256",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_numerical_refusal_is_terminal_and_preserves_cache",
+      "label": "test_numerical_refusal_is_terminal_and_preserves_cache()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L294",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_corrupt_column_is_rejected_and_never_dropped",
+      "label": "test_corrupt_column_is_rejected_and_never_dropped()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L318",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_stale_writer_lock_is_not_removed_automatically",
+      "label": "test_stale_writer_lock_is_not_removed_automatically()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L332",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_attempt_quota_is_nonrefundable_across_resumes",
+      "label": "test_attempt_quota_is_nonrefundable_across_resumes()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L342",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_independent_attempt_reservations_reject_ledger_edits",
+      "label": "test_independent_attempt_reservations_reject_ledger_edits()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L356",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_attempt_budget_header_cannot_be_changed_after_progress",
+      "label": "test_attempt_budget_header_cannot_be_changed_after_progress()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L389",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_hvp_direction_argument_mutation_refuses_without_column_commit",
+      "label": "test_hvp_direction_argument_mutation_refuses_without_column_commit()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L417",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_test_completed_checkpoint_is_verified_before_reuse",
+      "label": "test_completed_checkpoint_is_verified_before_reuse()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L430",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_hessian_checkpoint_rationale_1",
+      "label": "Toy-only checkpoint/resume tests; no FV, HVP workload beyond tiny quadratics.",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_checkpoint_experiment",
+      "label": "test_fv_checkpoint_experiment.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_checkpoint_experiment_setup",
+      "label": "_setup()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L15",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_checkpoint_experiment_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L15",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_checkpoint_experiment_fake_guard_result",
+      "label": "_fake_guard_result()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_checkpoint_experiment_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_checkpoint_experiment_run",
+      "label": "_run()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L64",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_checkpoint_experiment_test_malformed_child_is_durable_failure_and_does_not_retry",
+      "label": "test_malformed_child_is_durable_failure_and_does_not_retry()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L70",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_checkpoint_experiment_test_missing_parent_artifact_downgrades_success_and_is_written",
+      "label": "test_missing_parent_artifact_downgrades_success_and_is_written()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L92",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_checkpoint_experiment_test_completed_parent_with_unreadable_child_is_downgraded_durably",
+      "label": "test_completed_parent_with_unreadable_child_is_downgraded_durably()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L108",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_checkpoint_experiment_test_budget_checkpoint_progress_resumes_then_stops_on_completion",
+      "label": "test_budget_checkpoint_progress_resumes_then_stops_on_completion()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L126",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_checkpoint_experiment_test_three_budget_refusals_reserve_but_never_exceed_900_seconds",
+      "label": "test_three_budget_refusals_reserve_but_never_exceed_900_seconds()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L153",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_checkpoint_experiment_rationale_1",
+      "label": "Toy-only coordinator durability tests; no FV or HVP execution.",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "os",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_checkpointrefusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpointrefusal",
+      "target": "runtimeerror",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpointrefusal",
+      "target": "weather_scenarios_fv_hessian_checkpoint_checkpointrefusal_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L26",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpointrefusal_init",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L26",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_budgetrefusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_budgetrefusal",
+      "target": "weather_scenarios_fv_hessian_checkpoint_checkpointrefusal",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_receiptrefusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_receiptrefusal",
+      "target": "weather_scenarios_fv_hessian_checkpoint_checkpointrefusal",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_numericalrefusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_numericalrefusal",
+      "target": "weather_scenarios_fv_hessian_checkpoint_checkpointrefusal",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_tensor_sha",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_validate_tensor",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_validate_tensor",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_validate_parameters",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L56",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_validate_parameters",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L56",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_receipt",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_receipt",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_receipt",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_receipt",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_receipt",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_receipt",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_progress",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_progress",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_progress",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_progress",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_progress",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_progress",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_save",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L88",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_save",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L88",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_save",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L88",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_header",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_header",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_header",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_header",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_header",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_header",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_canonical_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_canonical_sha",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_reservation_path",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_reservation_path",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_reservation_path",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_write_reservation",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_write_reservation",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_write_reservation",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_write_reservation",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_writerclaim",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L133",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_writerclaim",
+      "target": "weather_scenarios_fv_hessian_checkpoint_writerclaim_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L136",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_writerclaim_init",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L136",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_writerclaim",
+      "target": "weather_scenarios_fv_hessian_checkpoint_writerclaim_release",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L143",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_checkpoint_state",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_state",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_validate_checkpoint",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L157",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_validate_checkpoint",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L157",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_validate_checkpoint",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L157",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_validate_checkpoint",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L157",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_make_state",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L266",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_make_state",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L266",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_make_state",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L266",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_make_state",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L266",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_make_state",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L266",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_make_state",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L266",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_record_refusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L271",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_record_refusal",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L271",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_record_refusal",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L271",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_record_refusal",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L271",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_record_refusal",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L271",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_record_refusal",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L271",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_record_refusal",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L271",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_attempt_status",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L283",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_basis",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L293",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_basis",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L293",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_apply_hvp",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_apply_hvp",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_apply_hvp",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_apply_hvp",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_apply_hvp",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_apply_hvp",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_build_final",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L305",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_build_final",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L305",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_build_final",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L305",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_build_final",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L305",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_build_final",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L305",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_build_final",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L305",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_build_final",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L305",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_verify_completed",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L333",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_verify_completed",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L333",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_verify_completed",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L333",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_verify_completed",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L333",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_verify_completed",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L333",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L377",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L377",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L377",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L377",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L377",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L377",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L377",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L377",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpointrefusal_init",
+      "target": "weather_scenarios_fv_hessian_checkpoint_writerclaim_init",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_receipt",
+      "target": "weather_scenarios_fv_hessian_checkpoint_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_header",
+      "target": "weather_scenarios_fv_hessian_checkpoint_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L98",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_write_reservation",
+      "target": "weather_scenarios_fv_hessian_checkpoint_canonical_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L122",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_write_reservation",
+      "target": "weather_scenarios_fv_hessian_checkpoint_reservation_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L125",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_validate_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_reservation_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L179",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_validate_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_canonical_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_validate_checkpoint",
+      "target": "weather_scenarios_fv_hessian_checkpoint_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L241",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_make_state",
+      "target": "weather_scenarios_fv_hessian_checkpoint_progress",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L268",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_record_refusal",
+      "target": "weather_scenarios_fv_hessian_checkpoint_checkpoint_state",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L274",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_record_refusal",
+      "target": "weather_scenarios_fv_hessian_checkpoint_make_state",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L277",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_record_refusal",
+      "target": "weather_scenarios_fv_hessian_checkpoint_save",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L279",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_build_final",
+      "target": "weather_scenarios_fv_hessian_checkpoint_make_state",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L311",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_build_final",
+      "target": "weather_scenarios_fv_hessian_checkpoint_numericalrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L312",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_build_final",
+      "target": "weather_scenarios_fv_hessian_checkpoint_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L327",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_verify_completed",
+      "target": "weather_scenarios_fv_hessian_checkpoint_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L345",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_validate_tensor",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L388",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_validate_parameters",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L389",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_receipt",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L401",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "examples_weather_scenarios_fv_hessian_checkpoint_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L402",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_header",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L405",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_writerclaim",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L406",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_validate_checkpoint",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L425",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_make_state",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L430",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_receiptrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L433",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_save",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L439",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_verify_completed",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L441",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_budgetrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L450",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_record_refusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L452",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_write_reservation",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L461",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_canonical_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L466",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_basis",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L481",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L482",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_apply_hvp",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L491",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_numericalrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L504",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_attempt_status",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L523",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_build_final",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L541",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "target": "weather_scenarios_fv_hessian_checkpoint_writerclaim_release",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L669",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_rationale_1",
+      "target": "weather_scenarios_fv_hessian_checkpoint",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_rationale_24",
+      "target": "weather_scenarios_fv_hessian_checkpoint_checkpointrefusal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_rationale_32",
+      "target": "weather_scenarios_fv_hessian_checkpoint_budgetrefusal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_rationale_39",
+      "target": "weather_scenarios_fv_hessian_checkpoint_receiptrefusal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_rationale_43",
+      "target": "weather_scenarios_fv_hessian_checkpoint_numericalrefusal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_rationale_63",
+      "target": "weather_scenarios_fv_hessian_checkpoint_receipt",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_rationale_115",
+      "target": "weather_scenarios_fv_hessian_checkpoint_write_reservation",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L115",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_rationale_134",
+      "target": "weather_scenarios_fv_hessian_checkpoint_writerclaim",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L134",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_rationale_335",
+      "target": "weather_scenarios_fv_hessian_checkpoint_verify_completed",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L335",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_hessian_checkpoint_rationale_381",
+      "target": "weather_scenarios_fv_hessian_checkpoint_checkpoint_hessian",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_hessian_checkpoint.py",
+      "source_location": "L381",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment",
+      "target": "weather_scenarios_fv_checkpoint_experiment_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_sha",
+      "target": "examples_weather_scenarios_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment",
+      "target": "weather_scenarios_fv_checkpoint_experiment_write",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_write",
+      "target": "examples_weather_scenarios_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_write",
+      "target": "examples_weather_scenarios_fv_checkpoint_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment",
+      "target": "weather_scenarios_fv_checkpoint_experiment_relative_hashes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment",
+      "target": "weather_scenarios_fv_checkpoint_experiment_fresh",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_fresh",
+      "target": "examples_weather_scenarios_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment",
+      "target": "weather_scenarios_fv_checkpoint_experiment_run_checkpoint_experiment",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_run_checkpoint_experiment",
+      "target": "examples_weather_scenarios_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_run_checkpoint_experiment",
+      "target": "examples_weather_scenarios_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_run_checkpoint_experiment",
+      "target": "examples_weather_scenarios_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_run_checkpoint_experiment",
+      "target": "examples_weather_scenarios_fv_checkpoint_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_relative_hashes",
+      "target": "weather_scenarios_fv_checkpoint_experiment_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_run_checkpoint_experiment",
+      "target": "weather_scenarios_fv_checkpoint_experiment_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_run_checkpoint_experiment",
+      "target": "examples_weather_scenarios_fv_checkpoint_experiment_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_run_checkpoint_experiment",
+      "target": "weather_scenarios_fv_checkpoint_experiment_relative_hashes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L92",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_run_checkpoint_experiment",
+      "target": "weather_scenarios_fv_checkpoint_experiment_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L117",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_rationale_1",
+      "target": "weather_scenarios_fv_checkpoint_experiment",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_checkpoint_experiment_rationale_57",
+      "target": "weather_scenarios_fv_checkpoint_experiment_run_checkpoint_experiment",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_checkpoint_experiment.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_toy_problem",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_call",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_call",
+      "target": "tests_test_fv_hessian_checkpoint_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_interrupted_basis_work_resumes_7_12_7_without_recomputation",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_interrupted_basis_work_resumes_7_12_7_without_recomputation",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_checkpoint_identity_change_refuses_without_committing_hvp",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_checkpoint_identity_change_refuses_without_committing_hvp",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_changed_objective_with_new_attestation_refuses_old_cache",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_changed_objective_with_new_attestation_refuses_old_cache",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_deadline_after_column_26_leaves_only_independent_audit_pending",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_deadline_after_column_26_leaves_only_independent_audit_pending",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_audit_hvp_owner_is_bound_to_its_reservation",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L157",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_audit_hvp_owner_is_bound_to_its_reservation",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L157",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_unexpected_hvp_error_is_terminal_and_retry_does_not_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L195",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_unexpected_hvp_error_is_terminal_and_retry_does_not_run",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L195",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_mismatched_query_preserves_completed_checkpoint_and_correct_reuse",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L223",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_mismatched_query_preserves_completed_checkpoint_and_correct_reuse",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L223",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_receipt_change_across_hvp_does_not_commit_that_product",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L256",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_receipt_change_across_hvp_does_not_commit_that_product",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L256",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_numerical_refusal_is_terminal_and_preserves_cache",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L294",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_numerical_refusal_is_terminal_and_preserves_cache",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L294",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_corrupt_column_is_rejected_and_never_dropped",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L318",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_corrupt_column_is_rejected_and_never_dropped",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L318",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_stale_writer_lock_is_not_removed_automatically",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L332",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_stale_writer_lock_is_not_removed_automatically",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L332",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_attempt_quota_is_nonrefundable_across_resumes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L342",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_attempt_quota_is_nonrefundable_across_resumes",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L342",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_independent_attempt_reservations_reject_ledger_edits",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L356",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_independent_attempt_reservations_reject_ledger_edits",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L356",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_attempt_budget_header_cannot_be_changed_after_progress",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L389",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_attempt_budget_header_cannot_be_changed_after_progress",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L389",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_hvp_direction_argument_mutation_refuses_without_column_commit",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L417",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_hvp_direction_argument_mutation_refuses_without_column_commit",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L417",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint",
+      "target": "tests_test_fv_hessian_checkpoint_test_completed_checkpoint_is_verified_before_reuse",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L430",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_completed_checkpoint_is_verified_before_reuse",
+      "target": "tests_test_fv_hessian_checkpoint_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L430",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_call",
+      "target": "tests_test_fv_hessian_checkpoint_toy_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_interrupted_basis_work_resumes_7_12_7_without_recomputation",
+      "target": "tests_test_fv_hessian_checkpoint_toy_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_interrupted_basis_work_resumes_7_12_7_without_recomputation",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_checkpoint_identity_change_refuses_without_committing_hvp",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_checkpoint_identity_change_refuses_without_committing_hvp",
+      "target": "tests_test_fv_hessian_checkpoint_toy_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_changed_objective_with_new_attestation_refuses_old_cache",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_changed_objective_with_new_attestation_refuses_old_cache",
+      "target": "tests_test_fv_hessian_checkpoint_toy_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_deadline_after_column_26_leaves_only_independent_audit_pending",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L142",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_audit_hvp_owner_is_bound_to_its_reservation",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L174",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_unexpected_hvp_error_is_terminal_and_retry_does_not_run",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L207",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_mismatched_query_preserves_completed_checkpoint_and_correct_reuse",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L228",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_mismatched_query_preserves_completed_checkpoint_and_correct_reuse",
+      "target": "tests_test_fv_hessian_checkpoint_toy_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L233",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_receipt_change_across_hvp_does_not_commit_that_product",
+      "target": "tests_test_fv_hessian_checkpoint_toy_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L258",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_receipt_change_across_hvp_does_not_commit_that_product",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L270",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_numerical_refusal_is_terminal_and_preserves_cache",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L305",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_corrupt_column_is_rejected_and_never_dropped",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L321",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_stale_writer_lock_is_not_removed_automatically",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L338",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_attempt_quota_is_nonrefundable_across_resumes",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L345",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_independent_attempt_reservations_reject_ledger_edits",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L361",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_attempt_budget_header_cannot_be_changed_after_progress",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L395",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_hvp_direction_argument_mutation_refuses_without_column_commit",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L425",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_test_completed_checkpoint_is_verified_before_reuse",
+      "target": "tests_test_fv_hessian_checkpoint_call",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L434",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_hessian_checkpoint_rationale_1",
+      "target": "tests_test_fv_hessian_checkpoint",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_hessian_checkpoint.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "tests_test_fv_point_3h_endpoint_diagnostics",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "tests_test_fv_checkpoint_experiment_setup",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_setup",
+      "target": "tests_test_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "tests_test_fv_checkpoint_experiment_fake_guard_result",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_fake_guard_result",
+      "target": "tests_test_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_fake_guard_result",
+      "target": "tests_test_fv_checkpoint_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_fake_guard_result",
+      "target": "tests_test_fv_checkpoint_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_fake_guard_result",
+      "target": "tests_test_fv_checkpoint_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "tests_test_fv_checkpoint_experiment_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_run",
+      "target": "tests_test_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_run",
+      "target": "tests_test_fv_checkpoint_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "tests_test_fv_checkpoint_experiment_test_malformed_child_is_durable_failure_and_does_not_retry",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_malformed_child_is_durable_failure_and_does_not_retry",
+      "target": "tests_test_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "tests_test_fv_checkpoint_experiment_test_missing_parent_artifact_downgrades_success_and_is_written",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L92",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_missing_parent_artifact_downgrades_success_and_is_written",
+      "target": "tests_test_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L92",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "tests_test_fv_checkpoint_experiment_test_completed_parent_with_unreadable_child_is_downgraded_durably",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_completed_parent_with_unreadable_child_is_downgraded_durably",
+      "target": "tests_test_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "tests_test_fv_checkpoint_experiment_test_budget_checkpoint_progress_resumes_then_stops_on_completion",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_budget_checkpoint_progress_resumes_then_stops_on_completion",
+      "target": "tests_test_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment",
+      "target": "tests_test_fv_checkpoint_experiment_test_three_budget_refusals_reserve_but_never_exceed_900_seconds",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L153",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_three_budget_refusals_reserve_but_never_exceed_900_seconds",
+      "target": "tests_test_fv_checkpoint_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L153",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_malformed_child_is_durable_failure_and_does_not_retry",
+      "target": "tests_test_fv_checkpoint_experiment_setup",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_malformed_child_is_durable_failure_and_does_not_retry",
+      "target": "tests_test_fv_checkpoint_experiment_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_missing_parent_artifact_downgrades_success_and_is_written",
+      "target": "tests_test_fv_checkpoint_experiment_setup",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_missing_parent_artifact_downgrades_success_and_is_written",
+      "target": "tests_test_fv_checkpoint_experiment_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_completed_parent_with_unreadable_child_is_downgraded_durably",
+      "target": "tests_test_fv_checkpoint_experiment_setup",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_completed_parent_with_unreadable_child_is_downgraded_durably",
+      "target": "tests_test_fv_checkpoint_experiment_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_budget_checkpoint_progress_resumes_then_stops_on_completion",
+      "target": "tests_test_fv_checkpoint_experiment_setup",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_budget_checkpoint_progress_resumes_then_stops_on_completion",
+      "target": "tests_test_fv_checkpoint_experiment_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_three_budget_refusals_reserve_but_never_exceed_900_seconds",
+      "target": "tests_test_fv_checkpoint_experiment_setup",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L154",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_test_three_budget_refusals_reserve_but_never_exceed_900_seconds",
+      "target": "tests_test_fv_checkpoint_experiment_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L170",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_checkpoint_experiment_rationale_1",
+      "target": "tests_test_fv_checkpoint_experiment",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_checkpoint_experiment.py",
+      "source_location": "L1",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
