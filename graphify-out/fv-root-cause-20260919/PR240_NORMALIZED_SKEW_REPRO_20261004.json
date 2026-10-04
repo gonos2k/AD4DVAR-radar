@@ -1,0 +1,63 @@
+{
+  "scope": "two original-vs-fixed synthetic FP64 triangular-solve cases; no FV/HVP/PCG/reanalysis",
+  "original_helper_sha256": "ba32a4d857ef99738da161b58c91afcbd6eb5d1df3aa56629317158dcebb0ecb",
+  "fixed_helper_sha256": "f4b33bb087dc06af9ab2ccd1325144f92265aff6ccef61ee668600676426fdee",
+  "cases": [
+    {
+      "jacobian_diagonal": [
+        1000000.0,
+        1e-08
+      ],
+      "hessian_offdiagonal": 1e-320,
+      "B_raw": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          9.9999e-319,
+          0.0
+        ]
+      ],
+      "relative_skew_before_symmetrization": 1.4142135623730951,
+      "original_eigenvalues": [
+        -4.99994e-319,
+        4.99994e-319
+      ],
+      "exact_input_fraction_expected_eigenvalues": [
+        -9.9999e-319,
+        9.9999e-319
+      ],
+      "fixed_refusal": "coordinate-normalized hessian asymmetry exceeds the FP64 relative tolerance"
+    },
+    {
+      "jacobian_diagonal": [
+        2.0,
+        0.5
+      ],
+      "hessian_offdiagonal": 5e-324,
+      "B_raw": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          5e-324,
+          0.0
+        ]
+      ],
+      "relative_skew_before_symmetrization": 1.4142135623730951,
+      "original_eigenvalues": [
+        0.0,
+        0.0
+      ],
+      "exact_input_fraction_expected_eigenvalues": [
+        -5e-324,
+        5e-324
+      ],
+      "fixed_refusal": "coordinate-normalized hessian asymmetry exceeds the FP64 relative tolerance"
+    }
+  ],
+  "all_found_cases_explicitly_refused": true,
+  "comprehensive_underflow_coverage": false
+}

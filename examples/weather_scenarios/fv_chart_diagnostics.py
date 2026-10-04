@@ -25,6 +25,17 @@ def _stable_symmetric_part(value: Tensor) -> Tensor:
     return scaled_average * pair_scale
 
 
+def _relative_frobenius_skew(value: Tensor) -> Tensor:
+    """Return a dimensionless skew norm after removing the matrix's scale."""
+    scale = value.abs().amax()
+    if bool(scale == 0):
+        return scale
+    scaled = value / scale
+    skew_norm = _stable_frobenius_norm(scaled - scaled.mT)
+    matrix_norm = _stable_frobenius_norm(scaled)
+    return skew_norm / matrix_norm
+
+
 def tangent_metric_diagnostics(
     jacobian: Tensor,
     gradient: Tensor,
@@ -92,32 +103,37 @@ def tangent_metric_diagnostics(
         "singular_values": singular_values,
         "condition_number": condition,
         "hessian_scope": None,
-        "hessian_asymmetry_relative": None,
+        "hessian_input_asymmetry_relative": None,
+        "hessian_input_asymmetry_relative_tolerance": None,
+        "coordinate_normalized_hessian_pre_symmetry_asymmetry_relative": None,
+        "coordinate_normalized_hessian_pre_symmetry_asymmetry_relative_tolerance": None,
         "coordinate_normalized_hessian_eigenvalues": None,
     }
     if hessian is not None:
         hessian_scale = hessian.abs().amax()
         if not bool(torch.isfinite(hessian_scale)):
             raise ValueError("hessian scale is nonfinite")
-        if bool(hessian_scale == 0):
-            scaled_hessian = hessian
-            asymmetry_relative = hessian_scale
-        else:
-            scaled_hessian = hessian / hessian_scale
-            scaled_asymmetry = _stable_frobenius_norm(scaled_hessian - scaled_hessian.mT)
-            scaled_norm = _stable_frobenius_norm(scaled_hessian)
-            asymmetry_relative = scaled_asymmetry / scaled_norm
         asymmetry_tolerance = 64 * torch.finfo(hessian.dtype).eps * tangent
+        asymmetry_relative = _relative_frobenius_skew(hessian)
         if not bool(torch.isfinite(asymmetry_relative)):
-            raise ValueError("hessian relative asymmetry is nonfinite")
+            raise ValueError("hessian input relative asymmetry is nonfinite")
         if not bool(asymmetry_relative <= asymmetry_tolerance):
-            raise ValueError("hessian asymmetry exceeds the FP64 component-scale tolerance")
+            raise ValueError("hessian input asymmetry exceeds the FP64 relative tolerance")
         symmetric = _stable_symmetric_part(hessian)
         if not bool(torch.isfinite(symmetric).all()):
             raise ValueError("symmetrized hessian is nonfinite")
         left = torch.linalg.solve_triangular(r.mT, symmetric, upper=False)
-        normalized = torch.linalg.solve_triangular(r.mT, left.mT, upper=False).mT
-        normalized = _stable_symmetric_part(normalized)
+        if not bool(torch.isfinite(left).all()):
+            raise ValueError("left-normalized hessian is nonfinite")
+        normalized_raw = torch.linalg.solve_triangular(r.mT, left.mT, upper=False).mT
+        if not bool(torch.isfinite(normalized_raw).all()):
+            raise ValueError("coordinate-normalized hessian is nonfinite before symmetrization")
+        normalized_asymmetry = _relative_frobenius_skew(normalized_raw)
+        if not bool(torch.isfinite(normalized_asymmetry)):
+            raise ValueError("coordinate-normalized hessian relative asymmetry is nonfinite")
+        if not bool(normalized_asymmetry <= asymmetry_tolerance):
+            raise ValueError("coordinate-normalized hessian asymmetry exceeds the FP64 relative tolerance")
+        normalized = _stable_symmetric_part(normalized_raw)
         if not bool(torch.isfinite(normalized).all()):
             raise ValueError("coordinate-normalized hessian overflowed to a nonfinite result")
         eigenvalues = torch.linalg.eigvalsh(normalized)
@@ -128,8 +144,10 @@ def tangent_metric_diagnostics(
                 "coordinate-normalized tangent Hessian; nonlinear-chart invariance "
                 "only at stationarity; no SPD or root certification"
             ),
-            hessian_asymmetry_relative=asymmetry_relative,
-            hessian_asymmetry_relative_tolerance=asymmetry_tolerance,
+            hessian_input_asymmetry_relative=asymmetry_relative,
+            hessian_input_asymmetry_relative_tolerance=asymmetry_tolerance,
+            coordinate_normalized_hessian_pre_symmetry_asymmetry_relative=normalized_asymmetry,
+            coordinate_normalized_hessian_pre_symmetry_asymmetry_relative_tolerance=asymmetry_tolerance,
             coordinate_normalized_hessian_eigenvalues=eigenvalues,
         )
     return result

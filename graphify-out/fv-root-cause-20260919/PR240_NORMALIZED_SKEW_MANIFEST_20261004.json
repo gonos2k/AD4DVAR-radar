@@ -1,0 +1,16 @@
+{
+  "scope": "explicit owned narrow P2 fix/evidence and separately labeled proposal",
+  "files": {
+    "examples/weather_scenarios/fv_chart_diagnostics.py": "f4b33bb087dc06af9ab2ccd1325144f92265aff6ccef61ee668600676426fdee",
+    "tests/test_fv_chart_diagnostics.py": "49471bcc466450a2e564dd03e30fa867cd5fd2636d92f63fe1e43907895af959",
+    "graphify-out/fv-root-cause-20260919/PR240_REVIEW_RESOLUTION_20261004.md": "54d653f7b9b44e18e87eac9d6f50f9038a2e9d0530ef0e64e01f547c370290f6",
+    "graphify-out/fv-root-cause-20260919/RESUMABLE_CURVATURE_DIAGNOSTIC_PROPOSAL_20261004.md": "14abc60fecbec6bbc7cc3038f2383705f359e7bdc9cefb61c3a0bde7b4a84d1d",
+    "graphify-out/fv-root-cause-20260919/PR240_NORMALIZED_SKEW_TESTS_20261004.log": "eae7532ec9a890ce54159337e8f35237a2d618ddffeddc507417102a9646cf67",
+    "graphify-out/fv-root-cause-20260919/PR240_NORMALIZED_SKEW_TYPES_20261004.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/PR240_NORMALIZED_SKEW_REPRO_20261004.json": "934736b855ff21cca3684e618592be398456dcf69e7e111cf523496b589862a3",
+    "graphify-out/fv-root-cause-20260919/PR240_NORMALIZED_SKEW_AST_20261004.json": "a4eeaa2149b183f78b88e1c5723bcbdd2da501dc392b2f37073f0b4b3e7f6744",
+    "graphify-out/fv-root-cause-20260919/PR240_NORMALIZED_SKEW_GRAPHIFY_20261004.json": "bd7008d8acfd97912789570ce354cd3e90585ad49d78f68bf2269dfb8f072103",
+    "graphify-out/fv-root-cause-20260919/PR240_NORMALIZED_SKEW_KG_UPDATE_20261004.json": "d85b5310df7726669ee09334a812b8afb46e00fb3d258bc9368f2a9b91a51a83",
+    "graphify-out/fv-root-cause-20260919/PR240_NORMALIZED_SKEW_REVIEWS_20261004.json": "e3057802d89e48c51e051a594f0b49c8c91e3f7d80ce9044aac7facccfc64cad"
+  }
+}
