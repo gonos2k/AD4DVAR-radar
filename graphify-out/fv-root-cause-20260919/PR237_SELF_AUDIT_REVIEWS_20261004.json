@@ -1,0 +1,19 @@
+{
+  "GREEN": {
+    "agent": "r4_coordinate_impl",
+    "decision": "GO",
+    "scope": "final four-file hashes, owned manifest,62-pass/type0 logs, three whole-envelope equalities, raw/sidecar pins, caller-root portability/tamper regressions, isolated AST/shared file invariants"
+  },
+  "RED": {
+    "agent": "r4_field_red",
+    "decision": "GO",
+    "scope": "pure probes reproduce rejection of A1/A2/A3/A6/A7, legitimate duplicate-control endpoints accepted, A4/A5 root/archive binding reviewed"
+  },
+  "source_sha256": {
+    "examples/weather_scenarios/fv_response_contract.py": "590f93d6efba4a8583137258b4703e1532676c61cf5350425e3b6e723a34af5e",
+    "examples/weather_scenarios/fv_archived_response_contract.py": "22a3487de3158b623cdb31cd8be6c62112e2337fee5dbfd2a7dc04c19cb05e77",
+    "tests/test_fv_response_contract.py": "1e1b69c9135b5fea8a9831c047bc550e6db82d70b0c94a5c29f6efbb50c026b8",
+    "tests/test_fv_archived_response_contract.py": "61b013a9f523aef8e1625dfaf9024b6081ece086510fefd094fff3cd3a01e376"
+  },
+  "not_performed": "No FV/GN/PCG/reanalysis/full Linux or physical/learning validation"
+}

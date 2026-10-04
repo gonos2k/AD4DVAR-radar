@@ -1,0 +1,21 @@
+{
+  "scope": "isolated four-file AST; cached structure consulted; no shared graph/report mutation",
+  "files": {
+    "examples/weather_scenarios/fv_response_contract.py": "590f93d6efba4a8583137258b4703e1532676c61cf5350425e3b6e723a34af5e",
+    "examples/weather_scenarios/fv_archived_response_contract.py": "22a3487de3158b623cdb31cd8be6c62112e2337fee5dbfd2a7dc04c19cb05e77",
+    "tests/test_fv_response_contract.py": "1e1b69c9135b5fea8a9831c047bc550e6db82d70b0c94a5c29f6efbb50c026b8",
+    "tests/test_fv_archived_response_contract.py": "61b013a9f523aef8e1625dfaf9024b6081ece086510fefd094fff3cd3a01e376"
+  },
+  "nodes": 81,
+  "edges": 299,
+  "ast_sha256": "611d46103572548a6675b0ea62ea1f261dc7df739cb489d607102caa8e01f14b",
+  "shared_before": {
+    "graphify-out/graph.json": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+    "graphify-out/GRAPH_REPORT.md": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491"
+  },
+  "shared_after": {
+    "graphify-out/graph.json": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+    "graphify-out/GRAPH_REPORT.md": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491"
+  },
+  "shared_graph_and_report_unchanged": true
+}

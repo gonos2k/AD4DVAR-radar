@@ -1,0 +1,20 @@
+{
+  "scope": "explicit owned audit files only",
+  "files": {
+    "examples/weather_scenarios/fv_response_contract.py": "590f93d6efba4a8583137258b4703e1532676c61cf5350425e3b6e723a34af5e",
+    "examples/weather_scenarios/fv_archived_response_contract.py": "22a3487de3158b623cdb31cd8be6c62112e2337fee5dbfd2a7dc04c19cb05e77",
+    "tests/test_fv_response_contract.py": "1e1b69c9135b5fea8a9831c047bc550e6db82d70b0c94a5c29f6efbb50c026b8",
+    "tests/test_fv_archived_response_contract.py": "61b013a9f523aef8e1625dfaf9024b6081ece086510fefd094fff3cd3a01e376",
+    "graphify-out/fv-root-cause-20260919/PR237_SELF_AUDIT_20261004.md": "7008f92f679327e6144bd030690aba5998d38fce21a398b1b89a534c11e39208",
+    "graphify-out/fv-root-cause-20260919/PR237_SELF_AUDIT_TESTS_20261004.log": "5626f94bd3eff9f2338b3b1e6d9d7b55d57e8137b579170cbc3d4ea39f73e8f7",
+    "graphify-out/fv-root-cause-20260919/PR237_SELF_AUDIT_TYPES_20261004.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/PR237_SELF_AUDIT_AST_20261004.json": "611d46103572548a6675b0ea62ea1f261dc7df739cb489d607102caa8e01f14b",
+    "graphify-out/fv-root-cause-20260919/PR237_SELF_AUDIT_GRAPHIFY_20261004.json": "8d61ca35a7de268661100562a16e5532e68b00c0019153355e3f9ef10ad3ac14",
+    "graphify-out/fv-root-cause-20260919/PR237_SELF_AUDIT_KG_UPDATE_20261004.json": "a9d549da2261eb385e292c72e2275cd09debbef5f458f381f57fd883272a31d3",
+    "graphify-out/fv-root-cause-20260919/response_contract_audit_20261004/partial_selected_qy.json": "c4d8c30eed4d90188943bb33a2dfda927f62493887d881abc7e1e5bb4017f75b",
+    "graphify-out/fv-root-cause-20260919/response_contract_audit_20261004/point_selected_qx.json": "617f6eb14b3aa1c717fdebaf01de75b6611fda1133212910c28869f957b04ea1",
+    "graphify-out/fv-root-cause-20260919/response_contract_audit_20261004/render_result.json": "ca5e44b6d39bf78b17580477fd6de345eb4e0c46f5f13c491b5accba70aad441",
+    "graphify-out/fv-root-cause-20260919/response_contract_audit_20261004/smooth_constructed_prior.json": "2f0cd5fa49866f4d2ce120fa064a70178ccbdb123bb90a2a2e62e92d0b0ac9d2",
+    "graphify-out/fv-root-cause-20260919/PR237_SELF_AUDIT_REVIEWS_20261004.json": "d8ac3ffcc331354386c2e3920d22b327de3f5bdaaa7bbc2f1757d9a4579ddf69"
+  }
+}

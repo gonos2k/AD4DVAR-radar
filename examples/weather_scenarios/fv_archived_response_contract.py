@@ -20,6 +20,26 @@ _ARCHIVE_SHA256 = {
     "point_centered_response_attempt1/point_centered_response.json":
         "e0996a5081e20037d39f95049768d15d67e768b8aeda133a00fd638ff39e47aa",
 }
+_DEPENDENCY_SHA256 = {
+    "point_single_qx_response_attempt2/preflight.json":
+        "5fbfed84fe2b2c55c6ac583dd6ffb931805c182cb980e0dac44f904e75e29d3d",
+    "point_single_qx_response_attempt2/parent.json":
+        "1ec8e736b5eb8067bbcca6f649aec689a4a2267e29adcb74baed86f2a34eede0",
+    "point_single_qx_response_attempt2/response.resource.json":
+        "1d999d32963f4299ddc0d61772ee3269b2ec096c5d18636211b344ec5f4cc7a9",
+    "partial_active_face_response_attempt1/preflight.json":
+        "a2c69f8ffeb95947ac42b58818c521c3b20157c6539871c7af360933508946c8",
+    "partial_active_face_response_attempt1/response.resource.json":
+        "ed84125ef580ce7295bf9701704a6ea09eff9399801ece96fc7bad70486e9c16",
+    "point_centered_response_attempt1/manifest.json":
+        "c003020d2ef2e7ce5bde73ded8613b2fc570c17b5564ee233f2b263274cfc138",
+    "point_centered_response_attempt1/point_centered_response.run.json":
+        "34cf10a2c625f6bdc31c2b62205eb56e2974d761f81d3ed15157e1fb69331db0",
+    "point_centered_response_attempt1/point_centered_response.resource.json":
+        "b4d6b7f0745708b535eab7286a4b11bb434b2634a31adafdc95f9ccb8dd32f06",
+    "FV_POINT_CENTERED_PRIOR_RESPONSE_EVIDENCE.json":
+        "d54bcc3ca8349858a7675e299d8a1fb7bea13af670bbd5a332543d56e96ca518",
+}
 _PROFILES = {
     "point_single_qx_response_attempt2/response.json": {
         "name": "point_single_qx_response_attempt2", "kind": "selected_face_conditional",
@@ -68,6 +88,13 @@ def _read_json(path: Path) -> tuple[dict[str, Any], str]:
     return json.loads(raw), _sha(raw)
 
 
+def _read_registered_json(path: Path, dependency_key: str) -> tuple[dict[str, Any], str]:
+    value, digest = _read_json(path)
+    if digest != _DEPENDENCY_SHA256[dependency_key]:
+        raise ValueError(f"registered archive dependency SHA-256 mismatch: {dependency_key}")
+    return value, digest
+
+
 def _archive_path(path: str | Path, root: Path) -> tuple[Path, dict[str, Any]]:
     candidate = Path(path)
     absolute = candidate if candidate.is_absolute() else root / candidate
@@ -81,13 +108,14 @@ def _archive_path(path: str | Path, root: Path) -> tuple[Path, dict[str, Any]]:
     profile = _PROFILES.get(profile_key)
     if profile is None:
         raise ValueError("unknown FV response archive")
-    return absolute, profile
+    return absolute.resolve(), profile
 
 
 def _source_records(archive_dir: Path, raw: dict[str, Any], profile: dict[str, Any],
                     root: Path) -> tuple[dict[str, str], dict[str, Any]]:
     if profile["name"] == "point_centered_response_attempt1":
-        manifest, _ = _read_json(archive_dir / "manifest.json")
+        manifest, _ = _read_registered_json(
+            archive_dir / "manifest.json", "point_centered_response_attempt1/manifest.json")
         snapshots = {name: digest for name, digest in manifest["sha256"].items()
                      if name.endswith(".py.txt")}
         for name, digest in snapshots.items():
@@ -100,12 +128,14 @@ def _source_records(archive_dir: Path, raw: dict[str, Any], profile: dict[str, A
         code_sha = snapshots[code_key]
         unchanged = raw.get("source_before") == raw.get("source_after")
     else:
-        preflight, _ = _read_json(archive_dir / "preflight.json")
+        preflight, _ = _read_registered_json(
+            archive_dir / "preflight.json", f"{profile['name']}/preflight.json")
         source_refs = dict(preflight["source_sha256"])
         probe_name = profile["code_path"]
         code_sha = source_refs[probe_name]
         if profile["name"] == "point_single_qx_response_attempt2":
-            parent, _ = _read_json(archive_dir / "parent.json")
+            parent, _ = _read_registered_json(
+                archive_dir / "parent.json", "point_single_qx_response_attempt2/parent.json")
             unchanged = (raw.get("source_before") == raw.get("source_after")
                          and parent.get("source_before") == parent.get("source_after"))
             if parent.get("source_before") != preflight["source_sha256"]:
@@ -141,13 +171,15 @@ def _stationarity_gate(archive_dir: Path, raw: dict[str, Any], profile: dict[str
     local_evidence_path: Path | None = None
     local_evidence_sha: str | None = None
     if profile["name"] == "point_centered_response_attempt1":
-        manifest, _ = _read_json(archive_dir / "manifest.json")
+        manifest, _ = _read_registered_json(
+            archive_dir / "manifest.json", "point_centered_response_attempt1/manifest.json")
         source_name = profile["gate_path"]
         snapshot_name = source_name
         gate_sha = manifest["sha256"][snapshot_name]
         source_text = (archive_dir / snapshot_name).read_text()
         local_evidence_path = root / _EVIDENCE / "FV_POINT_CENTERED_PRIOR_RESPONSE_EVIDENCE.json"
-        local_evidence, local_evidence_sha = _read_json(local_evidence_path)
+        local_evidence, local_evidence_sha = _read_registered_json(
+            local_evidence_path, "FV_POINT_CENTERED_PRIOR_RESPONSE_EVIDENCE.json")
         local_source_name = "src/advar/local_response.py"
         local_sha = local_evidence["sha256"][local_source_name]
         source_ref_name = str(archive_dir.relative_to(root) / snapshot_name)
@@ -155,7 +187,8 @@ def _stationarity_gate(archive_dir: Path, raw: dict[str, Any], profile: dict[str
         expected_expression = "gradient_max >= 1e-10"
     elif profile["name"] == "point_single_qx_response_attempt2":
         source_name = profile["gate_path"]
-        preflight, _ = _read_json(archive_dir / "preflight.json")
+        preflight, _ = _read_registered_json(
+            archive_dir / "preflight.json", "point_single_qx_response_attempt2/preflight.json")
         source_text = preflight["source_snapshots"][source_name]
         gate_sha = hashlib.sha256(source_text.encode()).hexdigest()
         local_name = "src/advar/local_response.py"
@@ -277,8 +310,12 @@ def render_archived_response(path: str | Path, *, root: str | Path = _ROOT) -> d
         problem_sha = _canonical_sha(raw["input_before"]["problem"])
         branch_sha = nominal["branch"].get("signature_sha256", _canonical_sha(nominal["branch"]))
         prior_sha = nominal["dynamics_prior_mean_sha256"]
-        run, run_sha = _read_json(archive_dir / "point_centered_response.run.json")
-        resource, resource_sha = _read_json(archive_dir / "point_centered_response.resource.json")
+        run, run_sha = _read_registered_json(
+            archive_dir / "point_centered_response.run.json",
+            "point_centered_response_attempt1/point_centered_response.run.json")
+        resource, resource_sha = _read_registered_json(
+            archive_dir / "point_centered_response.resource.json",
+            "point_centered_response_attempt1/point_centered_response.resource.json")
         plan_sha = raw["plan_sha256"]
         runtime = raw["environment"]
         objective = {"sha256": _canonical_sha({"problem": problem_sha, "objective": "constructed centered dynamics prior"}),
@@ -312,7 +349,8 @@ def render_archived_response(path: str | Path, *, root: str | Path = _ROOT) -> d
         plan_sha = raw["plan_sha256"]
         runfile = "parent.json" if name == "point_single_qx_response_attempt2" else None
         if runfile:
-            run, run_sha = _read_json(archive_dir / runfile)
+            run, run_sha = _read_registered_json(
+                archive_dir / runfile, "point_single_qx_response_attempt2/parent.json")
             exec_status = run.get("execution_status", "not_recorded")
             success_status = "restricted_active_face_response_numerically_supported_at_tested_points"
             numerical = "eligible" if run.get("response_validation") == success_status else "not_evaluated"
@@ -322,7 +360,8 @@ def render_archived_response(path: str | Path, *, root: str | Path = _ROOT) -> d
             success_status = "restricted_active_face_response_numerically_supported_at_tested_points"
             numerical = "eligible" if raw.get("response_validation") == success_status else "not_evaluated"
             runtime = {}
-        resource, resource_sha = _read_json(archive_dir / "response.resource.json")
+        resource, resource_sha = _read_registered_json(
+            archive_dir / "response.resource.json", f"{name}/response.resource.json")
         resource_out = {**resource, "wrapper_status": exec_status,
                         "resource_record_sha256": resource_sha,
                         "wrapper_record_sha256": run_sha,

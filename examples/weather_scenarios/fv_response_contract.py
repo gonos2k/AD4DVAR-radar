@@ -113,8 +113,21 @@ def _validation(row: Mapping[str, Any], point_sha: str, parameters_sha: str) -> 
                 raise ValueError("central finite differences require two control and parameter endpoints per step")
             if any(not _SHA256.fullmatch(str(value)) for value in parameter_endpoints):
                 raise ValueError("central finite-difference parameter endpoint identities must be SHA-256 values")
+            if status == "passed" and "relative_error_tolerance" in result["criterion"]:
+                tolerance = result["criterion"]["relative_error_tolerance"]
+                relative_values = [result["error"][key] for key in ("relative", "relative_error")
+                                   if key in result["error"]]
+                if (not isinstance(tolerance, (int, float)) or isinstance(tolerance, bool)
+                        or not math.isfinite(tolerance) or tolerance <= 0 or not relative_values
+                        or any(not isinstance(value, (int, float)) or isinstance(value, bool)
+                               or not math.isfinite(value) or value < 0 or value > tolerance
+                               for value in relative_values)):
+                    raise ValueError("passed central finite-difference relative error violates its explicit tolerance")
+                if len(relative_values) > 1 and any(value != relative_values[0] for value in relative_values[1:]):
+                    raise ValueError("relative-error aliases disagree")
     else:
-        if (steps or endpoints or result.get("criterion") or result.get("error")):
+        if (steps or endpoints or result.get("endpoint_parameters_sha256")
+                or result.get("criterion") or result.get("error")):
             raise ValueError("not_run validation cannot carry observed steps, endpoints, criteria, or errors")
         result.setdefault("criterion", {})
         result.setdefault("error", {})
@@ -183,6 +196,16 @@ def response_envelope(*, kind: ResponseKind, execution_status: str,
     if (not isinstance(claims, Mapping) or not {"full_root_supported", "physical_validation_supported"} <= set(claims)
             or any(not isinstance(value, bool) for value in claims.values())):
         raise ValueError("root/physical claims must be explicit booleans; no claims are inferred")
+    if claims["full_root_supported"] and kind == "smooth_stationary":
+        if (numerical_status != "eligible" or stationarity["status"] not in {"eligible", "passed"}
+                or curvature["status"] not in {"qualified", "passed"}):
+            raise ValueError("full-root support requires eligible full-control stationarity and qualified curvature")
+        value, tolerance = stationarity["value"], stationarity["tolerance"]
+        if (not isinstance(value, (int, float)) or isinstance(value, bool)
+                or not math.isfinite(value) or value < 0
+                or not isinstance(tolerance, (int, float)) or isinstance(tolerance, bool)
+                or not math.isfinite(tolerance) or tolerance <= 0 or value >= tolerance):
+            raise ValueError("full-root support requires measured stationarity below its explicit tolerance")
     if claims["physical_validation_supported"] and physical_status != "validated":
         raise ValueError("physical support cannot be claimed without an explicit validated status")
     if kind == "selected_face_conditional":

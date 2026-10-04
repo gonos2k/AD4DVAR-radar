@@ -1,0 +1,33 @@
+{
+  "baseline": {
+    "main": "439485ad",
+    "PR237_head": "78e75ff5"
+  },
+  "resolved": [
+    "A1 unrun parameter-endpoint evidence",
+    "A2 passed explicit relative metric gate",
+    "A3 declared eligibility/full-root claim coherence",
+    "A4 canonical caller-root archive path",
+    "A5 consumed historical sidecar SHA binding",
+    "A6 relative-error alias agreement",
+    "A7 reported stationarity value/gate consistency"
+  ],
+  "verification": {
+    "focused_passed": 62,
+    "existing_warnings": 18,
+    "typecheck_error_level_errors": 0,
+    "three_envelopes_equal_to_previous": true,
+    "raw_and_previous_exports_preserved": true,
+    "shared_graph_report_unchanged": true
+  },
+  "scope": "contract/filesystem/toy AD only; no FV/GN/PCG/reanalysis/full CI",
+  "remaining": [
+    "3h eligible stationary response",
+    "automatic selected-face policy/new weather inputs",
+    "independent physical forecasting/learning validation",
+    "latest full Linux pass unconfirmed",
+    "prior GRAPH_REPORT original text unrecovered"
+  ],
+  "python": "3.12.13",
+  "new_math_weather_claim": false
+}
