@@ -1,0 +1,29 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_point_3h_endpoint_diagnostics",
+    "--archive",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/coupled_original_j_continuation_attempt1/coupled_original_j_continuation.json",
+    "--archive-sha256",
+    "3e2e1e247be0de1c6b5e27d4c835dbbe6b456f7a0c0dc2e0e90ac18d71fd8385",
+    "--parent-sha256",
+    "5cf9c94f61f8154ab895f3c7cd3d85cc45e8841774554629e35def59785f0790",
+    "--resource-sha256",
+    "6e642669e49a776a928eaa9832e470bb3f27286902c4527f5c1910a8135ffc96",
+    "--plan",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/PR238_ENDPOINT_DIAGNOSTIC_PLAN_20261004.md",
+    "--output",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/endpoint_diagnostic_attempt1/audit.json"
+  ],
+  "child_pid": 57302,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 243.1650852500461,
+  "sampled_peak_rss_bytes": 369295360,
+  "rss_samples": 770,
+  "wall_limit_seconds": 300,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit"
+}

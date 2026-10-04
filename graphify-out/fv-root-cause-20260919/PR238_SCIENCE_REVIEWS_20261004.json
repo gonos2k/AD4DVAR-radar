@@ -1,0 +1,26 @@
+{
+  "GREEN": {
+    "agent": "r4_schur_review",
+    "decision": "GO",
+    "scope": "final chart/endpoint/guard source plus postrun scientific evidence; original problem, scalar gate, QR/curvature scope and numerical refusal preserved"
+  },
+  "RED": {
+    "agent": "r4_field_red",
+    "decision": "GO",
+    "scope": "finite-overflow probes, child/parent endpoint binding, actual budget-only refusal, final checklist and data integrity"
+  },
+  "source_sha256": {
+    "examples/weather_scenarios/fv_chart_diagnostics.py": "7a2ad7474f8ef68d7fbf9f2dfc91f6330221796d6bbb0682d769a096ce46b664",
+    "tests/test_fv_chart_diagnostics.py": "e490d821a90e5fed4405636c80db975562cce78de29899edf637e13914b11795",
+    "examples/weather_scenarios/fv_point_3h_endpoint_diagnostics.py": "d1e304ebd134a3ec0a18e55adcdc8f4064bb00675120a40fc9fe0eb6f9de455a",
+    "tests/test_fv_point_3h_endpoint_diagnostics.py": "64af675be3274dd9e6c09c545604c29c8241a8b8a17b4568e167001c06ca2d4a"
+  },
+  "guard_sha256": "79595a18e3a410942078635adf992cde77b4fd036c64936fef527cc5583b7ff7",
+  "postrun": {
+    "execution": "completed",
+    "numerical": "diagnostic_refusal",
+    "fresh_curvature": "not_recorded",
+    "no_rerun": true
+  },
+  "not_performed": "GN/PCG/reanalysis/full Linux and independent physical/learning validation"
+}

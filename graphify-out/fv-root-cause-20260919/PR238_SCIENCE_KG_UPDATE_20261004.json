@@ -1,0 +1,38 @@
+{
+  "baseline": {
+    "PR238": "e5808b38",
+    "main": "bbfb7a83"
+  },
+  "completed": [
+    "S2 ambient-metric tangent diagnostic and synthetic coordinate/rank/curvature/overflow regressions",
+    "S3 local/finite/meteorological evidence distinctions recorded"
+  ],
+  "S1": {
+    "execution": "completed",
+    "numerical": "diagnostic_refusal",
+    "original_J": 0.08389718093130327,
+    "original_gradient_inf": 1.0588168237438937,
+    "branch_and_metrics_reproduced": true,
+    "fresh_hessian": "not_recorded",
+    "hvp_calls_completed": "not_recorded",
+    "reason": "EndpointRefusal: 240-second internal Hessian audit budget exhausted",
+    "elapsed_seconds_guard": 243.1650852500461,
+    "peak_sampled_child_rss_bytes": 369295360,
+    "no_step_or_response": true,
+    "no_retry": true
+  },
+  "tests": {
+    "new_focused_passed": 32,
+    "existing_warnings": 18,
+    "typecheck_error_level_errors": 0
+  },
+  "remaining": [
+    "fresh3h endpoint curvature",
+    "3h eligible normal-point response",
+    "active-face stability neighborhood/finite influence",
+    "independent meteorological forecasting/learning/uncertainty",
+    "latest full Linux pass unconfirmed",
+    "prior GraphReport original-text recovery gap"
+  ],
+  "scope": "chart helper/toy tests plus one original FV read-only endpoint attempt; no GN/PCG/reanalysis or physical validation"
+}
