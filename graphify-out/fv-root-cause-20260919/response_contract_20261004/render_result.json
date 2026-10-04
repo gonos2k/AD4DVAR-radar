@@ -1,0 +1,138 @@
+{
+  "scope": "read-only archived JSON adaptation; no FV/GN/AD/PCG or reanalysis execution",
+  "input_sha256_before": {
+    "point_selected_qx": "cb3283e0ee70518700a6ee5e2ade3f118683a42bbede26433e9e96aed231a59f",
+    "partial_selected_qy": "9095a44201a82765315fbac9bbb58783e415c4f50f373d75ba2de40eb9f6bfdc",
+    "smooth_constructed_prior": "e0996a5081e20037d39f95049768d15d67e768b8aeda133a00fd638ff39e47aa"
+  },
+  "input_sha256_after": {
+    "point_selected_qx": "cb3283e0ee70518700a6ee5e2ade3f118683a42bbede26433e9e96aed231a59f",
+    "partial_selected_qy": "9095a44201a82765315fbac9bbb58783e415c4f50f373d75ba2de40eb9f6bfdc",
+    "smooth_constructed_prior": "e0996a5081e20037d39f95049768d15d67e768b8aeda133a00fd638ff39e47aa"
+  },
+  "archives_unchanged": true,
+  "adapter_sha256": "9e5c5e2e8d838d0f1a33c562c0b9013e614be728d8ac77b77c45ffb5ca41b1f4",
+  "contract_sha256": "f44acd96edc961d38c4b42c2a74f229b91cef148e91c67f87aa53ee8b9b6fc63",
+  "python": "3.12.13",
+  "profiles": [
+    {
+      "profile": "point_selected_qx",
+      "output": "graphify-out/fv-root-cause-20260919/response_contract_20261004/point_selected_qx.json",
+      "output_sha256": "7e13ac9b9f3c101b62f5f64c0535b4e15679bcb8b0ff54d6e836253a30c728f7",
+      "kind": "selected_face_conditional",
+      "assessment": {
+        "execution": "completed",
+        "numerical": "eligible",
+        "physical": "not_validated"
+      },
+      "ambient_dimension": 26,
+      "tangent_dimension": 25,
+      "stationarity": {
+        "space": "tangent",
+        "tolerance": 1e-10,
+        "value": 1.96875848956779e-12,
+        "status": "reported_pass_at_archived_fixed_gate",
+        "criterion": {
+          "tolerance": 1e-10,
+          "comparison": "pass iff gradient_max < tolerance",
+          "objective_control_units": "archived profile units; no rescaling applied",
+          "gate_source": {
+            "path": "examples/weather_scenarios/fv_point_single_qx_response_probe.py",
+            "sha256": "e28a6136080fd577b60b839b945b834b77b504526ca97fea543a15b2609aa922",
+            "evidence": "archived source snapshot"
+          },
+          "local_response_source": {
+            "path": "src/advar/local_response.py",
+            "sha256": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+            "evidence": "archived source SHA"
+          }
+        }
+      },
+      "validation_rows": 2,
+      "claims": {
+        "full_root_supported": false,
+        "physical_validation_supported": false
+      }
+    },
+    {
+      "profile": "partial_selected_qy",
+      "output": "graphify-out/fv-root-cause-20260919/response_contract_20261004/partial_selected_qy.json",
+      "output_sha256": "a7be2a50ca0f851d9c771aa35d602dd0df3787f98dc05fe267dbe14dfc197ca6",
+      "kind": "selected_face_conditional",
+      "assessment": {
+        "execution": "not_recorded",
+        "numerical": "eligible",
+        "physical": "not_validated"
+      },
+      "ambient_dimension": 26,
+      "tangent_dimension": 25,
+      "stationarity": {
+        "space": "tangent",
+        "tolerance": 1e-10,
+        "value": 7.947620860038196e-12,
+        "status": "reported_pass_at_archived_fixed_gate",
+        "criterion": {
+          "tolerance": 1e-10,
+          "comparison": "pass iff gradient_max < tolerance",
+          "objective_control_units": "archived profile units; no rescaling applied",
+          "gate_source": {
+            "path": "examples/weather_scenarios/fv_active_face_stationarity_probe.py",
+            "sha256": "98386f9987716aecfc4807e8ee1faaa2ac1da41c5ac71695a396e7cd270be412",
+            "evidence": "archived source-before SHA verified against matching source bytes"
+          },
+          "local_response_source": {
+            "path": "src/advar/local_response.py",
+            "sha256": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+            "evidence": "archived source SHA"
+          }
+        }
+      },
+      "validation_rows": 2,
+      "claims": {
+        "full_root_supported": false,
+        "physical_validation_supported": false
+      }
+    },
+    {
+      "profile": "smooth_constructed_prior",
+      "output": "graphify-out/fv-root-cause-20260919/response_contract_20261004/smooth_constructed_prior.json",
+      "output_sha256": "6247f6eb1ba227e093ffc1fe5d7812954e9a7f72a9726300c646d6bfed499298",
+      "kind": "smooth_stationary",
+      "assessment": {
+        "execution": "completed",
+        "numerical": "eligible",
+        "physical": "not_validated"
+      },
+      "ambient_dimension": 26,
+      "tangent_dimension": 26,
+      "stationarity": {
+        "space": "full_control",
+        "tolerance": 1e-10,
+        "value": 0.0,
+        "status": "reported_pass_at_archived_fixed_gate",
+        "criterion": {
+          "tolerance": 1e-10,
+          "comparison": "pass iff gradient_max < tolerance",
+          "objective_control_units": "archived profile units; no rescaling applied",
+          "gate_source": {
+            "path": "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/fv_point_centered_prior_response_probe.py.txt",
+            "sha256": "6a10297a850418241303db52a323b594a7d4ae62c567cea8fa1ff7fe385afa00",
+            "evidence": "archived source snapshot"
+          },
+          "local_response_source": {
+            "path": "src/advar/local_response.py",
+            "sha256": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+            "evidence": "archived evidence source map",
+            "evidence_record_path": "graphify-out/fv-root-cause-20260919/FV_POINT_CENTERED_PRIOR_RESPONSE_EVIDENCE.json",
+            "evidence_record_sha256": "d54bcc3ca8349858a7675e299d8a1fb7bea13af670bbd5a332543d56e96ca518"
+          }
+        }
+      },
+      "validation_rows": 2,
+      "claims": {
+        "full_root_supported": false,
+        "physical_validation_supported": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "scope": "auxiliary structural-report recovery; no numerical/physics change",
+  "graph_exactly_restored": true,
+  "graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "original_report_sha256": "b6c44d3b4c4e8f8821a78e12730a1e376e2a2ccd9cf392d1b7dd675c4ccad885",
+  "original_report_exactly_restored": false,
+  "generated_report_preserved": "/tmp/advar_graphify_refresh_20261004/GRAPH_REPORT.md",
+  "generated_report_sha256": "f3e0c6ceebfe1225f9285b91bbf3894c7ef2a575334946dfc96737ccdaacb2ec",
+  "current_report_is_explicit_recovery_notice": true,
+  "current_notice_sha256": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491",
+  "remaining": "original report text unavailable; no unchanged-report claim",
+  "numerical_archives_unchanged": true
+}

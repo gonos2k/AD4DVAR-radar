@@ -1,0 +1,31 @@
+{
+  "review_baseline": {
+    "head": "eabfa842",
+    "main": "966f236f"
+  },
+  "scope": "new common evidence format, archive-only adaptation and synthetic coordinate regressions; no FV rerun",
+  "checklist": "graphify-out/fv-root-cause-20260919/PR229_235_REVIEW_RESOLUTION_20261004.md",
+  "completed_limited": [
+    "T1",
+    "T2",
+    "T3_coordinate_choice_only",
+    "T5_saved_cost_accounting"
+  ],
+  "preserved_completed": [
+    "T0",
+    "T6_specified_linux_items_only"
+  ],
+  "open": [
+    "T4_full_3h_stationarity_response",
+    "T7_physical_finite_impact_learning",
+    "automatic_face_selection_new_inputs",
+    "original_graph_report_text_recovery"
+  ],
+  "validation": {
+    "new_tests": 28,
+    "existing_warnings": 18,
+    "typecheck_error_level_errors": 0,
+    "graphs": "isolated AST; canonical graph exact restored"
+  },
+  "root_response_and_physical_claim": false
+}

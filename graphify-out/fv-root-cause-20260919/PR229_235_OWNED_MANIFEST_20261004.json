@@ -1,0 +1,26 @@
+{
+  "scope": "new response format/synthetic regressions/archive-only adaptation; no FV rerun",
+  "files": {
+    "examples/weather_scenarios/fv_archived_response_contract.py": "9e5c5e2e8d838d0f1a33c562c0b9013e614be728d8ac77b77c45ffb5ca41b1f4",
+    "examples/weather_scenarios/fv_response_contract.py": "f44acd96edc961d38c4b42c2a74f229b91cef148e91c67f87aa53ee8b9b6fc63",
+    "graphify-out/fv-root-cause-20260919/PR229_235_CONTRACT_AST_20261004.json": "0e5487d06f24dd56f7cf37421dfc141bb01836d2b8c1f189e4c71b2ff20c5fb5",
+    "graphify-out/fv-root-cause-20260919/PR229_235_CONTRACT_GRAPHIFY_20261004.json": "2cce73c03c4b35402a95df3457de478fc8b8538d6c71fb932bbd75f930962d71",
+    "graphify-out/fv-root-cause-20260919/PR229_235_CONTRACT_TESTS_20261004.log": "0704811ed8f4b6c8be82818387eca1312aa1dc982497ac69ecf9c2730b35b3f2",
+    "graphify-out/fv-root-cause-20260919/PR229_235_CONTRACT_TYPES_20261004.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/PR229_235_CONTRACT_TYPES_BEFORE_FIX_20261004.log": "4c8ecce5032c0e4fa01eaaf19a3f5bb380c38caf8b9c8d7308be401a4d1393c5",
+    "graphify-out/fv-root-cause-20260919/PR229_235_GRAPH_RECOVERY_20261004.json": "8937f94729b7557b32f6f7a3c741a297cec0c145451db4ee728419f2ddc946af",
+    "graphify-out/fv-root-cause-20260919/PR229_235_KG_PROGRESS_20261004.json": "6f2d48862189281d91d9bfcb19ddb198714e4a48a949ee910b6552d062de218d",
+    "graphify-out/fv-root-cause-20260919/PR229_235_REVIEW_RESOLUTION_20261004.md": "d398b3d07537a640628e8ef5e15c8dfe85ebc1793886881c6974a13ce322e477",
+    "graphify-out/fv-root-cause-20260919/PR229_235_SEARCH_COST_AND_MOVEMENT_20261004.json": "1ace7f63d8bf64ac5496b8ac859124cb191c21a5b54e2019d6930d25af3b7889",
+    "graphify-out/fv-root-cause-20260919/response_contract_20261004/partial_selected_qy.json": "a7be2a50ca0f851d9c771aa35d602dd0df3787f98dc05fe267dbe14dfc197ca6",
+    "graphify-out/fv-root-cause-20260919/response_contract_20261004/point_selected_qx.json": "7e13ac9b9f3c101b62f5f64c0535b4e15679bcb8b0ff54d6e836253a30c728f7",
+    "graphify-out/fv-root-cause-20260919/response_contract_20261004/render_result.json": "f71cecb6ba5a8f9d0d2009965c253ffe1fa1b8081dbf81e3f550923ec7094250",
+    "graphify-out/fv-root-cause-20260919/response_contract_20261004/smooth_constructed_prior.json": "6247f6eb1ba227e093ffc1fe5d7812954e9a7f72a9726300c646d6bfed499298",
+    "tests/test_fv_archived_response_contract.py": "72c60fff08bc4848646fe23a772152347c50e503cd6d264fc1c69cc37f0d65c5",
+    "tests/test_fv_response_contract.py": "b04f017e734bf977e71c0b1fd1a45d0eb4d0bac4d6763189789e18511e1c9f08"
+  },
+  "historical_raws_unchanged": true,
+  "shared_graph_exact_restored": true,
+  "shared_report_original_text_restored": false,
+  "user_files_excluded": true
+}

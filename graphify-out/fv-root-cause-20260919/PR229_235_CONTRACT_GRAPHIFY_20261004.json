@@ -1,0 +1,15 @@
+{
+  "scope": "isolated four-file source AST only; no shared merge/semantic rebuild",
+  "files": {
+    "examples/weather_scenarios/fv_response_contract.py": "f44acd96edc961d38c4b42c2a74f229b91cef148e91c67f87aa53ee8b9b6fc63",
+    "examples/weather_scenarios/fv_archived_response_contract.py": "9e5c5e2e8d838d0f1a33c562c0b9013e614be728d8ac77b77c45ffb5ca41b1f4",
+    "tests/test_fv_response_contract.py": "b04f017e734bf977e71c0b1fd1a45d0eb4d0bac4d6763189789e18511e1c9f08",
+    "tests/test_fv_archived_response_contract.py": "72c60fff08bc4848646fe23a772152347c50e503cd6d264fc1c69cc37f0d65c5"
+  },
+  "nodes": 61,
+  "edges": 210,
+  "graph_sha256": "0e5487d06f24dd56f7cf37421dfc141bb01836d2b8c1f189e4c71b2ff20c5fb5",
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "shared_graph_unchanged": true,
+  "shared_report": "explicit recovery notice; original report text unrecovered"
+}
