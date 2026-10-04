@@ -1,0 +1,31 @@
+{
+  "scope": "synthetic chart scaling arithmetic; no FV or archived stationarity recalculation",
+  "same_ambient_control": [
+    0.1,
+    0.01
+  ],
+  "rows": [
+    {
+      "scale": 1.0,
+      "raw_tangent_gradient_inf": 0.252,
+      "existing_raw_1e10_gate": false,
+      "metric_tangent_gradient_l2": 0.24710633027411186,
+      "chart_condition": 1.0
+    },
+    {
+      "scale": 1e-06,
+      "raw_tangent_gradient_inf": 2.52e-07,
+      "existing_raw_1e10_gate": false,
+      "metric_tangent_gradient_l2": 0.24710633027411186,
+      "chart_condition": 1.0
+    },
+    {
+      "scale": 1e-10,
+      "raw_tangent_gradient_inf": 2.52e-11,
+      "existing_raw_1e10_gate": true,
+      "metric_tangent_gradient_l2": 0.24710633027411186,
+      "chart_condition": 1.0
+    }
+  ],
+  "interpretation": "raw gate changes under coordinate scaling; ambient-metric tangent residual invariant; no eligibility issued"
+}
