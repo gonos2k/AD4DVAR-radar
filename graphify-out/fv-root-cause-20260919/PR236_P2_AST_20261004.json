@@ -1,0 +1,2877 @@
+{
+  "nodes": [
+    {
+      "id": "weather_scenarios_fv_response_contract",
+      "label": "fv_response_contract.py",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_response_contract_compose_full_control",
+      "label": "compose_full_control()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L20",
+      "_origin": "ast"
+    },
+    {
+      "id": "tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L20",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_response_contract_local_response_payload",
+      "label": "local_response_payload()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "localresponse",
+      "label": "LocalResponse",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_response_contract_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_response_contract_identity",
+      "label": "_identity()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L59",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_response_contract_point_evidence",
+      "label": "_point_evidence()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L65",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_response_contract_validation",
+      "label": "_validation()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L73",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_response_contract_response_envelope",
+      "label": "response_envelope()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "_origin": "ast"
+    },
+    {
+      "id": "responsekind",
+      "label": "ResponseKind",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_response_contract_rationale_1",
+      "label": "Research-only common envelope and differentiable chart composition helpers.",
+      "file_type": "rationale",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_response_contract_rationale_23",
+      "label": "Compose J(c,p) or E(c,p) with c=\u0393(t,p), retaining autograd through \u0393.",
+      "file_type": "rationale",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L23",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_response_contract_rationale_37",
+      "label": "Serialize the common numeric and adjoint fields from ``LocalResponse``.",
+      "file_type": "rationale",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L37",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_response_contract_rationale_141",
+      "label": "Build an explicit-status response envelope; it never infers qualification.",
+      "file_type": "rationale",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L141",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_archived_response_contract",
+      "label": "fv_archived_response_contract.py",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_archived_response_contract_sha",
+      "label": "_sha()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L58",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_archived_response_contract_canonical_sha",
+      "label": "_canonical_sha()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L62",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L62",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_archived_response_contract_read_json",
+      "label": "_read_json()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L66",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_archived_response_contract_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L66",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_archived_response_contract_archive_path",
+      "label": "_archive_path()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L71",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_archived_response_contract_source_records",
+      "label": "_source_records()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L87",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_archived_response_contract_stationarity_gate",
+      "label": "_stationarity_gate()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L138",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_archived_response_contract_validation_rows",
+      "label": "_validation_rows()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L205",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_archived_response_contract_response_payload",
+      "label": "_response_payload()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L232",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "label": "render_archived_response()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L261",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_archived_response_contract_rationale_1",
+      "label": "Render immutable archived FV response reports into the common envelope.",
+      "file_type": "rationale",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_archived_response_contract_rationale_140",
+      "label": "Read the fixed gate from the archived source identity; never infer a new toleran",
+      "file_type": "rationale",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L140",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_archived_response_contract_rationale_262",
+      "label": "Adapt one of the three registered immutable archives; performs no model work.",
+      "file_type": "rationale",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L262",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract",
+      "label": "test_fv_response_contract.py",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_hash",
+      "label": "_hash()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_toy_binding",
+      "label": "_toy_binding()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L23",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L23",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_nonlinear_chart_curvature_and_stationary_response_match_closed_form",
+      "label": "test_nonlinear_chart_curvature_and_stationary_response_match_closed_form()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L49",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_parameter_dependent_chart_preserves_direct_indirect_and_mixed_terms",
+      "label": "test_parameter_dependent_chart_preserves_direct_indirect_and_mixed_terms()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L81",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_actual_active_face_objective_restores_pivot_prior_and_chart_curvature",
+      "label": "test_actual_active_face_objective_restores_pivot_prior_and_chart_curvature()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L107",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_alternate_pivots_on_same_face_restore_prior_and_agree_in_response",
+      "label": "test_alternate_pivots_on_same_face_restore_prior_and_agree_in_response()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L145",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_envelope_kwargs",
+      "label": "_envelope_kwargs()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L175",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_common_envelope_keeps_response_kinds_and_assessments_separate",
+      "label": "test_common_envelope_keeps_response_kinds_and_assessments_separate()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L209",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_conditional_response_can_record_unrun_normal_without_claiming_eligibility",
+      "label": "test_conditional_response_can_record_unrun_normal_without_claiming_eligibility()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L225",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_unmeasured_normal_evidence_rejects_inline_interval_values",
+      "label": "test_unmeasured_normal_evidence_rejects_inline_interval_values()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L237",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_not_run_validation_needs_no_fabricated_steps_or_errors",
+      "label": "test_not_run_validation_needs_no_fabricated_steps_or_errors()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L245",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_not_run_validation_rejects_fabricated_observed_evidence",
+      "label": "test_not_run_validation_rejects_fabricated_observed_evidence()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L256",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_selected_face_kind_cannot_claim_full_root_support",
+      "label": "test_selected_face_kind_cannot_claim_full_root_support()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L264",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_smooth_kind_rejects_reduced_tangent_record",
+      "label": "test_smooth_kind_rejects_reduced_tangent_record()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L271",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_passed_central_validation_pins_both_endpoints_for_each_h",
+      "label": "test_passed_central_validation_pins_both_endpoints_for_each_h()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L278",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_execution_and_numerical_statuses_remain_independent",
+      "label": "test_execution_and_numerical_statuses_remain_independent()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L299",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_common_envelope_rejects_normal_evidence_from_a_different_point",
+      "label": "test_common_envelope_rejects_normal_evidence_from_a_different_point()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L308",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_measured_normal_must_bind_the_same_base_parameters",
+      "label": "test_measured_normal_must_bind_the_same_base_parameters()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L317",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_performed_validation_must_bind_the_same_base_parameters",
+      "label": "test_performed_validation_must_bind_the_same_base_parameters()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L330",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_test_unrun_optional_parameter_identity_must_match_base",
+      "label": "test_unrun_optional_parameter_identity_must_match_base()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L344",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_response_contract_rationale_1",
+      "label": "Synthetic response-format and coordinate-curvature regressions; no FV execution.",
+      "file_type": "rationale",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract",
+      "label": "test_fv_archived_response_contract.py",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract_digest",
+      "label": "_digest()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L23",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L23",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract_copy_profile_fixture",
+      "label": "_copy_profile_fixture()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L27",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract_test_archived_render_preserves_raw_archive_and_references",
+      "label": "test_archived_render_preserves_raw_archive_and_references()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L65",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract_test_selected_face_profiles_keep_their_distinct_static_charts_and_dims",
+      "label": "test_selected_face_profiles_keep_their_distinct_static_charts_and_dims()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L91",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract_test_centered_profile_keeps_its_constructed_prior_and_smooth_full_control_scope",
+      "label": "test_centered_profile_keeps_its_constructed_prior_and_smooth_full_control_scope()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L129",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract_test_stationarity_uses_archived_profile_gate_and_source_sha",
+      "label": "test_stationarity_uses_archived_profile_gate_and_source_sha()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L140",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract_test_renderer_refuses_unregistered_archive_profiles",
+      "label": "test_renderer_refuses_unregistered_archive_profiles()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L160",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract_test_renderer_rejects_changed_registered_archive_bytes",
+      "label": "test_renderer_rejects_changed_registered_archive_bytes()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L165",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract_test_inline_normal_evidence_is_point_bound_not_the_historical_file",
+      "label": "test_inline_normal_evidence_is_point_bound_not_the_historical_file()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L175",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract_test_full_registered_profile_renders_from_alternate_caller_root",
+      "label": "test_full_registered_profile_renders_from_alternate_caller_root()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L186",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract_test_alternate_root_source_mismatch_rejects_even_when_importer_root_has_original",
+      "label": "test_alternate_root_source_mismatch_rejects_even_when_importer_root_has_original()",
+      "file_type": "code",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L204",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_archived_response_contract_rationale_1",
+      "label": "Archive-only renderer regressions; no FV construction or execution.",
+      "file_type": "rationale",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "weather_scenarios_fv_response_contract",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract",
+      "target": "re",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract",
+      "target": "collections_abc",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract",
+      "target": "advar_local_response",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract",
+      "target": "weather_scenarios_fv_response_contract_compose_full_control",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_compose_full_control",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_compose_full_control",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_compose_full_control",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_compose_full_control",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_compose_full_control",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_compose_full_control",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_compose_full_control",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_compose_full_control",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_compose_full_control",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract",
+      "target": "weather_scenarios_fv_response_contract_local_response_payload",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_local_response_payload",
+      "target": "localresponse",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_local_response_payload",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract",
+      "target": "weather_scenarios_fv_response_contract_identity",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_identity",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_identity",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract",
+      "target": "weather_scenarios_fv_response_contract_point_evidence",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_point_evidence",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_point_evidence",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract",
+      "target": "weather_scenarios_fv_response_contract_validation",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L73",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_validation",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L73",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_validation",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L73",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "responsekind",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "examples_weather_scenarios_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L126",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_point_evidence",
+      "target": "weather_scenarios_fv_response_contract_identity",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "weather_scenarios_fv_response_contract_identity",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L149",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "weather_scenarios_fv_response_contract_point_evidence",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L219",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_response_envelope",
+      "target": "weather_scenarios_fv_response_contract_validation",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L229",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_rationale_1",
+      "target": "weather_scenarios_fv_response_contract",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_rationale_23",
+      "target": "weather_scenarios_fv_response_contract_compose_full_control",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_rationale_37",
+      "target": "weather_scenarios_fv_response_contract_local_response_payload",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_response_contract_rationale_141",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_response_contract.py",
+      "source_location": "L141",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "re",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "examples_weather_scenarios_fv_response_contract",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "weather_scenarios_fv_archived_response_contract_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "weather_scenarios_fv_archived_response_contract_canonical_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_canonical_sha",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "weather_scenarios_fv_archived_response_contract_read_json",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_read_json",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_read_json",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "weather_scenarios_fv_archived_response_contract_archive_path",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_archive_path",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_archive_path",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_archive_path",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_archive_path",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "weather_scenarios_fv_archived_response_contract_source_records",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_source_records",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_source_records",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_source_records",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_source_records",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_source_records",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "weather_scenarios_fv_archived_response_contract_stationarity_gate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L138",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_stationarity_gate",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L138",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_stationarity_gate",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L138",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_stationarity_gate",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L138",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_stationarity_gate",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L138",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_stationarity_gate",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L138",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "weather_scenarios_fv_archived_response_contract_validation_rows",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L205",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_validation_rows",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L205",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_validation_rows",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L205",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_validation_rows",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L205",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "weather_scenarios_fv_archived_response_contract_response_payload",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L232",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_response_payload",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L232",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_response_payload",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L232",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_response_payload",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L232",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L261",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L261",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L261",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L261",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_canonical_sha",
+      "target": "weather_scenarios_fv_archived_response_contract_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_read_json",
+      "target": "weather_scenarios_fv_archived_response_contract_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_archive_path",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_source_records",
+      "target": "weather_scenarios_fv_archived_response_contract_read_json",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_source_records",
+      "target": "weather_scenarios_fv_archived_response_contract_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_source_records",
+      "target": "weather_scenarios_fv_archived_response_contract_canonical_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L134",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_stationarity_gate",
+      "target": "weather_scenarios_fv_archived_response_contract_read_json",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "target": "examples_weather_scenarios_fv_archived_response_contract_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L263",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "target": "weather_scenarios_fv_archived_response_contract_archive_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L264",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "target": "weather_scenarios_fv_archived_response_contract_read_json",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L266",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "target": "weather_scenarios_fv_archived_response_contract_source_records",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L271",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "target": "weather_scenarios_fv_archived_response_contract_canonical_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L277",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "target": "weather_scenarios_fv_archived_response_contract_validation_rows",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L295",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "target": "weather_scenarios_fv_archived_response_contract_stationarity_gate",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L351",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "target": "weather_scenarios_fv_archived_response_contract_response_payload",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L353",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "target": "weather_scenarios_fv_archived_response_contract_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L374",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_rationale_1",
+      "target": "weather_scenarios_fv_archived_response_contract",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_rationale_140",
+      "target": "weather_scenarios_fv_archived_response_contract_stationarity_gate",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L140",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_rationale_262",
+      "target": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L262",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "types",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "advar_local_response",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "examples_weather_scenarios_fv_face_flux_coordinates",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "examples_weather_scenarios_fv_point_active_face_binding",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "examples_weather_scenarios_fv_response_contract",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_hash",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_toy_binding",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_toy_binding",
+      "target": "tests_test_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_toy_binding",
+      "target": "tests_test_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_nonlinear_chart_curvature_and_stationary_response_match_closed_form",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_parameter_dependent_chart_preserves_direct_indirect_and_mixed_terms",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_actual_active_face_objective_restores_pivot_prior_and_chart_curvature",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L107",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_alternate_pivots_on_same_face_restore_prior_and_agree_in_response",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L145",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L175",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_envelope_kwargs",
+      "target": "tests_test_fv_response_contract_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L175",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_common_envelope_keeps_response_kinds_and_assessments_separate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L209",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_conditional_response_can_record_unrun_normal_without_claiming_eligibility",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L225",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_unmeasured_normal_evidence_rejects_inline_interval_values",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L237",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_not_run_validation_needs_no_fabricated_steps_or_errors",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L245",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_not_run_validation_rejects_fabricated_observed_evidence",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L256",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_selected_face_kind_cannot_claim_full_root_support",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L264",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_smooth_kind_rejects_reduced_tangent_record",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L271",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_passed_central_validation_pins_both_endpoints_for_each_h",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L278",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_execution_and_numerical_statuses_remain_independent",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L299",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_common_envelope_rejects_normal_evidence_from_a_different_point",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L308",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_measured_normal_must_bind_the_same_base_parameters",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L317",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_performed_validation_must_bind_the_same_base_parameters",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L330",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "tests_test_fv_response_contract_test_unrun_optional_parameter_identity_must_match_base",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L344",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_nonlinear_chart_curvature_and_stationary_response_match_closed_form",
+      "target": "tests_test_fv_response_contract_hash",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_parameter_dependent_chart_preserves_direct_indirect_and_mixed_terms",
+      "target": "tests_test_fv_response_contract_hash",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_actual_active_face_objective_restores_pivot_prior_and_chart_curvature",
+      "target": "tests_test_fv_response_contract_toy_binding",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_alternate_pivots_on_same_face_restore_prior_and_agree_in_response",
+      "target": "tests_test_fv_response_contract_toy_binding",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L155",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_alternate_pivots_on_same_face_restore_prior_and_agree_in_response",
+      "target": "tests_test_fv_response_contract_hash",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L167",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_envelope_kwargs",
+      "target": "tests_test_fv_response_contract_hash",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L176",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_common_envelope_keeps_response_kinds_and_assessments_separate",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L210",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_conditional_response_can_record_unrun_normal_without_claiming_eligibility",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L226",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_unmeasured_normal_evidence_rejects_inline_interval_values",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L238",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_not_run_validation_needs_no_fabricated_steps_or_errors",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L246",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_not_run_validation_needs_no_fabricated_steps_or_errors",
+      "target": "tests_test_fv_response_contract_hash",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L248",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_not_run_validation_rejects_fabricated_observed_evidence",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L257",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_not_run_validation_rejects_fabricated_observed_evidence",
+      "target": "tests_test_fv_response_contract_hash",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L259",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_selected_face_kind_cannot_claim_full_root_support",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L265",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_smooth_kind_rejects_reduced_tangent_record",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L272",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_passed_central_validation_pins_both_endpoints_for_each_h",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L279",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_passed_central_validation_pins_both_endpoints_for_each_h",
+      "target": "tests_test_fv_response_contract_hash",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L282",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_execution_and_numerical_statuses_remain_independent",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L300",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_common_envelope_rejects_normal_evidence_from_a_different_point",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L309",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_common_envelope_rejects_normal_evidence_from_a_different_point",
+      "target": "tests_test_fv_response_contract_hash",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L310",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_measured_normal_must_bind_the_same_base_parameters",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L318",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_measured_normal_must_bind_the_same_base_parameters",
+      "target": "tests_test_fv_response_contract_hash",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L323",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_performed_validation_must_bind_the_same_base_parameters",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L331",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_performed_validation_must_bind_the_same_base_parameters",
+      "target": "tests_test_fv_response_contract_hash",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L333",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_unrun_optional_parameter_identity_must_match_base",
+      "target": "tests_test_fv_response_contract_envelope_kwargs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L345",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_unrun_optional_parameter_identity_must_match_base",
+      "target": "tests_test_fv_response_contract_hash",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L348",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_rationale_1",
+      "target": "tests_test_fv_response_contract",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "shutil",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "examples_weather_scenarios_fv_archived_response_contract",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "tests_test_fv_archived_response_contract_digest",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_digest",
+      "target": "tests_test_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "tests_test_fv_archived_response_contract_copy_profile_fixture",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_copy_profile_fixture",
+      "target": "tests_test_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_copy_profile_fixture",
+      "target": "tests_test_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_copy_profile_fixture",
+      "target": "tests_test_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "tests_test_fv_archived_response_contract_test_archived_render_preserves_raw_archive_and_references",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_archived_render_preserves_raw_archive_and_references",
+      "target": "tests_test_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "tests_test_fv_archived_response_contract_test_selected_face_profiles_keep_their_distinct_static_charts_and_dims",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L91",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "tests_test_fv_archived_response_contract_test_centered_profile_keeps_its_constructed_prior_and_smooth_full_control_scope",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L129",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "tests_test_fv_archived_response_contract_test_stationarity_uses_archived_profile_gate_and_source_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L140",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_stationarity_uses_archived_profile_gate_and_source_sha",
+      "target": "tests_test_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L140",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "tests_test_fv_archived_response_contract_test_renderer_refuses_unregistered_archive_profiles",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L160",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "tests_test_fv_archived_response_contract_test_renderer_rejects_changed_registered_archive_bytes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L165",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_renderer_rejects_changed_registered_archive_bytes",
+      "target": "tests_test_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L165",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "tests_test_fv_archived_response_contract_test_inline_normal_evidence_is_point_bound_not_the_historical_file",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L175",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "tests_test_fv_archived_response_contract_test_full_registered_profile_renders_from_alternate_caller_root",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_full_registered_profile_renders_from_alternate_caller_root",
+      "target": "tests_test_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_full_registered_profile_renders_from_alternate_caller_root",
+      "target": "tests_test_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "tests_test_fv_archived_response_contract_test_alternate_root_source_mismatch_rejects_even_when_importer_root_has_original",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L204",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_alternate_root_source_mismatch_rejects_even_when_importer_root_has_original",
+      "target": "tests_test_fv_archived_response_contract_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L204",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_archived_render_preserves_raw_archive_and_references",
+      "target": "tests_test_fv_archived_response_contract_digest",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_stationarity_uses_archived_profile_gate_and_source_sha",
+      "target": "tests_test_fv_archived_response_contract_digest",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L154",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_full_registered_profile_renders_from_alternate_caller_root",
+      "target": "tests_test_fv_archived_response_contract_copy_profile_fixture",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L190",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_full_registered_profile_renders_from_alternate_caller_root",
+      "target": "tests_test_fv_archived_response_contract_digest",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L195",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_alternate_root_source_mismatch_rejects_even_when_importer_root_has_original",
+      "target": "tests_test_fv_archived_response_contract_copy_profile_fixture",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L207",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_rationale_1",
+      "target": "tests_test_fv_archived_response_contract",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "weather_scenarios_fv_response_contract_compose_full_control",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "weather_scenarios_fv_response_contract_local_response_payload",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract",
+      "target": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/examples/weather_scenarios/fv_archived_response_contract.py",
+      "source_location": "L383",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_nonlinear_chart_curvature_and_stationary_response_match_closed_form",
+      "target": "weather_scenarios_fv_response_contract_compose_full_control",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_nonlinear_chart_curvature_and_stationary_response_match_closed_form",
+      "target": "weather_scenarios_fv_response_contract_local_response_payload",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L75",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_parameter_dependent_chart_preserves_direct_indirect_and_mixed_terms",
+      "target": "weather_scenarios_fv_response_contract_compose_full_control",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L92",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_common_envelope_keeps_response_kinds_and_assessments_separate",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L210",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_conditional_response_can_record_unrun_normal_without_claiming_eligibility",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L231",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_not_run_validation_needs_no_fabricated_steps_or_errors",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L250",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_not_run_validation_rejects_fabricated_observed_evidence",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L261",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_selected_face_kind_cannot_claim_full_root_support",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L268",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_smooth_kind_rejects_reduced_tangent_record",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_passed_central_validation_pins_both_endpoints_for_each_h",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L288",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_common_envelope_rejects_normal_evidence_from_a_different_point",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L312",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_selected_face_profiles_keep_their_distinct_static_charts_and_dims",
+      "target": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L92",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_centered_profile_keeps_its_constructed_prior_and_smooth_full_control_scope",
+      "target": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L130",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_renderer_refuses_unregistered_archive_profiles",
+      "target": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_renderer_rejects_changed_registered_archive_bytes",
+      "target": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L172",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_inline_normal_evidence_is_point_bound_not_the_historical_file",
+      "target": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L176",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_alternate_root_source_mismatch_rejects_even_when_importer_root_has_original",
+      "target": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L213",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_unmeasured_normal_evidence_rejects_inline_interval_values",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L242",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_execution_and_numerical_statuses_remain_independent",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L303",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_measured_normal_must_bind_the_same_base_parameters",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L325",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_performed_validation_must_bind_the_same_base_parameters",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L340",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_response_contract_test_unrun_optional_parameter_identity_must_match_base",
+      "target": "weather_scenarios_fv_response_contract_response_envelope",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_response_contract.py",
+      "source_location": "L352",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_archived_render_preserves_raw_archive_and_references",
+      "target": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_stationarity_uses_archived_profile_gate_and_source_sha",
+      "target": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L141",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_archived_response_contract_test_full_registered_profile_renders_from_alternate_caller_root",
+      "target": "weather_scenarios_fv_archived_response_contract_render_archived_response",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-p2-binding-ast-20261004-mbeqt8gb/tests/test_fv_archived_response_contract.py",
+      "source_location": "L193",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

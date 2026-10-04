@@ -4,10 +4,12 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import shutil
 
 import pytest
 
 from examples.weather_scenarios.fv_archived_response_contract import render_archived_response
+from examples.weather_scenarios import fv_archived_response_contract as archived_contract
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "graphify-out/fv-root-cause-20260919"
@@ -20,6 +22,43 @@ ARCHIVES = (
 
 def _digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _copy_profile_fixture(root: Path, archive: Path) -> Path:
+    relative_archive = archive.relative_to(ROOT)
+    archive_dir = relative_archive.parent
+    name = archive_dir.name
+    if name == "point_single_qx_response_attempt2":
+        required = ("response.json", "preflight.json", "parent.json", "response.resource.json")
+    elif name == "partial_active_face_response_attempt1":
+        required = ("response.json", "preflight.json", "response.resource.json")
+    else:
+        required = ("point_centered_response.json", "manifest.json", "point_centered_response.run.json",
+                    "point_centered_response.resource.json")
+    destination_dir = root / archive_dir
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    for filename in required:
+        shutil.copyfile(ROOT / archive_dir / filename, destination_dir / filename)
+    if name == "point_centered_response_attempt1":
+        manifest = json.loads((destination_dir / "manifest.json").read_text())
+        for filename in manifest["sha256"]:
+            if filename.endswith(".py.txt"):
+                shutil.copyfile(ROOT / archive_dir / filename, destination_dir / filename)
+    support_paths = []
+    if name == "point_single_qx_response_attempt2":
+        support_paths = ["graphify-out/fv-root-cause-20260919/point_single_qx_normal_attempt2/normal.json"]
+    elif name == "partial_active_face_response_attempt1":
+        support_paths = [
+            "graphify-out/fv-root-cause-20260919/partial_active_face_normal_attempt3/normal.json",
+            "examples/weather_scenarios/fv_active_face_stationarity_probe.py",
+        ]
+    else:
+        support_paths = ["graphify-out/fv-root-cause-20260919/FV_POINT_CENTERED_PRIOR_RESPONSE_EVIDENCE.json"]
+    for support in support_paths:
+        source, destination = ROOT / support, root / support
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, destination)
+    return root / relative_archive
 
 
 @pytest.mark.parametrize("archive", ARCHIVES, ids=("qx-face", "two-hole-face", "centered-smooth"))
@@ -38,6 +77,8 @@ def test_archived_render_preserves_raw_archive_and_references(archive: Path):
     for row in result["independent_validation"]:
         assert len(row["endpoint_control_sha256"]) == 2
         assert len(row["endpoint_parameters_sha256"]) == 2
+        base_parameters_sha = raw.get("parameters_sha256", raw.get("nominal", {}).get("parameters_sha256"))
+        assert row["parameters_sha256"] == base_parameters_sha
         assert row["step_sizes"] and row["direction_sha256"] == raw.get(
             "direction_sha256", raw.get("nominal", {}).get("direction_sha256")
         )
@@ -81,6 +122,7 @@ def test_selected_face_profiles_keep_their_distinct_static_charts_and_dims():
         assert historical["sha256"] == raw["normal_result_sha256"]
         assert historical["status"] == "historical_prequalification_only_not_bound_to_current_base_point"
         assert "control_sha256" not in historical
+        assert envelope["geometry"]["normal_evidence"]["parameters_sha256"] == raw["parameters_sha256"]
     assert "four middle-time point-observation values in dBZ" in qx["independent_validation"][0]["scope"]
 
 
@@ -138,3 +180,34 @@ def test_inline_normal_evidence_is_point_bound_not_the_historical_file():
     assert inline["control_sha256"] == result["identities"]["control"]["sha256"]
     assert historical["sha256"] != inline["sha256"]
     assert historical["status"].endswith("not_bound_to_current_base_point")
+
+
+@pytest.mark.parametrize("archive", ARCHIVES, ids=("qx-face", "two-hole-face", "centered-smooth"))
+def test_full_registered_profile_renders_from_alternate_caller_root(tmp_path: Path, monkeypatch, archive: Path):
+    root_a = tmp_path / "importer-a"
+    root_a.mkdir()
+    root_b = tmp_path / "caller-b"
+    copied_archive = _copy_profile_fixture(root_b, archive)
+    monkeypatch.setattr(archived_contract, "_ROOT", root_a)
+
+    result = render_archived_response(copied_archive, root=root_b)
+
+    assert result["profile"]["archive_sha256"] == _digest(copied_archive)
+    assert result["profile"]["source_before_after_equal"] is True
+    assert result["stationarity"]["criterion"]["gate_source"]["path"]
+    assert result["independent_validation"]
+    if result["kind"] == "selected_face_conditional":
+        assert result["geometry"]["normal_evidence"]["parameters_sha256"] == result[
+            "identities"]["parameters"]["sha256"]
+
+
+def test_alternate_root_source_mismatch_rejects_even_when_importer_root_has_original(tmp_path: Path,
+                                                                                     monkeypatch):
+    root_b = tmp_path / "caller-b"
+    archive = _copy_profile_fixture(root_b, ARCHIVES[1])
+    source = root_b / "examples/weather_scenarios/fv_active_face_stationarity_probe.py"
+    source.write_bytes(source.read_bytes() + b"\n# changed in caller root\n")
+    monkeypatch.setattr(archived_contract, "_ROOT", ROOT)
+
+    with pytest.raises(ValueError, match="differs from the archived source SHA"):
+        render_archived_response(archive, root=root_b)

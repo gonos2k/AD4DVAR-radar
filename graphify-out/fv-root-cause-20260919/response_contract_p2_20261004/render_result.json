@@ -1,0 +1,56 @@
+{
+  "scope": "archive-only rerender under P2-fixed code; no FV/GN/AD/PCG/reanalysis",
+  "input_sha256_before": {
+    "point_selected_qx": "cb3283e0ee70518700a6ee5e2ade3f118683a42bbede26433e9e96aed231a59f",
+    "partial_selected_qy": "9095a44201a82765315fbac9bbb58783e415c4f50f373d75ba2de40eb9f6bfdc",
+    "smooth_constructed_prior": "e0996a5081e20037d39f95049768d15d67e768b8aeda133a00fd638ff39e47aa"
+  },
+  "input_sha256_after": {
+    "point_selected_qx": "cb3283e0ee70518700a6ee5e2ade3f118683a42bbede26433e9e96aed231a59f",
+    "partial_selected_qy": "9095a44201a82765315fbac9bbb58783e415c4f50f373d75ba2de40eb9f6bfdc",
+    "smooth_constructed_prior": "e0996a5081e20037d39f95049768d15d67e768b8aeda133a00fd638ff39e47aa"
+  },
+  "archives_unchanged": true,
+  "prior_PR236_exports_preserved": true,
+  "adapter_sha256": "b616a5aa9e0b78fe47b776d11c929477319d7b4ac5c12a811c1ab2913854e31f",
+  "contract_sha256": "86fdf4a9650e336c40a1a47d66b83b082733a986f101c01d0f023a831c33424b",
+  "profiles": [
+    {
+      "profile": "point_selected_qx",
+      "output": "graphify-out/fv-root-cause-20260919/response_contract_p2_20261004/point_selected_qx.json",
+      "output_sha256": "51896e7870a93fbe43fc1cb128a1c2b20f5ae06fd5b40367517f2514e1d309fb",
+      "kind": "selected_face_conditional",
+      "assessment": {
+        "execution": "completed",
+        "numerical": "eligible",
+        "physical": "not_validated"
+      },
+      "base_parameters_sha256": "0344522a5a5ce1a61213e74d3390515a29880cd327bb8a29ea25b20fbffd360a"
+    },
+    {
+      "profile": "partial_selected_qy",
+      "output": "graphify-out/fv-root-cause-20260919/response_contract_p2_20261004/partial_selected_qy.json",
+      "output_sha256": "bc97d30ada9c793a7a976a11a5ecc66486e152b8fa306f995450835d901e1f19",
+      "kind": "selected_face_conditional",
+      "assessment": {
+        "execution": "not_recorded",
+        "numerical": "eligible",
+        "physical": "not_validated"
+      },
+      "base_parameters_sha256": "e3a45fac86e622332c6afd3472b46d58ef97cd37db1445260c86923a3c423bf9"
+    },
+    {
+      "profile": "smooth_constructed_prior",
+      "output": "graphify-out/fv-root-cause-20260919/response_contract_p2_20261004/smooth_constructed_prior.json",
+      "output_sha256": "85a4421e2cfea78d8eaf8c6ec594057a4d85f1fdb657004eae1017e908e785c8",
+      "kind": "smooth_stationary",
+      "assessment": {
+        "execution": "completed",
+        "numerical": "eligible",
+        "physical": "not_validated"
+      },
+      "base_parameters_sha256": "fc5a04cb5dff27c8a37c755c7829ea603e8e8a7ef8c805420889cb7e3fbebbda"
+    }
+  ],
+  "python": "3.12.13"
+}

@@ -1,0 +1,26 @@
+{
+  "baseline": {
+    "PR236_head": "d525841b",
+    "main": "09e6fc0f"
+  },
+  "resolved": [
+    "P2-1 base parameter evidence binding",
+    "P2-2 caller root throughout file access"
+  ],
+  "scope": "contract and archive/filesystem regressions only; no FV/GN/PCG/reanalysis",
+  "verification": {
+    "focused_passed": 44,
+    "existing_warnings": 18,
+    "typecheck_error_level_errors": 0,
+    "all_three_raw_archives_preserved": true,
+    "old_PR236_exports_preserved": true,
+    "shared_graph_report_unchanged_this_fix": true
+  },
+  "remaining": [
+    "3h stationary response",
+    "automatic face selection/new weather inputs",
+    "physical forecasting/learning validation",
+    "prior GraphReport original-text recovery gap"
+  ],
+  "new_math_weather_claim": false
+}
