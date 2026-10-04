@@ -261,6 +261,13 @@ def test_not_run_validation_rejects_fabricated_observed_evidence():
         response_envelope(**kwargs)
 
 
+def test_not_run_validation_rejects_parameter_endpoint_evidence():
+    kwargs = _envelope_kwargs()
+    kwargs["validations"][0]["endpoint_parameters_sha256"] = [_hash("q"), _hash("r")]
+    with pytest.raises(ValueError, match="cannot carry observed"):
+        response_envelope(**kwargs)
+
+
 def test_selected_face_kind_cannot_claim_full_root_support():
     kwargs = _envelope_kwargs()
     kwargs["claims"]["full_root_supported"] = True
@@ -272,6 +279,34 @@ def test_smooth_kind_rejects_reduced_tangent_record():
     kwargs = _envelope_kwargs("smooth_stationary")
     kwargs.update(selected_face=None, chart=None, normal_evidence=None)
     with pytest.raises(ValueError, match="full-control stationarity"):
+        response_envelope(**kwargs)
+
+
+def test_smooth_full_root_claim_requires_explicit_numerical_eligibility_but_is_not_inferred():
+    kwargs = _envelope_kwargs("smooth_stationary")
+    kwargs.update(selected_face=None, chart=None, normal_evidence=None)
+    kwargs["coordinate_map"]["tangent_dimension"] = 26
+    kwargs["stationarity"].update(space="full_control", status="passed")
+    kwargs["curvature"].update(space="full_control", status="qualified")
+    # Even a recorded eligible smooth result does not gain a root claim by default.
+    kwargs["numerical_status"] = "eligible"
+    envelope = response_envelope(**kwargs)
+    assert envelope["claims"]["full_root_supported"] is False
+    kwargs["claims"]["full_root_supported"] = True
+    kwargs["numerical_status"] = "ineligible"
+    with pytest.raises(ValueError, match="requires eligible full-control"):
+        response_envelope(**kwargs)
+
+
+def test_full_root_claim_requires_stationarity_value_below_reported_gate():
+    kwargs = _envelope_kwargs("smooth_stationary")
+    kwargs.update(selected_face=None, chart=None, normal_evidence=None)
+    kwargs["coordinate_map"]["tangent_dimension"] = 26
+    kwargs["stationarity"].update(space="full_control", status="passed", value=1.0, tolerance=1e-10)
+    kwargs["curvature"].update(space="full_control", status="qualified")
+    kwargs["numerical_status"] = "eligible"
+    kwargs["claims"]["full_root_supported"] = True
+    with pytest.raises(ValueError, match="below its explicit tolerance"):
         response_envelope(**kwargs)
 
 
@@ -289,6 +324,64 @@ def test_passed_central_validation_pins_both_endpoints_for_each_h():
     row.pop("endpoint_parameters_sha256")
     with pytest.raises(ValueError, match="two control and parameter endpoints"):
         response_envelope(**kwargs)
+
+
+def _central_row(kwargs: dict[str, Any], *, relative: Any = 2e-5) -> dict[str, Any]:
+    return {"control_sha256": kwargs["identities"]["control"]["sha256"],
+            "parameters_sha256": kwargs["identities"]["parameters"]["sha256"],
+            "direction_sha256": _hash("l"), "scope": "same point central score difference",
+            "status": "passed", "method": "central_finite_difference", "step_sizes": [0.01],
+            "endpoint_control_sha256": [_hash("m"), _hash("m")],
+            "endpoint_parameters_sha256": [_hash("n"), _hash("o")],
+            "criterion": {"relative_error_tolerance": 1e-4}, "error": {"relative": relative}}
+
+
+@pytest.mark.parametrize("error", [1.0, float("inf"), None])
+def test_passed_known_central_metric_must_meet_explicit_tolerance(error: Any):
+    kwargs = _envelope_kwargs()
+    kwargs["validations"] = [_central_row(kwargs, relative=error)]
+    with pytest.raises(ValueError, match="relative error violates"):
+        response_envelope(**kwargs)
+
+
+def test_central_metric_checks_are_narrow_and_allow_failed_or_generic_criteria():
+    kwargs = _envelope_kwargs()
+    row = _central_row(kwargs, relative=1.0)
+    row["criterion"] = {"absolute_error_limit": 1e-8}
+    kwargs["validations"] = [row]
+    assert response_envelope(**kwargs)["independent_validation"][0]["status"] == "passed"
+    row["status"] = "failed"
+    row["criterion"] = {"relative_error_tolerance": 1e-4}
+    assert response_envelope(**kwargs)["independent_validation"][0]["status"] == "failed"
+
+
+def test_passed_central_validation_checks_both_relative_error_aliases():
+    kwargs = _envelope_kwargs()
+    row = _central_row(kwargs, relative=2e-5)
+    row["error"]["relative_error"] = 1.0
+    kwargs["validations"] = [row]
+    with pytest.raises(ValueError, match="relative error violates"):
+        response_envelope(**kwargs)
+
+
+def test_relative_error_aliases_must_agree_when_both_are_recorded():
+    kwargs = _envelope_kwargs()
+    row = _central_row(kwargs, relative=2e-5)
+    row["error"]["relative_error"] = 2e-5
+    kwargs["validations"] = [row]
+    assert response_envelope(**kwargs)["independent_validation"][0]["status"] == "passed"
+    row["error"]["relative_error"] = 3e-5
+    with pytest.raises(ValueError, match="aliases disagree"):
+        response_envelope(**kwargs)
+
+
+def test_legitimate_duplicate_control_endpoints_with_direct_response_are_allowed():
+    kwargs = _envelope_kwargs()
+    kwargs["validations"] = [_central_row(kwargs, relative=2e-5)]
+    kwargs["response"] = {"direct": 0.3, "indirect": -0.1, "total": 0.2}
+    validation = response_envelope(**kwargs)["independent_validation"][0]
+    assert validation["endpoint_control_sha256"][0] == validation["endpoint_control_sha256"][1]
+    assert validation["endpoint_parameters_sha256"][0] != validation["endpoint_parameters_sha256"][1]
 
 
 @pytest.mark.parametrize(("execution", "numerical"), [

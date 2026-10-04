@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 
@@ -210,4 +211,64 @@ def test_alternate_root_source_mismatch_rejects_even_when_importer_root_has_orig
     monkeypatch.setattr(archived_contract, "_ROOT", ROOT)
 
     with pytest.raises(ValueError, match="differs from the archived source SHA"):
+        render_archived_response(archive, root=root_b)
+
+
+@pytest.mark.parametrize("archive", ARCHIVES, ids=("qx-face", "two-hole-face", "centered-smooth"))
+def test_absolute_archive_paths_through_root_symlink_render_from_canonical_root(tmp_path: Path,
+                                                                               monkeypatch, archive: Path):
+    root_a = tmp_path / "empty-importer-a"
+    root_a.mkdir()
+    root_b = tmp_path / "caller-b"
+    canonical_archive = _copy_profile_fixture(root_b, archive)
+    alias = tmp_path / "caller-b-alias"
+    alias.symlink_to(root_b, target_is_directory=True)
+    monkeypatch.setattr(archived_contract, "_ROOT", root_a)
+
+    result = render_archived_response(alias / canonical_archive.relative_to(root_b), root=alias)
+
+    assert result["profile"]["archive_sha256"] == _digest(canonical_archive)
+    assert result["identities"]["source"]["before_after_equal"] is True
+
+
+def test_relative_caller_root_and_archive_path_are_supported(tmp_path: Path, monkeypatch):
+    root_a = tmp_path / "empty-importer-a"
+    root_a.mkdir()
+    root_b = tmp_path / "caller-b"
+    archive = _copy_profile_fixture(root_b, ARCHIVES[0])
+    relative_root = Path(os.path.relpath(root_b, Path.cwd()))
+    relative_archive = archive.relative_to(root_b)
+    monkeypatch.setattr(archived_contract, "_ROOT", root_a)
+
+    result = render_archived_response(relative_archive, root=relative_root)
+
+    assert result["profile"]["archive_sha256"] == _digest(archive)
+
+
+def test_archive_symlink_escaping_caller_root_is_rejected(tmp_path: Path):
+    root = tmp_path / "caller-root"
+    relative = ARCHIVES[0].relative_to(ROOT)
+    link = root / relative
+    link.parent.mkdir(parents=True)
+    link.symlink_to(ARCHIVES[0])
+    with pytest.raises(ValueError, match="archive must be inside the repository root"):
+        render_archived_response(link, root=root)
+
+
+@pytest.mark.parametrize(("archive_index", "dependency"), [
+    (0, "parent.json"),
+    (0, "response.resource.json"),
+    (2, "point_centered_response.run.json"),
+])
+def test_alternate_root_changed_registered_sidecar_is_rejected(tmp_path: Path,
+                                                               archive_index: int,
+                                                               dependency: str):
+    root_b = tmp_path / "caller-b"
+    archive = _copy_profile_fixture(root_b, ARCHIVES[archive_index])
+    sidecar = archive.parent / dependency
+    data = json.loads(sidecar.read_text())
+    data["execution_status"] = "refused"
+    sidecar.write_text(json.dumps(data))
+
+    with pytest.raises(ValueError, match="registered archive dependency SHA-256 mismatch"):
         render_archived_response(archive, root=root_b)

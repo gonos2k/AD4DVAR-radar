@@ -1,0 +1,329 @@
+{
+  "schema": "advar.response-envelope.v1",
+  "kind": "smooth_stationary",
+  "assessment": {
+    "execution": "completed",
+    "numerical": "eligible",
+    "physical": "not_validated"
+  },
+  "identities": {
+    "problem": {
+      "sha256": "6ff14a922dc32f7e703dd54706405bffe113bc33bcd21419c345236db8e8d5ac",
+      "scope": "archived fixed input identity"
+    },
+    "control": {
+      "sha256": "f289760ae9fe9f2aba17cf0b262ffcb4e18606a5e074445c8dd57a96e2d1d964",
+      "dimension": 26
+    },
+    "parameters": {
+      "sha256": "fc5a04cb5dff27c8a37c755c7829ea603e8e8a7ef8c805420889cb7e3fbebbda",
+      "dimension": 13
+    },
+    "code": {
+      "path": "fv_point_centered_prior_response_probe.py.txt",
+      "sha256": "6a10297a850418241303db52a323b594a7d4ae62c567cea8fa1ff7fe385afa00"
+    },
+    "branch": {
+      "sha256": "3c5e5433d3d74a8f840bdd28834b2a73c98edf3b3fc4b46c5ab89567b1e4c70d"
+    },
+    "source": {
+      "sha256": "934f9c96e4635257cba36aa52868eef1e1c7f5785e15150f2a235e5a0b04ac8c",
+      "references": {
+        "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/fv_point_centered_prior_case.py.txt": "49d855faaf353ff01c83efbc0ca2e4f81051fe5ce54ada12fa3bd4d3c8eb2e0f",
+        "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/fv_point_centered_prior_response_probe.py.txt": "6a10297a850418241303db52a323b594a7d4ae62c567cea8fa1ff7fe385afa00",
+        "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/fv_point_centered_prior_response_runner.py.txt": "ad4978df9fa0602ff55d21c0d060bde070e425873c91bf712ea03f1da2c6c661",
+        "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/test_fv_point_centered_prior_case.py.txt": "b2efdc605d9a2608b58f335f29cce0b21140c0e69fc7f8fa9c3e2674e21cfaee",
+        "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/test_fv_point_centered_prior_response.py.txt": "bb56f8f5e38203a5750382fca8c1d42c69edc4a48bf92bd123b83e7e00c46cff"
+      },
+      "before_after_equal": true
+    },
+    "runtime": {
+      "sha256": "659f05b6c125aebc98726bf7c68b24b3e3ed9285bd1cb88bd507d558a20bb596",
+      "recorded": {
+        "device": "CPU FP64",
+        "python": "3.12.13",
+        "torch": "2.13.0"
+      }
+    },
+    "plan": {
+      "sha256": "0e4469531dc050dc7c19933d035ad1063564260abac78b9c8e16d7d9395a72b3"
+    }
+  },
+  "objective": {
+    "sha256": "b292fde8d86c76f6ff9935ffffb268b63fe46f5d80cda953ecc837e229b45c63",
+    "name": "constructed centered dynamics prior; full-control objective"
+  },
+  "prior": {
+    "sha256": "db8d0788a635bfaea9e9944e3befdda15770f2aa47d98d4a828cf2d93b2e5bff",
+    "contract": "constructed centered dynamics prior; not original zero-prior profile",
+    "restored_full_objective": true,
+    "control_dimension": 26,
+    "mean_dimension": 6,
+    "mean": [
+      0.03524543344632973,
+      -0.014651948943251527,
+      0.05034747483050409,
+      -0.07062725334770116,
+      -0.0570045414264835,
+      0.023187493904503132
+    ]
+  },
+  "coordinates": {
+    "ambient_dimension": 26,
+    "tangent_dimension": 26,
+    "lift_sha256": "950aec86e19d4e384a074d759f745db9266b0ae548a748bab9f5b3407fbacc66"
+  },
+  "stationarity": {
+    "space": "full_control",
+    "tolerance": 1e-10,
+    "value": 0.0,
+    "status": "reported_pass_at_archived_fixed_gate",
+    "criterion": {
+      "tolerance": 1e-10,
+      "comparison": "pass iff gradient_max < tolerance",
+      "objective_control_units": "archived profile units; no rescaling applied",
+      "gate_source": {
+        "path": "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/fv_point_centered_prior_response_probe.py.txt",
+        "sha256": "6a10297a850418241303db52a323b594a7d4ae62c567cea8fa1ff7fe385afa00",
+        "evidence": "archived source snapshot"
+      },
+      "local_response_source": {
+        "path": "src/advar/local_response.py",
+        "sha256": "ed4ab262907da26bfdf6201997083125c1430ebccce9afa70982417d77a060f4",
+        "evidence": "archived evidence source map",
+        "evidence_record_path": "graphify-out/fv-root-cause-20260919/FV_POINT_CENTERED_PRIOR_RESPONSE_EVIDENCE.json",
+        "evidence_record_sha256": "d54bcc3ca8349858a7675e299d8a1fb7bea13af670bbd5a332543d56e96ca518"
+      }
+    }
+  },
+  "ambient_diagnostics": {
+    "status": false,
+    "gradient_max": null,
+    "scope": "reported only; not promoted to root/stationarity claim"
+  },
+  "curvature": {
+    "space": "full_control",
+    "status": "reported archived Hessian audit",
+    "hvp_columns": 26,
+    "lambda_max": 4426.990015915346,
+    "lambda_min": 0.9999999999997873,
+    "symmetry_relative": 2.930773598235177e-16
+  },
+  "geometry": {
+    "selected_face": null,
+    "chart": null,
+    "normal_evidence": null
+  },
+  "independent_validation": [
+    {
+      "control_sha256": "f289760ae9fe9f2aba17cf0b262ffcb4e18606a5e074445c8dd57a96e2d1d964",
+      "parameters_sha256": "fc5a04cb5dff27c8a37c755c7829ea603e8e8a7ef8c805420889cb7e3fbebbda",
+      "direction_sha256": "679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed",
+      "scope": "one local direction on the constructed centered-prior profile",
+      "status": "passed",
+      "method": "central_finite_difference",
+      "step_sizes": [
+        0.001
+      ],
+      "endpoint_control_sha256": [
+        "f1bbac4d6af16e637cfc6943baff11444377cba2dea808f8a189aecbd5674ecc",
+        "d626f7b563d5d58eeb2331a49f9b86bcab4c13d09c5da63b87e1d435abccd676"
+      ],
+      "endpoint_parameters_sha256": [
+        "eb9769a9ecdd02c6f7d1f2126367d451c5dec7d8e2dfad96caa427bdc3665350",
+        "6be2d27a6969a090824d9ed8460222ec89774c2692871c4a68508c920df664c8"
+      ],
+      "criterion": {
+        "tolerance": 1.2340828462648612e-07,
+        "source_field": "archived tolerance/limit"
+      },
+      "error": {
+        "absolute_error": 3.7488491345504665e-09,
+        "adjoint_directional": 0.0012340828462648612,
+        "central_difference": 0.0012340865951139958,
+        "relative_error": 3.0377613187776872e-06
+      }
+    },
+    {
+      "control_sha256": "f289760ae9fe9f2aba17cf0b262ffcb4e18606a5e074445c8dd57a96e2d1d964",
+      "parameters_sha256": "fc5a04cb5dff27c8a37c755c7829ea603e8e8a7ef8c805420889cb7e3fbebbda",
+      "direction_sha256": "679fc3ae3a787bbeef8e9efe6f841b4e6eba03cef102198119a820577c5d9fed",
+      "scope": "one local direction on the constructed centered-prior profile",
+      "status": "passed",
+      "method": "central_finite_difference",
+      "step_sizes": [
+        0.0005
+      ],
+      "endpoint_control_sha256": [
+        "6557c2ca8e72012f528b7a982e95456728d41c380ac019580c150c5b24c82731",
+        "f37adf5ca855d366ff390df1c5c730c1fd7d5a2258b82b411c176484420b171a"
+      ],
+      "endpoint_parameters_sha256": [
+        "6f57f550d5daf4cf3caf6f7ddc4fb49142737483a267f9d3d9c8fd42b06696db",
+        "7bd576d552835fa04afd660661238b268705e942671afd452b4cc8e97129d94b"
+      ],
+      "criterion": {
+        "tolerance": 1.2340828462648612e-07,
+        "source_field": "archived tolerance/limit"
+      },
+      "error": {
+        "absolute_error": 9.372330416097807e-10,
+        "adjoint_directional": 0.0012340828462648612,
+        "central_difference": 0.0012340837834979028,
+        "relative_error": 7.594571502605831e-07
+      }
+    }
+  ],
+  "response": {
+    "direct": {
+      "single_archived_local_direction": 0.0
+    },
+    "indirect": {
+      "single_archived_local_direction": 0.0012340828462648612
+    },
+    "total": {
+      "single_archived_local_direction": 0.0012340828462648612
+    },
+    "direct_gradient": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -0.004954104945433104
+    ],
+    "indirect_gradient": [
+      0.0006225417646816855,
+      -0.004122454223880157,
+      0.010385566034764341,
+      0.004827530841830817,
+      0.0015979687437152582,
+      -0.00035421253043565153,
+      0.0002571030424071991,
+      -0.0002667764094219697,
+      0.0028322663058491728,
+      0.005944788669516132,
+      -0.01622628996519675,
+      -0.008126373360380612,
+      0.001969932059682486
+    ],
+    "total_gradient": [
+      0.0006225417646816855,
+      -0.004122454223880157,
+      0.010385566034764341,
+      0.004827530841830817,
+      0.0015979687437152582,
+      -0.00035421253043565153,
+      0.0002571030424071991,
+      -0.0002667764094219697,
+      0.0028322663058491728,
+      0.005944788669516132,
+      -0.01622628996519675,
+      -0.008126373360380612,
+      -0.002984172885750618
+    ],
+    "adjoint": [
+      0.0033592722977760303,
+      -0.001571393789573527,
+      0.005635160791554816,
+      0.004141214541832596,
+      0.0035654328389991712,
+      0.0003327934511534916,
+      -0.0005434947853880034,
+      0.00022886626742915173,
+      -0.0008639485473421109,
+      -0.0017047137940687535,
+      -0.00231141167815793,
+      0.0013498148747846717,
+      -0.001391857577262839,
+      0.0034198182559432118,
+      -0.005929542400106654,
+      -0.00778404055010701,
+      -0.008679777693336308,
+      -0.009143807810423982,
+      -0.0015614199753508366,
+      -0.00990008380671649,
+      -9.052030796194544e-05,
+      -3.503005198535311e-05,
+      -0.00037840350261731287,
+      -0.00018592978973676268,
+      -0.0010341177233154281,
+      -5.4238988913986396e-05
+    ],
+    "mixed_gradients": {},
+    "pcg_iterations": 16,
+    "pcg_relative_residual": 1.0142650816527435e-13,
+    "true_adjoint_relative_residual": 1.0487605606789624e-13,
+    "hvp_count": 17,
+    "direction": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "direction_name": "single_archived_local_direction",
+    "total_projection": 0.001234082846264836,
+    "archived_response_seconds": 15.047767583047971,
+    "archive": {
+      "path": "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/point_centered_response.json",
+      "sha256": "e0996a5081e20037d39f95049768d15d67e768b8aeda133a00fd638ff39e47aa",
+      "source_artifact_sha256": {
+        "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/fv_point_centered_prior_case.py.txt": "49d855faaf353ff01c83efbc0ca2e4f81051fe5ce54ada12fa3bd4d3c8eb2e0f",
+        "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/fv_point_centered_prior_response_probe.py.txt": "6a10297a850418241303db52a323b594a7d4ae62c567cea8fa1ff7fe385afa00",
+        "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/fv_point_centered_prior_response_runner.py.txt": "ad4978df9fa0602ff55d21c0d060bde070e425873c91bf712ea03f1da2c6c661",
+        "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/test_fv_point_centered_prior_case.py.txt": "b2efdc605d9a2608b58f335f29cce0b21140c0e69fc7f8fa9c3e2674e21cfaee",
+        "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/test_fv_point_centered_prior_response.py.txt": "bb56f8f5e38203a5750382fca8c1d42c69edc4a48bf92bd123b83e7e00c46cff"
+      }
+    }
+  },
+  "resource": {
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "-m",
+      "examples.weather_scenarios.fv_point_centered_prior_response_probe",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/point_centered_response_attempt1/point_centered_response.json"
+    ],
+    "child_pid": 88052,
+    "exit_code": 0,
+    "resource_termination": null,
+    "monitor_error": null,
+    "elapsed_seconds": 120.32000154105481,
+    "sampled_peak_rss_bytes": 343736320,
+    "rss_samples": 457,
+    "wall_limit_seconds": 600,
+    "rss_limit_bytes": 1073741824,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wrapper_status": "completed",
+    "wrapper_record_sha256": "34cf10a2c625f6bdc31c2b62205eb56e2974d761f81d3ed15157e1fb69331db0",
+    "resource_record_sha256": "b4d6b7f0745708b535eab7286a4b11bb434b2634a31adafdc95f9ccb8dd32f06",
+    "source": "archived wrapper and resource records"
+  },
+  "claims": {
+    "full_root_supported": false,
+    "physical_validation_supported": false
+  },
+  "profile": {
+    "name": "point_centered_response_attempt1",
+    "archive_sha256": "e0996a5081e20037d39f95049768d15d67e768b8aeda133a00fd638ff39e47aa",
+    "source_before_after_equal": true,
+    "profile_scope": "constructed centered dynamics prior; full-valid correlated point FV; one local direction",
+    "provenance": "archived report adaptation; no FV recomputation"
+  }
+}
