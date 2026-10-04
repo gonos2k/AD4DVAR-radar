@@ -1,0 +1,21 @@
+{
+  "GREEN": {
+    "agent": "r4_schur_review",
+    "decision": "GO",
+    "scope": "frozen code/ledger/preflight and actual two-attempt matrix/eigenpair/Schur/limits"
+  },
+  "RED": {
+    "agent": "r4_field_red",
+    "decision": "GO",
+    "scope": "budget/header/cache/corruption/provider trust, cap check and actual stored-product/input/source records"
+  },
+  "source_sha256": {
+    "examples/weather_scenarios/fv_hessian_checkpoint.py": "8544c312cd12d0ec91f1c4310b312a9ca229fd8bcfe4c2b584d0ac166cc9e2ee",
+    "examples/weather_scenarios/fv_point_3h_endpoint_diagnostics.py": "6e48e23d2ad6be3a54ade759a35d720a9d928163dda70eb0906decc057047c8c",
+    "tests/test_fv_hessian_checkpoint.py": "7bcdff3890578b78aaff1aa3f4a9a0875ea40e218fe1fd6dd5a40782bcf825a5",
+    "tests/test_fv_point_3h_endpoint_diagnostics.py": "b43ba53cd220ceb3d16c94fd8f269ed827a6a722145d1d55dc23f62b41dcb459",
+    "tests/test_fv_objective_score_dependency.py": "de41a42612c22aa63c5eb60aac4fe3b36986657a74afc3c8c2530e1513b66e03"
+  },
+  "coordinator_sha256": "a993b66e43bf0625a08b6321cde6edd1392ade8f0645bb4dcd44e19b2c8340a9",
+  "actual_result_scope": "Jcc curvature only; no stationary-point, shift, optimizer, response or physical validation"
+}

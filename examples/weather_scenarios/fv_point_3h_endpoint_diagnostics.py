@@ -19,6 +19,7 @@ from examples.weather_scenarios import fv_point_3h_merit_continuation as tail
 from examples.weather_scenarios import fv_point_3h_precision_hessian_audit as hess_probe
 from examples.weather_scenarios import fv_point_3h_seed_linear_probe as seed
 from examples.weather_scenarios import fv_point_3h_terminal_block_schur as blocks
+from examples.weather_scenarios import fv_hessian_checkpoint as checkpoint_probe
 from examples.weather_scenarios.fv_diagnostic_guard import atomic_write_text, run_guarded_diagnostic
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -28,6 +29,8 @@ SELF = "examples/weather_scenarios/fv_point_3h_endpoint_diagnostics.py"
 TEST = "tests/test_fv_point_3h_endpoint_diagnostics.py"
 GUARD = "examples/weather_scenarios/fv_diagnostic_guard.py"
 GUARD_TEST = "tests/test_fv_diagnostic_guard.py"
+CHECKPOINT = "examples/weather_scenarios/fv_hessian_checkpoint.py"
+CHECKPOINT_TEST = "tests/test_fv_hessian_checkpoint.py"
 NC, NF, NPARAM, NSTAGE = 26, 20, 13, 3600
 INTERNAL_SECONDS = 240.0
 OUTER_SECONDS = 300.0
@@ -37,6 +40,12 @@ STATIONARITY_TOLERANCE = 1e-10
 
 class EndpointRefusal(RuntimeError):
     """Expected pointwise numerical or qualification refusal."""
+
+    def __init__(self, message: str, *, checkpoint_result: dict[str, Any] | None = None,
+                 checkpoint_kind: str | None = None) -> None:
+        super().__init__(message)
+        self.checkpoint_result = checkpoint_result
+        self.checkpoint_kind = checkpoint_kind
 
 
 def sha(path: Path) -> str:
@@ -114,6 +123,50 @@ def _write(path: Path, report: dict[str, Any]) -> None:
     atomic_write_text(path, json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n")
 
 
+def _checkpoint_receipt_provider(*, root: Path, paths: list[str], problem: Any,
+                                 original: Any, control: Tensor, parameters: Tensor,
+                                 truth: Tensor, base_identity: dict[str, Any],
+                                 objective: Tensor, phi: Tensor, gradient: Tensor, plan_sha256: str,
+                                 gradient_blocks: dict[str, Any], branch: dict[str, Any],
+                                 margins: dict[str, Any]):
+    def receipt() -> dict[str, Any]:
+        source_hashes = _source_hashes(root, paths)
+        input_identity = seed._input_identity(problem, original, control, parameters, truth)
+        runtime = blocks.runtime_identity()
+        return {
+            "objective": {"name": "original full-control J including the declared prior",
+                          "value": float(objective),
+                          "operator_scope": "Jcc of the original full-control objective",
+                          "source_sha256": source_hashes.get("src/advar/fv_point_research_problem.py")},
+            "problem": {"input_identity": input_identity,
+                        "terminal_truth_sha256": input_identity.get("terminal_truth_sha256"),
+                        "archived_problem_identity": base_identity.get("archived_input")},
+            "coordinates": {"kind": "original full-control coordinates", "dimension": NC,
+                            "field_dimension": NF, "dynamics_dimension": NC - NF,
+                            "block_layout": {"field": [0, NF], "dynamics": [NF, NC]}},
+            "source": {"hashes": source_hashes, "plan_sha256": plan_sha256},
+            "runtime": runtime,
+            "branch": {"status": branch.get("status"),
+                       "signature_sha256": branch.get("signature_sha256"),
+                       "euler_stages": branch.get("euler_stages"),
+                       "choice_stage_count": branch.get("choice_stage_count"),
+                       "face_sign_stage_count": branch.get("face_sign_stage_count"),
+                       "margins": margins},
+            "analysis_context": {"endpoint_control_sha256": tensor_sha(control),
+                "parameters_sha256": tensor_sha(parameters), "objective": float(objective),
+                "phi": float(phi), "gradient_sha256": tensor_sha(gradient),
+                "gradient_blocks": gradient_blocks,
+                "prior_contract": "original full 26-control zero-centered prior retained",
+                "full_case_qualification": {"strict_branch_status": branch.get("status"),
+                    "strict_branch_signature_sha256": branch.get("signature_sha256"),
+                    "full_gradient_inf": float(gradient.abs().max()),
+                    "stationarity_tolerance": STATIONARITY_TOLERANCE,
+                    "stationarity_passed": float(gradient.abs().max()) < STATIONARITY_TOLERANCE},
+                "hessian_scope": "fresh original full-H of J; field/dynamics split is diagnostic only"},
+        }
+    return receipt
+
+
 def _exists_or_symlink(path: Path) -> bool:
     return path.exists() or path.is_symlink()
 
@@ -169,13 +222,22 @@ def _validate_parent_and_resource(raw: dict[str, Any], parent: dict[str, Any],
 
 
 def run(*, archive: Path, archive_sha256: str, parent_sha256: str,
-        resource_sha256: str, plan: Path, output: Path) -> dict[str, Any]:
+        resource_sha256: str, plan: Path, output: Path,
+        checkpoint_directory: Path | None = None,
+        checkpoint_max_attempts: int = 3) -> dict[str, Any]:
     """Audit one last accepted control without changing it or running optimization."""
     started = time.monotonic()
     deadline = started + INTERNAL_SECONDS
     root = ROOT.resolve()
     archive_path = archive.resolve()
     plan_path = plan.resolve()
+    checkpoint_path = checkpoint_directory.resolve() if checkpoint_directory is not None else None
+    if checkpoint_path is not None:
+        output_parent = output.resolve().parent
+        if (not checkpoint_path.is_relative_to(root)
+                or checkpoint_path.is_relative_to(output_parent)
+                or output_parent.is_relative_to(checkpoint_path)):
+            raise ValueError("checkpoint directory must be root-contained and separate from the attempt output directory")
     if _exists_or_symlink(output):
         raise ValueError("endpoint diagnostic output must be fresh")
     if not archive_path.is_relative_to(root) or not plan_path.is_relative_to(root):
@@ -207,8 +269,9 @@ def run(*, archive: Path, archive_sha256: str, parent_sha256: str,
     archive_relative = archive_path.relative_to(root).as_posix()
     parent_relative = parent_path.relative_to(root).as_posix()
     resource_relative = resource_path.relative_to(root).as_posix()
+    checkpoint_sources = {CHECKPOINT, CHECKPOINT_TEST} if checkpoint_path is not None else set()
     paths = sorted(set(archive_sources) | {SELF, TEST, GUARD, GUARD_TEST, plan_relative, archive_relative,
-                                           parent_relative, resource_relative})
+                                           parent_relative, resource_relative} | checkpoint_sources)
     source_before = _source_hashes(root, paths)
     if any(source_before.get(name) != digest for name, digest in archive_sources.items()):
         raise ValueError("current source tree differs from the continuation's archived source hashes")
@@ -256,6 +319,10 @@ def run(*, archive: Path, archive_sha256: str, parent_sha256: str,
         "rss_limit_bytes": RSS_LIMIT_BYTES, "optimizer_step_applied": False,
         "score_computed": False, "adjoint_computed": False, "response_computed": False,
         "full_root_claim": False, "minimum_claim": False, "physical_validated": False,
+        "checkpoint": ({"status": "pending", "directory": checkpoint_path.relative_to(root).as_posix(),
+                        "max_attempts": checkpoint_max_attempts, "attempt_seconds": INTERNAL_SECONDS,
+                        "quota_scope": "Hessian-kernel invocations only; metadata/branch/J/g work is outside this quota"}
+                       if checkpoint_path is not None else {"status": "not_requested"}),
     }
     _write(output, initial)
     report = dict(initial)
@@ -304,6 +371,10 @@ def run(*, archive: Path, archive_sha256: str, parent_sha256: str,
         report.update(phase="endpoint_checked", branch=branch, margins=margins,
                       objective=float(objective), phi=float(phi), gradient=gradient.tolist(),
                       gradient_blocks=fresh_blocks, saved_metric_checks=checks,
+                      case_qualification={"branch_and_saved_J_gradient_metrics_reproduced": checks["all_passed"],
+                          "full_control_stationarity_gate_passed": float(gradient.abs().max()) < STATIONARITY_TOLERANCE,
+                          "qualification_scope": "endpoint case evidence; independent of Hessian curvature"},
+                      hessian_objective_scope="original full-control J including all declared prior terms",
                       stationarity_gate={"tolerance": STATIONARITY_TOLERANCE,
                                          "full_gradient_inf": float(gradient.abs().max()),
                                          "passed_scalar_gate": float(gradient.abs().max()) < STATIONARITY_TOLERANCE,
@@ -313,10 +384,35 @@ def run(*, archive: Path, archive_sha256: str, parent_sha256: str,
             raise EndpointRefusal("fresh J/Phi/full-gradient/block metrics differ from the last accepted trial")
         if time.monotonic() >= deadline:
             raise EndpointRefusal("240-second internal budget exhausted before fresh Hessian construction")
-        try:
-            hessian = hess_probe.fresh_hessian(problem.objective, endpoint, fixed_parameters, gradient, deadline)
-        except hess_probe.AuditRefusal as error:
-            raise EndpointRefusal(str(error)) from error
+        if checkpoint_path is None:
+            try:
+                hessian = hess_probe.fresh_hessian(problem.objective, endpoint, fixed_parameters, gradient, deadline)
+            except hess_probe.AuditRefusal as error:
+                raise EndpointRefusal(str(error)) from error
+        else:
+            receipt_provider = _checkpoint_receipt_provider(root=root, paths=paths,
+                problem=problem, original=original, control=endpoint, parameters=fixed_parameters,
+                truth=truth, base_identity=base_identity, objective=objective, phi=phi,
+                gradient=gradient, plan_sha256=plan_sha, gradient_blocks=fresh_blocks,
+                branch=branch, margins=margins)
+            try:
+                hessian = checkpoint_probe.checkpoint_hessian(problem.objective, endpoint, fixed_parameters,
+                    gradient, receipt_provider=receipt_provider, checkpoint_dir=checkpoint_path,
+                    deadline=deadline, max_attempts=checkpoint_max_attempts,
+                    attempt_seconds=INTERNAL_SECONDS)
+                report["checkpoint"] = {"status": "completed", "directory": checkpoint_path.relative_to(root).as_posix(),
+                    "max_attempts": checkpoint_max_attempts, "attempt_seconds": INTERNAL_SECONDS,
+                    "attempts_reserved": hessian.get("attempts_reserved")}
+            except checkpoint_probe.BudgetRefusal as error:
+                partial = dict(error.state)
+                report["checkpoint"] = partial
+                raise EndpointRefusal(str(error), checkpoint_result=partial,
+                                      checkpoint_kind="budget") from error
+            except checkpoint_probe.NumericalRefusal as error:
+                partial = dict(error.state)
+                report["checkpoint"] = partial
+                raise EndpointRefusal(str(error), checkpoint_result=partial,
+                                      checkpoint_kind="numerical") from error
         if hessian.get("hvp_columns") != NC or hessian.get("hvp_calls_total") != NC + 1:
             raise ValueError("fresh Hessian helper did not report 26 basis HVPs and one independent audit HVP")
         schur = hessian.get("block_schur")
@@ -327,6 +423,7 @@ def run(*, archive: Path, archive_sha256: str, parent_sha256: str,
                       hvp_calls_total=NC + 1,
                       block_schur_status=schur.get("status"),
                       block_schur_rhs="fresh full gradient; includes nonzero field-gradient correction",
+                      hessian_objective_scope="original full-control J including all declared prior terms",
                       optimizer_step_applied=False, score_computed=False,
                       adjoint_computed=False, response_computed=False)
         if schur.get("status") != "schur_evaluated":
@@ -335,10 +432,20 @@ def run(*, archive: Path, archive_sha256: str, parent_sha256: str,
             )
         report["numerical_status"] = "endpoint_diagnostic_completed"
     except EndpointRefusal as error:
-        report.update(phase="diagnostic_refused", numerical_status="diagnostic_refusal",
-                      refusal=f"{type(error).__name__}: {error}",
-                      hvp_columns_completed=report.get("hvp_columns_completed", "not_recorded"),
-                      hvp_calls_total=report.get("hvp_calls_total", "not_recorded"))
+        if error.checkpoint_result is not None:
+            partial = error.checkpoint_result
+            checkpoint_status = ("checkpoint_budget_refusal" if error.checkpoint_kind == "budget"
+                                 else "checkpoint_numerical_refusal")
+            report.update(phase="diagnostic_refused", numerical_status=checkpoint_status,
+                refusal=f"{type(error).__name__}: {error}",
+                checkpoint_hessian_status=partial.get("status", "audit_pending"),
+                hvp_columns_completed=partial.get("hvp_columns", partial.get("completed_columns", "not_recorded")),
+                hvp_calls_total=partial.get("hvp_calls_total", "not_recorded"))
+        else:
+            report.update(phase="diagnostic_refused", numerical_status="diagnostic_refusal",
+                refusal=f"{type(error).__name__}: {error}",
+                hvp_columns_completed=report.get("hvp_columns_completed", "not_recorded"),
+                hvp_calls_total=report.get("hvp_calls_total", "not_recorded"))
     source_after = _source_hashes(root, paths)
     input_after = seed._input_identity(problem, original, endpoint, fixed_parameters, truth)
     runtime_after = blocks.runtime_identity()
@@ -361,7 +468,9 @@ def run(*, archive: Path, archive_sha256: str, parent_sha256: str,
 
 def guarded_run(*, archive: Path, archive_sha256: str, parent_sha256: str,
                 resource_sha256: str, plan: Path, output: Path,
-                cancel_requested: Any = None) -> dict[str, Any]:
+                cancel_requested: Any = None,
+                checkpoint_directory: Path | None = None,
+                checkpoint_max_attempts: int = 3) -> dict[str, Any]:
     """Run one root-contained child and preserve separate guard/diagnostic outcomes."""
     root, evidence = ROOT.resolve(), EVIDENCE.resolve()
     if not output.resolve().is_relative_to(evidence):
@@ -385,6 +494,11 @@ def guarded_run(*, archive: Path, archive_sha256: str, parent_sha256: str,
     archive_path, plan_path = archive.resolve(), plan.resolve()
     if not archive_path.is_relative_to(root) or not plan_path.is_relative_to(root):
         raise ValueError("archive and diagnostic plan must be inside the repository")
+    checkpoint_path = checkpoint_directory.resolve() if checkpoint_directory is not None else None
+    if checkpoint_path is not None and (not checkpoint_path.is_relative_to(root)
+            or checkpoint_path.is_relative_to(output.parent.resolve())
+            or output.parent.resolve().is_relative_to(checkpoint_path)):
+        raise ValueError("checkpoint directory must be root-contained and separate from the attempt output directory")
     raw, actual_archive_sha = _read_object(archive_path)
     parent_input, actual_parent_sha = _read_object(archive_path.with_suffix(".run.json"))
     resource_input, actual_resource_sha = _read_object(archive_path.with_suffix(".resource.json"))
@@ -397,8 +511,9 @@ def guarded_run(*, archive: Path, archive_sha256: str, parent_sha256: str,
     archive_relative = archive_path.relative_to(root).as_posix()
     parent_input_relative = archive_path.with_suffix(".run.json").relative_to(root).as_posix()
     resource_input_relative = archive_path.with_suffix(".resource.json").relative_to(root).as_posix()
+    checkpoint_sources = {CHECKPOINT, CHECKPOINT_TEST} if checkpoint_path is not None else set()
     paths = sorted(set(raw["source_before"]) | {SELF, TEST, GUARD, GUARD_TEST, plan_relative,
-        archive_relative, parent_input_relative, resource_input_relative})
+        archive_relative, parent_input_relative, resource_input_relative} | checkpoint_sources)
     before = _source_hashes(root, paths)
     if any(before.get(name) != digest for name, digest in raw["source_before"].items()):
         raise ValueError("guarded preflight found changed archive dependencies")
@@ -412,7 +527,10 @@ def guarded_run(*, archive: Path, archive_sha256: str, parent_sha256: str,
         with claim_path.open("x", encoding="utf-8") as claim:
             claim.write(_canonical_json({"archive_sha256": archive_sha256,
                 "endpoint_control_sha256": raw["last_accepted_control_sha256"],
-                "parameters_sha256": raw["parameters_sha256"],
+            "parameters_sha256": raw["parameters_sha256"],
+                "checkpoint_directory": checkpoint_path.relative_to(root).as_posix() if checkpoint_path else None,
+                "checkpoint_max_attempts": checkpoint_max_attempts if checkpoint_path else None,
+                "checkpoint_quota_scope": "Hessian-kernel invocations only; metadata/branch/J/g work is outside this quota",
                 "source_before_sha256": hashlib.sha256(_canonical_json(before).encode()).hexdigest()}) + "\n")
     except FileExistsError as error:
         raise ValueError("guarded diagnostic attempt directory is already claimed; no retry") from error
@@ -421,12 +539,20 @@ def guarded_run(*, archive: Path, archive_sha256: str, parent_sha256: str,
         "--archive", str(archive_path), "--archive-sha256", archive_sha256,
         "--parent-sha256", parent_sha256, "--resource-sha256", resource_sha256,
         "--plan", str(plan_path), "--output", str(output)]
+    if checkpoint_path is not None:
+        command.extend(("--checkpoint-directory", str(checkpoint_path),
+                        "--checkpoint-max-attempts", str(checkpoint_max_attempts),
+                        "--checkpoint-child"))
     _write(preflight_path, {"scope": "metadata-only guarded preflight; child performs the endpoint diagnostic",
         "command": command, "source_before": before, "archive_sha256": archive_sha256,
         "attempt_claim_sha256": sha(claim_path),
         "endpoint_control_sha256": endpoint_sha, "parameters_sha256": raw["parameters_sha256"],
         "saved_objective": accepted["objective"], "wall_seconds": OUTER_SECONDS,
-        "rss_limit_bytes": RSS_LIMIT_BYTES})
+        "rss_limit_bytes": RSS_LIMIT_BYTES,
+        "checkpoint_directory": checkpoint_path.relative_to(root).as_posix() if checkpoint_path else None,
+        "checkpoint_max_attempts": checkpoint_max_attempts if checkpoint_path else None,
+        "checkpoint_quota_scope": ("Hessian-kernel invocations only; metadata/branch/J/g work is outside this quota"
+                                    if checkpoint_path else None)})
     try:
         resource = run_guarded_diagnostic(command, wall_seconds=OUTER_SECONDS, rss_bytes=RSS_LIMIT_BYTES,
             report_path=resource_path, log_path=log_path, cancel_requested=cancel_requested)
@@ -444,6 +570,8 @@ def guarded_run(*, archive: Path, archive_sha256: str, parent_sha256: str,
             "runtime_before": runtime_before, "runtime_after": runtime_after,
             "endpoint_identity_matches_archive": False, "endpoint_control_sha256": endpoint_sha,
             "parameters_sha256": raw["parameters_sha256"], "archive_sha256": archive_sha256,
+            "checkpoint": {"status": "not_reached", "directory": checkpoint_path.relative_to(root).as_posix()
+                           if checkpoint_path else None},
             "archive_unchanged": sha(archive_path) == archive_sha256,
             "optimizer_step_applied": False, "response_computed": False, "physical_validated": False})
         raise
@@ -485,6 +613,13 @@ def guarded_run(*, archive: Path, archive_sha256: str, parent_sha256: str,
         execution, failure = "failed", "guard terminated residual child processes after child exit"
     elif resource.get("child_process_group_cleanup_sent") is not False:
         execution, failure = "failed", "guard did not verify a clean child process group"
+    elif (not isinstance(resource.get("elapsed_seconds"), (int, float))
+            or isinstance(resource.get("elapsed_seconds"), bool)
+            or not math.isfinite(resource["elapsed_seconds"])):
+        execution, failure = "failed", "guard resource report has no finite elapsed_seconds value"
+    elif resource["elapsed_seconds"] > OUTER_SECONDS:
+        execution, failure = "resource_limited", (
+            f"measured elapsed_seconds={resource['elapsed_seconds']} exceeded {OUTER_SECONDS}-second wall cap")
     elif resource.get("exit_code") == 0 and resource.get("monitor_error") is None and complete:
         execution, failure = "completed", None
     else:
@@ -497,6 +632,7 @@ def guarded_run(*, archive: Path, archive_sha256: str, parent_sha256: str,
         "child_source_maps_match": child_sources_match,
         "runtime_before": runtime_before, "runtime_after": runtime_after,
         "child_runtime_matches": child_runtime_matches,
+        "checkpoint": child.get("checkpoint", {"status": "not_requested"}) if child else {"status": "not_reached"},
         "endpoint_identity_matches_archive": endpoint_matches, "endpoint_control_sha256": endpoint_sha,
         "parameters_sha256": raw["parameters_sha256"], "input_before": child.get("input_before") if child else None,
         "input_after": child.get("input_after") if child else None, "archive_sha256": archive_sha256,
@@ -516,20 +652,31 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--guarded", action="store_true",
                         help="run the read-only child under the new wall/RSS guard")
+    parser.add_argument("--checkpoint-directory", type=Path)
+    parser.add_argument("--checkpoint-max-attempts", type=int, default=3)
+    parser.add_argument("--checkpoint-child", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.guarded:
+        if args.checkpoint_child:
+            parser.error("--checkpoint-child is reserved for an externally guarded child")
         result = guarded_run(archive=args.archive, archive_sha256=args.archive_sha256,
             parent_sha256=args.parent_sha256, resource_sha256=args.resource_sha256,
-            plan=args.plan, output=args.output)
+            plan=args.plan, output=args.output, checkpoint_directory=args.checkpoint_directory,
+            checkpoint_max_attempts=args.checkpoint_max_attempts)
         print(json.dumps({"execution_status": result["execution_status"],
                           "numerical_status": result["numerical_status"],
                           "child_terminal_phase": result["child_terminal_phase"]}))
         if result["execution_status"] != "completed":
             raise SystemExit(1)
     else:
+        if args.checkpoint_child and args.checkpoint_directory is None:
+            parser.error("--checkpoint-child requires --checkpoint-directory")
+        if args.checkpoint_directory is not None and not args.checkpoint_child:
+            parser.error("checkpoint CLI requires --guarded; --checkpoint-child is for its launched child")
         run(archive=args.archive, archive_sha256=args.archive_sha256,
             parent_sha256=args.parent_sha256, resource_sha256=args.resource_sha256,
-            plan=args.plan, output=args.output)
+            plan=args.plan, output=args.output, checkpoint_directory=args.checkpoint_directory,
+            checkpoint_max_attempts=args.checkpoint_max_attempts)
 
 
 if __name__ == "__main__":
