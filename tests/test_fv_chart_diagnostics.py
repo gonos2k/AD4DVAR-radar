@@ -149,6 +149,16 @@ def test_near_rank_loss_is_refused_using_a_relative_fp64_threshold():
         tangent_metric_diagnostics(jacobian, gradient)
 
 
+def test_stable_tangent_norm_retains_small_nonzero_components():
+    jacobian = torch.eye(2, dtype=torch.float64)
+    gradient = torch.tensor([1e-200, 1e-200], dtype=torch.float64)
+    result = tangent_metric_diagnostics(jacobian, gradient)
+    assert result["tangent_gradient_norm"] > 0
+    assert result["tangent_gradient_norm"] == pytest.approx(2**0.5 * 1e-200, rel=1e-14, abs=0)
+    assert result["raw_tangent_gradient_inf_norm"] > 0
+    assert result["raw_tangent_gradient_inf_norm"] == pytest.approx(1e-200, rel=1e-14, abs=0)
+
+
 def test_finite_inputs_that_overflow_the_tangent_metric_are_refused():
     jacobian = torch.tensor([[1e-310]], dtype=torch.float64)
     coordinate_gradient = torch.ones(1, dtype=torch.float64)
@@ -167,6 +177,10 @@ def test_hessian_is_symmetrized_for_spectrum_and_asymmetry_is_reported():
     assert torch.allclose(result["coordinate_normalized_hessian_eigenvalues"],
                           torch.linalg.eigvalsh(symmetric))
     assert result["hessian_asymmetry_relative"] > 0
+    assert result["hessian_asymmetry_relative"] <= result["hessian_asymmetry_relative_tolerance"]
+    assert result["hessian_asymmetry_relative_tolerance"] == pytest.approx(
+        64 * torch.finfo(torch.float64).eps * 2
+    )
 
 
 @pytest.mark.parametrize("bad", [
@@ -187,13 +201,54 @@ def test_nonfinite_optional_hessian_is_refused():
         tangent_metric_diagnostics(jacobian, gradient, hessian=hessian)
 
 
-def test_finite_hessian_whose_norm_overflows_is_refused():
+def test_large_but_representable_hessian_norm_is_retained():
     jacobian = torch.eye(2, dtype=torch.float64)
     gradient = torch.zeros(2, dtype=torch.float64)
     hessian = torch.eye(2, dtype=torch.float64) * 1e308
     assert bool(torch.isfinite(hessian).all())
-    with pytest.raises(ValueError, match="hessian scale or asymmetry overflowed"):
+    result = tangent_metric_diagnostics(jacobian, gradient, hessian=hessian)
+    assert torch.equal(result["coordinate_normalized_hessian_eigenvalues"], torch.diag(hessian))
+
+
+@pytest.mark.parametrize("chart_scale", [1.0, 1e-150])
+def test_tiny_hessian_with_material_relative_skew_is_refused_at_any_chart_scale(chart_scale: float):
+    jacobian = torch.eye(2, dtype=torch.float64) * chart_scale
+    gradient = torch.zeros(2, dtype=torch.float64)
+    physical_hessian = torch.tensor([[1.0, 0.0], [1.0, 1.0]], dtype=torch.float64)
+    hessian = physical_hessian * chart_scale**2
+    assert bool(torch.isfinite(hessian).all())
+    with pytest.raises(ValueError, match="asymmetry exceeds"):
         tangent_metric_diagnostics(jacobian, gradient, hessian=hessian)
+
+
+def test_true_curvature_eigenvalue_overflow_is_refused():
+    jacobian = torch.eye(2, dtype=torch.float64)
+    gradient = torch.zeros(2, dtype=torch.float64)
+    hessian = torch.full((2, 2), 1e308, dtype=torch.float64)
+    with pytest.raises(ValueError, match="nonfinite"):
+        tangent_metric_diagnostics(jacobian, gradient, hessian=hessian)
+
+
+@pytest.mark.parametrize("small_curvature", [-1e-16, 1e-16])
+def test_symmetrization_preserves_mixed_scale_diagonal_curvature(small_curvature: float):
+    jacobian = torch.eye(2, dtype=torch.float64)
+    gradient = torch.zeros(2, dtype=torch.float64)
+    hessian = torch.diag(torch.tensor([1e308, small_curvature], dtype=torch.float64))
+    result = tangent_metric_diagnostics(jacobian, gradient, hessian=hessian)
+    eigenvalues = result["coordinate_normalized_hessian_eigenvalues"]
+    assert torch.sign(eigenvalues[0]) == torch.sign(torch.tensor(small_curvature))
+    assert eigenvalues[0] == pytest.approx(small_curvature, rel=2e-15, abs=0)
+    assert eigenvalues[1] == pytest.approx(1e308, rel=2e-15, abs=0)
+
+
+def test_symmetrization_preserves_representable_subnormal_diagonal_entries():
+    jacobian = torch.eye(2, dtype=torch.float64)
+    gradient = torch.zeros(2, dtype=torch.float64)
+    smallest_subnormal = torch.nextafter(torch.tensor(0.0, dtype=torch.float64), torch.tensor(1.0, dtype=torch.float64))
+    hessian = torch.eye(2, dtype=torch.float64) * smallest_subnormal
+    result = tangent_metric_diagnostics(jacobian, gradient, hessian=hessian)
+    expected = smallest_subnormal.expand(2).clone()
+    assert torch.equal(result["coordinate_normalized_hessian_eigenvalues"], expected)
 
 
 def test_finite_hessian_with_overflowing_coordinate_normalization_is_refused():

@@ -6,6 +6,7 @@ import base64
 import hashlib
 import json
 import math
+import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -18,12 +19,15 @@ from examples.weather_scenarios import fv_point_3h_merit_continuation as tail
 from examples.weather_scenarios import fv_point_3h_precision_hessian_audit as hess_probe
 from examples.weather_scenarios import fv_point_3h_seed_linear_probe as seed
 from examples.weather_scenarios import fv_point_3h_terminal_block_schur as blocks
+from examples.weather_scenarios.fv_diagnostic_guard import atomic_write_text, run_guarded_diagnostic
 
 ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE = ROOT / "graphify-out/fv-root-cause-20260919"
 PLAN = EVIDENCE / "PR238_ENDPOINT_DIAGNOSTIC_PLAN_20261004.md"
 SELF = "examples/weather_scenarios/fv_point_3h_endpoint_diagnostics.py"
 TEST = "tests/test_fv_point_3h_endpoint_diagnostics.py"
+GUARD = "examples/weather_scenarios/fv_diagnostic_guard.py"
+GUARD_TEST = "tests/test_fv_diagnostic_guard.py"
 NC, NF, NPARAM, NSTAGE = 26, 20, 13, 3600
 INTERNAL_SECONDS = 240.0
 OUTER_SECONDS = 300.0
@@ -107,9 +111,11 @@ def _source_hashes(root: Path, paths: list[str]) -> dict[str, str]:
 
 def _write(path: Path, report: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n")
-    tmp.replace(path)
+    atomic_write_text(path, json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n")
+
+
+def _exists_or_symlink(path: Path) -> bool:
+    return path.exists() or path.is_symlink()
 
 
 def _validate_parent_and_resource(raw: dict[str, Any], parent: dict[str, Any],
@@ -170,7 +176,7 @@ def run(*, archive: Path, archive_sha256: str, parent_sha256: str,
     root = ROOT.resolve()
     archive_path = archive.resolve()
     plan_path = plan.resolve()
-    if output.exists():
+    if _exists_or_symlink(output):
         raise ValueError("endpoint diagnostic output must be fresh")
     if not archive_path.is_relative_to(root) or not plan_path.is_relative_to(root):
         raise ValueError("archive and diagnostic plan must be inside the repository")
@@ -201,7 +207,7 @@ def run(*, archive: Path, archive_sha256: str, parent_sha256: str,
     archive_relative = archive_path.relative_to(root).as_posix()
     parent_relative = parent_path.relative_to(root).as_posix()
     resource_relative = resource_path.relative_to(root).as_posix()
-    paths = sorted(set(archive_sources) | {SELF, TEST, plan_relative, archive_relative,
+    paths = sorted(set(archive_sources) | {SELF, TEST, GUARD, GUARD_TEST, plan_relative, archive_relative,
                                            parent_relative, resource_relative})
     source_before = _source_hashes(root, paths)
     if any(source_before.get(name) != digest for name, digest in archive_sources.items()):
@@ -353,6 +359,153 @@ def run(*, archive: Path, archive_sha256: str, parent_sha256: str,
     return report
 
 
+def guarded_run(*, archive: Path, archive_sha256: str, parent_sha256: str,
+                resource_sha256: str, plan: Path, output: Path,
+                cancel_requested: Any = None) -> dict[str, Any]:
+    """Run one root-contained child and preserve separate guard/diagnostic outcomes."""
+    root, evidence = ROOT.resolve(), EVIDENCE.resolve()
+    if not output.resolve().is_relative_to(evidence):
+        raise ValueError("guarded diagnostic output must be inside the evidence tree")
+    parent_path, resource_path, log_path = (output.with_suffix(suffix) for suffix in
+                                             (".run.json", ".resource.json", ".log"))
+    preflight_path = output.parent / "preflight.json"
+    claim_path = output.parent / ".guarded-launch.lock"
+    siblings = (output, parent_path, resource_path, log_path, preflight_path, claim_path)
+    canonical_siblings = [path.resolve() for path in siblings]
+    if len(set(canonical_siblings)) != len(canonical_siblings):
+        raise ValueError("guarded output and sidecar paths must be distinct")
+    guarded_paths = tuple(path for item in siblings for path in
+                          (item, item.with_suffix(item.suffix + ".tmp")))
+    atomic_temps = (candidate for item in siblings for candidate in
+                    (output.parent.glob(f".{item.name}.*.tmp") if output.parent.is_dir() else ()))
+    if any(_exists_or_symlink(path) for path in guarded_paths) or any(
+            _exists_or_symlink(path) for path in atomic_temps):
+        raise ValueError("guarded diagnostic output siblings must all be fresh")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    archive_path, plan_path = archive.resolve(), plan.resolve()
+    if not archive_path.is_relative_to(root) or not plan_path.is_relative_to(root):
+        raise ValueError("archive and diagnostic plan must be inside the repository")
+    raw, actual_archive_sha = _read_object(archive_path)
+    parent_input, actual_parent_sha = _read_object(archive_path.with_suffix(".run.json"))
+    resource_input, actual_resource_sha = _read_object(archive_path.with_suffix(".resource.json"))
+    if (actual_archive_sha != archive_sha256 or actual_parent_sha != parent_sha256
+            or actual_resource_sha != resource_sha256):
+        raise ValueError("guarded diagnostic caller pins do not match the archive sidecars")
+    _validate_parent_and_resource(raw, parent_input, resource_input)
+    accepted = extract_last_accepted_trial(raw)
+    plan_relative = plan_path.relative_to(root).as_posix()
+    archive_relative = archive_path.relative_to(root).as_posix()
+    parent_input_relative = archive_path.with_suffix(".run.json").relative_to(root).as_posix()
+    resource_input_relative = archive_path.with_suffix(".resource.json").relative_to(root).as_posix()
+    paths = sorted(set(raw["source_before"]) | {SELF, TEST, GUARD, GUARD_TEST, plan_relative,
+        archive_relative, parent_input_relative, resource_input_relative})
+    before = _source_hashes(root, paths)
+    if any(before.get(name) != digest for name, digest in raw["source_before"].items()):
+        raise ValueError("guarded preflight found changed archive dependencies")
+    if (before[archive_relative] != archive_sha256 or before[parent_input_relative] != parent_sha256
+            or before[resource_input_relative] != resource_sha256):
+        raise ValueError("guarded preflight source map omits pinned archive sidecars")
+    runtime_before = blocks.runtime_identity()
+    if runtime_before != raw.get("runtime"):
+        raise ValueError("guarded preflight runtime differs from the completed continuation")
+    try:
+        with claim_path.open("x", encoding="utf-8") as claim:
+            claim.write(_canonical_json({"archive_sha256": archive_sha256,
+                "endpoint_control_sha256": raw["last_accepted_control_sha256"],
+                "parameters_sha256": raw["parameters_sha256"],
+                "source_before_sha256": hashlib.sha256(_canonical_json(before).encode()).hexdigest()}) + "\n")
+    except FileExistsError as error:
+        raise ValueError("guarded diagnostic attempt directory is already claimed; no retry") from error
+    endpoint_sha = raw["last_accepted_control_sha256"]
+    command = [str(root / ".venv/bin/python"), "-m", "examples.weather_scenarios.fv_point_3h_endpoint_diagnostics",
+        "--archive", str(archive_path), "--archive-sha256", archive_sha256,
+        "--parent-sha256", parent_sha256, "--resource-sha256", resource_sha256,
+        "--plan", str(plan_path), "--output", str(output)]
+    _write(preflight_path, {"scope": "metadata-only guarded preflight; child performs the endpoint diagnostic",
+        "command": command, "source_before": before, "archive_sha256": archive_sha256,
+        "attempt_claim_sha256": sha(claim_path),
+        "endpoint_control_sha256": endpoint_sha, "parameters_sha256": raw["parameters_sha256"],
+        "saved_objective": accepted["objective"], "wall_seconds": OUTER_SECONDS,
+        "rss_limit_bytes": RSS_LIMIT_BYTES})
+    try:
+        resource = run_guarded_diagnostic(command, wall_seconds=OUTER_SECONDS, rss_bytes=RSS_LIMIT_BYTES,
+            report_path=resource_path, log_path=log_path, cancel_requested=cancel_requested)
+    except Exception as error:
+        after = _source_hashes(root, paths)
+        runtime_after = blocks.runtime_identity()
+        try:
+            resource_failure, _ = _read_object(resource_path)
+        except (OSError, ValueError):
+            resource_failure = None
+        _write(parent_path, {"execution_status": "failed", "failure_reason":
+            f"guard invocation failed: {type(error).__name__}: {error}", "numerical_status": "not_reached",
+            "child_terminal_phase": None, "child_read_error": "guard did not return", "resource": resource_failure,
+            "source_before": before, "source_after": after, "source_unchanged": before == after,
+            "runtime_before": runtime_before, "runtime_after": runtime_after,
+            "endpoint_identity_matches_archive": False, "endpoint_control_sha256": endpoint_sha,
+            "parameters_sha256": raw["parameters_sha256"], "archive_sha256": archive_sha256,
+            "archive_unchanged": sha(archive_path) == archive_sha256,
+            "optimizer_step_applied": False, "response_computed": False, "physical_validated": False})
+        raise
+    after = _source_hashes(root, paths)
+    runtime_after = blocks.runtime_identity()
+    try:
+        child, child_sha = _read_object(output)
+        child_read_error = None
+    except (OSError, ValueError) as error:
+        child, child_sha, child_read_error = None, None, str(error)
+    endpoint_matches = bool(child is not None
+        and child.get("endpoint_control_sha256") == endpoint_sha
+        and child.get("endpoint_control") == raw["last_accepted_control"]
+        and child.get("parameters_sha256") == raw["parameters_sha256"]
+        and child.get("parameters") == raw["parameters"]
+        and child.get("input_before") == raw["input_after"]
+        and child.get("input_after") == raw["input_after"])
+    child_sources_match = bool(child is not None
+        and child.get("source_before") == before and child.get("source_after") == after)
+    child_runtime_matches = bool(child is not None
+        and child.get("runtime") == runtime_before == raw.get("runtime")
+        and child.get("runtime_after") == runtime_after == runtime_before)
+    complete = bool(endpoint_matches and child is not None
+        and child.get("phase") in {"finished", "diagnostic_refused"}
+        and child.get("source_unchanged") is True and child_sources_match
+        and child.get("input_unchanged") is True and child_runtime_matches and before == after)
+    if resource.get("received_sigterm"):
+        execution, failure = "failed", "guard received SIGTERM; child cancellation was requested"
+    elif resource.get("resource_termination") == "cancelled":
+        execution, failure = "failed", "guard cancellation was requested"
+    elif resource.get("monitor_error") is not None or resource.get("resource_termination") not in {
+            None, "wall_time_limit", "rss_limit"}:
+        execution, failure = "failed", str(resource.get("monitor_error") or resource["resource_termination"])
+    elif resource.get("resource_termination") in {"wall_time_limit", "rss_limit"}:
+        execution, failure = "resource_limited", str(resource["resource_termination"])
+    elif resource.get("child_process_group_cleanup_error") is not None:
+        execution, failure = "failed", str(resource["child_process_group_cleanup_error"])
+    elif resource.get("child_process_group_cleanup_sent") is True:
+        execution, failure = "failed", "guard terminated residual child processes after child exit"
+    elif resource.get("child_process_group_cleanup_sent") is not False:
+        execution, failure = "failed", "guard did not verify a clean child process group"
+    elif resource.get("exit_code") == 0 and resource.get("monitor_error") is None and complete:
+        execution, failure = "completed", None
+    else:
+        execution, failure = "failed", "guarded child or parent integrity gate failed"
+    record = {"execution_status": execution, "failure_reason": failure,
+        "numerical_status": child.get("numerical_status", "not_reached") if child else "not_reached",
+        "child_terminal_phase": child.get("phase") if child else None, "child_sha256": child_sha,
+        "child_read_error": child_read_error, "resource": resource, "source_before": before,
+        "source_after": after, "source_unchanged": before == after,
+        "child_source_maps_match": child_sources_match,
+        "runtime_before": runtime_before, "runtime_after": runtime_after,
+        "child_runtime_matches": child_runtime_matches,
+        "endpoint_identity_matches_archive": endpoint_matches, "endpoint_control_sha256": endpoint_sha,
+        "parameters_sha256": raw["parameters_sha256"], "input_before": child.get("input_before") if child else None,
+        "input_after": child.get("input_after") if child else None, "archive_sha256": archive_sha256,
+        "archive_unchanged": sha(archive_path) == archive_sha256,
+        "optimizer_step_applied": False, "response_computed": False, "physical_validated": False}
+    _write(parent_path, record)
+    return record
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--archive", type=Path, required=True)
@@ -361,10 +514,22 @@ def main() -> None:
     parser.add_argument("--resource-sha256", required=True)
     parser.add_argument("--plan", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--guarded", action="store_true",
+                        help="run the read-only child under the new wall/RSS guard")
     args = parser.parse_args()
-    run(archive=args.archive, archive_sha256=args.archive_sha256,
-        parent_sha256=args.parent_sha256, resource_sha256=args.resource_sha256,
-        plan=args.plan, output=args.output)
+    if args.guarded:
+        result = guarded_run(archive=args.archive, archive_sha256=args.archive_sha256,
+            parent_sha256=args.parent_sha256, resource_sha256=args.resource_sha256,
+            plan=args.plan, output=args.output)
+        print(json.dumps({"execution_status": result["execution_status"],
+                          "numerical_status": result["numerical_status"],
+                          "child_terminal_phase": result["child_terminal_phase"]}))
+        if result["execution_status"] != "completed":
+            raise SystemExit(1)
+    else:
+        run(archive=args.archive, archive_sha256=args.archive_sha256,
+            parent_sha256=args.parent_sha256, resource_sha256=args.resource_sha256,
+            plan=args.plan, output=args.output)
 
 
 if __name__ == "__main__":

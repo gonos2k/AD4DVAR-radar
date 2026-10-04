@@ -1,0 +1,33 @@
+{
+  "GREEN": {
+    "agent": "r4_schur_review",
+    "decision": "GO",
+    "scope": "math/coordinates/scale and final group cleanup/exclusive claim/source-status contract"
+  },
+  "RED": {
+    "agent": "r4_field_red",
+    "decision": "GO",
+    "scope": "independent underflow/mixed-range probes and final cancellation/filesystem/concurrency deltas"
+  },
+  "independent_baseline_review": {
+    "agent": "r2_response_impl",
+    "scope": "PR239 original endpoint/provenance/execution numerical-refusal records matched; no baseline FV result invalidated"
+  },
+  "source_sha256": {
+    "examples/weather_scenarios/fv_chart_diagnostics.py": "ba32a4d857ef99738da161b58c91afcbd6eb5d1df3aa56629317158dcebb0ecb",
+    "examples/weather_scenarios/fv_diagnostic_guard.py": "a1c6b71dcaa4a16952658c9057839cef405238390908476b04e793710f6d275c",
+    "examples/weather_scenarios/fv_point_3h_endpoint_diagnostics.py": "5b27a4dd454749318b8eba9cfae329807816164131a616160673dd758c67e7fa",
+    "tests/test_fv_chart_diagnostics.py": "7d213db023694b2ba5a64df579429cb2dd06797c50565e53dc5c204c4142c526",
+    "tests/test_fv_diagnostic_guard.py": "70b91717617dfb1b32dcee5d7cb1b90c355fa09d143047c9b30c262043c437ec",
+    "tests/test_fv_point_3h_endpoint_diagnostics.py": "6151d8c672b1283ad5269a00d4bb5ab52c3c4bdb9a04f3c6fbeac9660ef89be1"
+  },
+  "verification": {
+    "focused_passed": 81,
+    "typecheck_error_level_errors": 0,
+    "no_new_FV_HVP_GN_PCG_reanalysis": true
+  },
+  "scope_limits": [
+    "only new guarded route verified for cancellation/exclusivity; legacy directcalls not migrated",
+    "original3h budget refusal stays historical and unqualified"
+  ]
+}

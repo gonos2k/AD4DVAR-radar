@@ -1,0 +1,51 @@
+{
+  "baseline": {
+    "PR239_head": "c74a45a2",
+    "main": "8f6162ab"
+  },
+  "resolved_in_supported_new_path": [
+    "T1 nonzero tangent norm underflow",
+    "T2 relative Hessian-skew underflow",
+    "T3 SIGTERM child cleanup via newguarded CLI",
+    "T4 unique atomic output/exclusive log contracts",
+    "TERM-ignoring residual process-group cleanup",
+    "exclusive persistent attempt claim closes concurrent preflight/parent overwrite"
+  ],
+  "verification": {
+    "focused_passed": 81,
+    "existing_warnings": 18,
+    "typecheck_errors": 0,
+    "original_64_numerical_dependency_sources_unchanged": true,
+    "historical_evidence_files_unchanged": {
+      "graphify-out/fv-root-cause-20260919/PR238_SCIENTIFIC_FOLLOWUP_20261004.md": "b5ef27e53c7196b8143240643291f59b787b07fbb1a9ad53e47d7578884d1639",
+      "graphify-out/fv-root-cause-20260919/PR238_ENDPOINT_DIAGNOSTIC_PLAN_20261004.md": "8de1ac8b29c383288c10476b333058f8d1c0746888670fb12e97a5c46b5e9858",
+      "graphify-out/fv-root-cause-20260919/PR238_CHART_METRIC_EXAMPLE_20261004.json": "5b1fd69f389c77ce10b77fd52bc825445f93047770d74b236bae59d67baa1597",
+      "graphify-out/fv-root-cause-20260919/PR238_SCIENCE_AST_20261004.json": "435bd50da7d4af0e80e67ec3b3e57b7ccd934b11221406eea95671e0f5e6074c",
+      "graphify-out/fv-root-cause-20260919/PR238_SCIENCE_GRAPHIFY_20261004.json": "07f12bb1d4a5ca973b8bad94488e3175a3eb7ba8e4481501cff895f9c2d37ff6",
+      "graphify-out/fv-root-cause-20260919/PR238_SCIENCE_KG_UPDATE_20261004.json": "929b3af6857b5a0ff8802cef1340759ac6d49e67cedf1ef36b0438cff6a71eb6",
+      "graphify-out/fv-root-cause-20260919/PR238_SCIENCE_TESTS_20261004.log": "fa7029f2faccc9378f9eef665f00bef870659f83f259c90836fa9a82cb8937a7",
+      "graphify-out/fv-root-cause-20260919/PR238_SCIENCE_TYPES_20261004.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+      "graphify-out/fv-root-cause-20260919/endpoint_diagnostic_attempt1/run_guarded_audit.py": "79595a18e3a410942078635adf992cde77b4fd036c64936fef527cc5583b7ff7",
+      "graphify-out/fv-root-cause-20260919/endpoint_diagnostic_attempt1/preflight.json": "a0bd4bf7303aadfd6360141a51d00d57e2f6839b81cf695ac52a20da0b3829d2",
+      "graphify-out/fv-root-cause-20260919/endpoint_diagnostic_attempt1/audit.json": "8225ba715675b21adc7f57b1d621c2aef90781123be28737fd88c44676dfd23a",
+      "graphify-out/fv-root-cause-20260919/endpoint_diagnostic_attempt1/audit.run.json": "18193634cab6e334bed169e28d118723fc328656ec266e99e4ac7114f53e87ab",
+      "graphify-out/fv-root-cause-20260919/endpoint_diagnostic_attempt1/audit.resource.json": "ef288e2c4056e73e274094e3c7b09894eedaeecc2982dddb1fcfe0644e761837",
+      "graphify-out/fv-root-cause-20260919/endpoint_diagnostic_attempt1/audit.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "graphify-out/fv-root-cause-20260919/PR238_SCIENCE_REVIEWS_20261004.json": "bbcb0b974b8e37b1f7c212821ad8c97e49f338287326079a33e49a0a8e29e51b"
+    },
+    "no_FV_GN_HVP_PCG_reanalysis": true,
+    "shared_graph_report_unchanged": true,
+    "isolated_AST": {
+      "nodes": 124,
+      "edges": 373
+    }
+  },
+  "scope_limits": [
+    "SIGTERM safety verified only new guarded route; old direct resource runner preserved and not upgraded",
+    "bare child mode still requires outer guard",
+    "historical 3h fresh-Hessian budget refusal not rerun or requalified",
+    "new3h curvature/normal-point response, finite impacts, independent meteorology/learning still open",
+    "latest full Linux success and prior GraphReport original-text recovery still unconfirmed"
+  ],
+  "new_scientific_performance_claim": false
+}
