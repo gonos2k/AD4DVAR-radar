@@ -1,0 +1,16 @@
+{
+  "scope": "independent original-vs-fixed chart arithmetic; no FV/HVP/reanalysis",
+  "baseline_source_sha256": "7a2ad7474f8ef68d7fbf9f2dfc91f6330221796d6bbb0682d769a096ce46b664",
+  "tangent": {
+    "old": 0.0,
+    "fixed": 1.414213562373095e-200,
+    "expected": 1.414213562373095e-200,
+    "old_fails_zero_absolute_tolerance": true
+  },
+  "relative_skew": {
+    "old": 0.0,
+    "expected": 0.816496580927726,
+    "fixed_refusal": "hessian asymmetry exceeds the FP64 component-scale tolerance"
+  },
+  "historical_reports_unchanged": true
+}

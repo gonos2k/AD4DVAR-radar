@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
+from concurrent.futures import ThreadPoolExecutor
+import threading
 
 import pytest
 import torch
@@ -42,6 +44,8 @@ def _make_toy_archive(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
     producer_plan_rel = "graphify-out/fv-root-cause-20260919/S4_COUPLED_ORIGINAL_J_CONTINUATION_PLAN_20261003.md"
     for relative, contents in ((diagnostic.SELF, b"toy driver source"),
                                (diagnostic.TEST, b"toy test source"),
+                               (diagnostic.GUARD, b"toy guarded runner source"),
+                               (diagnostic.GUARD_TEST, b"toy guarded runner tests"),
                                (plan_rel, b"toy endpoint plan"),
                                (producer_plan_rel, b"toy producer plan")):
         path = root / relative
@@ -204,6 +208,7 @@ def test_toy_run_reports_only_fresh_endpoint_diagnostics(tmp_path: Path, monkeyp
     assert report["fresh_hessian"]["schur_input_gradient"] == report["gradient"]
     assert max(abs(value) for value in report["fresh_hessian"]["schur_input_gradient"][:diagnostic.NF]) > 0
     assert report["source_unchanged"] and report["input_unchanged"]
+    assert diagnostic.GUARD in report["source_before"]
 
 
 def test_typed_hessian_refusal_keeps_jg_and_does_not_claim_hvp_count(tmp_path: Path, monkeypatch):
@@ -279,3 +284,260 @@ def test_branch_signature_mismatch_is_serialized_as_numerical_refusal(tmp_path: 
     assert report["numerical_status"] == "diagnostic_refusal"
     assert report["branch"]["signature_sha256"] == "e" * 64
     assert report["hvp_calls_total"] == "not_recorded"
+
+
+@pytest.mark.parametrize("kind", ["existing", "dangling_symlink"])
+def test_child_rejects_existing_or_dangling_output_without_clobber(tmp_path: Path,
+                                                                  monkeypatch, kind: str):
+    archive, plan, output, _ = _make_toy_archive(tmp_path, monkeypatch)
+    original = archive.read_bytes()
+    if kind == "existing":
+        output.write_text("preserve me")
+    else:
+        output.symlink_to(output.with_name("missing-target.json"))
+    with pytest.raises(ValueError, match="output must be fresh"):
+        _run(archive, plan, output)
+    assert archive.read_bytes() == original
+    if kind == "dangling_symlink":
+        assert output.is_symlink()
+    else:
+        assert output.read_text() == "preserve me"
+
+
+def test_guarded_run_preserves_execution_and_numerical_status_separately(tmp_path: Path,
+                                                                         monkeypatch):
+    archive, plan, _, raw = _make_toy_archive(tmp_path, monkeypatch)
+    output = archive.parent / "future-attempt/audit.json"
+    captured: dict[str, Any] = {}
+
+    def fake_guard(command, *, wall_seconds, rss_bytes, report_path, log_path, cancel_requested=None):
+        captured.update(command=command, wall_seconds=wall_seconds, rss_bytes=rss_bytes,
+                        cancel_requested=cancel_requested)
+        assert "--guarded" not in command
+        sources = json.loads((output.parent / "preflight.json").read_text())["source_before"]
+        child = {"phase": "diagnostic_refused", "numerical_status": "diagnostic_refusal",
+            "endpoint_control": raw["last_accepted_control"],
+            "endpoint_control_sha256": raw["last_accepted_control_sha256"],
+            "parameters": raw["parameters"], "parameters_sha256": raw["parameters_sha256"],
+            "input_before": raw["input_after"], "input_after": raw["input_after"],
+            "source_before": sources, "source_after": sources,
+            "source_unchanged": True, "input_unchanged": True,
+            "runtime": raw["runtime"], "runtime_after": raw["runtime_after"]}
+        diagnostic._write(output, child)
+        with log_path.open("x") as stream:
+            stream.write("toy child log")
+        resource = {"exit_code": 0, "resource_termination": None, "monitor_error": None,
+                    "elapsed_seconds": 1.0, "sampled_peak_rss_bytes": 1024,
+                    "received_sigterm": False, "child_process_group_cleanup_sent": False,
+                    "child_process_group_cleanup_error": None}
+        diagnostic._write(report_path, resource)
+        return resource
+
+    monkeypatch.setattr(diagnostic, "run_guarded_diagnostic", fake_guard)
+    parent = diagnostic.guarded_run(archive=archive, archive_sha256=diagnostic.sha(archive),
+        parent_sha256=diagnostic.sha(archive.with_suffix(".run.json")),
+        resource_sha256=diagnostic.sha(archive.with_suffix(".resource.json")), plan=plan, output=output)
+    assert parent["execution_status"] == "completed"
+    assert parent["numerical_status"] == "diagnostic_refusal"
+    assert parent["child_terminal_phase"] == "diagnostic_refused"
+    assert parent["endpoint_identity_matches_archive"] is True
+    assert captured["wall_seconds"] == diagnostic.OUTER_SECONDS
+    assert captured["rss_bytes"] == diagnostic.RSS_LIMIT_BYTES
+    assert "--guarded" not in captured["command"]
+    assert diagnostic.GUARD in parent["source_before"]
+    assert diagnostic.GUARD_TEST in parent["source_before"]
+    assert (output.parent / "preflight.json").is_file()
+    assert (output.parent / ".guarded-launch.lock").is_file()
+    assert output.with_suffix(".run.json").is_file()
+    assert output.with_suffix(".resource.json").is_file()
+    assert output.with_suffix(".log").read_text() == "toy child log"
+
+
+@pytest.mark.parametrize("sibling", ["log", "resource", "preflight_tmp", "output_tmp", "atomic_temp", "claim_lock"])
+def test_guarded_run_refuses_preexisting_or_dangling_output_siblings(tmp_path: Path,
+                                                                    monkeypatch, sibling: str):
+    archive, plan, _, _ = _make_toy_archive(tmp_path, monkeypatch)
+    output = archive.parent / "future-attempt/audit.json"
+    output.parent.mkdir(parents=True)
+    paths = {"log": output.with_suffix(".log"),
+             "resource": output.with_suffix(".resource.json"),
+             "preflight_tmp": output.parent / "preflight.json.tmp",
+             "output_tmp": output.with_suffix(".json.tmp"),
+             "atomic_temp": output.parent / f".{output.name}.stale.tmp",
+             "claim_lock": output.parent / ".guarded-launch.lock"}
+    paths[sibling].symlink_to(paths[sibling].with_name("missing-target"))
+    monkeypatch.setattr(diagnostic, "run_guarded_diagnostic",
+                        lambda *_args, **_kwargs: pytest.fail("preexisting sibling launched child"))
+    with pytest.raises(ValueError, match="siblings must all be fresh"):
+        diagnostic.guarded_run(archive=archive, archive_sha256=diagnostic.sha(archive),
+            parent_sha256=diagnostic.sha(archive.with_suffix(".run.json")),
+            resource_sha256=diagnostic.sha(archive.with_suffix(".resource.json")), plan=plan, output=output)
+    assert paths[sibling].is_symlink()
+
+
+@pytest.mark.parametrize("name", ["preflight.json", "audit.log"])
+def test_guarded_run_rejects_output_paths_colliding_with_derived_sidecars(tmp_path: Path,
+                                                                          monkeypatch, name: str):
+    archive, plan, _, _ = _make_toy_archive(tmp_path, monkeypatch)
+    output = archive.parent / "future-attempt" / name
+    monkeypatch.setattr(diagnostic, "run_guarded_diagnostic",
+                        lambda *_args, **_kwargs: pytest.fail("colliding outputs launched child"))
+    with pytest.raises(ValueError, match="paths must be distinct"):
+        diagnostic.guarded_run(archive=archive, archive_sha256=diagnostic.sha(archive),
+            parent_sha256=diagnostic.sha(archive.with_suffix(".run.json")),
+            resource_sha256=diagnostic.sha(archive.with_suffix(".resource.json")), plan=plan, output=output)
+
+
+@pytest.mark.parametrize(("resource", "expected", "mismatch"), [
+    ({"resource_termination": "cancelled", "received_sigterm": False}, "failed", None),
+    ({"resource_termination": None, "received_sigterm": True}, "failed", None),
+    ({"resource_termination": "rss_monitor_unavailable", "received_sigterm": False}, "failed", None),
+    ({"resource_termination": "resource_monitor_error", "monitor_error": "ps failed",
+      "received_sigterm": False}, "failed", None),
+    ({"resource_termination": "wall_time_limit", "received_sigterm": False}, "resource_limited", None),
+    ({"resource_termination": "rss_limit", "received_sigterm": False}, "resource_limited", None),
+    ({"resource_termination": None, "received_sigterm": False,
+      "child_process_group_cleanup_sent": True}, "failed", None),
+    ({"resource_termination": None, "received_sigterm": False}, "failed", "source"),
+    ({"resource_termination": None, "received_sigterm": False}, "failed", "runtime"),
+])
+def test_guard_execution_failures_do_not_overwrite_child_numerical_status(
+        tmp_path: Path, monkeypatch, resource: dict[str, Any], expected: str, mismatch: str | None):
+    archive, plan, _, raw = _make_toy_archive(tmp_path, monkeypatch)
+    output = archive.parent / "future-attempt/audit.json"
+
+    def fake_guard(_command, *, report_path, log_path, **_kwargs):
+        sources = json.loads((output.parent / "preflight.json").read_text())["source_before"]
+        child_sources = sources
+        runtime = raw["runtime"]
+        if mismatch == "source":
+            child_sources = {**sources, "wrong.py": "0" * 64}
+        if mismatch == "runtime":
+            runtime = {"device": "CPU FP64", "python": "changed", "torch": "changed"}
+        child = {"phase": "finished", "numerical_status": "endpoint_diagnostic_completed",
+            "endpoint_control": raw["last_accepted_control"],
+            "endpoint_control_sha256": raw["last_accepted_control_sha256"],
+            "parameters": raw["parameters"], "parameters_sha256": raw["parameters_sha256"],
+            "input_before": raw["input_after"], "input_after": raw["input_after"],
+            "source_before": sources, "source_after": child_sources,
+            "source_unchanged": True, "input_unchanged": True,
+            "runtime": runtime, "runtime_after": runtime}
+        diagnostic._write(output, child)
+        with log_path.open("x") as stream:
+            stream.write("interrupted child")
+        result = {"exit_code": -15, "resource_termination": None, "monitor_error": None,
+                  "elapsed_seconds": 2.0, "sampled_peak_rss_bytes": 1024,
+                  "received_sigterm": False, "child_process_group_cleanup_sent": False,
+                  "child_process_group_cleanup_error": None, **resource}
+        diagnostic._write(report_path, result)
+        return result
+
+    monkeypatch.setattr(diagnostic, "run_guarded_diagnostic", fake_guard)
+    record = diagnostic.guarded_run(archive=archive, archive_sha256=diagnostic.sha(archive),
+        parent_sha256=diagnostic.sha(archive.with_suffix(".run.json")),
+        resource_sha256=diagnostic.sha(archive.with_suffix(".resource.json")), plan=plan, output=output)
+    assert record["execution_status"] == expected
+    assert record["numerical_status"] == "endpoint_diagnostic_completed"
+    if resource.get("received_sigterm") or resource.get("resource_termination") == "cancelled":
+        assert "cancellation" in record["failure_reason"] or "SIGTERM" in record["failure_reason"]
+
+
+def test_guard_launch_exception_is_recorded_then_propagated(tmp_path: Path, monkeypatch):
+    archive, plan, _, _ = _make_toy_archive(tmp_path, monkeypatch)
+    output = archive.parent / "future-attempt/audit.json"
+    monkeypatch.setattr(diagnostic, "run_guarded_diagnostic",
+                        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("toy launch failure")))
+    with pytest.raises(RuntimeError, match="toy launch failure"):
+        diagnostic.guarded_run(archive=archive, archive_sha256=diagnostic.sha(archive),
+            parent_sha256=diagnostic.sha(archive.with_suffix(".run.json")),
+            resource_sha256=diagnostic.sha(archive.with_suffix(".resource.json")), plan=plan, output=output)
+    parent = json.loads(output.with_suffix(".run.json").read_text())
+    assert parent["execution_status"] == "failed"
+    assert parent["failure_reason"].endswith("RuntimeError: toy launch failure")
+
+
+def test_guarded_attempt_claim_allows_only_one_concurrent_launch(tmp_path: Path, monkeypatch):
+    archive, plan, _, raw = _make_toy_archive(tmp_path, monkeypatch)
+    output = archive.parent / "future-attempt/audit.json"
+    ingress_barrier = threading.Barrier(2)
+    original_extract = diagnostic.extract_last_accepted_trial
+    launches = 0
+    preflight_writes = 0
+    counter_lock = threading.Lock()
+
+    def synchronized_extract(value):
+        result = original_extract(value)
+        ingress_barrier.wait(timeout=5)
+        return result
+
+    original_write = diagnostic._write
+
+    def counted_write(path, value):
+        nonlocal preflight_writes
+        if path.name == "preflight.json":
+            with counter_lock:
+                preflight_writes += 1
+        original_write(path, value)
+
+    def fake_guard(_command, *, report_path, log_path, **_kwargs):
+        nonlocal launches
+        with counter_lock:
+            launches += 1
+        sources = json.loads((output.parent / "preflight.json").read_text())["source_before"]
+        child = {"phase": "diagnostic_refused", "numerical_status": "diagnostic_refusal",
+            "endpoint_control": raw["last_accepted_control"],
+            "endpoint_control_sha256": raw["last_accepted_control_sha256"],
+            "parameters": raw["parameters"], "parameters_sha256": raw["parameters_sha256"],
+            "input_before": raw["input_after"], "input_after": raw["input_after"],
+            "source_before": sources, "source_after": sources, "source_unchanged": True,
+            "input_unchanged": True, "runtime": raw["runtime"], "runtime_after": raw["runtime_after"]}
+        diagnostic._write(output, child)
+        with log_path.open("x") as stream:
+            stream.write("single child")
+        resource = {"exit_code": 0, "resource_termination": None, "monitor_error": None,
+                    "elapsed_seconds": 1.0, "sampled_peak_rss_bytes": 1024, "received_sigterm": False,
+                    "child_process_group_cleanup_sent": False, "child_process_group_cleanup_error": None}
+        diagnostic._write(report_path, resource)
+        return resource
+
+    monkeypatch.setattr(diagnostic, "extract_last_accepted_trial", synchronized_extract)
+    monkeypatch.setattr(diagnostic, "_write", counted_write)
+    monkeypatch.setattr(diagnostic, "run_guarded_diagnostic", fake_guard)
+
+    def invoke():
+        return diagnostic.guarded_run(archive=archive, archive_sha256=diagnostic.sha(archive),
+            parent_sha256=diagnostic.sha(archive.with_suffix(".run.json")),
+            resource_sha256=diagnostic.sha(archive.with_suffix(".resource.json")), plan=plan, output=output)
+
+    results, errors = [], []
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(invoke) for _ in range(2)]
+        for future in futures:
+            try:
+                results.append(future.result())
+            except ValueError as error:
+                errors.append(str(error))
+    assert len(results) == len(errors) == 1
+    assert "already claimed" in errors[0]
+    assert launches == preflight_writes == 1
+    assert (output.parent / ".guarded-launch.lock").is_file()
+    assert json.loads(output.with_suffix(".run.json").read_text())["execution_status"] == "completed"
+
+
+@pytest.mark.parametrize("guarded", [False, True])
+def test_cli_preserves_bare_child_mode_and_optional_guarded_parent(monkeypatch, guarded: bool):
+    import sys
+
+    args = ["endpoint-diagnostics", "--archive", "archive.json", "--archive-sha256", "a" * 64,
+            "--parent-sha256", "b" * 64, "--resource-sha256", "c" * 64,
+            "--plan", "plan.md", "--output", "output.json"]
+    if guarded:
+        args.append("--guarded")
+    monkeypatch.setattr(sys, "argv", args)
+    called: list[str] = []
+    monkeypatch.setattr(diagnostic, "run", lambda **_kwargs: called.append("child"))
+    monkeypatch.setattr(diagnostic, "guarded_run", lambda **_kwargs: (called.append("guarded") or {
+        "execution_status": "completed", "numerical_status": "diagnostic_refusal",
+        "child_terminal_phase": "diagnostic_refused"}))
+    diagnostic.main()
+    assert called == (["guarded"] if guarded else ["child"])
