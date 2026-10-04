@@ -42,12 +42,16 @@ def _make_toy_archive(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
     monkeypatch.setattr(diagnostic, "EVIDENCE", evidence)
     plan_rel = "PR238_ENDPOINT_DIAGNOSTIC_PLAN_20261004.md"
     producer_plan_rel = "graphify-out/fv-root-cause-20260919/S4_COUPLED_ORIGINAL_J_CONTINUATION_PLAN_20261003.md"
+    problem_source_rel = "src/advar/fv_point_research_problem.py"
     for relative, contents in ((diagnostic.SELF, b"toy driver source"),
                                (diagnostic.TEST, b"toy test source"),
                                (diagnostic.GUARD, b"toy guarded runner source"),
                                (diagnostic.GUARD_TEST, b"toy guarded runner tests"),
+                               (diagnostic.CHECKPOINT, b"toy Hessian checkpoint source"),
+                               (diagnostic.CHECKPOINT_TEST, b"toy Hessian checkpoint tests"),
                                (plan_rel, b"toy endpoint plan"),
-                               (producer_plan_rel, b"toy producer plan")):
+                               (producer_plan_rel, b"toy producer plan"),
+                               (problem_source_rel, b"toy objective source")):
         path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(contents)
@@ -101,7 +105,8 @@ def _make_toy_archive(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
     }
     archive = evidence / "coupled_original_j_continuation.json"
     archive.write_text(json.dumps(raw))
-    source_map = {producer_plan_rel: _hash_bytes((root / producer_plan_rel).read_bytes())}
+    source_map = {producer_plan_rel: _hash_bytes((root / producer_plan_rel).read_bytes()),
+                  problem_source_rel: _hash_bytes((root / problem_source_rel).read_bytes())}
     raw["source_before"] = dict(source_map)
     raw["source_after"] = dict(source_map)
     archive.write_text(json.dumps(raw))
@@ -117,7 +122,7 @@ def _make_toy_archive(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
               "adjoint_computed": False, "full_root_claim": False,
               "source_sha256_before": source_map, "source_sha256_after": source_map,
               "source_bytes_base64_after": {
-                  producer_plan_rel: base64.b64encode((root / producer_plan_rel).read_bytes()).decode()},
+                  name: base64.b64encode((root / name).read_bytes()).decode() for name in source_map},
               "resource": resource}
     (evidence / "coupled_original_j_continuation.run.json").write_text(json.dumps(parent))
 
@@ -286,6 +291,128 @@ def test_branch_signature_mismatch_is_serialized_as_numerical_refusal(tmp_path: 
     assert report["hvp_calls_total"] == "not_recorded"
 
 
+def test_checkpoint_route_receipt_and_completed_hessian_are_opt_in(tmp_path: Path, monkeypatch):
+    archive, plan, _, _ = _make_toy_archive(tmp_path, monkeypatch)
+    output = archive.parent / "checkpoint-attempt/audit.json"
+    checkpoint_dir = archive.parent / "shared-checkpoint"
+    captured: dict[str, Any] = {}
+    hessian_matrix = torch.eye(diagnostic.NC, dtype=torch.float64)
+
+    def fake_checkpoint(objective, control, parameters, gradient, *, receipt_provider,
+                        checkpoint_dir, deadline, max_attempts, attempt_seconds, max_new_columns=None):
+        receipt = receipt_provider()
+        captured.update(receipt=receipt, control=control.clone(), parameters=parameters.clone(),
+                        gradient=gradient.clone(), directory=checkpoint_dir, deadline=deadline,
+                        max_attempts=max_attempts, attempt_seconds=attempt_seconds,
+                        max_new_columns=max_new_columns)
+        schur = blocks.schur_diagnostic(hessian_matrix, gradient)
+        eigenvalues, eigenvectors = torch.linalg.eigh(hessian_matrix)
+        return {"hessian": hessian_matrix.tolist(), "hessian_sha256": diagnostic.tensor_sha(hessian_matrix),
+            "hvp_columns": diagnostic.NC, "hvp_calls_total": diagnostic.NC + 1,
+            "symmetry_relative": 0.0, "eigenvalues": eigenvalues.tolist(),
+            "minimum_eigenpair_audit": {"passed": True}, "block_schur": schur,
+            "checkpoint_status": "completed", "attempts_reserved": 1}
+
+    monkeypatch.setattr(diagnostic.checkpoint_probe, "checkpoint_hessian", fake_checkpoint)
+    report = diagnostic.run(archive=archive, archive_sha256=diagnostic.sha(archive),
+        parent_sha256=diagnostic.sha(archive.with_suffix(".run.json")),
+        resource_sha256=diagnostic.sha(archive.with_suffix(".resource.json")), plan=plan,
+        output=output, checkpoint_directory=checkpoint_dir, checkpoint_max_attempts=2)
+    assert report["numerical_status"] == "endpoint_diagnostic_completed"
+    assert report["checkpoint"]["status"] == "completed"
+    assert report["hessian_objective_scope"].startswith("original full-control J")
+    assert report["case_qualification"]["branch_and_saved_J_gradient_metrics_reproduced"] is True
+    assert report["case_qualification"]["full_control_stationarity_gate_passed"] is False
+    receipt = captured["receipt"]
+    assert receipt["problem"]["input_identity"] == report["input_before"]
+    assert receipt["coordinates"]["dimension"] == 26
+    assert receipt["coordinates"]["field_dimension"] == 20
+    assert receipt["coordinates"]["dynamics_dimension"] == 6
+    assert receipt["analysis_context"]["gradient_blocks"] == report["gradient_blocks"]
+    assert diagnostic.CHECKPOINT in receipt["source"]["hashes"]
+    assert diagnostic.CHECKPOINT_TEST in receipt["source"]["hashes"]
+    assert captured["max_attempts"] == 2 and captured["attempt_seconds"] == diagnostic.INTERNAL_SECONDS
+    assert captured["max_new_columns"] is None
+
+
+def test_checkpoint_budget_refusal_serializes_partial_count_without_hessian(tmp_path: Path,
+                                                                            monkeypatch):
+    archive, plan, _, raw = _make_toy_archive(tmp_path, monkeypatch)
+    output = archive.parent / "checkpoint-attempt/audit.json"
+    checkpoint_dir = archive.parent / "shared-checkpoint"
+
+    def refuse(*_args, **_kwargs):
+        state = {"status": "audit_pending", "completed_columns": 26, "hvp_columns": 26,
+                 "hvp_calls_total": 26, "attempts_reserved": 1,
+                 "receipt": {"control": raw["last_accepted_control_sha256"]},
+                 "checkpoint_dir": str(checkpoint_dir)}
+        raise diagnostic.checkpoint_probe.BudgetRefusal("toy quota exhausted", state)
+
+    monkeypatch.setattr(diagnostic.checkpoint_probe, "checkpoint_hessian", refuse)
+    report = diagnostic.run(archive=archive, archive_sha256=diagnostic.sha(archive),
+        parent_sha256=diagnostic.sha(archive.with_suffix(".run.json")),
+        resource_sha256=diagnostic.sha(archive.with_suffix(".resource.json")), plan=plan,
+        output=output, checkpoint_directory=checkpoint_dir)
+    assert report["phase"] == "diagnostic_refused"
+    assert report["numerical_status"] == "checkpoint_budget_refusal"
+    assert report["hvp_columns_completed"] == report["hvp_calls_total"] == 26
+    assert report["checkpoint_hessian_status"] == "audit_pending"
+    assert "fresh_hessian" not in report and "block_schur_status" not in report
+    assert report["checkpoint"]["attempts_reserved"] == 1
+
+
+def test_checkpoint_receipt_refusal_propagates_without_marking_eligible(tmp_path: Path, monkeypatch):
+    archive, plan, _, raw = _make_toy_archive(tmp_path, monkeypatch)
+    output = archive.parent / "checkpoint-attempt/audit.json"
+    checkpoint_dir = archive.parent / "shared-checkpoint"
+
+    def refuse_receipt(*_args, **_kwargs):
+        state = {"status": "receipt_changed", "completed_columns": 7, "hvp_columns": 7,
+                 "hvp_calls_total": 7, "attempts_reserved": 1,
+                 "checkpoint_dir": str(checkpoint_dir), "changed": "parameters_sha256"}
+        raise diagnostic.checkpoint_probe.ReceiptRefusal("receipt changed", state)
+
+    monkeypatch.setattr(diagnostic.checkpoint_probe, "checkpoint_hessian", refuse_receipt)
+    with pytest.raises(diagnostic.checkpoint_probe.ReceiptRefusal, match="receipt changed"):
+        diagnostic.run(archive=archive, archive_sha256=diagnostic.sha(archive),
+            parent_sha256=diagnostic.sha(archive.with_suffix(".run.json")),
+            resource_sha256=diagnostic.sha(archive.with_suffix(".resource.json")), plan=plan,
+            output=output, checkpoint_directory=checkpoint_dir)
+    partial = json.loads(output.read_text())
+    assert partial["phase"] == "endpoint_checked"
+    assert partial["numerical_status"] == "not_reached"
+    assert partial["optimizer_step_applied"] is False
+    assert partial["response_computed"] is False
+    assert partial["parameters_sha256"] == raw["parameters_sha256"]
+
+
+def test_checkpoint_numerical_refusal_serializes_partial_counts_without_hessian(tmp_path: Path,
+                                                                               monkeypatch):
+    archive, plan, _, raw = _make_toy_archive(tmp_path, monkeypatch)
+    output = archive.parent / "checkpoint-attempt/audit.json"
+    checkpoint_dir = archive.parent / "shared-checkpoint"
+
+    def refuse_numerical(*_args, **_kwargs):
+        state = {"status": "invalid_hvp_product", "completed_columns": 7, "hvp_columns": 7,
+                 "hvp_calls_total": 7, "attempts_reserved": 1,
+                 "receipt": {"control": raw["last_accepted_control_sha256"]},
+                 "checkpoint_dir": str(checkpoint_dir)}
+        raise diagnostic.checkpoint_probe.NumericalRefusal("invalid HVP product", state)
+
+    monkeypatch.setattr(diagnostic.checkpoint_probe, "checkpoint_hessian", refuse_numerical)
+    report = diagnostic.run(archive=archive, archive_sha256=diagnostic.sha(archive),
+        parent_sha256=diagnostic.sha(archive.with_suffix(".run.json")),
+        resource_sha256=diagnostic.sha(archive.with_suffix(".resource.json")), plan=plan,
+        output=output, checkpoint_directory=checkpoint_dir)
+    assert report["phase"] == "diagnostic_refused"
+    assert report["numerical_status"] == "checkpoint_numerical_refusal"
+    assert report["checkpoint_hessian_status"] == "invalid_hvp_product"
+    assert report["hvp_columns_completed"] == report["hvp_calls_total"] == 7
+    assert "fresh_hessian" not in report and "block_schur_status" not in report
+    assert report["source_unchanged"] and report["input_unchanged"]
+    assert report["parameters_sha256"] == raw["parameters_sha256"]
+
+
 @pytest.mark.parametrize("kind", ["existing", "dangling_symlink"])
 def test_child_rejects_existing_or_dangling_output_without_clobber(tmp_path: Path,
                                                                   monkeypatch, kind: str):
@@ -308,6 +435,7 @@ def test_guarded_run_preserves_execution_and_numerical_status_separately(tmp_pat
                                                                          monkeypatch):
     archive, plan, _, raw = _make_toy_archive(tmp_path, monkeypatch)
     output = archive.parent / "future-attempt/audit.json"
+    checkpoint_directory = archive.parent / "shared-checkpoint"
     captured: dict[str, Any] = {}
 
     def fake_guard(command, *, wall_seconds, rss_bytes, report_path, log_path, cancel_requested=None):
@@ -336,7 +464,8 @@ def test_guarded_run_preserves_execution_and_numerical_status_separately(tmp_pat
     monkeypatch.setattr(diagnostic, "run_guarded_diagnostic", fake_guard)
     parent = diagnostic.guarded_run(archive=archive, archive_sha256=diagnostic.sha(archive),
         parent_sha256=diagnostic.sha(archive.with_suffix(".run.json")),
-        resource_sha256=diagnostic.sha(archive.with_suffix(".resource.json")), plan=plan, output=output)
+        resource_sha256=diagnostic.sha(archive.with_suffix(".resource.json")), plan=plan, output=output,
+        checkpoint_directory=checkpoint_directory, checkpoint_max_attempts=2)
     assert parent["execution_status"] == "completed"
     assert parent["numerical_status"] == "diagnostic_refusal"
     assert parent["child_terminal_phase"] == "diagnostic_refused"
@@ -344,8 +473,13 @@ def test_guarded_run_preserves_execution_and_numerical_status_separately(tmp_pat
     assert captured["wall_seconds"] == diagnostic.OUTER_SECONDS
     assert captured["rss_bytes"] == diagnostic.RSS_LIMIT_BYTES
     assert "--guarded" not in captured["command"]
+    assert "--checkpoint-child" in captured["command"]
+    assert str(checkpoint_directory) in captured["command"]
+    assert "2" in captured["command"]
     assert diagnostic.GUARD in parent["source_before"]
     assert diagnostic.GUARD_TEST in parent["source_before"]
+    assert diagnostic.CHECKPOINT in parent["source_before"]
+    assert diagnostic.CHECKPOINT_TEST in parent["source_before"]
     assert (output.parent / "preflight.json").is_file()
     assert (output.parent / ".guarded-launch.lock").is_file()
     assert output.with_suffix(".run.json").is_file()
@@ -398,6 +532,12 @@ def test_guarded_run_rejects_output_paths_colliding_with_derived_sidecars(tmp_pa
     ({"resource_termination": "rss_limit", "received_sigterm": False}, "resource_limited", None),
     ({"resource_termination": None, "received_sigterm": False,
       "child_process_group_cleanup_sent": True}, "failed", None),
+    ({"resource_termination": None, "received_sigterm": False,
+      "elapsed_seconds": 300.1}, "resource_limited", None),
+    ({"resource_termination": None, "received_sigterm": False,
+      "elapsed_seconds": None}, "failed", None),
+    ({"resource_termination": None, "received_sigterm": False,
+      "elapsed_seconds": "unknown"}, "failed", None),
     ({"resource_termination": None, "received_sigterm": False}, "failed", "source"),
     ({"resource_termination": None, "received_sigterm": False}, "failed", "runtime"),
 ])
@@ -438,6 +578,8 @@ def test_guard_execution_failures_do_not_overwrite_child_numerical_status(
         resource_sha256=diagnostic.sha(archive.with_suffix(".resource.json")), plan=plan, output=output)
     assert record["execution_status"] == expected
     assert record["numerical_status"] == "endpoint_diagnostic_completed"
+    if resource.get("elapsed_seconds") == 300.1:
+        assert "elapsed_seconds=300.1" in record["failure_reason"]
     if resource.get("received_sigterm") or resource.get("resource_termination") == "cancelled":
         assert "cancellation" in record["failure_reason"] or "SIGTERM" in record["failure_reason"]
 
@@ -541,3 +683,27 @@ def test_cli_preserves_bare_child_mode_and_optional_guarded_parent(monkeypatch, 
         "child_terminal_phase": "diagnostic_refused"}))
     diagnostic.main()
     assert called == (["guarded"] if guarded else ["child"])
+
+
+def test_checkpoint_cli_requires_guarded_parent_or_internal_child(monkeypatch, tmp_path: Path):
+    import sys
+
+    checkpoint = tmp_path / "shared-checkpoint"
+    common = ["endpoint-diagnostics", "--archive", "archive.json", "--archive-sha256", "a" * 64,
+              "--parent-sha256", "b" * 64, "--resource-sha256", "c" * 64,
+              "--plan", "plan.md", "--output", "output.json", "--checkpoint-directory", str(checkpoint)]
+    called: list[tuple[str, Any]] = []
+    monkeypatch.setattr(diagnostic, "run", lambda **kwargs: called.append(("child", kwargs)))
+    monkeypatch.setattr(diagnostic, "guarded_run", lambda **kwargs: (called.append(("guarded", kwargs)) or {
+        "execution_status": "completed", "numerical_status": "diagnostic_refusal",
+        "child_terminal_phase": "diagnostic_refused"}))
+    monkeypatch.setattr(sys, "argv", common)
+    with pytest.raises(SystemExit) as error:
+        diagnostic.main()
+    assert error.value.code == 2
+    monkeypatch.setattr(sys, "argv", [*common, "--guarded", "--checkpoint-max-attempts", "2"])
+    diagnostic.main()
+    assert called[-1][0] == "guarded" and called[-1][1]["checkpoint_max_attempts"] == 2
+    monkeypatch.setattr(sys, "argv", [*common, "--checkpoint-child"])
+    diagnostic.main()
+    assert called[-1][0] == "child" and called[-1][1]["checkpoint_directory"] == checkpoint

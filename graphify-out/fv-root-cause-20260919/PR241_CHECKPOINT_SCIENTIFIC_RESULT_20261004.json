@@ -1,0 +1,54 @@
+{
+  "scope": "actual fixed original J_cc at cd6b; no optimization/score/response/physical claim",
+  "control_sha256": "cd6b5693e2bd32a8a41a3509b87b61e7cf647b03d864dfccc0a4cccce96e908d",
+  "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+  "objective": 0.08389718093130327,
+  "full_gradient_inf": 1.0588168237438937,
+  "full_hessian_eigenvalue_range": [
+    -1.5290711560348096,
+    4197.686317885176
+  ],
+  "full_hessian_negative_count": 1,
+  "hff_eigenvalue_range": [
+    0.8612141103966404,
+    1821.7462457530985
+  ],
+  "schur_eigenvalues": [
+    -27.5013204655476,
+    0.902596674840338,
+    0.9431315088176915,
+    1.1527396524911533,
+    2.4274552112945766,
+    406.6721404244002
+  ],
+  "minimum_eigenpair_residual": {
+    "passed": true,
+    "relative_residual": 2.193830525596266e-16,
+    "residual_l2": 1.0155539825946161e-12,
+    "tolerance": 1e-08
+  },
+  "launches": 2,
+  "stored_basis_products": 26,
+  "stored_independent_products": 1,
+  "second_attempt_reused_all_products": true,
+  "elapsed_seconds_experiment": 259.57896237517707,
+  "attempts": [
+    {
+      "execution": "completed",
+      "numerical": "checkpoint_budget_refusal",
+      "guard_seconds": 246.8950542078819
+    },
+    {
+      "execution": "completed",
+      "numerical": "endpoint_diagnostic_completed",
+      "guard_seconds": 12.571388666052371
+    }
+  ],
+  "next_search_policy_proposal": {
+    "original_newton_PCG_SPD_gate": "not_supported_at_this_point",
+    "dynamics_shift_floor_one_mu": 28.5013204655476,
+    "applied": false
+  },
+  "normal_point_qualified": false,
+  "response_computed": false
+}
