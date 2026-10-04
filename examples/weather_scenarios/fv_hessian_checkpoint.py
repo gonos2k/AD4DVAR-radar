@@ -16,7 +16,7 @@ from examples.weather_scenarios import fv_diagnostic_guard
 from examples.weather_scenarios import fv_point_3h_terminal_block_schur as blocks
 
 NC = 26
-_SCHEMA = "advar.hessian-checkpoint.v1"
+_SCHEMA = "advar.hessian-checkpoint.v2"
 _RECEIPT_KEYS = {"objective", "problem", "coordinates", "source", "runtime", "branch", "analysis_context"}
 
 
@@ -86,6 +86,7 @@ def _progress(checkpoint: dict[str, Any], directory: Path, status: str,
 
 
 def _save(path: Path, checkpoint: dict[str, Any]) -> None:
+    checkpoint["last_status"] = checkpoint.get("status")
     fv_diagnostic_guard.atomic_write_text(
         path, json.dumps(checkpoint, indent=2, sort_keys=True, allow_nan=False) + "\n")
 
@@ -98,6 +99,35 @@ def _header(control: Tensor, parameters: Tensor, gradient: Tensor,
             "parameters": {"values": parameters.tolist(), "sha256": tensor_sha(parameters)},
             "gradient": {"values": gradient.tolist(), "sha256": tensor_sha(gradient)},
             "receipt": receipt}
+
+
+def _canonical_sha(value: Any) -> str:
+    encoded = json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _reservation_path(directory: Path, attempt: int) -> Path:
+    return directory / f"reservation_{attempt:06d}.json"
+
+
+def _write_reservation(directory: Path, header: dict[str, Any], attempt: int,
+                       reserved_seconds: float, basis_start_column: int) -> dict[str, Any]:
+    """Persist an exclusive attempt anchor before the mutable checkpoint row.
+
+    The separate file catches one-sided truncation or deletion of the ledger.
+    Integrity assumes a trusted checkpoint directory; coordinated edits to
+    both the ledger and its sidecar are outside this local corruption check.
+    """
+    record = {"schema": _SCHEMA, "attempt": attempt,
+              "header_sha256": _canonical_sha(header),
+              "reserved_seconds": reserved_seconds,
+              "basis_start_column": basis_start_column}
+    path = _reservation_path(directory, attempt)
+    with path.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(record, sort_keys=True, allow_nan=False) + "\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    return record
 
 
 class _WriterClaim:
@@ -125,7 +155,8 @@ def _checkpoint_state(checkpoint: dict[str, Any], status: str) -> None:
 
 
 def _validate_checkpoint(checkpoint: dict[str, Any], header: dict[str, Any],
-                         max_attempts: int, attempt_seconds: float) -> None:
+                         max_attempts: int, attempt_seconds: float,
+                         directory: Path) -> None:
     if checkpoint.get("schema") != _SCHEMA or checkpoint.get("header") != header:
         raise ValueError("checkpoint endpoint identity or attempt-budget header changed")
     attempts = checkpoint.get("attempts")
@@ -141,6 +172,59 @@ def _validate_checkpoint(checkpoint: dict[str, Any], header: dict[str, Any],
                 or item.get("reserved_seconds") != attempt_seconds
                 or item.get("status") not in attempt_states):
             raise ValueError("checkpoint attempt ledger lost its full-cap reservation")
+    reservation_paths = sorted(directory.glob("reservation_*.json"))
+    if len(reservation_paths) != len(attempts):
+        raise ValueError("checkpoint attempt ledger and independent reservation files disagree")
+    for index, (item, path) in enumerate(zip(attempts, reservation_paths, strict=True), start=1):
+        expected_path = _reservation_path(directory, index)
+        if path != expected_path or path.is_symlink():
+            raise ValueError("checkpoint has an orphan, aliased, or symlinked reservation file")
+        try:
+            reservation = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise ValueError("checkpoint reservation file is unreadable") from error
+        if (not isinstance(reservation, dict)
+                or reservation.get("schema") != _SCHEMA
+                or reservation.get("attempt") != index
+                or reservation.get("header_sha256") != _canonical_sha(header)
+                or reservation.get("reserved_seconds") != attempt_seconds
+                or reservation.get("basis_start_column") != item.get("basis_start_column")
+                or item.get("reservation_sha256") != _canonical_sha(reservation)):
+            raise ValueError("checkpoint reservation does not authenticate its attempt row")
+    starts = [item.get("basis_start_column") for item in attempts]
+    if any(isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= NC
+           for value in starts) or starts != sorted(starts):
+        raise ValueError("checkpoint attempt basis starts are malformed or out of order")
+    for column_index, row in enumerate(columns):
+        if not isinstance(row, dict):
+            raise ValueError("checkpoint column ledger entry must be an object")
+        owners = [index for index, start in enumerate(starts, start=1) if start <= column_index]
+        if not owners or row.get("attempt_index") != owners[-1]:
+            raise ValueError("checkpoint attempt ledger column ownership is incoherent")
+    status = checkpoint.get("status")
+    if checkpoint.get("last_status") != status:
+        raise ValueError("checkpoint current and last status fields disagree")
+    if not attempts:
+        if status != "columns_pending":
+            raise ValueError("checkpoint status has no corresponding attempt reservation")
+    else:
+        latest_status = attempts[-1]["status"]
+        permitted_statuses = {
+            "reserved": {"attempt_running", "columns_pending", "audit_pending",
+                         "audit_validation_pending", "schur_pending"},
+            "budget_refused": {"columns_pending", "audit_pending", "audit_validation_pending",
+                               "schur_pending", "schur_completed_over_deadline",
+                               "attempt_limit_exhausted"},
+            "receipt_refused": {"receipt_changed"},
+            "numerical_refused": {"invalid_hvp_product", "hessian_invalid",
+                                   "hessian_symmetry_refused", "eigensolver_refused",
+                                   "eigensystem_nonfinite", "audit_hvp_invalid",
+                                   "eigenpair_refused", "schur_refused"},
+            "programming_error": {"programming_error"},
+            "completed": {"completed"},
+        }
+        if status not in permitted_statuses.get(latest_status, set()):
+            raise ValueError("checkpoint status disagrees with the latest attempt outcome")
     for index, row in enumerate(columns):
         if not isinstance(row, dict):
             raise ValueError("checkpoint column entry must be an object")
@@ -148,7 +232,10 @@ def _validate_checkpoint(checkpoint: dict[str, Any], header: dict[str, Any],
         product = torch.tensor(row.get("product"), dtype=torch.float64)
         expected = torch.zeros(NC, dtype=torch.float64)
         expected[index] = 1.0
-        if (row.get("index") != index or direction.shape != (NC,) or product.shape != (NC,)
+        attempt_index = row.get("attempt_index")
+        if (row.get("index") != index or isinstance(attempt_index, bool)
+                or not isinstance(attempt_index, int) or not 1 <= attempt_index <= len(attempts)
+                or direction.shape != (NC,) or product.shape != (NC,)
                 or not bool(torch.isfinite(direction).all() & torch.isfinite(product).all())
                 or not torch.equal(direction, expected)
                 or tensor_sha(direction) != row.get("direction_sha256")
@@ -162,7 +249,12 @@ def _validate_checkpoint(checkpoint: dict[str, Any], header: dict[str, Any],
             raise ValueError("checkpoint audit HVP must be an object")
         direction = torch.tensor(audit.get("direction"), dtype=torch.float64)
         product = torch.tensor(audit.get("product"), dtype=torch.float64)
-        if (len(columns) != NC or direction.shape != (NC,) or product.shape != (NC,)
+        attempt_index = audit.get("attempt_index")
+        if (len(columns) != NC or isinstance(attempt_index, bool)
+                or not isinstance(attempt_index, int) or not 1 <= attempt_index <= len(attempts)
+                or audit.get("reservation_sha256")
+                   != attempts[attempt_index - 1].get("reservation_sha256")
+                or direction.shape != (NC,) or product.shape != (NC,)
                 or not bool(torch.isfinite(direction).all() & torch.isfinite(product).all())
                 or tensor_sha(direction) != audit.get("direction_sha256")
                 or tensor_sha(product) != audit.get("product_sha256")
@@ -330,7 +422,8 @@ def checkpoint_hessian(objective: Any, control: Tensor, parameters: Tensor, grad
             if (saved_header.get("max_attempts") != expected_header["max_attempts"]
                     or saved_header.get("attempt_seconds") != expected_header["attempt_seconds"]):
                 raise ValueError("checkpoint attempt-budget header changed")
-            _validate_checkpoint(checkpoint, saved_header, max_attempts, float(attempt_seconds))
+            _validate_checkpoint(checkpoint, saved_header, max_attempts,
+                                 float(attempt_seconds), directory)
             if saved_header != expected_header:
                 # A mismatched query does not own this checkpoint. Keep its
                 # committed history and status untouched, including completion.
@@ -348,6 +441,10 @@ def checkpoint_hessian(objective: Any, control: Tensor, parameters: Tensor, grad
             return _verify_completed(checkpoint, receipt, g)
         if checkpoint.get("status") == "programming_error":
             raise ValueError("checkpoint has a terminal programming error; start a new checkpoint explicitly")
+        resumable_statuses = {"columns_pending", "audit_pending", "audit_validation_pending",
+                              "schur_pending", "schur_completed_over_deadline"}
+        if checkpoint.get("status") not in resumable_statuses:
+            raise ValueError("checkpoint is terminal after a non-budget refusal; start a new checkpoint explicitly")
         if time.monotonic() >= deadline:
             state = _make_state(checkpoint, directory, "deadline_expired", receipt)
             raise BudgetRefusal("absolute deadline expired before attempt reservation", state)
@@ -359,9 +456,14 @@ def checkpoint_hessian(objective: Any, control: Tensor, parameters: Tensor, grad
 
         attempt_start = time.monotonic()
         attempt_deadline = min(float(deadline), attempt_start + float(attempt_seconds))
-        attempt = {"attempt": len(checkpoint["attempts"]) + 1,
+        attempt_number = len(checkpoint["attempts"]) + 1
+        basis_start = len(checkpoint["columns"])
+        reservation = _write_reservation(directory, header, attempt_number,
+                                         float(attempt_seconds), basis_start)
+        attempt = {"attempt": attempt_number,
                    "reserved_seconds": float(attempt_seconds),
-                   "basis_start_column": len(checkpoint["columns"]), "status": "reserved"}
+                   "basis_start_column": basis_start,
+                   "reservation_sha256": _canonical_sha(reservation), "status": "reserved"}
         checkpoint["attempts"].append(attempt)
         checkpoint["status"] = "attempt_running"
         _save(checkpoint_path, checkpoint)
@@ -403,7 +505,8 @@ def checkpoint_hessian(objective: Any, control: Tensor, parameters: Tensor, grad
                                            _make_state(checkpoint, directory, "invalid_hvp_product", receipt,
                                                        attempted_column=index))
                 checkpoint["columns"].append({
-                    "index": index, "direction": direction.tolist(), "direction_sha256": direction_sha,
+                    "index": index, "attempt_index": attempt_number,
+                    "direction": direction.tolist(), "direction_sha256": direction_sha,
                     "product": product.tolist(), "product_sha256": tensor_sha(product),
                     "hvp_elapsed_seconds": hvp_elapsed,
                     "attempt_elapsed_seconds_at_commit": attempt_elapsed,
@@ -489,7 +592,9 @@ def checkpoint_hessian(objective: Any, control: Tensor, parameters: Tensor, grad
                                         "audit_hvp_invalid", receipt,
                                         attempt_status="numerical_refused")
                 raise NumericalRefusal("independent 27th HVP is invalid/nonfinite", state)
-            audit_row = {"direction": direction.tolist(), "direction_sha256": direction_sha,
+            audit_row = {"attempt_index": attempt_number,
+                         "reservation_sha256": checkpoint["attempts"][-1]["reservation_sha256"],
+                         "direction": direction.tolist(), "direction_sha256": direction_sha,
                          "product": product.tolist(), "product_sha256": tensor_sha(product),
                          "receipt_before": before, "receipt_after": after,
                          "hvp_elapsed_seconds": hvp_elapsed,
@@ -541,6 +646,7 @@ def checkpoint_hessian(objective: Any, control: Tensor, parameters: Tensor, grad
                                     block_schur=schur, minimum_eigenpair_audit=eigenpair)
             raise BudgetRefusal("deadline expired after Schur diagnostic", state)
         checkpoint["status"] = "completed"
+        checkpoint["last_status"] = "completed"
         checkpoint["final_result"] = result
         checkpoint["attempts"][-1]["status"] = "completed"
         _save(checkpoint_path, checkpoint)

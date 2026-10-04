@@ -1,0 +1,29 @@
+{
+  "GREEN": {
+    "agent": "r4_schur_review",
+    "decision": "GO",
+    "scope": "saved scientific v1 evidence plus v2 reservation/audit owner and new coordinator"
+  },
+  "RED": {
+    "agent": "r4_field_red",
+    "decision": "GO",
+    "scope": "independent ledger-erasure/refusal retry probes, v2 delta and parent-first child failure handling"
+  },
+  "baseline_package_review": {
+    "agent": "r4_coordinate_impl",
+    "decision": "GO",
+    "scope": "all31 originalmanifest entries/64numeric sources/runtime/inputs/2launch27product/scientificclaims"
+  },
+  "source_sha256": {
+    "examples/weather_scenarios/fv_hessian_checkpoint.py": "7d16d92d3ec64c1c749470a4601d674809b3de30b21dc49472b1cf45832dde8c",
+    "examples/weather_scenarios/fv_checkpoint_experiment.py": "921aa2e8c7b0c74111f5d530b9658c49acc4888c84cf524ebe162dab2698abf5",
+    "tests/test_fv_hessian_checkpoint.py": "33b01676d564cf0cc9a3c403df58a691b9853f011e64ae58a1224646b4ad269e",
+    "tests/test_fv_checkpoint_experiment.py": "71d7c70ea51c1986d1f8c78474c2b4455f069ed6f150c57a01e428cb744122d5"
+  },
+  "verification": {
+    "focused_passed": 69,
+    "typecheck_error_level_errors": 0,
+    "no_new_FV_HVP_optimization": true
+  },
+  "limits": "new v2/new coordinator only; actualv1records remain historical; trusted directory/caller receipts not forgery certification"
+}

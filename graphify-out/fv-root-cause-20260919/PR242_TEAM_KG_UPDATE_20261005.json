@@ -1,0 +1,57 @@
+{
+  "baseline": {
+    "PR242_head": "cab0d119",
+    "main": "113a21ce"
+  },
+  "resolved_in_new_paths": [
+    "A1 independent reservation/column ledger coherence and audit owner",
+    "A2 active numerical/receipt refusal terminal; budget-only resume",
+    "A3 parent-first durable failed experiment outcomes and safe child progress"
+  ],
+  "verification": {
+    "focused_passed": 69,
+    "existing_warnings": 18,
+    "typecheck_error_level_errors": 0,
+    "original64_numerical_sources_unchanged": true,
+    "previous29_owned_files_preserved": {
+      "examples/weather_scenarios/fv_point_3h_endpoint_diagnostics.py": "6e48e23d2ad6be3a54ade759a35d720a9d928163dda70eb0906decc057047c8c",
+      "tests/test_fv_point_3h_endpoint_diagnostics.py": "b43ba53cd220ceb3d16c94fd8f269ed827a6a722145d1d55dc23f62b41dcb459",
+      "tests/test_fv_objective_score_dependency.py": "de41a42612c22aa63c5eb60aac4fe3b36986657a74afc3c8c2530e1513b66e03",
+      "graphify-out/fv-root-cause-20260919/RESUMABLE_HESSIAN_IMPLEMENTATION_PLAN_20261004.md": "ce72cd6693731e97f0155cc6077d170c16f3e0d43264effd3ecb607d31ee2842",
+      "graphify-out/fv-root-cause-20260919/PR241_CHECKPOINT_CHECKLIST_20261004.md": "07b315f509529825907624d2853068bfc3184c1eb0971bb7da044c3519b69611",
+      "graphify-out/fv-root-cause-20260919/PR241_CHECKPOINT_TESTS_20261004.log": "90e40cdbf4e953393ff61426195e49dc6451c031750301b583ae0a68f2844622",
+      "graphify-out/fv-root-cause-20260919/PR241_CHECKPOINT_TYPES_20261004.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+      "graphify-out/fv-root-cause-20260919/PR241_CHECKPOINT_AST_20261004.json": "5196214f0b0669b9f483c32fbc3fe5a290d869c48c8185d09f5bccfd5606ee5e",
+      "graphify-out/fv-root-cause-20260919/PR241_CHECKPOINT_GRAPHIFY_20261004.json": "2ae125cc3a3981441bb4bf84cda05378af4143967f87504dd637638fc1bfdce2",
+      "graphify-out/fv-root-cause-20260919/PR241_CHECKPOINT_SCIENTIFIC_RESULT_20261004.json": "8456272a93738011523cb070be9d848acab1c0f11b65a1f31d68c437cdd7fc1e",
+      "graphify-out/fv-root-cause-20260919/PR241_CHECKPOINT_KG_UPDATE_20261004.json": "1ed63ae73608f149cf61a3aba6c9ceeb3f054ecebaadadadfbdd58e281db6e3a",
+      "graphify-out/fv-root-cause-20260919/PR241_CHECKPOINT_REVIEWS_20261004.json": "329bee5e81dffa26627a34847b852b1a7ccb25fe86df54a4d693a6154e1f9fc3",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/run_experiment.py": "a993b66e43bf0625a08b6321cde6edd1392ade8f0645bb4dcd44e19b2c8340a9",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/preflight.json": "f76614f558c67d9b552586b5e735ff8c9e380a72ce50687ff680cbe22805113c",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/experiment.json": "76eaca929840aba29aa9665a745b9f4ec2c709517c5069f5e84ff6def81db4ae",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/.experiment.claim": "4a04facf3d43f085ae25633c092acf3b326922f87b7c739b2311300a7c034040",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/checkpoint/hessian_checkpoint.json": "d0064b2f5ec6a570cd679a683f3f38667e2f9f73d73d6b30c46dbe1d92874797",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/attempt_1/preflight.json": "a6ca4c5d8451ed2b5ff2b40be6a0808b68a5578458146301bff20e9955d7291a",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/attempt_1/audit.json": "c77e3fdc7bb071eb38bcf7eee0365b758a8ca39875c6e34af5b656d238a9df2f",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/attempt_1/audit.run.json": "683d5e4da021d611c79dcdbef0d81c8f343b100aece614aa33ce486b81c9c11e",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/attempt_1/audit.resource.json": "8ff86b67e3d2ec5dccffff5a9a8e493acfc0593b796f99eb006633f548e02a5c",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/attempt_1/audit.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/attempt_1/.guarded-launch.lock": "cbf1f411bbd5fc82c40de64709c4765fec53413e5a89817f3ffb363b374fd7f2",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/attempt_2/preflight.json": "79323fdbcbac16fe9cdd146f39bfddd1864bca757501b7bb916098e626af4a96",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/attempt_2/audit.json": "20b7ce7bab9e960d8feb857a4d43a9b51c67e6e1d60a1cce549d3d37cf71d8e5",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/attempt_2/audit.run.json": "39250737419ce21f3627a90fda96414ae7e449f1095c0530f3d2c713ef212b9e",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/attempt_2/audit.resource.json": "f248b2011dc3b67d324b344099b217084a2fbd9dd8cbb5a93f74f665919eba91",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/attempt_2/audit.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/attempt_2/.guarded-launch.lock": "cbf1f411bbd5fc82c40de64709c4765fec53413e5a89817f3ffb363b374fd7f2"
+    },
+    "shared_graph_report_unchanged": true,
+    "no_new_FV_HVP_or_optimization": true
+  },
+  "limits": [
+    "trusted files/receipt provider; no authentication of coordinated forgeries",
+    "historical v1 data/controller not retroactively upgraded or rerun",
+    "next coupled modified-Newton step not applied",
+    "3h stationary point/adjoint/reanalysis and independent meteorology remain open",
+    "legacy migration/fullLinux/GraphReport originaltext stillpriorlimits"
+  ]
+}

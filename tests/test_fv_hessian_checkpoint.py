@@ -154,6 +154,44 @@ def test_deadline_after_column_26_leaves_only_independent_audit_pending(
     assert result["checkpoint_status"] == "completed"
 
 
+def test_audit_hvp_owner_is_bound_to_its_reservation(tmp_path: Path, monkeypatch):
+    directory = tmp_path / "checkpoint"
+    clock = [100.0]
+    monkeypatch.setattr(checkpoint.time, "monotonic", lambda: clock[0])
+    real_hvp = checkpoint._apply_hvp
+    calls = 0
+
+    def expire_after_audit_hvp(*args):
+        nonlocal calls
+        calls += 1
+        product = real_hvp(*args)
+        if calls == checkpoint.NC + 1:
+            clock[0] = 200.0
+        return product
+
+    monkeypatch.setattr(checkpoint, "_apply_hvp", expire_after_audit_hvp)
+    with pytest.raises(checkpoint.BudgetRefusal):
+        _call(directory)
+    first = json.loads((directory / "hessian_checkpoint.json").read_text())
+    assert first["audit_hvp"]["attempt_index"] == 1
+    assert first["attempts"][0]["status"] == "budget_refused"
+
+    result = _call(directory)
+    assert result["checkpoint_status"] == "completed"
+    assert result["attempts_reserved"] == 2
+    assert json.loads((directory / "hessian_checkpoint.json").read_text())["audit_hvp"]["attempt_index"] == 1
+    path = directory / "hessian_checkpoint.json"
+    state = json.loads(path.read_text())
+    state["audit_hvp"]["attempt_index"] = 2
+    path.write_text(json.dumps(state))
+    corrupt_bytes = path.read_bytes()
+    monkeypatch.setattr(checkpoint, "_apply_hvp", lambda *_args: pytest.fail("must reject before HVP"))
+    with pytest.raises(ValueError, match="independent HVP is malformed"):
+        _call(directory)
+    assert path.read_bytes() == corrupt_bytes
+    assert calls == checkpoint.NC + 1
+
+
 def test_unexpected_hvp_error_is_terminal_and_retry_does_not_run(tmp_path: Path,
                                                                  monkeypatch):
     directory = tmp_path / "checkpoint"
@@ -212,9 +250,10 @@ def test_mismatched_query_preserves_completed_checkpoint_and_correct_reuse(tmp_p
     result = _call(directory)
     assert result["checkpoint_status"] == "completed"
     assert path.read_bytes() == original_bytes
+    assert json.loads(original_bytes)["last_status"] == "completed"
 
 
-def test_receipt_change_across_hvp_does_not_commit_that_product(tmp_path: Path):
+def test_receipt_change_across_hvp_does_not_commit_that_product(tmp_path: Path, monkeypatch):
     directory = tmp_path / "checkpoint"
     _objective, _control, _parameters, _gradient, context, _provider = _toy_problem()
     calls = 0
@@ -233,6 +272,47 @@ def test_receipt_change_across_hvp_does_not_commit_that_product(tmp_path: Path):
     assert exc.value.state["completed_columns"] == 0
     assert saved["columns"] == []
     assert saved["attempts"][0]["reserved_seconds"] == 10
+    path = directory / "hessian_checkpoint.json"
+    refused_bytes = path.read_bytes()
+
+    def no_retry(*_args):
+        pytest.fail("receipt-refused checkpoint must be terminal")
+
+    monkeypatch.setattr(checkpoint, "_apply_hvp", no_retry)
+    with pytest.raises(ValueError, match="terminal after a non-budget refusal"):
+        _call(directory)
+    assert path.read_bytes() == refused_bytes
+    altered = json.loads(refused_bytes)
+    altered["status"] = altered["last_status"] = "columns_pending"
+    path.write_text(json.dumps(altered))
+    altered_bytes = path.read_bytes()
+    with pytest.raises(ValueError, match="status disagrees with the latest attempt"):
+        _call(directory)
+    assert path.read_bytes() == altered_bytes
+
+
+def test_numerical_refusal_is_terminal_and_preserves_cache(tmp_path: Path, monkeypatch):
+    directory = tmp_path / "checkpoint"
+    calls = 0
+
+    def invalid_hvp(*_args):
+        nonlocal calls
+        calls += 1
+        return torch.full((checkpoint.NC,), float("nan"), dtype=torch.float64)
+
+    monkeypatch.setattr(checkpoint, "_apply_hvp", invalid_hvp)
+    with pytest.raises(checkpoint.NumericalRefusal):
+        _call(directory)
+    assert calls == 1
+    path = directory / "hessian_checkpoint.json"
+    refused_bytes = path.read_bytes()
+    saved = json.loads(refused_bytes)
+    assert saved["status"] == "invalid_hvp_product"
+    monkeypatch.setattr(checkpoint, "_apply_hvp", lambda *_args: pytest.fail("must not retry"))
+    with pytest.raises(ValueError, match="terminal after a non-budget refusal"):
+        _call(directory)
+    assert path.read_bytes() == refused_bytes
+    assert calls == 1
 
 
 def test_corrupt_column_is_rejected_and_never_dropped(tmp_path: Path):
@@ -269,6 +349,37 @@ def test_attempt_quota_is_nonrefundable_across_resumes(tmp_path: Path):
     after = json.loads((directory / "hessian_checkpoint.json").read_text())
     assert len(after["attempts"]) == 1
     assert after["columns"] == before["columns"]
+
+
+@pytest.mark.parametrize("damage", ["clear_ledger", "truncate_ledger", "orphan_anchor",
+                                    "truncate_anchor", "wrong_column_owner"])
+def test_independent_attempt_reservations_reject_ledger_edits(tmp_path: Path, monkeypatch,
+                                                               damage: str):
+    directory = tmp_path / "checkpoint"
+    for _ in range(2):
+        with pytest.raises(checkpoint.CheckpointBudgetRefusal):
+            _call(directory, max_new_columns=1)
+    path = directory / "hessian_checkpoint.json"
+    state = json.loads(path.read_text())
+    if damage == "clear_ledger":
+        state["attempts"] = []
+    elif damage == "truncate_ledger":
+        state["attempts"].pop()
+    elif damage == "orphan_anchor":
+        (directory / "reservation_000003.json").write_text("{}\n")
+    elif damage == "truncate_anchor":
+        (directory / "reservation_000001.json").write_text("{}\n")
+    else:
+        state["columns"][0]["attempt_index"] = 2
+    if damage in {"clear_ledger", "truncate_ledger", "wrong_column_owner"}:
+        path.write_text(json.dumps(state))
+    damaged_checkpoint = path.read_bytes()
+    damaged_reservations = {p.name: p.read_bytes() for p in directory.glob("reservation_*.json")}
+    monkeypatch.setattr(checkpoint, "_apply_hvp", lambda *_args: pytest.fail("must refuse before HVP"))
+    with pytest.raises(ValueError, match="reservation|ledger"):
+        _call(directory)
+    assert path.read_bytes() == damaged_checkpoint
+    assert {p.name: p.read_bytes() for p in directory.glob("reservation_*.json")} == damaged_reservations
 
 
 @pytest.mark.parametrize(
