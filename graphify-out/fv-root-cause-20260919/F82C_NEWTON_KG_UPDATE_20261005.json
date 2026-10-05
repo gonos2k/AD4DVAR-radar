@@ -1,0 +1,23 @@
+{
+  "scope": "one actual unshifted coupled original-J Newton step from fresh f82c H; no new HVP",
+  "facts": [
+    {
+      "claim": "unshifted coupled Newton actualstep improved J/Phi/gradient_inf",
+      "evidence": "graphify-out/fv-root-cause-20260919/f82c_unshifted_newton_20261005_attempt1/step.json"
+    },
+    {
+      "claim": "both endpoint branch partitions changed; gradient linearization error80%",
+      "evidence": "graphify-out/fv-root-cause-20260919/F82C_NEWTON_SCIENTIFIC_RESULT_20261005.json"
+    },
+    {
+      "claim": "physical deltas decoded in model coordinates, no wind/water/skill claim",
+      "evidence": "graphify-out/fv-root-cause-20260919/f82c_unshifted_newton_20261005_attempt1/step.json"
+    }
+  ],
+  "remaining": [
+    "fresh derivative/curvature at newly accepted a35e point before exact next Newton",
+    "3h eligible stationary point and original-H response/reanalysis",
+    "independent weather skill and finite observational influence"
+  ],
+  "graph_refresh": "graphify-out/fv-root-cause-20260919/F82C_NEWTON_GRAPHIFY_20261005.json"
+}

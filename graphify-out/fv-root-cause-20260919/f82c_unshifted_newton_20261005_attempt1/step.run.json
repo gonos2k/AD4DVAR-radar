@@ -1,0 +1,33 @@
+{
+  "child_read_error": null,
+  "child_sha256": "4df260a88ccd1b7105d5078718520f5839bbca48e7734a6e42aafa1cba208d98",
+  "execution_status": "completed",
+  "numerical_status": "one_original_J_step_accepted",
+  "resource": {
+    "child_pid": 54405,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "-m",
+      "examples.weather_scenarios.fv_point_3h_current_newton_step",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/F82C_NEWTON_PLAN_20261005.json",
+      "--plan-sha256",
+      "d7f639e82dcd9445eeef0e32472194b57f31088dc1247e22b52ab0acc37f4a8f",
+      "--directory",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/f82c_unshifted_newton_20261005_attempt1"
+    ],
+    "elapsed_seconds": 18.663179624825716,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 70,
+    "sampled_peak_rss_bytes": 358252544,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300.0
+  }
+}
