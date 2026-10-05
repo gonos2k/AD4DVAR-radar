@@ -1,0 +1,27 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_point_3h_bounded_coupled_step",
+    "--child",
+    "--plan",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/PR243_BOUNDED_COUPLED_PLAN_20261005.json",
+    "--plan-sha256",
+    "a2598083ff3e0bb01a53485ce95917108be2acbe24cef8a30b57089ae16835cf",
+    "--output-directory",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/bounded_coupled_original_j_20261005_attempt1"
+  ],
+  "child_pid": 90049,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 16.279658624902368,
+  "sampled_peak_rss_bytes": 361103360,
+  "rss_samples": 62,
+  "wall_limit_seconds": 300.0,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}

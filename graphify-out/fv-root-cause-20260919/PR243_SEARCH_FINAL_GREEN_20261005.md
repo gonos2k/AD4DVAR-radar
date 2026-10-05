@@ -1,0 +1,11 @@
+# PR243 bounded coupled search: GREEN evidence review
+
+The guarded run at `bounded_coupled_original_j_20261005_attempt1/` is internally consistent for the declared one-step experiment. The child reports `one_original_J_step_accepted`; the parent records `completed`, exit 0, no monitor error or termination, and the child SHA matches `step.json`. Wall time was 16.280 s and sampled peak RSS was 361,103,360 bytes under the 300 s / 1 GiB sampled limits.
+
+The run binds the accepted-endpoint archive (`3e2e1e…d71fd8385`), completed checkpoint experiment (`76eaca…f81db4ae`), Hessian checkpoint (`d0064b…92874797`), base audit (`20b7ce…cf71d8e5`), and plan (`a25980…16835cf`). The current driver SHA is `0c6ab9…c654aa1`, and the test SHA is `e723af…cfab136`. Child `source_before` equals `source_after`; runtime is CPU FP64, Python 3.12.13 / Torch 2.13.0 before and after. The fixed 13-parameter vector and archived problem/truth identity are unchanged. The input receipt changes only to bind the accepted control SHA `f82cc3…14e5b359`.
+
+The direction uses cached (H) with dynamics-only shift μ=40 and the nonzero full gradient: (s=-(H+40P_d)^{-1}g). Its norm is 0.4612237015, so α=0.05/||s||=0.1084072649. The modified-system relative residual is 1.48e-13 and (g^Ts=-0.0729997283). The original-H residual is 1.194 relative, as expected for a shifted direction; this is not an original-H Newton solve. No new HVP was needed.
+
+The accepted candidate has original (J=0.0781108797), down from 0.0838971809. The Armijo upper bound is 0.0838963896, so the decrease passes with margin 0.00578551. Its own endpoint branch/margin audit passed all 3,600 stages, while the branch signature changed. This records endpoint qualification only, not a branch-path certificate. Φ rose from 1.76359662398 to 1.76705798908 and full-gradient infinity norm rose from 1.05881682374 to 1.18153416091; the accepted step therefore demonstrates original-J descent, not stationarity improvement.
+
+The trial row is the canonical record for accepted α, objective, Φ, gradient and branch checks. The child’s top-level `accepted_alpha`, `accepted_objective`, `accepted_phi`, and `accepted_gradient_blocks` are absent, so downstream consumers should read `trials[0]` and not infer those summary fields. No response, adjoint, score, full-root, minimum, or physical-validation claim is made.

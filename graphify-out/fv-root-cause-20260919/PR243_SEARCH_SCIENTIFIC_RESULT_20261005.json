@@ -1,0 +1,53 @@
+{
+  "accepted": {
+    "J": 0.07811087971491998,
+    "Phi": 1.7670579890832934,
+    "alpha": 0.10840726492158614,
+    "branch_changed": true,
+    "branch_signature": "7cf3a261bf3255004e79b36d9a651ae30d42b62eefafe4fd6735efd83914a46d",
+    "control_sha256": "f82cc3412a9ec8cb3896412d4a7bf9703e96cccae9693bc1f61b947914e5b359",
+    "gradient_inf": 1.1815341609110253,
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "step_l2": 0.05,
+    "strict_endpoint_passed": true
+  },
+  "base": {
+    "J": 0.08389718093130327,
+    "Phi": 1.7635966239794696,
+    "control_sha256": "cd6b5693e2bd32a8a41a3509b87b61e7cf647b03d864dfccc0a4cccce96e908d",
+    "gradient_inf": 1.0588168237438937
+  },
+  "changes": {
+    "J_fractional_reduction": 0.06896895881544862,
+    "Phi_fractional_change": 0.0019626739225737655,
+    "gradient_inf_fractional_change": 0.11590044133716404
+  },
+  "cost": {
+    "accepted_steps": 1,
+    "candidate_evaluations": 1,
+    "guard_seconds": 16.279658624902368,
+    "new_hvp": 0,
+    "sampled_child_peak_rss_bytes": 361103360
+  },
+  "execution_status": "completed",
+  "numerical_status": "one_original_J_step_accepted",
+  "plan_sha256": "a2598083ff3e0bb01a53485ce95917108be2acbe24cef8a30b57089ae16835cf",
+  "qualification": {
+    "accepted_point_curvature": "not_computed",
+    "connecting_path": "not_certified",
+    "normal_point": false,
+    "physical_validated": false,
+    "response_computed": false,
+    "source_and_fixed_input_unchanged": true,
+    "stationarity_tolerance": 1e-10
+  },
+  "remaining": [
+    "fresh accepted-point original-J curvature before another Newton direction",
+    "3h eligible stationary point and original-H response/reanalysis",
+    "independent weather verification and finite observational influence"
+  ],
+  "scope": "actual original-J FV single step from cached same-point H; no new HVP, score or response",
+  "source_sha256": "0c6ab9c3b244d9521c64bb40391303d3c1a9f2a8086a552980a5658afc654aa1",
+  "tests": "39 passed, 18 existing warnings; affected synthetic/archived algebra tests only",
+  "types": "0 errors, 0 warnings, 0 notes (error-level invocation)"
+}

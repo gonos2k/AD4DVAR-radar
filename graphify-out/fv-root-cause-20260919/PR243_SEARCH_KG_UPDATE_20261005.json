@@ -1,0 +1,23 @@
+{
+  "scope": "scientific evidence update; isolated structural extraction only",
+  "facts": [
+    {
+      "claim": "One bounded original-J FV step accepted at changed strict endpoint branch",
+      "evidence": "graphify-out/fv-root-cause-20260919/bounded_coupled_original_j_20261005_attempt1/step.json"
+    },
+    {
+      "claim": "J decreased but Phi and max gradient increased; no stationarity improvement claim",
+      "evidence": "graphify-out/fv-root-cause-20260919/PR243_SEARCH_SCIENTIFIC_RESULT_20261005.json"
+    },
+    {
+      "claim": "Cached same-point H reused; accepted-point H unknown",
+      "evidence": "graphify-out/fv-root-cause-20260919/bounded_coupled_original_j_20261005_attempt1/step.json"
+    }
+  ],
+  "remaining": [
+    "fresh accepted-point original-J curvature before another Newton direction",
+    "3h eligible stationary point and original-H response/reanalysis",
+    "independent weather verification and finite observational influence"
+  ],
+  "graph_refresh": "graphify-out/fv-root-cause-20260919/PR243_SEARCH_GRAPHIFY_20261005.json"
+}

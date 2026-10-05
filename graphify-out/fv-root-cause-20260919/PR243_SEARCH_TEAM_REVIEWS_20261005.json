@@ -1,0 +1,8 @@
+{
+  "GREEN": "graphify-out/fv-root-cause-20260919/PR243_SEARCH_FINAL_GREEN_20261005.md",
+  "RED": "graphify-out/fv-root-cause-20260919/PR243_SEARCH_RED_20261005.md",
+  "decision": "GO for recorded one-step research evidence; no stationary response claim",
+  "actual_run": "one guarded child, no repeat",
+  "scope": "original-J nonlinear step only; J decreases, Phi/g_inf increase",
+  "normal_point_and_response": "open"
+}

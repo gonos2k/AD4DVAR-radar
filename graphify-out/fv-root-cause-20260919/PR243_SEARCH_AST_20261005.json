@@ -1,0 +1,1341 @@
+{
+  "nodes": [
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "label": "fv_point_3h_bounded_coupled_step.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_steprefusal",
+      "label": "StepRefusal",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L50",
+      "_origin": "ast"
+    },
+    {
+      "id": "runtimeerror",
+      "label": "RuntimeError",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_sha",
+      "label": "sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_tensor_sha",
+      "label": "tensor_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L58",
+      "_origin": "ast"
+    },
+    {
+      "id": "tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L58",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_write",
+      "label": "_write()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L62",
+      "_origin": "ast"
+    },
+    {
+      "id": "any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L62",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_exact_shifted_direction",
+      "label": "exact_shifted_direction()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L67",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "label": "bounded_original_j_search()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_source_paths",
+      "label": "_source_paths()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L181",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_required_source_files",
+      "label": "_required_source_files()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L198",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_load_cached",
+      "label": "_load_cached()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L208",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L283",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L400",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_execution_status",
+      "label": "execution_status()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L451",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_rationale_1",
+      "label": "One guarded original-J step using the pinned cd6b Hessian; no new HVP.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_rationale_51",
+      "label": "Known one-step numerical or budget refusal.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L51",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_rationale_68",
+      "label": "Apply the exact cached 20+6 block inverse of H+mu*P_d; performs no HVP.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L68",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_bounded_coupled_step_rationale_284",
+      "label": "Evaluate one bounded cached-H direction against the original full J.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L284",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_bounded_coupled_step",
+      "label": "test_fv_point_3h_bounded_coupled_step.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_bounded_coupled_step_strict_branch",
+      "label": "strict_branch()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L11",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_bounded_coupled_step_search",
+      "label": "search()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L16",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_bounded_coupled_step_test_cached_direction_retains_nonzero_field_and_cross_blocks",
+      "label": "test_cached_direction_retains_nonzero_field_and_cross_blocks()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L26",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_bounded_coupled_step_test_phi_ascent_does_not_override_original_j_armijo",
+      "label": "test_phi_ascent_does_not_override_original_j_armijo()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L43",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_bounded_coupled_step_test_decrease_does_not_bypass_candidate_branch_gate",
+      "label": "test_decrease_does_not_bypass_candidate_branch_gate()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_bounded_coupled_step_test_armijo_uses_actual_objective_even_with_small_step",
+      "label": "test_armijo_uses_actual_objective_even_with_small_step()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L69",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_bounded_coupled_step_test_deadline_before_evaluation_keeps_unaccepted_trial",
+      "label": "test_deadline_before_evaluation_keeps_unaccepted_trial()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L76",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_bounded_coupled_step_test_deadline_after_evaluation_does_not_accept",
+      "label": "test_deadline_after_evaluation_does_not_accept()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L89",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_bounded_coupled_step_test_nonfinite_candidate_cannot_be_accepted",
+      "label": "test_nonfinite_candidate_cannot_be_accepted()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L99",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_bounded_coupled_step_test_execution_resource_outcome_is_separate",
+      "label": "test_execution_resource_outcome_is_separate()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L125",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_bounded_coupled_step_test_parent_keeps_failure_for_missing_or_invalid_child",
+      "label": "test_parent_keeps_failure_for_missing_or_invalid_child()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L133",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_bounded_coupled_step_rationale_1",
+      "label": "Cached linear algebra and search policy checks; no FV trajectory execution.",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_steprefusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_steprefusal",
+      "target": "runtimeerror",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_sha",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_tensor_sha",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_write",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_write",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_write",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_exact_shifted_direction",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_exact_shifted_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_exact_shifted_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_exact_shifted_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_exact_shifted_direction",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_source_paths",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L181",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_source_paths",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L181",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_source_paths",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L181",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_required_source_files",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L198",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_required_source_files",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L198",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_load_cached",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L208",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_load_cached",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L208",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L283",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L283",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L283",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L283",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L400",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_execution_status",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L451",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_execution_status",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L451",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_exact_shifted_direction",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_steprefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_steprefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L122",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_load_cached",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L209",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_load_cached",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_required_source_files",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L219",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_load_cached",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L264",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_load_cached",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L290",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_source_paths",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L291",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L292",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L297",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_steprefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L315",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_exact_shifted_direction",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L328",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L351",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_bounded_original_j_search",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L362",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_main",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L412",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_main",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L415",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_main",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_load_cached",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L420",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_main",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_execution_status",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L429",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_main",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L439",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_rationale_51",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_steprefusal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_rationale_68",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_exact_shifted_direction",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_bounded_coupled_step_rationale_284",
+      "target": "weather_scenarios_fv_point_3h_bounded_coupled_step_run",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L284",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_strict_branch",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_search",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_test_cached_direction_retains_nonzero_field_and_cross_blocks",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L26",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_test_phi_ascent_does_not_override_original_j_armijo",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_test_decrease_does_not_bypass_candidate_branch_gate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_test_armijo_uses_actual_objective_even_with_small_step",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_test_deadline_before_evaluation_keeps_unaccepted_trial",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L76",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_test_deadline_after_evaluation_does_not_accept",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L89",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_test_nonfinite_candidate_cannot_be_accepted",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_test_execution_resource_outcome_is_separate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L125",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_test_parent_keeps_failure_for_missing_or_invalid_child",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L133",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step_test_phi_ascent_does_not_override_original_j_armijo",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_search",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step_test_decrease_does_not_bypass_candidate_branch_gate",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_search",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step_test_armijo_uses_actual_objective_even_with_small_step",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_search",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step_test_deadline_after_evaluation_does_not_accept",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_search",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step_test_nonfinite_candidate_cannot_be_accepted",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step_search",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L107",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_bounded_coupled_step_rationale_1",
+      "target": "tests_test_fv_point_3h_bounded_coupled_step",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-bounded-ast-5shn38tj/tests/test_fv_point_3h_bounded_coupled_step.py",
+      "source_location": "L1",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
