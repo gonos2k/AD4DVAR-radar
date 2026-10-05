@@ -51,6 +51,15 @@ class StepRefusal(RuntimeError):
     """Known one-step numerical or budget refusal."""
 
 
+class BudgetRefusal(StepRefusal):
+    """Cooperative deadline reached before starting another operation."""
+
+
+def _check_deadline(deadline: float) -> None:
+    if time.monotonic() >= deadline:
+        raise BudgetRefusal("240-second internal budget exhausted during setup")
+
+
 def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -72,8 +81,11 @@ def exact_shifted_direction(hessian: Tensor, gradient: Tensor, mu: float = MU) -
         raise ValueError("cached Hessian/gradient must be finite CPU FP64 26-control values")
     shifted = hessian.clone()
     shifted[20:, 20:] += mu * torch.eye(6, dtype=torch.float64)
-    inverse, inverse_audit = block_step.block_inverse_preconditioner(shifted)
-    step = inverse(-gradient)
+    try:
+        inverse, inverse_audit = block_step.block_inverse_preconditioner(shifted)
+        step = inverse(-gradient)
+    except block_step.StepRefusal as error:
+        raise StepRefusal(f"cached shifted block qualification refused: {error}") from error
     residual = shifted @ step + gradient
     rhs_norm = torch.linalg.vector_norm(gradient)
     relative = float(torch.linalg.vector_norm(residual) / rhs_norm) if float(rhs_norm) > 0 else float(torch.linalg.vector_norm(residual))
@@ -180,19 +192,14 @@ def bounded_original_j_search(control: Tensor, parameters: Tensor, base_objectiv
 
 def _source_paths(plan_path: Path, archive: dict[str, Any]) -> list[str]:
     archive_path = ARCHIVE.relative_to(ROOT).as_posix()
-    return sorted(set(archive["source_before"]) | {SELF, TEST,
+    plan_sources = json.loads(plan_path.read_text())["source_files"]
+    return sorted(set(plan_sources) | _required_source_files(archive) | {
         str(plan_path.relative_to(ROOT)), archive_path,
         str(ARCHIVE.with_suffix(".run.json").relative_to(ROOT)),
         str(ARCHIVE.with_suffix(".resource.json").relative_to(ROOT)),
         str(EXPERIMENT.relative_to(ROOT)), str(CHECKPOINT.relative_to(ROOT)),
         str(BASE_AUDIT.relative_to(ROOT)), str(BASE_PARENT.relative_to(ROOT)),
-        str(BASE_RESOURCE.relative_to(ROOT)), block_step.SELF, block_step.TEST,
-        blocks.SELF, blocks.TEST,
-        "examples/weather_scenarios/fv_point_3h_seed_linear_probe.py", "tests/test_fv_point_3h_seed_linear_probe.py",
-        "examples/weather_scenarios/fv_point_3h_merit_continuation.py",
-        "examples/weather_scenarios/fv_point_3h_accepted_endpoint_audit.py",
-        "src/advar/fv_point_research_problem.py", "src/advar/transport.py",
-        "src/advar/variational.py", "src/advar/nowcast.py"})
+        str(BASE_RESOURCE.relative_to(ROOT))})
 
 
 def _required_source_files(archive: dict[str, Any]) -> set[str]:
@@ -201,6 +208,9 @@ def _required_source_files(archive: dict[str, Any]) -> set[str]:
         "examples/weather_scenarios/fv_point_3h_seed_linear_probe.py", "tests/test_fv_point_3h_seed_linear_probe.py",
         "examples/weather_scenarios/fv_point_3h_merit_continuation.py",
         "examples/weather_scenarios/fv_point_3h_accepted_endpoint_audit.py",
+        "examples/weather_scenarios/fv_point_3h_endpoint_diagnostics.py",
+        "examples/weather_scenarios/fv_diagnostic_guard.py",
+        "examples/weather_scenarios/fv86_resource_runner.py",
         "src/advar/fv_point_research_problem.py", "src/advar/transport.py",
         "src/advar/variational.py", "src/advar/nowcast.py"}
 
@@ -288,6 +298,7 @@ def run(*, plan_path: Path, plan_sha256: str, output: Path) -> dict[str, Any]:
         raise ValueError("bounded-step output must be fresh")
     root = ROOT.resolve()
     raw, accepted, saved, checkpoint, hessian = _load_cached(plan_path, plan_sha256)
+    _check_deadline(deadline)
     paths = _source_paths(plan_path.resolve(), raw)
     before = {name: sha(root / name) for name in paths}
     if any(before.get(name) != digest for name, digest in raw["source_before"].items()):
@@ -300,6 +311,7 @@ def run(*, plan_path: Path, plan_sha256: str, output: Path) -> dict[str, Any]:
     runtime = blocks.runtime_identity()
     if runtime != saved.get("runtime") or runtime != saved.get("runtime_after"):
         raise ValueError("runtime differs from the saved curvature diagnostic")
+    _check_deadline(deadline)
     problem, original, _seed_control, fixed_parameters, truth, base_identity = seed._prepare_fixed_seed()
     if not torch.equal(parameters, fixed_parameters):
         raise ValueError("reconstructed original parameter vector changed")
@@ -307,7 +319,9 @@ def run(*, plan_path: Path, plan_sha256: str, output: Path) -> dict[str, Any]:
     if (input_before != raw.get("input_after") or input_before != saved.get("input_after")
             or base_identity.get("archived_input") != input_before.get("archived_input")):
         raise ValueError("reconstructed original problem/input identity differs from stored endpoint")
+    _check_deadline(deadline)
     branch, margins = tail._full_current_branch(problem, original_control, fixed_parameters)
+    _check_deadline(deadline)
     if (branch.get("status") != "passed_strict_branch" or branch.get("euler_stages") != 3600
             or branch.get("choice_stage_count") != 3600 or branch.get("face_sign_stage_count") != 3600
             or branch.get("signature_sha256") != saved.get("branch", {}).get("signature_sha256")
@@ -315,6 +329,7 @@ def run(*, plan_path: Path, plan_sha256: str, output: Path) -> dict[str, Any]:
         raise StepRefusal("fresh original endpoint strict branch/margins differ from cached base")
     gradient_fn = torch.func.grad(problem.objective, argnums=0)
     fresh = tail._fresh_merit(problem, original_control, fixed_parameters, gradient_fn)
+    _check_deadline(deadline)
     if fresh is None:
         raise StepRefusal("fresh original endpoint J/g/Phi is nonfinite")
     base_j, gradient, phi = fresh
@@ -326,6 +341,7 @@ def run(*, plan_path: Path, plan_sha256: str, output: Path) -> dict[str, Any]:
             or not all(check["passed"] for check in checks["gradient_components"])):
         raise StepRefusal("fresh base J/Phi/full gradient differs from archived accepted point")
     step, direction_audit = exact_shifted_direction(hessian, gradient, MU)
+    _check_deadline(deadline)
     alpha_start = min(1.0, RADIUS / float(torch.linalg.vector_norm(step)))
     report: dict[str, Any] = {"schema": "advar.point3h-bounded-coupled-step.v1", "phase": "running",
         "numerical_status": "not_reached", "scope": "at most one cached-H shifted direction; original-J backtracking",
@@ -412,8 +428,9 @@ def main() -> None:
             run(plan_path=args.plan.resolve(), plan_sha256=args.plan_sha256, output=output)
         except StepRefusal as error:
             if not output.exists():
-                _write(output, {"phase": "finished", "numerical_status": "initial_step_refusal",
+                _write(output, {"phase": "finished", "numerical_status": "step_budget_refusal" if isinstance(error, BudgetRefusal) else "initial_step_refusal",
                     "refusal": str(error), "source_unchanged": None,
+                    "integrity_status": "not_verified",
                     "optimizer_steps_applied": 0, "response_computed": False, "full_root_claim": False})
         return
     # Validate the fixed inputs before reserving the only guarded launch.
@@ -440,6 +457,7 @@ def main() -> None:
         if execution == "completed" and (child.get("phase") != "finished" or child.get("source_unchanged") is not True
                 or child.get("fixed_input_unchanged") is not True or child.get("runtime_after") != child.get("runtime")):
             parent["execution_status"] = "failed"
+            parent["execution_failure_reason"] = "child_completion_or_integrity_not_verified"
     except (OSError, ValueError) as error:
         parent.update(execution_status="failed" if execution == "completed" else execution,
                       child_read_error=f"{type(error).__name__}: {error}")

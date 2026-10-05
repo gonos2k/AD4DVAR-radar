@@ -1,0 +1,18 @@
+{
+  "scope": "team audit changes only; historical plan/raw evidence unchanged; no FV",
+  "files": {
+    "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py": "71c4d56f0b497f63ed8f016db99aa225c98a9ad807d4d3c154c804a1364752e0",
+    "tests/test_fv_point_3h_bounded_coupled_step.py": "3856c68c9d9abe21bdcc5a9294fb485f7b640e00343b35dd7c4bdf991196d80a",
+    "graphify-out/fv-root-cause-20260919/PR244_TEAM_AST_20261005.json": "358f0bd6f23f3a608434088a05b27acd04a5ddfd3195447b213818abb8dab553",
+    "graphify-out/fv-root-cause-20260919/PR244_TEAM_CHECKLIST_20261005.md": "225214cdc635e57545a155aaf90c32b60f70116a8f732ab74084d144ea22b655",
+    "graphify-out/fv-root-cause-20260919/PR244_TEAM_ENGINEERING_20261005.md": "7fe640278eff15b6907e5fcec9b66218d016c07ea040da14174bcce839c5ebd0",
+    "graphify-out/fv-root-cause-20260919/PR244_TEAM_FINAL_GREEN_20261005.md": "40a1be6717f61e88e174427ec8d89cc8ea00fad32b83624fd728981adc004145",
+    "graphify-out/fv-root-cause-20260919/PR244_TEAM_FINAL_RED_20261005.md": "4a1515659d308a99a2e2a32b7d0b547fc3e6fb8f039926d6406f42f42297e002",
+    "graphify-out/fv-root-cause-20260919/PR244_TEAM_GRAPHIFY_20261005.json": "9980e09708cf3a36a2495378d7634a011fc949722fa56891faacbf3e99f41948",
+    "graphify-out/fv-root-cause-20260919/PR244_TEAM_KG_UPDATE_20261005.json": "5ad60bd798e48a64211c6b2c28b335e0c14d8786fe523367be4481ceae56f898",
+    "graphify-out/fv-root-cause-20260919/PR244_TEAM_POST_FIX_20261005.json": "ae7aaa0413e5c7fb28251892430929496c77b217370b86214cee7cce987ded2b",
+    "graphify-out/fv-root-cause-20260919/PR244_TEAM_PRE_FIX_REPRO_20261005.json": "99a2a35b0862800599c8bba4c36c806fc9ec00ae43ec82ecc704ecc4efabdf2f",
+    "graphify-out/fv-root-cause-20260919/PR244_TEAM_TESTS_20261005.log": "d92a8c8055bc4c53ed664533d4d2b6ee82077e74e449b9c66861206d999572d0",
+    "graphify-out/fv-root-cause-20260919/PR244_TEAM_TYPES_20261005.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c"
+  }
+}

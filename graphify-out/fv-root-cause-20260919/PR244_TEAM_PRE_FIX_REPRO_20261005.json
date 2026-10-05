@@ -1,0 +1,14 @@
+{
+  "scope": "small source-list inspection; no FV/HVP",
+  "missing_from_execution_after_check": [
+    "examples/weather_scenarios/fv_diagnostic_guard.py",
+    "examples/weather_scenarios/fv_point_3h_endpoint_diagnostics.py"
+  ],
+  "plan_sha256": "a2598083ff3e0bb01a53485ce95917108be2acbe24cef8a30b57089ae16835cf",
+  "historical_actual_result": "not invalidated; no mutation established",
+  "known_block_refusal_exception": {
+    "type": "examples.weather_scenarios.fv_point_3h_schur_newton_step.StepRefusal",
+    "caught_by_driver_refusal": false,
+    "message": "full frozen Hessian is not resolved positive definite"
+  }
+}
