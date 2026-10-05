@@ -1,0 +1,23 @@
+{
+  "scope": "owned source/tests/plan/one actual run/reviews; original evidence unchanged",
+  "files": {
+    "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py": "0c6ab9c3b244d9521c64bb40391303d3c1a9f2a8086a552980a5658afc654aa1",
+    "tests/test_fv_point_3h_bounded_coupled_step.py": "e723afef3351e6cc818f50feff01473dad144dcaadbc75c25e84ed662cfab136",
+    "graphify-out/fv-root-cause-20260919/PR243_SEARCH_AST_20261005.json": "300d3eb2713471755d50e602c8d4a1fc3abc55e32fb694f61e33c0db722032af",
+    "graphify-out/fv-root-cause-20260919/PR243_SEARCH_CHECKLIST_20261005.md": "3f594c5cb5d9b62380d6164b28b7401ac6a3fa0e2f8590fc7b3dc771f5d0c176",
+    "graphify-out/fv-root-cause-20260919/PR243_SEARCH_FINAL_GREEN_20261005.md": "05f505fe894b12a3f41337cc2a7e962443958b227b959bd59c9b26997b4746d6",
+    "graphify-out/fv-root-cause-20260919/PR243_SEARCH_GRAPHIFY_20261005.json": "dbf5f4deba04e4bce29428795579ca97649d47be10ae724c5fe20900d94a09d1",
+    "graphify-out/fv-root-cause-20260919/PR243_SEARCH_GREEN_20261005.json": "37ffa61c4ed16b76809c63fdfa356d22a787da30d7fe42f4c2b50496df3f369d",
+    "graphify-out/fv-root-cause-20260919/PR243_SEARCH_KG_UPDATE_20261005.json": "f1022a0b1a2410be72529d2eda92f5bf5f88c7c57ca3096d40ba7c3ecf5f257d",
+    "graphify-out/fv-root-cause-20260919/PR243_SEARCH_RED_20261005.md": "d2769b92ac5e50a2ea5377bc7625476262a014eb17b0d4f09f40c72c3ca00907",
+    "graphify-out/fv-root-cause-20260919/PR243_SEARCH_SCIENTIFIC_RESULT_20261005.json": "9971f5a3e947f4b3d57c66fbcdc620416842c82b13451537df6d685e342a6da8",
+    "graphify-out/fv-root-cause-20260919/PR243_SEARCH_TEAM_REVIEWS_20261005.json": "373918c304ce49ce8530c632f034276b4a91424d31a513bf2f249869c144c541",
+    "graphify-out/fv-root-cause-20260919/PR243_SEARCH_TESTS_20261005.log": "4cf275961b16201407a3613b4a3f9f91af2bdc44ff7ce90ee4f1dcec2670e22b",
+    "graphify-out/fv-root-cause-20260919/PR243_SEARCH_TYPES_20261005.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/PR243_BOUNDED_COUPLED_PLAN_20261005.json": "a2598083ff3e0bb01a53485ce95917108be2acbe24cef8a30b57089ae16835cf",
+    "graphify-out/fv-root-cause-20260919/bounded_coupled_original_j_20261005_attempt1/step.json": "ec289275e29d106685cb3a76b10b48ed96676411b84582b649ac944040d7d361",
+    "graphify-out/fv-root-cause-20260919/bounded_coupled_original_j_20261005_attempt1/step.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/bounded_coupled_original_j_20261005_attempt1/step.resource.json": "643691ce857a4b404cc5870be3d86e654063f5bf33cee64174c06a62bbb604db",
+    "graphify-out/fv-root-cause-20260919/bounded_coupled_original_j_20261005_attempt1/step.run.json": "e9b0645b1687ced1c57d62dd8a723dc82d9dd6255a8b5523bdad2c96b90bcc81"
+  }
+}
