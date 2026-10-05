@@ -1,0 +1,1465 @@
+{
+  "nodes": [
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "label": "fv_point_3h_accepted_curvature.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_curvaturerefusal",
+      "label": "CurvatureRefusal",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L47",
+      "_origin": "ast"
+    },
+    {
+      "id": "runtimeerror",
+      "label": "RuntimeError",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_sha",
+      "label": "sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L51",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L51",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_tensor_sha",
+      "label": "tensor_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_write",
+      "label": "_write()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L59",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L59",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_required_sources",
+      "label": "_required_sources()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L64",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_accepted_trial",
+      "label": "_accepted_trial()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L79",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_endpoint_metrics",
+      "label": "_endpoint_metrics()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L90",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_endpoint_metrics_pass",
+      "label": "_endpoint_metrics_pass()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L111",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_branch_partition",
+      "label": "_branch_partition()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L120",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_load_inputs",
+      "label": "_load_inputs()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L143",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L206",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L390",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_rationale_1",
+      "label": "Fresh Hessian diagnostic at the accepted f82c full-control endpoint.  This modul",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_accepted_curvature_rationale_48",
+      "label": "A measured endpoint failed its declared strict-branch or metric gate.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L48",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_accepted_curvature",
+      "label": "test_fv_point_3h_accepted_curvature.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_accepted_curvature_step",
+      "label": "_step()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L18",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_accepted_curvature_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L18",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_accepted_curvature_test_pinned_step_selects_only_the_accepted_f82c_full_point",
+      "label": "test_pinned_step_selects_only_the_accepted_f82c_full_point()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L22",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_accepted_curvature_test_endpoint_metrics_check_every_gradient_component",
+      "label": "test_endpoint_metrics_check_every_gradient_component()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L32",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_accepted_curvature_test_accepted_step_rejects_control_or_branch_identity_drift",
+      "label": "test_accepted_step_rejects_control_or_branch_identity_drift()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L53",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_accepted_curvature_test_branch_partition_reports_analysis_and_future_as_distinct_hashes",
+      "label": "test_branch_partition_reports_analysis_and_future_as_distinct_hashes()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L66",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_accepted_curvature_test_branch_partition_refuses_incomplete_signatures",
+      "label": "test_branch_partition_refuses_incomplete_signatures()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L82",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_accepted_curvature_test_expired_branch_setup_does_not_start_objective_or_hvp",
+      "label": "test_expired_branch_setup_does_not_start_objective_or_hvp()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L88",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_f82c_curvature_experiment",
+      "label": "test_f82c_curvature_experiment.py",
+      "file_type": "code",
+      "source_file": "tests/test_f82c_curvature_experiment.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_f82c_curvature_experiment_run_toy",
+      "label": "run_toy()",
+      "file_type": "code",
+      "source_file": "tests/test_f82c_curvature_experiment.py",
+      "source_location": "L15",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_f82c_curvature_experiment_test_only_budget_refusal_resumes_and_completion_stops",
+      "label": "test_only_budget_refusal_resumes_and_completion_stops()",
+      "file_type": "code",
+      "source_file": "tests/test_f82c_curvature_experiment.py",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_f82c_curvature_experiment_test_three_launch_budget_is_not_extended",
+      "label": "test_three_launch_budget_is_not_extended()",
+      "file_type": "code",
+      "source_file": "tests/test_f82c_curvature_experiment.py",
+      "source_location": "L61",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_f82c_curvature_experiment_test_nonbudget_or_invalid_child_stops_without_retry",
+      "label": "test_nonbudget_or_invalid_child_stops_without_retry()",
+      "file_type": "code",
+      "source_file": "tests/test_f82c_curvature_experiment.py",
+      "source_location": "L68",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_f82c_curvature_experiment_rationale_1",
+      "label": "Toy orchestration tests; the guard and FV child are replaced explicitly.",
+      "file_type": "rationale",
+      "source_file": "tests/test_f82c_curvature_experiment.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "label": "F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_sha",
+      "label": "sha()",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L16",
+      "_origin": "ast"
+    },
+    {
+      "id": "graphify_out_fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L16",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_write",
+      "label": "write()",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "graphify_out_fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L22",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_rationale_1",
+      "label": "Frozen three-launch f82c curvature experiment; no optimizer or score.",
+      "file_type": "rationale",
+      "source_file": "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_curvaturerefusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_curvaturerefusal",
+      "target": "runtimeerror",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_sha",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_tensor_sha",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_write",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_write",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_write",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_required_sources",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_required_sources",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_accepted_trial",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_accepted_trial",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_accepted_trial",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_endpoint_metrics",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_endpoint_metrics",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_endpoint_metrics",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_endpoint_metrics",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_endpoint_metrics",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_endpoint_metrics",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_endpoint_metrics_pass",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L111",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_endpoint_metrics_pass",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L111",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_branch_partition",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_branch_partition",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_branch_partition",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_load_inputs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L143",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_load_inputs",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L143",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_load_inputs",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L143",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_load_inputs",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L143",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_load_inputs",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L143",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_load_inputs",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L143",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L206",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L206",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L206",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L206",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "target": "examples_weather_scenarios_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L206",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L390",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_branch_partition",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_curvaturerefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_load_inputs",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_load_inputs",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_required_sources",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_load_inputs",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_accepted_trial",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_load_inputs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L214",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L218",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L225",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L259",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_curvaturerefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_endpoint_metrics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L283",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_endpoint_metrics_pass",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L289",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_branch_partition",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L298",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_main",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L401",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_accepted_curvature_rationale_48",
+      "target": "weather_scenarios_fv_point_3h_accepted_curvature_curvaturerefusal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/examples/weather_scenarios/fv_point_3h_accepted_curvature.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "copy",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "tests_test_fv_point_3h_accepted_curvature_step",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature_step",
+      "target": "tests_test_fv_point_3h_accepted_curvature_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "tests_test_fv_point_3h_accepted_curvature_test_pinned_step_selects_only_the_accepted_f82c_full_point",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "tests_test_fv_point_3h_accepted_curvature_test_endpoint_metrics_check_every_gradient_component",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "tests_test_fv_point_3h_accepted_curvature_test_accepted_step_rejects_control_or_branch_identity_drift",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L53",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "tests_test_fv_point_3h_accepted_curvature_test_branch_partition_reports_analysis_and_future_as_distinct_hashes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "tests_test_fv_point_3h_accepted_curvature_test_branch_partition_refuses_incomplete_signatures",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L82",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature",
+      "target": "tests_test_fv_point_3h_accepted_curvature_test_expired_branch_setup_does_not_start_objective_or_hvp",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L88",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature_test_pinned_step_selects_only_the_accepted_f82c_full_point",
+      "target": "tests_test_fv_point_3h_accepted_curvature_step",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature_test_endpoint_metrics_check_every_gradient_component",
+      "target": "tests_test_fv_point_3h_accepted_curvature_step",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature_test_accepted_step_rejects_control_or_branch_identity_drift",
+      "target": "tests_test_fv_point_3h_accepted_curvature_step",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_accepted_curvature_test_expired_branch_setup_does_not_start_objective_or_hvp",
+      "target": "tests_test_fv_point_3h_accepted_curvature_step",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_fv_point_3h_accepted_curvature.py",
+      "source_location": "L89",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_f82c_curvature_experiment",
+      "target": "importlib_util",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_f82c_curvature_experiment.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_f82c_curvature_experiment",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_f82c_curvature_experiment.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_f82c_curvature_experiment",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_f82c_curvature_experiment.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_f82c_curvature_experiment",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_f82c_curvature_experiment.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_f82c_curvature_experiment",
+      "target": "tests_test_f82c_curvature_experiment_run_toy",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_f82c_curvature_experiment.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_f82c_curvature_experiment",
+      "target": "tests_test_f82c_curvature_experiment_test_only_budget_refusal_resumes_and_completion_stops",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_f82c_curvature_experiment.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_f82c_curvature_experiment",
+      "target": "tests_test_f82c_curvature_experiment_test_three_launch_budget_is_not_extended",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_f82c_curvature_experiment.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_f82c_curvature_experiment",
+      "target": "tests_test_f82c_curvature_experiment_test_nonbudget_or_invalid_child_stops_without_retry",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_f82c_curvature_experiment.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_f82c_curvature_experiment_test_only_budget_refusal_resumes_and_completion_stops",
+      "target": "tests_test_f82c_curvature_experiment_run_toy",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_f82c_curvature_experiment.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_f82c_curvature_experiment_test_three_launch_budget_is_not_extended",
+      "target": "tests_test_f82c_curvature_experiment_run_toy",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_f82c_curvature_experiment.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_f82c_curvature_experiment_test_nonbudget_or_invalid_child_stops_without_retry",
+      "target": "tests_test_f82c_curvature_experiment_run_toy",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_f82c_curvature_experiment.py",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_f82c_curvature_experiment_rationale_1",
+      "target": "tests_test_f82c_curvature_experiment",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/tests/test_f82c_curvature_experiment.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "target": "examples_weather_scenarios_fv_point_3h_bounded_coupled_step",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "target": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_sha",
+      "target": "graphify_out_fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "target": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_write",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_write",
+      "target": "graphify_out_fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_write",
+      "target": "graphify_out_fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "target": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_main",
+      "target": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_main",
+      "target": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005_rationale_1",
+      "target": "fv_root_cause_20260919_f82c_curvature_run_experiment_20261005",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-f82c-ast-az7serli/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py",
+      "source_location": "L1",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

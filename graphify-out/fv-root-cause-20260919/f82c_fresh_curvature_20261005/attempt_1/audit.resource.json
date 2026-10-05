@@ -1,0 +1,29 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_point_3h_accepted_curvature",
+    "--child",
+    "--plan",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_PLAN_20261005.json",
+    "--plan-sha256",
+    "b9b92e69bbcae3d333169f381c8a2dd2a9de9efa105cd4985e0878915bb9ebb2",
+    "--output-directory",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/attempt_1",
+    "--checkpoint-directory",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/checkpoint"
+  ],
+  "child_pid": 74709,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 235.8782522911206,
+  "sampled_peak_rss_bytes": 373686272,
+  "rss_samples": 858,
+  "wall_limit_seconds": 300.0,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}

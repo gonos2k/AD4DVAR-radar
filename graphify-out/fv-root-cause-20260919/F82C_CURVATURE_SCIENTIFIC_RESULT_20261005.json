@@ -1,0 +1,108 @@
+{
+  "branch_partition": {
+    "analysis_signature_sha256": "494069db50308d3c1d682fd161793f48b945cf8db498e8f02731ff2ae315148b",
+    "analysis_stages": 360,
+    "full_signature_sha256": "7cf3a261bf3255004e79b36d9a651ae30d42b62eefafe4fd6735efd83914a46d",
+    "future_signature_sha256": "024c4f016d20009776655f29ada5ba56a4c7ca4ec2ab44c34b3c3d336d656e2c",
+    "future_stages": 3240
+  },
+  "control_sha256": "f82cc3412a9ec8cb3896412d4a7bf9703e96cccae9693bc1f61b947914e5b359",
+  "cost": {
+    "basis_hvp": 26,
+    "child_seconds": 234.58892495790496,
+    "guard_seconds": 235.8782522911206,
+    "guarded_launches": 1,
+    "independent_hvp": 1,
+    "kernel_attempts": 1,
+    "outer_reserved_seconds": 300,
+    "sampled_child_peak_rss_bytes": 373686272
+  },
+  "curvature": {
+    "condition_2": 57087.07698263046,
+    "hdd_range": [
+      1.0095695200842054,
+      2916.5479059547843
+    ],
+    "hessian_sha256": "1c4da0d6fd39426e3366b106cc71f733b19cc2e509d78db5dbc39e8d87797991",
+    "hff_range": [
+      0.9341252808080519,
+      1824.8919791559695
+    ],
+    "lambda_max": 4202.874648667052,
+    "lambda_min": 0.07362217284212738,
+    "minimum_eigenpair_audit": {
+      "passed": true,
+      "relative_residual": 1.3938824594685205e-16,
+      "residual_l2": 6.450429202747786e-13,
+      "tolerance": 1e-08
+    },
+    "negative_eigenvalues": 0,
+    "schur_range": [
+      0.3826709325853409,
+      386.46850305919384
+    ],
+    "schur_status": "schur_evaluated",
+    "symmetry_relative": 1.2118792466212137e-15
+  },
+  "execution_status": "completed",
+  "gradient_blocks": {
+    "dynamics": {
+      "inf": 0.7877260514707414,
+      "l2": 0.9813865398003851,
+      "rms": 0.4006493771577531
+    },
+    "field": {
+      "inf": 1.1815341609110253,
+      "l2": 1.6034327044392018,
+      "rms": 0.35853845244723836
+    },
+    "flow": {
+      "inf": 0.7877260514707414,
+      "l2": 0.8866975315090994,
+      "rms": 0.39654319118712156
+    },
+    "full_inf": 1.1815341609110253,
+    "full_l2": 1.879924460760747,
+    "growth": {
+      "inf": 0.4205793957352676,
+      "l2": 0.4205793957352676,
+      "rms": 0.4205793957352676,
+      "value": 0.4205793957352676
+    }
+  },
+  "gradient_inf": 1.1815341609110253,
+  "gradient_sha256": "a745f780cebae76b35b8ac4af0d2dd2cc64f340d31b9590a64b917d81a2d8f26",
+  "next_direction_algebra_only": {
+    "g_dot_s": -0.04099245857700097,
+    "interpretation": "SPD permits unshifted coupled Newton direction at this point; actual step acceptance remains unmeasured",
+    "operator": "original new-point Jcc, mu=0",
+    "phi_directional_derivative": -3.5341159781665747,
+    "raw_H_relative_residual": 7.825606644677257e-14,
+    "step_applied": false,
+    "step_l2": 0.2581891908651328
+  },
+  "numerical_status": "curvature_completed",
+  "objective": 0.07811087971491998,
+  "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+  "phi": 1.7670579890832934,
+  "plan_sha256": "b9b92e69bbcae3d333169f381c8a2dd2a9de9efa105cd4985e0878915bb9ebb2",
+  "qualification": {
+    "branch_path_certified": false,
+    "full_root_claim": false,
+    "physical_validated": false,
+    "response_computed": false,
+    "score_computed": false,
+    "stationarity_passed": false,
+    "stationarity_tolerance": 1e-10
+  },
+  "remaining": [
+    "coupled original-J nonlinear search from new point using new curvature",
+    "3h eligible stationary point, original-H adjoint and nonlinear reanalysis",
+    "independent weather skill, finite observational influence and learned error model"
+  ],
+  "scope": "fresh actual FV original-J curvature at fixed accepted f82c; no optimizer step or score/response",
+  "verification": {
+    "affected_tests": "35 passed,18 existing warnings3.18s",
+    "types": "0 errors,0 warnings,0 notes (error-level invocation)"
+  }
+}

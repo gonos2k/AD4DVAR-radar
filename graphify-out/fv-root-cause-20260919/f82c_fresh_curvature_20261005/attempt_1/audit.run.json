@@ -1,0 +1,36 @@
+{
+  "child_read_error": null,
+  "child_sha256": "3058fec5ebf746c500a02b8712983459f8735e0ad8e762b217474e31379f2255",
+  "execution_status": "completed",
+  "numerical_status": "curvature_completed",
+  "phase": "finished",
+  "resource": {
+    "child_pid": 74709,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "-m",
+      "examples.weather_scenarios.fv_point_3h_accepted_curvature",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_PLAN_20261005.json",
+      "--plan-sha256",
+      "b9b92e69bbcae3d333169f381c8a2dd2a9de9efa105cd4985e0878915bb9ebb2",
+      "--output-directory",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/attempt_1",
+      "--checkpoint-directory",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/checkpoint"
+    ],
+    "elapsed_seconds": 235.8782522911206,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 858,
+    "sampled_peak_rss_bytes": 373686272,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300.0
+  }
+}

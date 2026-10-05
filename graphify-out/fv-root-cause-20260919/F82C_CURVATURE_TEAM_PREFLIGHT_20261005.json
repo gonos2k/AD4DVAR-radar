@@ -1,0 +1,9 @@
+{
+  "scope": "prelaunch source/plan review and pure tests only",
+  "GREEN": "GO; all73 source +4archive pins; original-J Hessian at acceptedpoint",
+  "RED": "GO; directchildguard caps3x300 total900 andbudget-onlyresume",
+  "plan_sha256": "b9b92e69bbcae3d333169f381c8a2dd2a9de9efa105cd4985e0878915bb9ebb2",
+  "tests": "35 passed,18 existing warnings3.18s",
+  "types": "0 errors,0 warnings,0 notes",
+  "prospective_limits": "no stationarity/response/score/physical claim"
+}
