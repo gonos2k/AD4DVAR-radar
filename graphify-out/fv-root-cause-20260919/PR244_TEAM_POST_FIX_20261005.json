@@ -1,0 +1,18 @@
+{
+  "scope": "audit fix verification; no new FV/HVP/optimization",
+  "missing_plan_sources_after_fix": [],
+  "historical_owned_manifest_changed": [
+    "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py",
+    "tests/test_fv_point_3h_bounded_coupled_step.py"
+  ],
+  "all_old_plan_raw_results_reviews_unchanged": true,
+  "historical_plan_sha256": "a2598083ff3e0bb01a53485ce95917108be2acbe24cef8a30b57089ae16835cf",
+  "current_source_requires_new_separately_frozen_plan_for_any_future_run": true,
+  "new_actual_runs": 0,
+  "affected_tests": "44 passed, 18 existing warnings",
+  "types": "0 errors, 0 warnings, 0 notes (error-level invocation)",
+  "setup_deadline": "cooperative checks between setup/branch/gradient/direction operations; no preemption of running op",
+  "initial_refusal": "numerical reason preserved; integrity_not_verified keeps execution failed explicitly",
+  "current_source_sha256": "71c4d56f0b497f63ed8f016db99aa225c98a9ad807d4d3c154c804a1364752e0",
+  "current_test_sha256": "3856c68c9d9abe21bdcc5a9294fb485f7b640e00343b35dd7c4bdf991196d80a"
+}

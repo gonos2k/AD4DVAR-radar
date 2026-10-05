@@ -40,6 +40,60 @@ def test_cached_direction_retains_nonzero_field_and_cross_blocks():
     assert (s[20:] - wrong).norm() > .01
 
 
+def test_all_plan_sources_are_audited_before_and_after():
+    archive = json.loads(probe.ARCHIVE.read_text())
+    plan = json.loads(probe.PLAN.read_text())
+    paths = probe._source_paths(probe.PLAN, archive)
+    assert set(plan["source_files"]) <= set(paths)
+    assert {"examples/weather_scenarios/fv_diagnostic_guard.py",
+            "examples/weather_scenarios/fv_point_3h_endpoint_diagnostics.py"} <= probe._required_source_files(archive)
+
+
+def test_block_curvature_refusal_uses_driver_numerical_refusal():
+    with pytest.raises(probe.StepRefusal, match="block qualification refused"):
+        probe.exact_shifted_direction(-torch.eye(26, dtype=torch.float64),
+                                      torch.ones(26, dtype=torch.float64))
+
+
+def test_unexpected_block_error_is_not_hidden_as_numerical_refusal(monkeypatch):
+    def broken(matrix):
+        raise RuntimeError("unexpected program failure")
+
+    monkeypatch.setattr(probe.block_step, "block_inverse_preconditioner", broken)
+    with pytest.raises(RuntimeError, match="unexpected program failure"):
+        probe.exact_shifted_direction(torch.eye(26, dtype=torch.float64),
+                                      torch.ones(26, dtype=torch.float64))
+
+
+def test_initial_block_refusal_leaves_numerical_record(tmp_path, monkeypatch):
+    def refused(**kwargs):
+        probe.exact_shifted_direction(-torch.eye(26, dtype=torch.float64),
+                                      torch.ones(26, dtype=torch.float64))
+
+    monkeypatch.setattr(probe, "run", refused)
+    monkeypatch.setattr(probe.sys, "argv", ["step", "--child", "--plan-sha256", "unused",
+                                            "--output-directory", str(tmp_path)])
+    probe.main()
+    report = json.loads((tmp_path / "step.json").read_text())
+    assert report["numerical_status"] == "initial_step_refusal"
+    assert report["optimizer_steps_applied"] == 0
+    assert report["source_unchanged"] is None
+    assert report["integrity_status"] == "not_verified"
+
+
+def test_setup_deadline_stops_before_another_operation(tmp_path, monkeypatch):
+    clock = iter([0., 241.])
+    monkeypatch.setattr(probe.time, "monotonic", lambda: next(clock))
+    monkeypatch.setattr(probe, "_load_cached", lambda *args: ({}, {}, {}, {}, torch.empty(26, 26)))
+
+    def forbidden(*args):
+        raise AssertionError("expired setup cannot continue to source/direction work")
+
+    monkeypatch.setattr(probe, "_source_paths", forbidden)
+    with pytest.raises(probe.BudgetRefusal, match="budget exhausted during setup"):
+        probe.run(plan_path=tmp_path / "plan.json", plan_sha256="unused", output=tmp_path / "step.json")
+
+
 def test_phi_ascent_does_not_override_original_j_armijo():
     def objective(c, p):
         return 1 + c[0] - c[0] ** 2 / 2
@@ -148,3 +202,5 @@ def test_parent_keeps_failure_for_missing_or_invalid_child(tmp_path, monkeypatch
     parent = json.loads((directory / "step.run.json").read_text())
     assert parent["execution_status"] == "failed"
     assert parent["resource"]["exit_code"] == 0
+    if child == '{"phase":"running"}':
+        assert parent["execution_failure_reason"] == "child_completion_or_integrity_not_verified"
