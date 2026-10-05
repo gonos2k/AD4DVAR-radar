@@ -1,0 +1,58 @@
+{
+  "attempts": [
+    {
+      "attempt": 1,
+      "child_read_error": null,
+      "child_sha256": "3058fec5ebf746c500a02b8712983459f8735e0ad8e762b217474e31379f2255",
+      "completed_columns": 26,
+      "hvp_calls_total": 27,
+      "numerical_status": "curvature_completed",
+      "parent_sha256": "26261c610df92552a655e8066ae4af384f22693f8754426a6eeb95e5713efb14",
+      "reserved_outer_seconds": 300,
+      "resource": {
+        "child_pid": 74709,
+        "child_process_group_cleanup_error": null,
+        "child_process_group_cleanup_sent": false,
+        "command": [
+          "/Users/yhlee/ADVAR/.venv/bin/python",
+          "-m",
+          "examples.weather_scenarios.fv_point_3h_accepted_curvature",
+          "--child",
+          "--plan",
+          "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/F82C_CURVATURE_PLAN_20261005.json",
+          "--plan-sha256",
+          "b9b92e69bbcae3d333169f381c8a2dd2a9de9efa105cd4985e0878915bb9ebb2",
+          "--output-directory",
+          "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/attempt_1",
+          "--checkpoint-directory",
+          "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/checkpoint"
+        ],
+        "elapsed_seconds": 235.8782522911206,
+        "exit_code": 0,
+        "monitor_error": null,
+        "received_sigterm": false,
+        "resource_termination": null,
+        "rss_limit_bytes": 1073741824,
+        "rss_samples": 858,
+        "sampled_peak_rss_bytes": 373686272,
+        "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+        "wall_limit_seconds": 300.0
+      },
+      "resource_sha256": "139c8545f0538625b808e42f4060fbec4a38eacab41fa2ef8a072a53af9ece0a",
+      "status": "completed"
+    }
+  ],
+  "control_sha256": "f82cc3412a9ec8cb3896412d4a7bf9703e96cccae9693bc1f61b947914e5b359",
+  "elapsed_seconds": 235.8834712919779,
+  "optimizer_step_applied": false,
+  "original_archive_unchanged": true,
+  "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+  "phase": "finished",
+  "physical_validated": false,
+  "plan_sha256": "b9b92e69bbcae3d333169f381c8a2dd2a9de9efa105cd4985e0878915bb9ebb2",
+  "reserved_outer_seconds": 300,
+  "response_computed": false,
+  "scope": "fresh original assimilation Hessian at accepted f82c point; no optimizer step/score/response/physical claim",
+  "source_unchanged": true,
+  "stop_reason": "fresh accepted-point curvature completed"
+}

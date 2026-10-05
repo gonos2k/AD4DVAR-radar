@@ -1,0 +1,247 @@
+{
+  "identity": {
+    "accepted_branch_signature": "7cf3a261bf3255004e79b36d9a651ae30d42b62eefafe4fd6735efd83914a46d",
+    "accepted_control_sha256": "f82cc3412a9ec8cb3896412d4a7bf9703e96cccae9693bc1f61b947914e5b359",
+    "accepted_gradient_sha256": "a745f780cebae76b35b8ac4af0d2dd2cc64f340d31b9590a64b917d81a2d8f26",
+    "archived_problem_identity_sha256": "16fa95b534c3b61cf5d1506770cbfc77edb527c40d1f4c536f5130cba24e1fc3",
+    "base_branch_signature": "2f08096af7c30da6be7e2b5bb22ba3577b9bdb4ef368a0ec03660a99a4cc3431",
+    "base_control_sha256": "cd6b5693e2bd32a8a41a3509b87b61e7cf647b03d864dfccc0a4cccce96e908d",
+    "base_gradient_sha256": "c9dfc589a4b83665e48af0266d68514af9189738b6cf376891c081ebbd7e5a94",
+    "branch_changed": true,
+    "cached_H_sha256": "9abaf1e5d643bce7c2d1426245d64c04feec119b7eddecdc3853a40dbb297003",
+    "fixed_input_unchanged_receipt": true,
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed"
+  },
+  "limitations": [
+    "No fresh f82c Hessian or HVP was computed.",
+    "No new branch/path, stationarity, normal-point, response, forecast-skill, or physical-validity claim.",
+    "The H-gradient comparison spans a branch signature change, so it cannot isolate smooth within-branch truncation error."
+  ],
+  "linearization": {
+    "H_point": "cd6b base point; stored original-J Hessian only",
+    "actual_secant": "g(f82c)-g(cd6b), both stored full FP64 gradients",
+    "delta_control": "accepted f82c control minus cd6b base control",
+    "error": "actual_secant - prediction",
+    "interpretation": "The old-point H underpredicts the secant norm by 5.59x and the directional secant sign differs. Since the endpoint branch signature changed, this is not a smooth same-branch Hessian-accuracy test; it is sufficient reason not to reuse H(cd6b) as current curvature at f82c.",
+    "metrics": {
+      "H0_delta_control_prediction_l2_inf": {
+        "inf": 0.12743524908176362,
+        "l2": 0.2462025622152113,
+        "rms": 0.048284294962765546
+      },
+      "H_is_finite": true,
+      "H_sha256_computed": "9abaf1e5d643bce7c2d1426245d64c04feec119b7eddecdc3853a40dbb297003",
+      "H_shape": [
+        26,
+        26
+      ],
+      "H_symmetry_relative_frobenius": 1.2218135306248102e-15,
+      "accepted_gradient_l2_inf": {
+        "inf": 1.1815341609110253,
+        "l2": 1.879924460760747,
+        "rms": 0.36868351959613244
+      },
+      "actual_gradient_secant_delta_l2_inf": {
+        "inf": 0.8442700781673541,
+        "l2": 1.3761515487371216,
+        "rms": 0.2698855231027506
+      },
+      "actual_to_predicted_gradient_secant_l2_ratio": 5.589509452522253,
+      "actual_vs_predicted_secant_cosine": 0.3063680914321779,
+      "alpha_times_step_difference_l2": 6.072742092430092e-18,
+      "base_gradient_l2_inf": {
+        "inf": 1.0588168237438937,
+        "l2": 1.8780823325826106,
+        "rms": 0.3683222485374072
+      },
+      "blocks": {
+        "dynamics": {
+          "H_delta_c_prediction": {
+            "inf": 0.12743524908176362,
+            "l2": 0.1715582415688732,
+            "rms": 0.07003835883547893
+          },
+          "accepted_gradient": {
+            "inf": 0.7877260514707414,
+            "l2": 0.9813865398003851,
+            "rms": 0.4006493771577531
+          },
+          "actual_secant_delta_g": {
+            "inf": 0.8442700781673541,
+            "l2": 0.8549322845204096,
+            "rms": 0.3490246436178222
+          },
+          "base_gradient": {
+            "inf": 0.7712211540317542,
+            "l2": 0.9347528779812214,
+            "rms": 0.3816112644420096
+          },
+          "linearization_error": {
+            "inf": 0.7952039545156947,
+            "l2": 0.8293012343084227,
+            "rms": 0.33856081118598513
+          }
+        },
+        "field": {
+          "H_delta_c_prediction": {
+            "inf": 0.1147834359150357,
+            "l2": 0.17658842371778263,
+            "rms": 0.039486371947249806
+          },
+          "accepted_gradient": {
+            "inf": 1.1815341609110253,
+            "l2": 1.6034327044392018,
+            "rms": 0.35853845244723836
+          },
+          "actual_secant_delta_g": {
+            "inf": 0.7582144851711082,
+            "l2": 1.0783709352427353,
+            "rms": 0.24113107161627798
+          },
+          "base_gradient": {
+            "inf": 1.0588168237438937,
+            "l2": 1.6289353286931816,
+            "rms": 0.36424101259089176
+          },
+          "linearization_error": {
+            "inf": 0.7006686244375854,
+            "l2": 1.0291092532216843,
+            "rms": 0.23011582464777305
+          }
+        },
+        "flow": {
+          "H_delta_c_prediction": {
+            "inf": 0.12743524908176362,
+            "l2": 0.16439204895615825,
+            "rms": 0.07351835928528863
+          },
+          "accepted_gradient": {
+            "inf": 0.7877260514707414,
+            "l2": 0.8866975315090994,
+            "rms": 0.39654319118712156
+          },
+          "actual_secant_delta_g": {
+            "inf": 0.11705528606524168,
+            "l2": 0.1346003203063663,
+            "rms": 0.06019509319965607
+          },
+          "base_gradient": {
+            "inf": 0.7712211540317542,
+            "l2": 0.8332161475358054,
+            "rms": 0.37262558916811095
+          },
+          "linearization_error": {
+            "inf": 0.1590571575341087,
+            "l2": 0.23535336825308967,
+            "rms": 0.10525322602948987
+          }
+        },
+        "growth": {
+          "H_delta_c_prediction": {
+            "inf": 0.04906612365165941,
+            "l2": 0.04906612365165941,
+            "rms": 0.04906612365165941
+          },
+          "accepted_gradient": {
+            "inf": 0.4205793957352676,
+            "l2": 0.4205793957352676,
+            "rms": 0.4205793957352676
+          },
+          "actual_secant_delta_g": {
+            "inf": 0.8442700781673541,
+            "l2": 0.8442700781673541,
+            "rms": 0.8442700781673541
+          },
+          "base_gradient": {
+            "inf": 0.4236906824320865,
+            "l2": 0.4236906824320865,
+            "rms": 0.4236906824320865
+          },
+          "linearization_error": {
+            "inf": 0.7952039545156947,
+            "l2": 0.7952039545156947,
+            "rms": 0.7952039545156947
+          }
+        }
+      },
+      "delta_control_dot_H_delta_control": -0.0006188578740329882,
+      "delta_control_dot_actual_secant": 0.004578459486893914,
+      "delta_control_l2": 0.05,
+      "directional_secant_ratio_actual_over_predicted": -7.398240660746379,
+      "gradient_linearization_error_l2_inf": {
+        "inf": 0.7952039545156947,
+        "l2": 1.321668034073597,
+        "rms": 0.25920042677819555
+      },
+      "gradient_linearization_error_over_actual_secant_l2": 0.9604087829472534,
+      "linearization_error_over_prediction_l2": 5.368213970569066
+    },
+    "prediction": "H(cd6b) @ delta_control"
+  },
+  "provenance": {
+    "actual_step_path": "graphify-out/fv-root-cause-20260919/bounded_coupled_original_j_20261005_attempt1/step.json",
+    "actual_step_sha256": "ec289275e29d106685cb3a76b10b48ed96676411b84582b649ac944040d7d361",
+    "checkpoint_path": "graphify-out/fv-root-cause-20260919/resumable_cd6b_hessian_20261004/checkpoint/hessian_checkpoint.json",
+    "checkpoint_sha256": "d0064b2f5ec6a570cd679a683f3f38667e2f9f73d73d6b30c46dbe1d92874797",
+    "completed_seconds": 16.279658624902368,
+    "current_vs_historical_source_mismatches": [
+      {
+        "current_sha256": "71c4d56f0b497f63ed8f016db99aa225c98a9ad807d4d3c154c804a1364752e0",
+        "historical_sha256": "0c6ab9c3b244d9521c64bb40391303d3c1a9f2a8086a552980a5658afc654aa1",
+        "path": "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py"
+      },
+      {
+        "current_sha256": "3856c68c9d9abe21bdcc5a9294fb485f7b640e00343b35dd7c4bdf991196d80a",
+        "historical_sha256": "e723afef3351e6cc818f50feff01473dad144dcaadbc75c25e84ed662cfab136",
+        "path": "tests/test_fv_point_3h_bounded_coupled_step.py"
+      }
+    ],
+    "execution_status": "completed",
+    "mismatch_scope": "Only the bounded-step producer/test differ because PR245 audits changed them after the historical PR244 run; archived run hashes are intentionally retained.",
+    "numerical_status": "one_original_J_step_accepted",
+    "parent_path": "graphify-out/fv-root-cause-20260919/bounded_coupled_original_j_20261005_attempt1/step.run.json",
+    "parent_sha256": "e9b0645b1687ced1c57d62dd8a723dc82d9dd6255a8b5523bdad2c96b90bcc81",
+    "resource_path": "graphify-out/fv-root-cause-20260919/bounded_coupled_original_j_20261005_attempt1/step.resource.json",
+    "resource_sha256": "643691ce857a4b404cc5870be3d86e654063f5bf33cee64174c06a62bbb604db",
+    "runtime": {
+      "device": "CPU FP64",
+      "python": "3.12.13",
+      "torch": "2.13.0"
+    },
+    "runtime_after": {
+      "device": "CPU FP64",
+      "python": "3.12.13",
+      "torch": "2.13.0"
+    },
+    "sampled_peak_rss_bytes": 361103360,
+    "source_before_equals_after": true,
+    "source_map_entries": 76
+  },
+  "schema": "advar.pr245.f82c.cached_linearization_review.v1",
+  "scope": "Offline cached-tensor comparison only; no FV, HVP, reanalysis, solve, or candidate evaluation.",
+  "stored_trial": {
+    "accepted_J": 0.07811087971491998,
+    "accepted_J_delta": -0.005786301216383294,
+    "accepted_Phi": 1.7670579890832934,
+    "accepted_gradient_inf": 1.1815341609110253,
+    "alpha": 0.10840726492158614,
+    "base_J": 0.08389718093130327,
+    "base_Phi": 1.7635966239794696,
+    "base_gradient_inf": 1.0588168237438937,
+    "new_hvp_count": 0,
+    "objective_name": "original analysis J",
+    "optimizer_steps_applied": 1,
+    "original_J_armijo_passed": true,
+    "step_radius_l2": 0.05,
+    "strict_endpoint_passed": true
+  },
+  "v2_curvature_reuse_conditions": {
+    "branch": "Replay complete strict branch and margins at c; a changed signature requires fresh local J derivatives on that endpoint branch. Never inherit curvature or assert a smooth connecting path across the cd6b-to-f82c branch change.",
+    "candidate_gate": "Any later direction/candidate is a separate bounded operation with fresh original-J Armijo and its own strict endpoint check; Phi and gradient are diagnostics, not replacements for J or a normality gate.",
+    "control_parameters": "Bind exact current control c=f82c and fixed parameter p by byte hashes; bind endpoint input/truth/problem identities and CPU FP64 runtime before and after every HVP.",
+    "curvature": "Build fresh 26-control H at c from original-J HVPs; verify finite values, symmetry with component-scaled tolerance, independent product/eigenpair residual, Hff/Schur inertia and conditioning; include full nonzero gradient in any solve. Do not substitute Phi, score E, Gauss-Newton, shifted H, or old cd6b H as original-J curvature.",
+    "objective": "Fresh local gradient and curvature must be for the exact original analysis objective J (observation loss plus original priors), same fixed problem/data/time/prior/source identity. If E means another functional such as forecast verification score, J curvature is ineligible; compute and pin E derivatives separately.",
+    "resource_plan": "Separate new caller plan: at most 3 guarded attempts, each 240 s internal, 300 s outer wall, sampled 1 GiB RSS (900 s aggregate wall cap). Reserve each attempt before launch and stop on non-budget refusal; no old-plan reuse.",
+    "reuse": "Resume cached columns only for exact same objective/source/runtime/c/p/branch/checkpoint identity; any mismatch invalidates reuse. Partial HVP checkpoints cannot pass curvature/positive-definiteness gates."
+  }
+}

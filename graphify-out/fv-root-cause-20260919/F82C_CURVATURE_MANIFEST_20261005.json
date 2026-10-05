@@ -1,0 +1,28 @@
+{
+  "scope": "owned new-point curvature source/tests/plan/one actual run/reviews; previous point/archive/source unchanged",
+  "files": {
+    "examples/weather_scenarios/fv_point_3h_accepted_curvature.py": "b29bb664bb7c58dcdbbd08a6ade78f270752f79694ca0cca7439577e972f3e7a",
+    "tests/test_fv_point_3h_accepted_curvature.py": "160d9ca43ac9173e73395ff61d4cb251969c130e750ca41a75ed994e4103a5dc",
+    "tests/test_f82c_curvature_experiment.py": "a08ab08eb6a86c4408c4dd059b2422de04973632b40fd64af832a8cd7eb5a2b2",
+    "graphify-out/fv-root-cause-20260919/PR245_F82C_GREEN_PREFLIGHT_20261005.json": "9ff4f258e602ba720855d6eda8528b8e4c07902703a225fc87874629c2896647",
+    "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_AST_20261005.json": "192be27e437f899494431d657cab345d7bd016363b5f1caba00fca83b0e02e17",
+    "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_CHECKLIST_20261005.md": "697e19d4065fb6b96b68a9162193e39da0644e97bb9372fff5d8e43c4f4845e1",
+    "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_FINAL_GREEN_20261005.md": "2675fd4787e6f50641bd550b1e30baab9372b46baa485dc43a7bbbf7816a9474",
+    "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_FINAL_RED_20261005.md": "bfaf7e0eac8c8aefbed8d6cadc2ea726a4bc1fc1f1aa0e88e40fc23713b8087c",
+    "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_GRAPHIFY_20261005.json": "c90412b9cb88d65477e56677dd8b306b95ae1b245cf343398fd6e20947f567a3",
+    "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_KG_UPDATE_20261005.json": "170c13d885c0b4bf1b87d0e6db36c78864fe89f24c5ca67d0bfb79e482cdb87c",
+    "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_PLAN_20261005.json": "b9b92e69bbcae3d333169f381c8a2dd2a9de9efa105cd4985e0878915bb9ebb2",
+    "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_RUN_EXPERIMENT_20261005.py": "5c4b5db539ba597fc754320fcbeaa44fd2b7691e46b2551f189fdaab7b660c36",
+    "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_SCIENTIFIC_RESULT_20261005.json": "c7056f9d983c162d81a287a6078dd54adb0f66eb4f15d8974cf8ad56fce86fe9",
+    "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_TEAM_PREFLIGHT_20261005.json": "6ecbe2e9989b931be3846e60d7feef54d2bff14b8b1acc4df440b09f4f643ded",
+    "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_TESTS_20261005.log": "06d9a42c464f2d7fe44aa2995458d09c44c57c1b9e6d8afbe30df6691eacb400",
+    "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_TYPES_20261005.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/attempt_1/audit.json": "3058fec5ebf746c500a02b8712983459f8735e0ad8e762b217474e31379f2255",
+    "graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/attempt_1/audit.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/attempt_1/audit.resource.json": "139c8545f0538625b808e42f4060fbec4a38eacab41fa2ef8a072a53af9ece0a",
+    "graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/attempt_1/audit.run.json": "26261c610df92552a655e8066ae4af384f22693f8754426a6eeb95e5713efb14",
+    "graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/checkpoint/hessian_checkpoint.json": "a249f0947440dada62464c2292e99f03cb4aa44d00ce8705fb8e4b0510d966bd",
+    "graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/checkpoint/reservation_000001.json": "35de5c4997ff937f3cb7cc077d8c9ff20202e19deadb5bcaf187ba3328bc2d77",
+    "graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/experiment.json": "6f1d17b74af097eeb0e6fd4aba0817677ce758ce6f153e1647020c2038bc1851"
+  }
+}

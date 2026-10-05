@@ -1,0 +1,23 @@
+{
+  "scope": "actual new-point original-J curvature, separate from stored previouspoint",
+  "facts": [
+    {
+      "claim": "new f82c Hessian qualified SPD, old cd6b had one negative eigenvalue; distinct points",
+      "evidence": "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_SCIENTIFIC_RESULT_20261005.json"
+    },
+    {
+      "claim": "one reservation generated26basis+independentaudit; no resume needed",
+      "evidence": "graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/experiment.json"
+    },
+    {
+      "claim": "newpoint is not stationary; no response/score/physical claim",
+      "evidence": "graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/attempt_1/audit.json"
+    }
+  ],
+  "remaining": [
+    "coupled original-J nonlinear search from new point using new curvature",
+    "3h eligible stationary point, original-H adjoint and nonlinear reanalysis",
+    "independent weather skill, finite observational influence and learned error model"
+  ],
+  "graph_refresh": "graphify-out/fv-root-cause-20260919/F82C_CURVATURE_GRAPHIFY_20261005.json"
+}
