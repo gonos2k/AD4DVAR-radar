@@ -1,0 +1,22 @@
+{
+  "scope": "new caller and one actual Newton step; old H/point evidence retained",
+  "files": {
+    "examples/weather_scenarios/fv_point_3h_current_newton_step.py": "91568a9293dd4919fdfeb2e8058e049d6e2ac083bf35a5af107f44ecd53a4d3f",
+    "tests/test_fv_point_3h_current_newton_step.py": "545bdfb3dfc6f85cf91a7adc3393df2f0544f43dcbc7be3bbe7aa890316de40b",
+    "graphify-out/fv-root-cause-20260919/F82C_NEWTON_AST_20261005.json": "589980e6a0dfa9755d5ce17fd0cb2c9ed7872e3eae46411456ca7fc923892b24",
+    "graphify-out/fv-root-cause-20260919/F82C_NEWTON_CHECKLIST_20261005.md": "21d179a04efab6ec433a42ac8972c1fa695cae2259ae770af3e04672edaa1bb6",
+    "graphify-out/fv-root-cause-20260919/F82C_NEWTON_GRAPHIFY_20261005.json": "78b33260ddf2cfa79470ba3c7d26d27b156df5ca249b57f6c3248de2efbd5a19",
+    "graphify-out/fv-root-cause-20260919/F82C_NEWTON_GREEN_PREFLIGHT_20261005.json": "7be26a9f3219bf1f61839484abae34226cbb51c87ea187a0e57a5702965e2f2c",
+    "graphify-out/fv-root-cause-20260919/F82C_NEWTON_KG_UPDATE_20261005.json": "3364aaeeca910ca215d94cd82750a4b8da0394ab55d5f7eb432caad6d5221d64",
+    "graphify-out/fv-root-cause-20260919/F82C_NEWTON_PLAN_20261005.json": "d7f639e82dcd9445eeef0e32472194b57f31088dc1247e22b52ab0acc37f4a8f",
+    "graphify-out/fv-root-cause-20260919/F82C_NEWTON_SCIENTIFIC_RESULT_20261005.json": "c6d34f466a7ae91bdb6a3f131c94dafc15f2977e073291f75794709a45dc90de",
+    "graphify-out/fv-root-cause-20260919/F82C_NEWTON_TESTS_20261005.log": "8d5094595020d22dfcfbbbac668bcd6b3f31b43733c44edd5cc90eaa82a92ae2",
+    "graphify-out/fv-root-cause-20260919/F82C_NEWTON_TYPES_20261005.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/F82C_CURRENT_NEWTON_FINAL_GREEN_20261005.md": "c7d9d51bc2d59d5ef0b42ad4cd13acddf79bfb4bae0dc8a367c87a1157428f7c",
+    "graphify-out/fv-root-cause-20260919/F82C_CURRENT_NEWTON_FINAL_RED_20261005.md": "90cf26b63041108656a17afd3e0d897d11043c229c4ddafdae61926dd34ce450",
+    "graphify-out/fv-root-cause-20260919/f82c_unshifted_newton_20261005_attempt1/step.json": "4df260a88ccd1b7105d5078718520f5839bbca48e7734a6e42aafa1cba208d98",
+    "graphify-out/fv-root-cause-20260919/f82c_unshifted_newton_20261005_attempt1/step.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/f82c_unshifted_newton_20261005_attempt1/step.resource.json": "5e02ca1e5c841e12e10bdcc0274e1f9a55d6d8d8184f9eb12382a9df4d1a92fb",
+    "graphify-out/fv-root-cause-20260919/f82c_unshifted_newton_20261005_attempt1/step.run.json": "8fe06271f20b31e7e3b0127df9837da13c51dee7cbe62e4ae2cfd3d811f0cfad"
+  }
+}

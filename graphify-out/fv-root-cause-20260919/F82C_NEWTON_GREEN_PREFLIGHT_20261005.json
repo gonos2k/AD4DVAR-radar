@@ -1,0 +1,106 @@
+{
+  "identity": {
+    "checkpoint_hessian_sha256": "1c4da0d6fd39426e3366b106cc71f733b19cc2e509d78db5dbc39e8d87797991",
+    "control_input_identity_sha256": "f82cc3412a9ec8cb3896412d4a7bf9703e96cccae9693bc1f61b947914e5b359",
+    "control_sha256": "f82cc3412a9ec8cb3896412d4a7bf9703e96cccae9693bc1f61b947914e5b359",
+    "current_branch_changed_from_cd6b": true,
+    "current_branch_signature_sha256": "7cf3a261bf3255004e79b36d9a651ae30d42b62eefafe4fd6735efd83914a46d",
+    "gradient_sha256": "a745f780cebae76b35b8ac4af0d2dd2cc64f340d31b9590a64b917d81a2d8f26",
+    "hessian_sha256": "1c4da0d6fd39426e3366b106cc71f733b19cc2e509d78db5dbc39e8d87797991",
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "previous_cd6b_branch_signature_sha256": "2f08096af7c30da6be7e2b5bb22ba3577b9bdb4ef368a0ec03660a99a4cc3431"
+  },
+  "linear_system": {
+    "direction_l2": 0.2581891908652299,
+    "direction_sha256": "abb9e12e1d518fbe78ad2b64e115c548860fd2091bdbd4e93b60962960518b3d",
+    "directional_phi_derivative_gTHs": -3.534115978166736,
+    "equation": "H s = -g",
+    "g_dot_s": -0.040992458577004565,
+    "operator": "fresh original-J H at f82c; mu=0",
+    "step_applied": false,
+    "true_residual_relative_to_gradient": 8.576620754429558e-14
+  },
+  "prospective_gate": {
+    "actual_objective_acceptance": "Evaluate actual original J Armijo (c1=1e-4) for each bounded trial; do not use the quadratic prediction as acceptance.",
+    "branch": "Replay strict complete endpoint branch/margins at each candidate; branch may change, with no connecting-path claim.",
+    "budget": "At most one direct guarded run: 240s internal, 300s outer, 1 GiB sampled RSS; up to 16 dyadic candidates; no new HVP.",
+    "no_claims": [
+      "No applied direction until actual J/branch acceptance.",
+      "No stationarity/root/minimum claim; current stored gradient inf is 1.1815341609.",
+      "No score, response, physical validation, forecast skill, or observational rank claim."
+    ],
+    "phi": "Diagnostic only; not the acceptance rule."
+  },
+  "provenance": {
+    "accepted_curvature_audit_path": "graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/attempt_1/audit.json",
+    "accepted_curvature_audit_sha256": "3058fec5ebf746c500a02b8712983459f8735e0ad8e762b217474e31379f2255",
+    "accepted_step_path": "graphify-out/fv-root-cause-20260919/bounded_coupled_original_j_20261005_attempt1/step.json",
+    "accepted_step_sha256": "ec289275e29d106685cb3a76b10b48ed96676411b84582b649ac944040d7d361",
+    "checkpoint_path": "graphify-out/fv-root-cause-20260919/f82c_fresh_curvature_20261005/checkpoint/hessian_checkpoint.json",
+    "checkpoint_sha256": "a249f0947440dada62464c2292e99f03cb4aa44d00ce8705fb8e4b0510d966bd",
+    "fresh_hvp_count_for_this_preflight": 0,
+    "original_objective": "original full-control analysis J(c,p), including original 26-control priors",
+    "runtime_from_audit": {
+      "device": "CPU FP64",
+      "python": "3.12.13",
+      "torch": "2.13.0"
+    }
+  },
+  "quadratic_model": {
+    "J_formula": "alpha*gTs + 0.5*alpha^2*s^T*H*s; local quadratic model only",
+    "Phi_linearized_gradient_formula": "0.5*||g + H*(alpha*s)||^2; not an actual nonlinear Phi evaluation",
+    "actual_J_Phi_and_branch_unmeasured": true,
+    "base_J": 0.07811087971491998,
+    "base_Phi": 1.7670579890832934,
+    "predicted_J": 0.07094109239351204,
+    "predicted_Phi_first_order": 1.0826536640371143,
+    "predicted_Phi_from_linearized_gradient": 1.1489233171888087,
+    "predicted_delta_J": -0.007169787321407934,
+    "predicted_delta_Phi_first_order": -0.6844043250461792
+  },
+  "radius_preview": {
+    "alpha": 0.1936564417450733,
+    "displacement_l2": 0.05000000000000001,
+    "displacement_sha256": "a42d7d2a55faa2dfef1cdda95310c403faef9377937918ded472b735935e3ca4",
+    "max_dyadic_candidates_if_launched": 16,
+    "preview_control_sha256": "a35e2f6ef000cca4b593a3e5ed49f1c3e94b951450f2f235902a50e1dde6647c",
+    "preview_is_not_evaluated": true,
+    "radius": 0.05,
+    "space": "26 standardized prior coordinates, whole-control Euclidean norm"
+  },
+  "schema": "advar.pr245.f82c_unshifted_newton_preflight.v1",
+  "scope": "Offline cached-H/g linear algebra and quadratic model only. No FV/objective/gradient/branch/HVP evaluation; proposed direction is not applied.",
+  "weak_mode_and_coupling": {
+    "blocks": "A=Hff (20x20), B=Hfd (20x6), D=Hdd (6x6)",
+    "full_H_eigenvalues_range": [
+      0.073622172842371,
+      4202.874648667051
+    ],
+    "hdd_min_eigenvalue": 1.0095695200841974,
+    "hff_min_eigenvalue": 0.9341252808080548,
+    "normalized_K_sigma_max": 0.9921814271844343,
+    "normalized_K_singular_values": [
+      0.9921814271844343,
+      0.976304562073694,
+      0.882034608158434,
+      0.8025204556743664,
+      0.4220784686764501,
+      0.2003200626290699
+    ],
+    "normalized_coupling_definition": "K=A^(-1/2) B D^(-1/2), symmetric SPD inverse square roots from eigh(A), eigh(D)",
+    "normalized_schur_definition": "D^(-1/2) (D - B^T A^(-1) B) D^(-1/2) = I - K^T K",
+    "normalized_schur_eigenvalues": [
+      0.015576015550284929,
+      0.046829402074097415,
+      0.2220149500108065,
+      0.35596091822428017,
+      0.8218497662797941,
+      0.9598718725085407
+    ],
+    "normalized_schur_min": 0.015576015550284929,
+    "schur_min_eigenvalue": 0.38267093258545176,
+    "weak_mode_scope": "Projection of the Newton direction onto the lowest-eigenvalue vector in standardized control coordinates; not an observational rank result.",
+    "weakest_eigenvector_direction_share_squared_norm": 0.5997167497341203,
+    "weakest_mode_share_percent": 59.97167497341203
+  }
+}

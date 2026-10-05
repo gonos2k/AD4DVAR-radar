@@ -1,0 +1,18 @@
+{
+  "scope": "cached previous kernel/curvature AST consulted; isolated changed two files",
+  "files": {
+    "examples/weather_scenarios/fv_point_3h_current_newton_step.py": "91568a9293dd4919fdfeb2e8058e049d6e2ac083bf35a5af107f44ecd53a4d3f",
+    "tests/test_fv_point_3h_current_newton_step.py": "545bdfb3dfc6f85cf91a7adc3393df2f0544f43dcbc7be3bbe7aa890316de40b"
+  },
+  "nodes": 16,
+  "edges": 49,
+  "ast_sha256": "589980e6a0dfa9755d5ce17fd0cb2c9ed7872e3eae46411456ca7fc923892b24",
+  "shared_before": {
+    "graphify-out/graph.json": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+    "graphify-out/GRAPH_REPORT.md": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491"
+  },
+  "shared_after": {
+    "graphify-out/graph.json": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+    "graphify-out/GRAPH_REPORT.md": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491"
+  }
+}
