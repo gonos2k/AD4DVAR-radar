@@ -1,0 +1,1914 @@
+{
+  "nodes": [
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "label": "fv_point_3h_dual_merit_continuation.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_continuationrefusal",
+      "label": "ContinuationRefusal",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L42",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_continuationrefusal_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L45",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy",
+      "label": "_policy()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L50",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L50",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy_dict",
+      "label": "policy_dict()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L62",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_check_deadline",
+      "label": "_check_deadline()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L67",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_execution_status",
+      "label": "execution_status()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L72",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_finite_vector",
+      "label": "_finite_vector()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L93",
+      "_origin": "ast"
+    },
+    {
+      "id": "tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L93",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_strict_branch",
+      "label": "_strict_branch()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L100",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "label": "_true_merit()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L106",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "label": "_solve_direction()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "label": "run_iterations()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_mark_current_candidate_not_committed",
+      "label": "_mark_current_candidate_not_committed()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L364",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_copy_partial_child_counts",
+      "label": "_copy_partial_child_counts()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L373",
+      "_origin": "ast"
+    },
+    {
+      "id": "path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L373",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_archive_names",
+      "label": "_archive_names()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L387",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_load_base",
+      "label": "load_base()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L397",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L468",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L591",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_1",
+      "label": "Bounded repeated dual-merit correction from the accepted e0b04a point.  The orig",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_43",
+      "label": "Expected numerical, policy, or cooperative-budget stop.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L43",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_63",
+      "label": "Public frozen policy for the evidence plan and review checklist.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L63",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_73",
+      "label": "Classify this runner's 780-second receipt, independently of old runners.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L73",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_127",
+      "label": "Use the existing matrix-free PCG recurrence with the continuation cap.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L127",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_195",
+      "label": "Run the bounded numerical loop with injectable callbacks for small tests.      `",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L195",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_365",
+      "label": "Clear only this iteration's provisional row; keep earlier commits intact.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L365",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_374",
+      "label": "Copy trustworthy progress only from a JSON object child receipt.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L374",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_continuation",
+      "label": "test_fv_point_3h_dual_merit_continuation.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_continuation_problem",
+      "label": "_problem()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_continuation_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_continuation_test_repeats_fresh_pcg_directions_at_each_accepted_point",
+      "label": "test_repeats_fresh_pcg_directions_at_each_accepted_point()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L45",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_continuation_test_stationarity_stop_is_pending_audit_and_never_eligible",
+      "label": "test_stationarity_stop_is_pending_audit_and_never_eligible()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L65",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_continuation_test_total_hvp_cap_keeps_prior_commit_and_records_failed_solve",
+      "label": "test_total_hvp_cap_keeps_prior_commit_and_records_failed_solve()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L79",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_continuation_test_nonpositive_curvature_refuses_without_j_only_fallback",
+      "label": "test_nonpositive_curvature_refuses_without_j_only_fallback()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L94",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_continuation_test_later_commit_failure_discards_only_provisional_candidate",
+      "label": "test_later_commit_failure_discards_only_provisional_candidate()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L108",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_continuation_test_deadline_is_checked_after_slow_branch_callback",
+      "label": "test_deadline_is_checked_after_slow_branch_callback()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L132",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_continuation_test_parent_summary_ignores_nonobject_partial_child",
+      "label": "test_parent_summary_ignores_nonobject_partial_child()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L150",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_continuation_test_continuation_classifies_its_own_actual_resource_plan",
+      "label": "test_continuation_classifies_its_own_actual_resource_plan()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L168",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L26",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_continuationrefusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_continuationrefusal",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_continuationrefusal_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy_dict",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy_dict",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_check_deadline",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_execution_status",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_execution_status",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_finite_vector",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_finite_vector",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_finite_vector",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_strict_branch",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_strict_branch",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_strict_branch",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_mark_current_candidate_not_committed",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L364",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_mark_current_candidate_not_committed",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L364",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_copy_partial_child_counts",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L373",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_copy_partial_child_counts",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L373",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_copy_partial_child_counts",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L373",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_archive_names",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L387",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_archive_names",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L387",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_load_base",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L397",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_load_base",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L397",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_load_base",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L397",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_load_base",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L397",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_load_base",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L397",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_load_base",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L397",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L468",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L468",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L468",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L468",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L591",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy_dict",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_check_deadline",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_continuationrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L115",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_finite_vector",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_continuationrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L153",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_finite_vector",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L155",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_finite_vector",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L202",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L214",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_check_deadline",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L231",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_true_merit",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L232",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_strict_branch",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L236",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_continuationrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L237",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L257",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_mark_current_candidate_not_committed",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L289",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_load_base",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_archive_names",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L414",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_load_base",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L417",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_load_base",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_execution_status",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L435",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_load_base",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_continuationrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L462",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L476",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_load_base",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L479",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_check_deadline",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L485",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_strict_branch",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L525",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_continuationrefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L527",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L563",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_main",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L602",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_main",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_execution_status",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L632",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_main",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_copy_partial_child_counts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L647",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_43",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_continuationrefusal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_63",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy_dict",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_73",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_execution_status",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L73",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_127",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_solve_direction",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_195",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_run_iterations",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L195",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_365",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_mark_current_candidate_not_committed",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L365",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_continuation_rationale_374",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_continuation_copy_partial_child_counts",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L374",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_problem",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation_problem",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_test_repeats_fresh_pcg_directions_at_each_accepted_point",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_test_stationarity_stop_is_pending_audit_and_never_eligible",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_test_total_hvp_cap_keeps_prior_commit_and_records_failed_solve",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_test_nonpositive_curvature_refuses_without_j_only_fallback",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_test_later_commit_failure_discards_only_provisional_candidate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_test_deadline_is_checked_after_slow_branch_callback",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L132",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_test_parent_summary_ignores_nonobject_partial_child",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L150",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_test_continuation_classifies_its_own_actual_resource_plan",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L168",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation_test_repeats_fresh_pcg_directions_at_each_accepted_point",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation_test_stationarity_stop_is_pending_audit_and_never_eligible",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L66",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation_test_total_hvp_cap_keeps_prior_commit_and_records_failed_solve",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L80",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation_test_nonpositive_curvature_refuses_without_j_only_fallback",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation_test_later_commit_failure_discards_only_provisional_candidate",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_continuation_test_deadline_is_checked_after_slow_branch_callback",
+      "target": "tests_test_fv_point_3h_dual_merit_continuation_problem",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L133",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

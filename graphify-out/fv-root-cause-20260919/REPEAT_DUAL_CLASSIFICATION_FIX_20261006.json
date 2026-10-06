@@ -1,0 +1,21 @@
+{
+  "finding": "parent used an old 300-second resource classifier on the new 780-second plan",
+  "severity": "P2 reporting/contract defect; raw numerical iterations preserved",
+  "historical_parent_execution_status": "failed",
+  "child_execution_status": "completed",
+  "child_numerical_status": "budget_refusal",
+  "exit_code": 0,
+  "old_classifier_status": "failed",
+  "new_classifier_status_on_same_saved_resource": "completed",
+  "scope": "offline classification regression; no actual rerun or raw rewrite",
+  "historical_plan_sha256": "ee75ca45b03495b055023a984457c4aab73eb76c646c1c17bf8760d2e53f80d9",
+  "historical_producer_sha256": "b8c02f5cc35032de5aacc79a926a09ee9fe2c669fdba5f0acd80f7676bd5424d",
+  "historical_test_sha256": "1608a03b6abc8062c541c9c196f105ae7fb4a10b5fac832f30f5313656855515",
+  "current_producer_sha256": "c4bfa13b92d188a4201ccfe524552910cfd28c5a5c22fe48c050953a689c2fb6",
+  "current_test_sha256": "c8b4ac3b353b80712c83aa2143c55b7d90bf2885ea0fc9494fe16b9e830a0304",
+  "raw_sha256": "6be9cf6e67ef644888334b4cf34fb628483e43655186a1c0a9a0be3e4cc2c003",
+  "parent_sha256": "e70abf0987db430670d426a18537012cc7118e34d0d75939458370c665c98704",
+  "resource_sha256": "de454a9639642a2cffd3d9dc46ed8ffd1d938ccfe746b59ea0d7d6f94852a19c",
+  "current_source_requires_new_plan_for_future_run": true,
+  "verification": "30 affected tests passed; type errors 0; original raw parent remains failed"
+}

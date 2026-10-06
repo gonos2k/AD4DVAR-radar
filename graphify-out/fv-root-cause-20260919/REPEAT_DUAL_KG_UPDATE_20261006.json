@@ -1,0 +1,30 @@
+{
+  "scope": "bounded repeated dual J/Phi correction from e0b04a",
+  "state": "bounded experiment ended; two committed corrections; third solve internal budget refusal",
+  "plan": "E0B_DUAL_MERIT_CONTINUATION_PLAN_20261006.json",
+  "plan_sha256": "ee75ca45b03495b055023a984457c4aab73eb76c646c1c17bf8760d2e53f80d9",
+  "resolved": [
+    "fresh current-point HVP per committed iteration",
+    "fixed same-point direction/Hs during dual backtracking",
+    "cumulative HVP/time limits and partial committed iteration receipts",
+    "later provisional candidate undo without deleting earlier commits",
+    "preflight-to-source-capture hash closure"
+  ],
+  "verification": [
+    "24 affected tests passed, 18 existing warnings",
+    "error-level type check 0",
+    "isolated Graphify 37 nodes/155 edges, shared unchanged",
+    "GREEN and RED scoped prelaunch GO"
+  ],
+  "remaining": [
+    "eligible stationary point and original-Hessian adjoint/reanalysis",
+    "new final-point full curvature unknown",
+    "bounded repeated correction beyond current budget",
+    "independent forecast skill/finite-influence validation"
+  ],
+  "actual_evidence": "e0b_repeat_dual_20261006_attempt1",
+  "result": "E0B_REPEAT_DUAL_RESULT_20261006.json",
+  "classification_fix": "REPEAT_DUAL_CLASSIFICATION_FIX_20261006.json",
+  "historical_parent_status": "failed (old limit classifier); preserved",
+  "current_source_executed": false
+}
