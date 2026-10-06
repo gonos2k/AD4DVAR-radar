@@ -1,0 +1,18 @@
+{
+  "scope": "cached structure consulted; final isolated copied two-file AST refresh; no shared refresh",
+  "files": {
+    "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py": "b8c02f5cc35032de5aacc79a926a09ee9fe2c669fdba5f0acd80f7676bd5424d",
+    "tests/test_fv_point_3h_dual_merit_continuation.py": "1608a03b6abc8062c541c9c196f105ae7fb4a10b5fac832f30f5313656855515"
+  },
+  "nodes": 37,
+  "edges": 155,
+  "ast_sha256": "cf31be0935b6a597700058f598513714bbf306f7ccde40f25fb2570dd2a6ae52",
+  "shared_before": {
+    "graphify-out/graph.json": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+    "graphify-out/GRAPH_REPORT.md": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491"
+  },
+  "shared_after": {
+    "graphify-out/graph.json": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+    "graphify-out/GRAPH_REPORT.md": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "scope": "existing structural AST consulted before repeated dual-merit implementation",
+  "cached_ast_sha256": "e0e8b12fafa7e353e5f72187de048b9927804c970c01ebfad56d0811149e9d86",
+  "reused_nodes": [
+    "fv_point_3h_dual_merit_step.py",
+    "StepRefusal",
+    "_policy()",
+    "Any",
+    "_check_deadline()",
+    "_direction_audit()",
+    "Tensor",
+    "_archive_names()",
+    "_mark_candidate_not_committed()",
+    "load_base()",
+    "Path",
+    "dual_merit_search()",
+    "run()",
+    "main()",
+    "One cached-direction step that requires descent in both J and gradient merit.  T",
+    "Known policy, numerical, or cooperative-budget refusal.",
+    "Validate the saved solve receipt and return immutable s, g, and Hs.",
+    "Clear provisional acceptance when closure fails before commit.",
+    "Backtrack along fixed s; require actual J and Phi Armijo plus strict branch marg"
+  ],
+  "operators": [
+    "matrix_free.pcg",
+    "counted_hvp",
+    "dual_merit_search",
+    "block_inverse_preconditioner"
+  ],
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "shared_report_sha256": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491",
+  "refresh_policy": "new files copied to temporary isolated extractor; no shared refresh"
+}
