@@ -1,10 +1,50 @@
 """Saved-matrix and analytic model checks; no FV trajectory execution."""
 import json
+import pytest
 
 import torch
 from types import SimpleNamespace
 
 from examples.weather_scenarios import fv_point_3h_current_newton_step as probe
+
+
+def _current_plan(tmp_path):
+    plan = json.loads(probe.PLAN.read_text())
+    plan["source_files"] = {n: probe.curvature.sha(probe.ROOT/n) for n in plan["source_files"]}
+    path = tmp_path / "plan.json"
+    path.write_text(json.dumps(plan))
+    return path, plan
+
+
+def test_new_caller_plan_can_reuse_unchanged_objective_curvature(tmp_path):
+    path, _ = _current_plan(tmp_path)
+    _, base, _ = probe.load_base(path, probe.curvature.sha(path))
+    assert base["control_sha256"] == probe.curvature.CONTROL_SHA
+
+
+def test_repinning_changed_objective_does_not_revalidate_old_hessian(tmp_path, monkeypatch):
+    path, plan = _current_plan(tmp_path)
+    changed_source = probe.ROOT / "src/advar/variational.py"
+    original_sha = probe.curvature.sha
+
+    def changed_hash(p):
+        return "0"*64 if p == changed_source else original_sha(p)
+
+    monkeypatch.setattr(probe.curvature, "sha", changed_hash)
+    plan["source_files"]["src/advar/variational.py"] = "0"*64
+    path.write_text(json.dumps(plan))
+    # The new plan agrees with the simulated checkout hash; the cached operator does not.
+    with pytest.raises(ValueError, match="objective source differs from cached Hessian"):
+        probe.load_base(path, original_sha(path))
+
+
+def test_missing_objective_proof_in_both_maps_is_rejected():
+    base = json.loads(probe.BASE.read_text())
+    plan = json.loads(probe.PLAN.read_text())
+    base["source_before"].pop("src/advar/variational.py")
+    plan["source_files"].pop("src/advar/variational.py")
+    with pytest.raises(ValueError, match="objective source differs from cached Hessian"):
+        probe._require_cached_objective_sources(plan, base)
 
 
 def test_unshifted_direction_solves_original_f82c_system():

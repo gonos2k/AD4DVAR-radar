@@ -1,0 +1,23 @@
+{
+  "scope": "audit code/tests/records only; historical plan/raw preserved; no FV",
+  "files": {
+    "examples/weather_scenarios/fv_point_3h_current_newton_step.py": "b03c082dd56d9a4d6f05e72cc19ef2a0f87d773bef79178ba8ebc814f3fda666",
+    "examples/weather_scenarios/fv_point_3h_bounded_coupled_step.py": "4b620ef142d11aaa01f711ccac305f5ee4b32b04db5eabf4e3572863e3675d79",
+    "tests/test_fv_point_3h_current_newton_step.py": "36d12fc93a0651f297a0c65bbb0043da8f2bbca330910d312b792a7017e6172b",
+    "tests/test_fv_point_3h_bounded_coupled_step.py": "b609aabb71876cd0f48a1b3257986abc5a70297f2cc693175a0794fdc9acae81",
+    "tests/test_f82c_curvature_experiment.py": "709f0a7c4ab754537999c9aa74f1e7542e04a252e19e2b639899b7e7eb86744b",
+    "graphify-out/fv-root-cause-20260919/PR247_TEAM_AST_20261006.json": "195fb1a24fd53b570bb9e32cb9ef6f629d73ac79e42d7deef325795a9ac1d951",
+    "graphify-out/fv-root-cause-20260919/PR247_TEAM_CHECKLIST_20261006.md": "ebb49d30e3a82adc338b1b5dff82eee86e1ff266739a2eee17ba0abaf6561f13",
+    "graphify-out/fv-root-cause-20260919/PR247_TEAM_FINAL_GREEN_20261006.md": "d09e7721cf66de570a23b5a8c2b14b546579ac5c26b4b88a9f866996dc920a7a",
+    "graphify-out/fv-root-cause-20260919/PR247_TEAM_FINAL_RECORDS_RED_20261006.md": "62405c0b034b32971158c9f5e45a897db8343aa632b4d54ca6551ae2b91b4a50",
+    "graphify-out/fv-root-cause-20260919/PR247_TEAM_FINAL_RED_20261006.md": "70b39359c39c0e8c214738a23be969e91f9c678b438d1a3831ed94706e5d49b6",
+    "graphify-out/fv-root-cause-20260919/PR247_TEAM_GRAPHIFY_20261006.json": "5c7f486619d0c910ca6dd6a526c5b4a25ac016aa9b5f8d55bbeedeaca1ebe4f5",
+    "graphify-out/fv-root-cause-20260919/PR247_TEAM_GREEN_20261006.md": "af8b7c134cc15aa74a75b8e4eea9c8b5540b97bd24d55f489143ba6f40f14866",
+    "graphify-out/fv-root-cause-20260919/PR247_TEAM_KG_UPDATE_20261006.json": "b6d7bd9f7cd301fdd53550b753247f064345340feb7dde1e862c180afbe9fd26",
+    "graphify-out/fv-root-cause-20260919/PR247_TEAM_POST_FIX_20261006.json": "4798644c1e71946ae2fda0b87e666244a41201fa2b013e32e4708ea30e3a9281",
+    "graphify-out/fv-root-cause-20260919/PR247_TEAM_RECORDS_RED_20261006.md": "e3e4fb96089728fbec273b5953e0fee6dc75942b244eb8dd3f125da278eafc2e",
+    "graphify-out/fv-root-cause-20260919/PR247_TEAM_RED_20261006.md": "cc3a8f9ab4922755dd5df3da29d9ff33b2f287b0de00d9c528e21372fc38954f",
+    "graphify-out/fv-root-cause-20260919/PR247_TEAM_TESTS_20261006.log": "3a2e516f33fa9d4f4933a063e4204369a5c7788cec7f58c5e87f7127c61059fe",
+    "graphify-out/fv-root-cause-20260919/PR247_TEAM_TYPES_20261006.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c"
+  }
+}

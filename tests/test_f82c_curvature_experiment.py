@@ -34,7 +34,8 @@ def run_toy(tmp_path, monkeypatch, statuses):
         status = statuses[len(calls)]
         calls.append(command)
         resource = {"exit_code": 0, "elapsed_seconds": 1., "resource_termination": None,
-                    "monitor_error": None, "child_process_group_cleanup_sent": False,
+                    "wall_limit_seconds": 300., "rss_limit_bytes": 1024**3, "sampled_peak_rss_bytes": 0,
+                "monitor_error": None, "child_process_group_cleanup_sent": False,
                     "child_process_group_cleanup_error": None}
         Path(kwargs["report_path"]).write_text(json.dumps(resource))
         if status == "non_object":
