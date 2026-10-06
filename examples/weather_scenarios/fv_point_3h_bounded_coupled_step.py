@@ -470,6 +470,11 @@ def execution_status(resource: dict[str, Any]) -> str:
     elapsed = resource.get("elapsed_seconds")
     if isinstance(elapsed, bool) or not isinstance(elapsed, (float, int)) or not math.isfinite(elapsed) or elapsed < 0:
         return "failed"
+    if resource.get("wall_limit_seconds") != WALL_SECONDS or resource.get("rss_limit_bytes") != RSS_BYTES:
+        return "failed"
+    peak = resource.get("sampled_peak_rss_bytes")
+    if isinstance(peak, bool) or not isinstance(peak, int) or peak < 0:
+        return "failed"
     if resource.get("received_sigterm") or resource.get("resource_termination") == "cancelled":
         return "failed"
     if (resource.get("monitor_error") or resource.get("child_process_group_cleanup_error")
@@ -477,7 +482,7 @@ def execution_status(resource: dict[str, Any]) -> str:
         return "failed"
     if resource.get("resource_termination") not in {None, "wall_time_limit", "rss_limit"}:
         return "failed"
-    if resource.get("resource_termination") in {"wall_time_limit", "rss_limit"} or elapsed > WALL_SECONDS:
+    if resource.get("resource_termination") in {"wall_time_limit", "rss_limit"} or elapsed > WALL_SECONDS or peak > RSS_BYTES:
         return "resource_limited"
     if resource.get("exit_code") != 0:
         return "failed"

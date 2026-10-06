@@ -175,9 +175,16 @@ def test_nonfinite_candidate_cannot_be_accepted():
     ({"resource_termination": "rss_monitor_unavailable"}, "failed"),
     ({"resource_termination": "unknown"}, "failed"),
     ({"monitor_error": "sample failure", "resource_termination": "rss_limit"}, "failed"),
+    ({"sampled_peak_rss_bytes": 2*1024**3}, "resource_limited"),
+    ({"wall_limit_seconds": 1.}, "failed"),
+    ({"rss_limit_bytes": 2*1024**3}, "failed"),
+    ({"sampled_peak_rss_bytes": None}, "failed"),
+    ({"sampled_peak_rss_bytes": -1}, "failed"),
+    ({"sampled_peak_rss_bytes": True}, "failed"),
 ])
 def test_execution_resource_outcome_is_separate(change, status):
     resource = {"exit_code": 0, "elapsed_seconds": 1., "resource_termination": None,
+                "wall_limit_seconds": 300., "rss_limit_bytes": 1024**3, "sampled_peak_rss_bytes": 0,
                 "monitor_error": None, "child_process_group_cleanup_sent": False,
                 "child_process_group_cleanup_error": None}
     assert probe.execution_status({**resource, **change}) == status
@@ -194,6 +201,7 @@ def test_parent_keeps_failure_for_missing_or_invalid_child(tmp_path, monkeypatch
         if child is not None:
             (directory / "step.json").write_text(child)
         return {"exit_code": 0, "elapsed_seconds": 1., "resource_termination": None,
+                "wall_limit_seconds": 300., "rss_limit_bytes": 1024**3, "sampled_peak_rss_bytes": 0,
                 "monitor_error": None, "child_process_group_cleanup_sent": False,
                 "child_process_group_cleanup_error": None}
 

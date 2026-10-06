@@ -25,6 +25,19 @@ TEST = "tests/test_fv_point_3h_current_newton_step.py"
 PLAN = EVIDENCE / "F82C_NEWTON_PLAN_20261005.json"
 
 
+def _require_cached_objective_sources(plan: dict[str, Any], base: dict[str, Any]) -> None:
+    # Matching J/g at one point cannot establish that its second derivative is unchanged.
+    archive_name = curvature.R9_ARCHIVE.relative_to(ROOT).as_posix()
+    historical = base["source_before"]
+    current = plan["source_files"]
+    if current.get(archive_name) != historical.get(archive_name):
+        raise ValueError("original objective dependency manifest differs from cached Hessian")
+    dependencies = json.loads(curvature.R9_ARCHIVE.read_text())["source_before"]
+    if any(current.get(name) != digest or historical.get(name) != digest
+           for name, digest in dependencies.items()):
+        raise ValueError("objective source differs from cached Hessian; compute fresh curvature")
+
+
 def load_base(plan_path: Path, plan_sha: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     if curvature.sha(plan_path) != plan_sha:
         raise ValueError("Newton plan hash changed")
@@ -37,6 +50,7 @@ def load_base(plan_path: Path, plan_sha: str) -> tuple[dict[str, Any], dict[str,
     for name, digest in {**plan["source_files"], **plan["archive_files"]}.items():
         if curvature.sha(ROOT / name) != digest:
             raise ValueError(f"Newton input/source pin changed: {name}")
+    _require_cached_objective_sources(plan, base)
     if not {BASE.relative_to(ROOT).as_posix(), CHECKPOINT.relative_to(ROOT).as_posix(),
             BASE.with_suffix(".run.json").relative_to(ROOT).as_posix(),
             BASE.with_suffix(".resource.json").relative_to(ROOT).as_posix()} <= set(plan["archive_files"]):
@@ -184,6 +198,9 @@ def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
                 physical_changes={"values": changes, "base": {k: x.tolist() for k, x in states[0].items()},
                     "candidate": {k: x.tolist() for k, x in states[1].items()},
                     "scope": "model echo proxy, not water mass; model flow, not observed air wind",
+                    "initial_dbz_units": "dBZ", "echo_proxy_units": "linear reflectivity proxy Z minus Z_min",
+                    "face_flux_units": "configured model-coordinate area per second (2-D; no depth specified)",
+                    "flow_coefficient_units": "units of fixed coefficient_limits; depend on psi_basis normalization",
                     "speed_units": "configured model-coordinate lengths per second", "growth_units": "log echo growth per 600-second interval"})
             record["weak_mode"].update(actual_step_projection=float(weak @ delta),
                 actual_step_squared_norm_fraction=float((weak @ delta).square()/(delta @ delta)))

@@ -1,0 +1,15 @@
+{
+  "scope": "team audit corrections; no new FV/HVP/optimizer/response",
+  "resolved": [
+    "historical objective-source compatibility for cached Hessian",
+    "declared guard policy and sampled RSS consistency"
+  ],
+  "clarity": "new reports label face-flux/coefficient/dBZ/echo units; old raw metadata preserved",
+  "evidence": "graphify-out/fv-root-cause-20260919/PR247_TEAM_POST_FIX_20261006.json",
+  "remaining": [
+    "new a35 point curvature",
+    "3h eligible stationary point and original-H adjoint/reanalysis",
+    "independent weather/finite influence verification"
+  ],
+  "graph_refresh": "graphify-out/fv-root-cause-20260919/PR247_TEAM_GRAPHIFY_20261006.json"
+}
