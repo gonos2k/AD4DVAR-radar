@@ -1,0 +1,18 @@
+{
+  "scope": "a35 cached live direction, actual dual J/Phi Armijo search",
+  "resolved": [
+    "finite step policy tested with both actual merit functions",
+    "first historical389 candidate rejected only by Phi in separate mode",
+    "second half-step accepted with unchanged original J/prior/observations/parameters",
+    "no new HVP or PCG work"
+  ],
+  "evidence": "graphify-out/fv-root-cause-20260919/a35_dual_merit_20261006_attempt1/step.json",
+  "arithmetic": "graphify-out/fv-root-cause-20260919/A35_DUAL_MERIT_RESULT_20261006.json",
+  "remaining": [
+    "3h eligible stationary point and original-Hessian adjoint/reanalysis",
+    "new accepted-point curvature unknown",
+    "independent forecast skill/finite influence validation"
+  ],
+  "graph_refresh": "graphify-out/fv-root-cause-20260919/DUAL_MERIT_GRAPHIFY_20261006.json",
+  "graph_incident": "graphify-out/fv-root-cause-20260919/DUAL_MERIT_GRAPH_RECOVERY_20261006.json"
+}

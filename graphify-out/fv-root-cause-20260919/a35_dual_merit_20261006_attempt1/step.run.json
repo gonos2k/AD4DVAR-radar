@@ -1,0 +1,33 @@
+{
+  "child_read_error": null,
+  "child_sha256": "ace5c514f661c6257a635c59282c5fc7fdb31c6128e666333bdaebb6d5a8ebe1",
+  "execution_status": "completed",
+  "numerical_status": "one_dual_merit_step_accepted",
+  "resource": {
+    "child_pid": 70733,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "-m",
+      "examples.weather_scenarios.fv_point_3h_dual_merit_step",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/A35_DUAL_MERIT_STEP_PLAN_20261006.json",
+      "--plan-sha256",
+      "62e291b8b683ef1480f60ae302e562c7313c2a545a3cb6517fd53f3b294220c0",
+      "--directory",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/a35_dual_merit_20261006_attempt1"
+    ],
+    "elapsed_seconds": 24.343269041040912,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 93,
+    "sampled_peak_rss_bytes": 353665024,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300.0
+  }
+}
