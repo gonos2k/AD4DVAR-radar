@@ -1,0 +1,20 @@
+{
+  "scope": "failure-path audit and commitment fixes only; no real FV/HVP",
+  "resolved": [
+    "nonobject child cannot leave completed parent",
+    "unexpected solver/operator errors persist actualcounts then rethrow",
+    "known nonfinite PCG direction update is a numerical refusal",
+    "candidate commitment deferred through diagnostics/integrity/deadline checks"
+  ],
+  "verification": "51 passed,18 existing warnings1.66s; error-leveltypes0/0/0; finalGREEN/RED",
+  "historical_manifest_differences": [
+    "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+    "tests/test_fv_point_3h_hvp_newton_step.py"
+  ],
+  "original_plan_and_raw_archives_unchanged": true,
+  "remaining": [
+    "finite-step policy for original-J stationarity",
+    "3h eligible stationary point and adjoint/reanalysis",
+    "independent weather/finite influence validation"
+  ]
+}

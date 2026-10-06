@@ -167,6 +167,7 @@ def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
         "accepted_point_curvature": "not_computed", "global_spd_claim": False}
     search._write(output, record)
     final_c = c
+    candidate_update: dict[str, Any] | None = None
     try:
         search._check_deadline(deadline)
         branch, margins = curvature.tail._full_current_branch(problem, c, p)
@@ -252,7 +253,7 @@ def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
             search._check_deadline(deadline)
             changes = {k: (state1[k] - state0[k]).tolist() for k in state0}
             search._check_deadline(deadline)
-            record.update(optimizer_steps_applied=1, accepted_control=accepted.tolist(),
+            candidate_update = dict(optimizer_steps_applied=1, accepted_control=accepted.tolist(),
                 accepted_control_sha256=curvature.tensor_sha(accepted), accepted_branch_partition=partition,
                 branch_scope=scope, model_diagnostics=diagnostics.model_diagnostics(
                     float(j), g, None, delta, row["objective"],
@@ -265,6 +266,7 @@ def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
                     "candidate": {k: x.tolist() for k, x in state1.items()},
                     **diagnostics.physical_unit_labels()},
                 numerical_status="one_live_HVP_original_J_step_accepted")
+            search._check_deadline(deadline)
             final_c = accepted
     except block_step.StepRefusal as error:
         message = str(error)
@@ -275,12 +277,34 @@ def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
     except search.StepRefusal as error:
         record.update(numerical_status="budget_refusal" if isinstance(error, search.BudgetRefusal) else "step_refusal",
                       refusal=str(error), pcg_iterations=record.get("pcg_iterations", "iterations_not_recorded"))
-        if record["trials"] and record["trials"][-1].get("status") == "accepted" and not record["optimizer_steps_applied"]:
-            record["trials"][-1].update(status="candidate_not_committed", original_J_candidate_passed=True)
+    except Exception as error:
+        if isinstance(error, RuntimeError) and str(error) == "PCG direction update is not finite":
+            record.update(numerical_status="step_refusal", refusal=str(error))
+        else:
+            record.update(phase="programming_error", numerical_status="programming_error",
+                          failure=f"{type(error).__name__}: {error}")
+            if record["trials"] and record["trials"][-1].get("status") == "accepted" and not record["optimizer_steps_applied"]:
+                record["trials"][-1].update(status="candidate_not_committed", original_J_candidate_passed=True)
+            search._write(output, record)
+            raise
     after = {name: curvature.sha(ROOT / name) for name in names}
     final_identity = curvature.seed._input_identity(problem, original, final_c, p, truth)
     intact = (before == after and curvature.blocks.runtime_identity() == base["runtime"]
               and curvature.audit._fixed_input_matches(final_identity, identity, curvature.tensor_sha(final_c)))
+    if candidate_update is not None:
+        try:
+            search._check_deadline(deadline)
+        except search.BudgetRefusal as error:
+            record.update(numerical_status="budget_refusal", refusal=str(error))
+            candidate_update = None
+            final_c = c
+            final_identity = curvature.seed._input_identity(problem, original, c, p, truth)
+            intact = (before == after and curvature.blocks.runtime_identity() == base["runtime"]
+                      and curvature.audit._fixed_input_matches(final_identity, identity, curvature.tensor_sha(c)))
+        if candidate_update is not None and intact:
+            record.update(candidate_update)
+    if record["trials"] and record["trials"][-1].get("status") == "accepted" and not record["optimizer_steps_applied"]:
+        record["trials"][-1].update(status="candidate_not_committed", original_J_candidate_passed=True)
     record.update(phase="finished" if intact else "integrity_refused", source_after=after,
         source_unchanged=before == after, fixed_input_unchanged=intact, input_after=final_identity,
         runtime_after=curvature.blocks.runtime_identity(), elapsed_seconds=time.monotonic() - started)
@@ -313,6 +337,8 @@ def main() -> None:
     search._write(directory / "step.run.json", parent)
     try:
         child = json.loads((directory / "step.json").read_text())
+        if not isinstance(child, dict):
+            raise ValueError("child result must be a JSON object")
         parent.update(numerical_status=child["numerical_status"], child_sha256=curvature.sha(directory / "step.json"))
         if parent["execution_status"] == "completed" and not (child.get("phase") == "finished" and child.get("fixed_input_unchanged") is True):
             parent["execution_status"] = "failed"
