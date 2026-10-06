@@ -1,0 +1,16 @@
+{
+  "scope": "failure-path audit and commitment fixes only; no real FV/HVP",
+  "resolved": [
+    "nonobject child cannot leave completed parent",
+    "unexpected solver/operator errors persist actualcounts then rethrow",
+    "known nonfinite PCG direction update is a numerical refusal",
+    "candidate commitment deferred through diagnostics/integrity/deadline checks"
+  ],
+  "evidence": "graphify-out/fv-root-cause-20260919/PR249_TEAM_POST_FIX_20261006.json",
+  "remaining": [
+    "finite-step policy for original-J stationarity",
+    "3h eligible stationary point and adjoint/reanalysis",
+    "independent weather/finite influence validation"
+  ],
+  "graph_refresh": "graphify-out/fv-root-cause-20260919/PR249_TEAM_GRAPHIFY_20261006.json"
+}

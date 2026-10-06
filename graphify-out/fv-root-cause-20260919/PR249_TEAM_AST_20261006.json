@@ -1,0 +1,730 @@
+{
+  "nodes": [
+    {
+      "id": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "label": "fv_point_3h_hvp_newton_step.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_hvp_newton_step_counted_hvp",
+      "label": "counted_hvp()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L37",
+      "_origin": "ast"
+    },
+    {
+      "id": "tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L37",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_hvp_newton_step_archive_names",
+      "label": "_archive_names()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_hvp_newton_step_accepted_trial",
+      "label": "_accepted_trial()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L61",
+      "_origin": "ast"
+    },
+    {
+      "id": "any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L61",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_hvp_newton_step_load_base",
+      "label": "load_base()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L70",
+      "_origin": "ast"
+    },
+    {
+      "id": "path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L70",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_hvp_newton_step_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L131",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_hvp_newton_step_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L317",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_hvp_newton_step_rationale_1",
+      "label": "One live-HVP Newton step at a35; the f82c matrix is a preconditioner only.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_hvp_newton_step_rationale_39",
+      "label": "Count started/completed live products and stop before product limit+1.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L39",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_hvp_newton_step",
+      "label": "test_fv_point_3h_hvp_newton_step.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_hvp_newton_step_test_newton_pcg_uses_live_operator_not_frozen_preconditioner",
+      "label": "test_newton_pcg_uses_live_operator_not_frozen_preconditioner()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L11",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_hvp_newton_step_test_negative_live_curvature_refuses_before_search_candidate",
+      "label": "test_negative_live_curvature_refuses_before_search_candidate()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L22",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_hvp_newton_step_test_live_hvp_cap_refuses_without_candidate",
+      "label": "test_live_hvp_cap_refuses_without_candidate()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L32",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_hvp_newton_step_test_nonobject_child_cannot_leave_completed_parent",
+      "label": "test_nonobject_child_cannot_leave_completed_parent()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L45",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_hvp_newton_step_toy_run_setup",
+      "label": "_toy_run_setup()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L64",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_hvp_newton_step_test_solver_error_preserves_counts_and_error_class",
+      "label": "test_solver_error_preserves_counts_and_error_class()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L91",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_hvp_newton_step_test_post_candidate_deadline_prevents_commit",
+      "label": "test_post_candidate_deadline_prevents_commit()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L119",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_hvp_newton_step_rationale_1",
+      "label": "Focused live-operator tests; no FV trajectory is executed.",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_counted_hvp",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_counted_hvp",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_counted_hvp",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_counted_hvp",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_counted_hvp",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_archive_names",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_accepted_trial",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_accepted_trial",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_accepted_trial",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_load_base",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_load_base",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_load_base",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_load_base",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_load_base",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_run",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_run",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_run",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L317",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_load_base",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_archive_names",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L85",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_load_base",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_accepted_trial",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_run",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_load_base",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L136",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_run",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_accepted_trial",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L180",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_run",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_counted_hvp",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L210",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_main",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L326",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_main",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_load_base",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L328",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_hvp_newton_step_rationale_39",
+      "target": "weather_scenarios_fv_point_3h_hvp_newton_step_counted_hvp",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/examples/weather_scenarios/fv_point_3h_hvp_newton_step.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step",
+      "target": "types",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step",
+      "target": "tests_test_fv_point_3h_hvp_newton_step_test_newton_pcg_uses_live_operator_not_frozen_preconditioner",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step",
+      "target": "tests_test_fv_point_3h_hvp_newton_step_test_negative_live_curvature_refuses_before_search_candidate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step",
+      "target": "tests_test_fv_point_3h_hvp_newton_step_test_live_hvp_cap_refuses_without_candidate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step",
+      "target": "tests_test_fv_point_3h_hvp_newton_step_test_nonobject_child_cannot_leave_completed_parent",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step",
+      "target": "tests_test_fv_point_3h_hvp_newton_step_toy_run_setup",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step",
+      "target": "tests_test_fv_point_3h_hvp_newton_step_test_solver_error_preserves_counts_and_error_class",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L91",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step",
+      "target": "tests_test_fv_point_3h_hvp_newton_step_test_post_candidate_deadline_prevents_commit",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L119",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step_test_solver_error_preserves_counts_and_error_class",
+      "target": "tests_test_fv_point_3h_hvp_newton_step_toy_run_setup",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L92",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step_test_post_candidate_deadline_prevents_commit",
+      "target": "tests_test_fv_point_3h_hvp_newton_step_toy_run_setup",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_hvp_newton_step_rationale_1",
+      "target": "tests_test_fv_point_3h_hvp_newton_step",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-pr249-audit-q9amlp1x/tests/test_fv_point_3h_hvp_newton_step.py",
+      "source_location": "L1",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

@@ -1,0 +1,20 @@
+{
+  "scope": "execution audit corrections only; historicalplan/raw retained; no FV",
+  "files": {
+    "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py": "7103bbbab9835c6d6eb0d65ce73929d2b1ea936563d2962cafa105a4970b9551",
+    "tests/test_fv_point_3h_hvp_newton_step.py": "9ed19555d4b7c769d934bd33532c19d28b071f426de13fd3b2f799299a39618e",
+    "graphify-out/fv-root-cause-20260919/PR249_TEAM_AST_20261006.json": "91508b44155926666e1d93c68b93bf86aeb0156d060f2450dcfa3ec0540c157c",
+    "graphify-out/fv-root-cause-20260919/PR249_TEAM_CHECKLIST_20261006.md": "ba8c3ee9334b2eadaeac62ca95c90e24bbfcc9995621c7d22f379a03288d1c6f",
+    "graphify-out/fv-root-cause-20260919/PR249_TEAM_FINAL_GREEN_20261006.md": "44f684fa58f311b921afad51cd466add164b9ca7b8cbf6041be3d50b9007c797",
+    "graphify-out/fv-root-cause-20260919/PR249_TEAM_FINAL_RECORDS_20261006.md": "d4e8aa72d544d302db4e9f80a204b46f60870a2f2349feca5a38daca8acee262",
+    "graphify-out/fv-root-cause-20260919/PR249_TEAM_FINAL_RED_20261006.md": "eee370158d6b41d443310252867fdf073f27aef26f91cd1cac2a69ec4d222a37",
+    "graphify-out/fv-root-cause-20260919/PR249_TEAM_GRAPHIFY_20261006.json": "120eb547f21958f9e5a223d2672c9ae4153faeeaa9b669c822dfcf7731d38fad",
+    "graphify-out/fv-root-cause-20260919/PR249_TEAM_GREEN_20261006.md": "88253bc1cabf20e9ce220756e646d305690d214fb4a4a619f8129050bef20031",
+    "graphify-out/fv-root-cause-20260919/PR249_TEAM_KG_UPDATE_20261006.json": "e587195b709f900e334cbce2419abe02d20a69ddd03a31f063117a5b873cefff",
+    "graphify-out/fv-root-cause-20260919/PR249_TEAM_POST_FIX_20261006.json": "b5ad1c311863aad809bc59dd94876bc8a2501bb647a2446c19efd4d0b12cf9dc",
+    "graphify-out/fv-root-cause-20260919/PR249_TEAM_RECORDS_20261006.md": "6408e6b7061f48d57b7bec1a0c8a2eff06a8300ef01d9cfc68a3b75de7f11680",
+    "graphify-out/fv-root-cause-20260919/PR249_TEAM_RED_20261006.md": "86a6292506d2434816b66b03a99fde97847c4e2e27a3e3fc1e7d1b19e93b001d",
+    "graphify-out/fv-root-cause-20260919/PR249_TEAM_TESTS_20261006.log": "16442f7e853f4b0d8eca7a67e078a5d6241f346f69b7ccfd14eccf99db40ff63",
+    "graphify-out/fv-root-cause-20260919/PR249_TEAM_TYPES_20261006.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c"
+  }
+}
