@@ -1,0 +1,20 @@
+{
+  "scope": "cached kernel/Newton structure consulted; isolated four changed files",
+  "files": {
+    "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py": "882f83589913e81ab4152e8c123dd204689940cdfde43059a6fc30ba7bbc1324",
+    "tests/test_fv_point_3h_hvp_newton_step.py": "8d6ce8d27376aea8d3ad7f6f1a17d4cc8b47390f394ef845bc024712f976ea33",
+    "examples/weather_scenarios/fv_point_3h_current_newton_step.py": "9d3a5be312f5173f6c152ebbbf104df0c5b44bdf4ed0c250df2a1725cafe3657",
+    "tests/test_fv_point_3h_current_newton_step.py": "fb8fb7fa6fabbb30d8095ad363a5821a4c9dd60478044796e7b767738dab6718"
+  },
+  "nodes": 40,
+  "edges": 112,
+  "ast_sha256": "2e4012c236ea5f394cd0b0c8659a9affa4a4c9da02d6351818445ce1491c900c",
+  "shared_before": {
+    "graphify-out/graph.json": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+    "graphify-out/GRAPH_REPORT.md": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491"
+  },
+  "shared_after": {
+    "graphify-out/graph.json": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+    "graphify-out/GRAPH_REPORT.md": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491"
+  }
+}

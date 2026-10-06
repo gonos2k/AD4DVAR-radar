@@ -1,0 +1,104 @@
+{
+  "accepted": {
+    "J": 0.06681574666444642,
+    "Phi": 1.8573840876146208,
+    "alpha": 0.17287763958236457,
+    "gradient_inf": 0.9880409691611126,
+    "step_l2": 0.049999999999999996,
+    "strict_branch_passed": true
+  },
+  "accepted_control_sha256": "38901e3a4c2ee97c8083b43e01e335f6328c3410982118b4ba891023468c471d",
+  "base": {
+    "J": 0.07161498269916244,
+    "Phi": 1.1129736170918725,
+    "gradient_inf": 0.798015151631069
+  },
+  "base_control_sha256": "a35e2f6ef000cca4b593a3e5ed49f1c3e94b951450f2f235902a50e1dde6647c",
+  "changes": {
+    "J_fraction_reduction": 0.06701441309951117,
+    "Phi_fraction_increase": 0.6688482629694712,
+    "gradient_inf_fraction_increase": 0.2381230696455432
+  },
+  "cost": {
+    "guard_seconds": 219.13180662482046,
+    "guarded_launches": 1,
+    "sampled_child_peak_rss_bytes": 370491392
+  },
+  "execution_status": "completed",
+  "linear_solve": {
+    "g_dot_s": -0.04171826501708994,
+    "global_SPD_proved": false,
+    "hvp_completed": 26,
+    "hvp_started": 26,
+    "pcg_iterations": 24,
+    "rtol": 1e-10,
+    "true_relative_residual": 8.214105073635838e-11
+  },
+  "model": {
+    "actual_J_reduction": 0.00479923603471602,
+    "actual_over_predicted_J_reduction": 0.7283991160220024,
+    "actual_phi": 1.8573840876146208,
+    "directional_secant": 0.00742588505506446,
+    "dynamics_step_l2": 0.01188088731349368,
+    "field_step_l2": 0.04856793712568061,
+    "gradient_linearization_error_l2": 1.9690032506912845,
+    "gradient_linearization_relative_error": 1.0215992725431262,
+    "linear_gradient": [
+      -0.3846722303272341,
+      -0.6600561758761988,
+      0.002342484575955642,
+      -0.012631783409172127,
+      0.001071114603665968,
+      -0.2009353015225551,
+      -0.25314820206038546,
+      -0.15167906985339857,
+      -0.1612801059325782,
+      -0.028417580680029367,
+      -0.0406767153823983,
+      0.3496580580850607,
+      0.3146278001086669,
+      -0.3550371840676192,
+      -0.1125371368293324,
+      0.0009045559365592433,
+      -0.029531467390867726,
+      0.009833197020586772,
+      -0.3921969530835156,
+      -0.13743212675850885,
+      -0.06165957000732489,
+      0.06152623308676981,
+      0.09632821237660581,
+      0.14807463830856998,
+      0.4057260919565653,
+      -0.21456701412553006
+    ],
+    "linear_phi": 0.7614201978369358,
+    "old_point_directional_curvature": 0.0012468203644469475,
+    "predicted_J": 0.06502623769775988,
+    "predicted_J_reduction": 0.006588745001402572,
+    "step_l2": 0.049999999999999996
+  },
+  "numerical_status": "one_live_HVP_original_J_step_accepted",
+  "operator": "live Jcc at a35 via JVP of gradient",
+  "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+  "plan_sha256": "610e9f1d9bacb8f235159dccf1e7e4b56a55eef088214a1c9fcea77437166090",
+  "preconditioner": "archived f82c H block inverse only",
+  "qualification": {
+    "branch_path_certified": false,
+    "newpoint_full_curvature": "not_computed",
+    "normality_improved": false,
+    "physical_validated": false,
+    "response_computed": false,
+    "score_computed": false,
+    "stationarity_passed": false,
+    "stationarity_tolerance": 1e-10
+  },
+  "remaining": [
+    "nonlinear search policy for original-J stationarity after finite-step Phi increase",
+    "current/newpoint curvature not globally qualified",
+    "3h eligible stationary point, adjoint and nonlinear reanalysis",
+    "independent weather skill and finite influence"
+  ],
+  "scope": "actual original-J live-HVP direction at a35 and one bounded J-only Armijo candidate",
+  "tests": "44 passed in1.53s",
+  "types": "error-level0errors/0warnings/0notes"
+}
