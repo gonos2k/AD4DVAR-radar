@@ -1,0 +1,11 @@
+{
+  "event": "subagent accidentally refreshed shared graph instead of isolated AST",
+  "generated_graph_sha256": "b24fddb18f260a5c248f6eee1d61caa35eac04625ed09e9a78dbde3131ce4832",
+  "generated_graph_saved": "/tmp/advar-dual-agent-global-graph-20261006.json",
+  "restored_from": "/Users/yhlee/ADVAR/graphify-out/.graphify_ci_research_fixes_before.json",
+  "restored_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "report_sha256": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491",
+  "report_unchanged": true,
+  "other_derived_cache_changes": "stat-index and30ASTcache entries updated; no pre-update cache snapshot, not claimed restored",
+  "action": "shared graph restored byte-exact; all further extraction isolated"
+}

@@ -1,0 +1,1083 @@
+{
+  "nodes": [
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "label": "fv_point_3h_dual_merit_step.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_steprefusal",
+      "label": "StepRefusal",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L41",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_policy",
+      "label": "_policy()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L45",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_dual_merit_step_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L45",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_check_deadline",
+      "label": "_check_deadline()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L52",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_direction_audit",
+      "label": "_direction_audit()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L57",
+      "_origin": "ast"
+    },
+    {
+      "id": "tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L57",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_archive_names",
+      "label": "_archive_names()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L83",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_mark_candidate_not_committed",
+      "label": "_mark_candidate_not_committed()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L88",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_load_base",
+      "label": "load_base()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L97",
+      "_origin": "ast"
+    },
+    {
+      "id": "path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L97",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "label": "dual_merit_search()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L261",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L398",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_rationale_1",
+      "label": "One cached-direction step that requires descent in both J and gradient merit.  T",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_rationale_42",
+      "label": "Known policy, numerical, or cooperative-budget refusal.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L42",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_rationale_58",
+      "label": "Validate the saved solve receipt and return immutable s, g, and Hs.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L58",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_rationale_89",
+      "label": "Clear provisional acceptance when closure fails before commit.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L89",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_step_rationale_155",
+      "label": "Backtrack along fixed s; require actual J and Phi Armijo plus strict branch marg",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L155",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_step",
+      "label": "test_fv_point_3h_dual_merit_step.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_step_inputs",
+      "label": "_inputs()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L10",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_step_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L10",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_step_test_dual_merit_rejects_j_only_decrease_then_accepts_same_direction",
+      "label": "test_dual_merit_rejects_j_only_decrease_then_accepts_same_direction()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L39",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_step_test_dual_merit_requires_candidate_branch_even_when_both_armijo_tests_pass",
+      "label": "test_dual_merit_requires_candidate_branch_even_when_both_armijo_tests_pass()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L63",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_step_test_post_acceptance_failure_clears_provisional_commit",
+      "label": "test_post_acceptance_failure_clears_provisional_commit()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L90",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_step_test_callback_error_preserves_current_candidate",
+      "label": "test_callback_error_preserves_current_candidate()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L101",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_dual_merit_step_test_malformed_branch_contract_keeps_candidate_receipt",
+      "label": "test_malformed_branch_contract_keeps_candidate_receipt()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L116",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_steprefusal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_policy",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_policy",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_step_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_check_deadline",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_direction_audit",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_direction_audit",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_step_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_direction_audit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_direction_audit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_direction_audit",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_archive_names",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L83",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_mark_candidate_not_committed",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L88",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_mark_candidate_not_committed",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_step_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L88",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_load_base",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L97",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_load_base",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L97",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_load_base",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_step_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L97",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_load_base",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_step_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L97",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_step_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_step_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_step_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_step_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L261",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_run",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L261",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_run",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L261",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_run",
+      "target": "examples_weather_scenarios_fv_point_3h_dual_merit_step_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L261",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L398",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_load_base",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_archive_names",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_load_base",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_policy",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_load_base",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_direction_audit",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_steprefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L168",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_run",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_load_base",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L266",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_run",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_direction_audit",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L274",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_run",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_check_deadline",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L295",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_run",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_steprefusal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L301",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_run",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L325",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_run",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_mark_candidate_not_committed",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L364",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_main",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L407",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_main",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_load_base",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L409",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_rationale_42",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_steprefusal",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_rationale_58",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_direction_audit",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_rationale_89",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_mark_candidate_not_committed",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L89",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_dual_merit_step_rationale_155",
+      "target": "weather_scenarios_fv_point_3h_dual_merit_step_dual_merit_search",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/examples/weather_scenarios/fv_point_3h_dual_merit_step.py",
+      "source_location": "L155",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step",
+      "target": "tests_test_fv_point_3h_dual_merit_step_inputs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step_inputs",
+      "target": "tests_test_fv_point_3h_dual_merit_step_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step",
+      "target": "tests_test_fv_point_3h_dual_merit_step_test_dual_merit_rejects_j_only_decrease_then_accepts_same_direction",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step",
+      "target": "tests_test_fv_point_3h_dual_merit_step_test_dual_merit_requires_candidate_branch_even_when_both_armijo_tests_pass",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step",
+      "target": "tests_test_fv_point_3h_dual_merit_step_test_post_acceptance_failure_clears_provisional_commit",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L90",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step",
+      "target": "tests_test_fv_point_3h_dual_merit_step_test_callback_error_preserves_current_candidate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step",
+      "target": "tests_test_fv_point_3h_dual_merit_step_test_malformed_branch_contract_keeps_candidate_receipt",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step_test_dual_merit_rejects_j_only_decrease_then_accepts_same_direction",
+      "target": "tests_test_fv_point_3h_dual_merit_step_inputs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step_test_dual_merit_requires_candidate_branch_even_when_both_armijo_tests_pass",
+      "target": "tests_test_fv_point_3h_dual_merit_step_inputs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step_test_callback_error_preserves_current_candidate",
+      "target": "tests_test_fv_point_3h_dual_merit_step_inputs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_dual_merit_step_test_malformed_branch_contract_keeps_candidate_receipt",
+      "target": "tests_test_fv_point_3h_dual_merit_step_inputs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-dual-final-kek286ep/tests/test_fv_point_3h_dual_merit_step.py",
+      "source_location": "L117",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
