@@ -1,0 +1,33 @@
+{
+  "child_read_error": null,
+  "child_sha256": "64bef5e1a16af8fe4a480601c94d4357ce192fec0ab4c1e41ae510c8177b0c52",
+  "execution_status": "completed",
+  "numerical_status": "one_live_HVP_original_J_step_accepted",
+  "resource": {
+    "child_pid": 74022,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "-m",
+      "examples.weather_scenarios.fv_point_3h_hvp_newton_step",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/NEWA35_LIVE_HVP_NEWTON_PLAN_20261006.json",
+      "--plan-sha256",
+      "610e9f1d9bacb8f235159dccf1e7e4b56a55eef088214a1c9fcea77437166090",
+      "--directory",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/a35_live_hvp_newton_20261006_attempt1"
+    ],
+    "elapsed_seconds": 219.13180662482046,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 836,
+    "sampled_peak_rss_bytes": 370491392,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300.0
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-m",
+    "examples.weather_scenarios.fv_point_3h_hvp_newton_step",
+    "--child",
+    "--plan",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/NEWA35_LIVE_HVP_NEWTON_PLAN_20261006.json",
+    "--plan-sha256",
+    "610e9f1d9bacb8f235159dccf1e7e4b56a55eef088214a1c9fcea77437166090",
+    "--directory",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/a35_live_hvp_newton_20261006_attempt1"
+  ],
+  "child_pid": 74022,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 219.13180662482046,
+  "sampled_peak_rss_bytes": 370491392,
+  "rss_samples": 836,
+  "wall_limit_seconds": 300.0,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}

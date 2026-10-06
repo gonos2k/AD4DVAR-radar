@@ -71,6 +71,8 @@ def test_model_agrees_exactly_for_quadratic_objective():
     assert abs(result["actual_over_predicted_J_reduction"]-1) < 1e-14
     assert result["gradient_linearization_error_l2"] < 1e-14
     assert abs(result["directional_secant"]-result["old_point_directional_curvature"]) < 1e-14
+    directional = probe.model_diagnostics(j0, 2*c, None, delta, j1, 2*(c+delta), hessian_delta=h@delta)
+    assert directional == result
 
 
 def test_nonlinear_change_is_reported_not_used_as_new_hessian():

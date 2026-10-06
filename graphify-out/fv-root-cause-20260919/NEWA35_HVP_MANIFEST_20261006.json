@@ -1,0 +1,24 @@
+{
+  "scope": "new-a35 liveoperator stage, one guarded run and helper sharing; historical artifacts unchanged",
+  "files": {
+    "examples/weather_scenarios/fv_point_3h_hvp_newton_step.py": "882f83589913e81ab4152e8c123dd204689940cdfde43059a6fc30ba7bbc1324",
+    "tests/test_fv_point_3h_hvp_newton_step.py": "8d6ce8d27376aea8d3ad7f6f1a17d4cc8b47390f394ef845bc024712f976ea33",
+    "examples/weather_scenarios/fv_point_3h_current_newton_step.py": "9d3a5be312f5173f6c152ebbbf104df0c5b44bdf4ed0c250df2a1725cafe3657",
+    "tests/test_fv_point_3h_current_newton_step.py": "fb8fb7fa6fabbb30d8095ad363a5821a4c9dd60478044796e7b767738dab6718",
+    "graphify-out/fv-root-cause-20260919/NEWA35_HVP_AST_20261006.json": "2e4012c236ea5f394cd0b0c8659a9affa4a4c9da02d6351818445ce1491c900c",
+    "graphify-out/fv-root-cause-20260919/NEWA35_HVP_FINAL_GREEN_20261006.md": "563bde36e983fdae927f28a4ebc5c676312404f99ec4d096b4e20056a5fffea3",
+    "graphify-out/fv-root-cause-20260919/NEWA35_HVP_GRAPHIFY_20261006.json": "d9c012112f3ba0b4c9d03e6fb0de75938649045ffd35eb29d880c029b91b05db",
+    "graphify-out/fv-root-cause-20260919/NEWA35_HVP_KG_UPDATE_20261006.json": "34674837ddcede4e3ace8efd28bf21ab72ccda91edc48cb0ed9910d4507ab43b",
+    "graphify-out/fv-root-cause-20260919/NEWA35_HVP_SCIENTIFIC_RESULT_20261006.json": "84627930dbd64ffa9c7197595786aad8618a52b645702e17c21540625cea337a",
+    "graphify-out/fv-root-cause-20260919/NEWA35_HVP_TESTS_20261006.log": "ce20e76c812f3cc0f1fea5927d45d353e95f033c3803d20caadbc4ee52345808",
+    "graphify-out/fv-root-cause-20260919/NEWA35_HVP_TYPES_20261006.log": "56882e01cb80173ef053c4096e4ee43e3123a15f5c0a06715f96988d48fbd91c",
+    "graphify-out/fv-root-cause-20260919/NEWA35_LIVE_HVP_CHECKLIST_20261006.md": "71beb00502de3d1567552446e1e38dbec1e25603cad2917be08351d902829407",
+    "graphify-out/fv-root-cause-20260919/NEWA35_LIVE_HVP_NEWTON_PLAN_20261006.json": "610e9f1d9bacb8f235159dccf1e7e4b56a55eef088214a1c9fcea77437166090",
+    "graphify-out/fv-root-cause-20260919/A35_HVP_GREEN_20261006.md": "3e9deaf9a52e4a4e8746959d2f9f9a0b665f2d9a73d0ae700e51957c2b754cb4",
+    "graphify-out/fv-root-cause-20260919/A35_HVP_RED_20261006.md": "aa3621ba1eb6a9c917b06f2e36edfd9b68fd4652f9e06f37e7b21ac77a29942c",
+    "graphify-out/fv-root-cause-20260919/a35_live_hvp_newton_20261006_attempt1/step.json": "64bef5e1a16af8fe4a480601c94d4357ce192fec0ab4c1e41ae510c8177b0c52",
+    "graphify-out/fv-root-cause-20260919/a35_live_hvp_newton_20261006_attempt1/step.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "graphify-out/fv-root-cause-20260919/a35_live_hvp_newton_20261006_attempt1/step.resource.json": "88f1e53b5c984b1eae520d77723957380a1373047636363cd4c9660b4f2abcd9",
+    "graphify-out/fv-root-cause-20260919/a35_live_hvp_newton_20261006_attempt1/step.run.json": "3dda9efe60c5bee3ae9c964d834a0c128c1a5ad81107956f6a59db6c00dca670"
+  }
+}

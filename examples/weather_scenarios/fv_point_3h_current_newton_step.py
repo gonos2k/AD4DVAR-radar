@@ -77,10 +77,15 @@ def load_base(plan_path: Path, plan_sha: str) -> tuple[dict[str, Any], dict[str,
     return plan, base, checkpoint
 
 
-def model_diagnostics(j0: float, g0: Tensor, h0: Tensor, delta: Tensor,
-                      j1: float, g1: Tensor) -> dict[str, Any]:
-    linear_g = g0 + h0 @ delta
-    predicted = -float(g0 @ delta + .5 * delta @ (h0 @ delta))
+def model_diagnostics(j0: float, g0: Tensor, h0: Tensor | None, delta: Tensor,
+                      j1: float, g1: Tensor, *, hessian_delta: Tensor | None = None) -> dict[str, Any]:
+    """Compare Taylor predictions from the actual local Hδ, without requiring a dense H."""
+    if hessian_delta is None:
+        if h0 is None:
+            raise ValueError("a local Hessian or its displacement product is required")
+        hessian_delta = h0 @ delta
+    linear_g = g0 + hessian_delta
+    predicted = -float(g0 @ delta + .5 * delta @ hessian_delta)
     actual = j0 - j1
     return {"predicted_J": j0 - predicted, "actual_J_reduction": actual,
         "predicted_J_reduction": predicted, "actual_over_predicted_J_reduction": actual / predicted if predicted > 0 else None,
@@ -89,7 +94,7 @@ def model_diagnostics(j0: float, g0: Tensor, h0: Tensor, delta: Tensor,
         "gradient_linearization_relative_error": float((g1 - linear_g).norm() / g1.norm()) if bool(g1.norm() > 0) else None,
         "step_l2": float(delta.norm()), "field_step_l2": float(delta[:20].norm()),
         "dynamics_step_l2": float(delta[20:].norm()), "directional_secant": float(delta @ (g1 - g0)),
-        "old_point_directional_curvature": float(delta @ (h0 @ delta))}
+        "old_point_directional_curvature": float(delta @ hessian_delta)}
 
 
 def physical_state(problem: Any, c: Tensor, p: Tensor) -> dict[str, Tensor]:
@@ -109,6 +114,15 @@ def physical_state(problem: Any, c: Tensor, p: Tensor) -> dict[str, Tensor]:
         "flow_coefficients": coeff, "qx": qx, "qy": qy,
         "normal_x_speed": qx/spec.spacing_yx[0], "normal_y_speed": qy/spec.spacing_yx[1],
         "interval_log_echo_growth": contract.nowcast_config.max_log_growth_per_step*c[-1].tanh()}
+
+
+def physical_unit_labels() -> dict[str, str]:
+    return {"scope": "model echo proxy, not water mass; model flow, not observed air wind",
+        "initial_dbz_units": "dBZ", "echo_proxy_units": "linear reflectivity proxy Z minus Z_min",
+        "face_flux_units": "configured model-coordinate area per second (2-D; no depth specified)",
+        "flow_coefficient_units": "units of fixed coefficient_limits; depend on psi_basis normalization",
+        "speed_units": "configured model-coordinate lengths per second",
+        "growth_units": "log echo growth per 600-second interval"}
 
 
 def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
@@ -197,11 +211,7 @@ def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
                     row["objective"], torch.tensor(row["gradient"], dtype=torch.float64)),
                 physical_changes={"values": changes, "base": {k: x.tolist() for k, x in states[0].items()},
                     "candidate": {k: x.tolist() for k, x in states[1].items()},
-                    "scope": "model echo proxy, not water mass; model flow, not observed air wind",
-                    "initial_dbz_units": "dBZ", "echo_proxy_units": "linear reflectivity proxy Z minus Z_min",
-                    "face_flux_units": "configured model-coordinate area per second (2-D; no depth specified)",
-                    "flow_coefficient_units": "units of fixed coefficient_limits; depend on psi_basis normalization",
-                    "speed_units": "configured model-coordinate lengths per second", "growth_units": "log echo growth per 600-second interval"})
+                    **physical_unit_labels()})
             record["weak_mode"].update(actual_step_projection=float(weak @ delta),
                 actual_step_squared_norm_fraction=float((weak @ delta).square()/(delta @ delta)))
             final_c = accepted
