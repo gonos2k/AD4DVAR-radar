@@ -1,0 +1,12 @@
+{
+  "scope": "lossless archive of original raw bytes; original JSON remains locally unchanged",
+  "raw_path": "graphify-out/fv-root-cause-20260919/qy32_diagnostic_attempt1/diagnostic.json",
+  "archive_path": "graphify-out/fv-root-cause-20260919/qy32_diagnostic_attempt1/diagnostic.json.gz",
+  "raw_bytes": 49600039,
+  "archive_bytes": 298604,
+  "raw_sha256": "d05e5b8ed86f9067b4d29d5f9b9bf7ccd4ea7c23d8157a94410c0d59914d15c3",
+  "archive_sha256": "1b81004e56e31e051221ddebd6af6bbab8f8809f1eb888796cc1cb37476fea3e",
+  "decompressed_bytes_match": true,
+  "reconstruct": "gzip -dk graphify-out/fv-root-cause-20260919/qy32_diagnostic_attempt1/diagnostic.json.gz; .venv/bin/python graphify-out/fv-root-cause-20260919/QY32_ANALYZE_20261007.py",
+  "reconstruct_condition": "Only decompress to the canonical raw path when it is absent; original local JSON is retained and must not be overwritten."
+}

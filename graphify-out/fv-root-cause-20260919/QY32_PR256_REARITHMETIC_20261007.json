@@ -1,0 +1,50 @@
+{
+  "scope": "archived PR256 re-arithmetic only; no new FV/HVP/PCG",
+  "percent_decreases": {
+    "objective": 0.12994407056540314,
+    "phi": 1.583781515516889,
+    "gradient_inf": 0.7347092671473425,
+    "gradient_l2": 0.7950512905313208
+  },
+  "iterations": [
+    {
+      "control_sha_matches": true,
+      "relative_residual": 0.0008380193059061861,
+      "gTs": -0.009672751536728417,
+      "gTHs": -0.5674847731115717,
+      "move": 0.000781250000000001,
+      "gradient_linear_relative_error": 0.01453309795389159
+    },
+    {
+      "control_sha_matches": true,
+      "relative_residual": 0.0006054067208761333,
+      "gTs": -0.008686346511996002,
+      "gTHs": -0.5593166375133625,
+      "move": 9.765625000000051e-05,
+      "gradient_linear_relative_error": 0.0007204407537422715
+    }
+  ],
+  "nearest_rejected": [
+    {
+      "J_pass": true,
+      "Phi_pass": false,
+      "strict_pass": true,
+      "reasons": [
+        "actual Phi exceeds Phi Armijo threshold"
+      ]
+    },
+    {
+      "J_pass": true,
+      "Phi_pass": false,
+      "strict_pass": true,
+      "reasons": [
+        "actual Phi exceeds Phi Armijo threshold"
+      ]
+    }
+  ],
+  "pins_checked": {
+    "source_files": 104,
+    "archive_files": 28,
+    "all_match": true
+  }
+}
