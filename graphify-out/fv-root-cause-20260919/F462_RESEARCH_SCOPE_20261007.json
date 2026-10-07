@@ -1,0 +1,51 @@
+{
+  "official_phase1": {
+    "completion": "8/8=100% under original predefined globalmotion/growth scope",
+    "evidence": [
+      "PHASE1_COMPLETION_CHECKLIST.md",
+      "https://github.com/gonos2k/AD4DVAR-radar/pull/159"
+    ],
+    "PR159_state": "merged",
+    "merge_commit": "3296f70b0b3dc2d9010a7f60bc568ea1394aab32",
+    "not_claimed": [
+      "currentcode defectfree",
+      "FV3h stationary response completed",
+      "realradar/operational skill"
+    ]
+  },
+  "FV_extension_external_review_estimate": {
+    "score": 70,
+    "denominator": 100,
+    "owner": "user supplied PR255 review, not official repository completion metric",
+    "weights": [
+      10,
+      15,
+      10,
+      15,
+      10,
+      20,
+      15,
+      5
+    ],
+    "recognized": [
+      10,
+      15,
+      10,
+      15,
+      10,
+      10,
+      0,
+      0
+    ],
+    "meaning": "weighted milestone scope, not elapsed work, successprobability or ETA",
+    "remaining": [
+      "original3h eligible stationary point",
+      "originalHessian adjoint/VJP/reanalysis",
+      "independent synthetic future/finite-range validation"
+    ]
+  },
+  "separate": [
+    "realradar phase2",
+    "deployment/operations excluded"
+  ]
+}

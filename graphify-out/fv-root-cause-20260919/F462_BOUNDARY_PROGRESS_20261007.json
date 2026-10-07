@@ -1,0 +1,39 @@
+{
+  "scope": "existing saved accepted-point arithmetic only; no newFV/HVP or rejectedpoint evaluation",
+  "observed": "same internal y-face[3,2] remains negative and approacheszero as acceptedsteps shrink",
+  "rows": [
+    {
+      "iteration": 1,
+      "control_sha256": "d139407b390c3cf05f31fc2115961f1b583b41eff2dac2fc9398fff939a77c0b",
+      "Qy_3_2_before": -6.777421930689864e-05,
+      "Qy_3_2_after": -8.147753831233562e-06,
+      "normalized_min_face_flux": 0.0003239632285514144,
+      "min_face_location": [
+        3,
+        2
+      ],
+      "alpha": 0.007575710234584901,
+      "step_l2": 0.000781250000000001,
+      "candidate_count": 7,
+      "model_decrease_ratio": 0.9805722260874493,
+      "gradient_linearization_relative_error": 0.014533097953891592
+    },
+    {
+      "iteration": 2,
+      "control_sha256": "e29c348d51e7ec2de23f3f74d1522a34f58bf0bb72fd56e63d9b89cadea15e37",
+      "Qy_3_2_before": -8.147753831233562e-06,
+      "Qy_3_2_after": -5.910612738066479e-07,
+      "normalized_min_face_flux": 2.3485245429188745e-05,
+      "min_face_location": [
+        3,
+        2
+      ],
+      "alpha": 0.0010023709321312648,
+      "step_l2": 9.765625000000051e-05,
+      "candidate_count": 10,
+      "model_decrease_ratio": 0.9993238558534646,
+      "gradient_linearization_relative_error": 0.0007204407537422715
+    }
+  ],
+  "interpretation": "candidate branchboundary worthdiagnosing next; notcertifiedactiveface/localmin/causal proof; no physicalwind/precipitationbarrier claim"
+}
