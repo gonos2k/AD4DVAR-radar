@@ -1,6 +1,6 @@
 # Qy[3,2] two-sided boundary diagnostic — RED design
 
-Date: 2026-10-07  
+Date: 2026-10-07
 Scope: bounded design review from the committed PR #256 endpoint. This note proposes one diagnostic; it does not report new model results. No FV, HVP, PCG, optimizer, forecast, adjoint, reanalysis, test suite, or shared Graphify job is authorized by this design.
 
 ## RED disposition

@@ -1,7 +1,7 @@
 # Qy[3,2] diagnostic — RED preflight review
 
-Date: 2026-10-07  
-Disposition: **GO for one planned guarded diagnostic. No prelaunch blocker found.**  
+Date: 2026-10-07
+Disposition: **GO for one planned guarded diagnostic. No prelaunch blocker found.**
 Review basis: read-only review of the pinned diagnostic plan, implementation, focused tests, PR #256 receipts, and arithmetic summary. I did not run tests, FV, gradients, HVP, PCG, forecast, adjoint, or reanalysis.
 
 ## Plan and provenance
