@@ -1,0 +1,57 @@
+{
+  "scope": "PR252 root-candidate stagnation ordering; cached structure consulted before edits",
+  "cached_ast_sha256": "4c09a79ecbc34a162b1e90b0baef4efecd1ac3e95fb944054280762431b5cce4",
+  "relevant_nodes": [
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation",
+      "label": "fv_point_3h_dual_merit_continuation.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_continuationrefusal",
+      "label": "ContinuationRefusal",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L42",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_continuationrefusal_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L45",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy",
+      "label": "_policy()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L50",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_dual_merit_continuation_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L50",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_dual_merit_continuation_policy_dict",
+      "label": "policy_dict()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_dual_merit_continuation.py",
+      "source_location": "L62",
+      "_origin": "ast"
+    }
+  ],
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "shared_report_sha256": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491",
+  "refresh_policy": "isolated copied changed code only; no shared refresh"
+}

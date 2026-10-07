@@ -1,0 +1,23 @@
+{
+  "scope": "near-stationary candidate ordering fix only",
+  "finding": "absolute J-size based progress floor could discard zero-gradient candidate under constant offset",
+  "resolved": [
+    "fresh root-only J/g/Phi/branch confirmation before stagnation refusal",
+    "confirmed root can bypass displacement and cost/Phi roundoff floors",
+    "nonroot progress floors and original Armijo/tolerances unchanged",
+    "pending audit after closure/deadline, no eligibility claim"
+  ],
+  "evidence": [
+    "PR252_ROOT_REPRO_20261007.json",
+    "PR252_ROOT_FIXED_CHECKS_20261007.json",
+    "PR252_ROOT_TESTS_20261007.log",
+    "PR252_ROOT_TYPES_20261007.log"
+  ],
+  "graph_refresh": "PR252_ROOT_GRAPHIFY_20261007.json",
+  "FV_rerun": false,
+  "remaining": [
+    "bounded new-plan continuation at90fc",
+    "eligible stationary point, original-Hessian adjoint/reanalysis",
+    "independent forecast verification"
+  ]
+}

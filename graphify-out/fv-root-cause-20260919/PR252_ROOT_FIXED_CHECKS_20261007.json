@@ -1,0 +1,61 @@
+{
+  "scope": "consistent quadratic/analytic HVP with actual repository PCG, strict branch stub; no FV run",
+  "producer_sha256": "a9be7758a745f3b72423c2ab17d3af495cb39525440444c6a86d1e6b0c3abbdf",
+  "cases": [
+    {
+      "C": 0.0,
+      "initial_control": 1e-07,
+      "h": 1.0,
+      "initial_gradient_inf": 1e-07,
+      "candidate_gradient_inf": 0.0,
+      "numerical_status": "root_pending_audit",
+      "root_recheck": true,
+      "displacement_below_roundoff": false,
+      "eligible_stationary_point": false
+    },
+    {
+      "C": 1.0,
+      "initial_control": 1e-07,
+      "h": 1.0,
+      "initial_gradient_inf": 1e-07,
+      "candidate_gradient_inf": 0.0,
+      "numerical_status": "root_pending_audit",
+      "root_recheck": true,
+      "displacement_below_roundoff": false,
+      "eligible_stationary_point": false
+    },
+    {
+      "C": 1.0,
+      "initial_control": 1e-08,
+      "h": 1.0,
+      "initial_gradient_inf": 1e-08,
+      "candidate_gradient_inf": 0.0,
+      "numerical_status": "root_pending_audit",
+      "root_recheck": true,
+      "displacement_below_roundoff": false,
+      "eligible_stationary_point": false
+    },
+    {
+      "C": 0.063,
+      "initial_control": 1e-08,
+      "h": 1.0,
+      "initial_gradient_inf": 1e-08,
+      "candidate_gradient_inf": 0.0,
+      "numerical_status": "root_pending_audit",
+      "root_recheck": true,
+      "displacement_below_roundoff": false,
+      "eligible_stationary_point": false
+    },
+    {
+      "C": 1.0,
+      "initial_control": 1e-22,
+      "h": 1000000000000000.0,
+      "initial_gradient_inf": 1.0000000000000001e-07,
+      "candidate_gradient_inf": 1.2930437859045163e-22,
+      "numerical_status": "root_pending_audit",
+      "root_recheck": true,
+      "displacement_below_roundoff": true,
+      "eligible_stationary_point": false
+    }
+  ]
+}

@@ -285,7 +285,58 @@ def run_iterations(control: Tensor, parameters: Tensor,
             displacement = accepted - c
             delta_norm = float(torch.linalg.vector_norm(displacement))
             scale = max(1.0, float(torch.linalg.vector_norm(c)))
-            if delta_norm <= 128 * EPS * scale:
+            candidate_gradient_inf = float(
+                torch.tensor(candidate_row["gradient"], dtype=torch.float64).abs().max())
+            root_candidate = candidate_gradient_inf <= ROOT_GRADIENT_INF
+            if root_candidate:
+                # Confirm the pending-root path with an independent fresh
+                # evaluation: the search receipt alone must not establish it.
+                fresh_j, fresh_gradient, fresh_phi = _true_merit(
+                    accepted, parameters, objective, gradient_fn, deadline)
+                fresh_branch, fresh_margins = branch_fn(accepted.clone(), parameters.clone())
+                _check_deadline(deadline)
+                saved_gradient = torch.tensor(candidate_row["gradient"], dtype=torch.float64)
+                scalar_consistent = all(
+                    abs(float(fresh) - float(saved)) <= 128 * EPS * max(
+                        abs(float(fresh)), abs(float(saved)), torch.finfo(torch.float64).tiny)
+                    for fresh, saved in ((fresh_j, candidate_row["objective"]),
+                                         (fresh_phi, candidate_row["phi"])))
+                gradient_consistent = bool(torch.max(torch.abs(fresh_gradient - saved_gradient)) <=
+                    128 * EPS * max(torch.finfo(torch.float64).tiny,
+                                    float(fresh_gradient.abs().max()),
+                                    float(saved_gradient.abs().max())))
+                fresh_gradient_inf = float(fresh_gradient.abs().max())
+                fresh_branch_valid = (_strict_branch(fresh_branch, fresh_margins)
+                    and fresh_branch.get("signature_sha256") ==
+                        candidate_row["branch"].get("signature_sha256"))
+                fresh_armijo = (float(fresh_j) <= candidate_row["J_armijo_threshold"]
+                    and float(fresh_phi) <= candidate_row["Phi_armijo_threshold"])
+                if (not scalar_consistent or not gradient_consistent or not fresh_branch_valid
+                        or not fresh_armijo or fresh_gradient_inf > ROOT_GRADIENT_INF):
+                    _mark_current_candidate_not_committed(record,
+                        "fresh root candidate re-evaluation changed or failed a root gate")
+                    iteration.update(status="root_candidate_recheck_failed",
+                        candidate_not_committed=True,
+                        fresh_gradient_inf=fresh_gradient_inf,
+                        fresh_objective=float(fresh_j), fresh_phi=float(fresh_phi),
+                        recheck_objective_consistent=scalar_consistent,
+                        recheck_gradient_consistent=gradient_consistent,
+                        recheck_strict_branch_passed=fresh_branch_valid,
+                        recheck_dual_armijo_passed=fresh_armijo)
+                    record.update(numerical_status="root_candidate_recheck_failed",
+                                  current_iteration=iteration)
+                    persist()
+                    break
+                # Use the confirmed values in the commit receipt.
+                candidate_row.update(objective=float(fresh_j),
+                    gradient=fresh_gradient.tolist(), gradient_l2=float(fresh_gradient.norm()),
+                    gradient_blocks=block_step.frozen.gradient_blocks(fresh_gradient),
+                    phi=float(fresh_phi),
+                    branch=fresh_branch, margins=fresh_margins)
+                candidate_gradient_inf = fresh_gradient_inf
+            # Large positive curvature can turn a roundoff-size move into a
+            # valid root, so only the independently confirmed root bypasses this guard.
+            if delta_norm <= 128 * EPS * scale and not root_candidate:
                 _mark_current_candidate_not_committed(record, "candidate displacement is numerically stagnant")
                 iteration.update(status="displacement_stagnation", candidate_not_committed=True)
                 record.update(numerical_status="displacement_stagnation", current_iteration=iteration)
@@ -295,7 +346,9 @@ def run_iterations(control: Tensor, parameters: Tensor,
             base_phi_delta = float(base_phi) - candidate_row["phi"]
             j_floor = 128 * EPS * max(abs(float(base_j)), abs(candidate_row["objective"]), torch.finfo(torch.float64).tiny)
             phi_floor = 128 * EPS * max(abs(float(base_phi)), abs(candidate_row["phi"]), torch.finfo(torch.float64).tiny)
-            if base_j_delta <= j_floor or base_phi_delta <= phi_floor:
+            # Both actual Armijo checks remain mandatory; only subtraction-
+            # scale decrease floors are skipped for a confirmed root.
+            if not root_candidate and (base_j_delta <= j_floor or base_phi_delta <= phi_floor):
                 _mark_current_candidate_not_committed(record, "accepted decrease is numerically zero")
                 iteration.update(status="numerically_zero_decrease", candidate_not_committed=True,
                                  J_reduction=base_j_delta, Phi_reduction=base_phi_delta)
@@ -312,9 +365,13 @@ def run_iterations(control: Tensor, parameters: Tensor,
                 accepted_control_sha256=curvature.tensor_sha(accepted),
                 accepted_objective=candidate_row["objective"], accepted_phi=candidate_row["phi"],
                 accepted_gradient=candidate_row["gradient"],
-                accepted_gradient_inf=float(torch.tensor(candidate_row["gradient"], dtype=torch.float64).abs().max()),
+                accepted_gradient_inf=candidate_gradient_inf,
+                root_candidate_recheck_passed=root_candidate,
+                root_candidate_recheck_gradient_inf=candidate_gradient_inf if root_candidate else None,
                 J_reduction=base_j_delta, Phi_reduction=base_phi_delta,
-                displacement_l2=delta_norm, diagnostics=closure)
+                displacement_l2=delta_norm,
+                displacement_below_roundoff=delta_norm <= 128 * EPS * scale,
+                diagnostics=closure)
             # Commit only after all candidate diagnostics, integrity checks,
             # and deadline checks have completed successfully.
             c = accepted
