@@ -1,0 +1,14 @@
+{
+  "scope": "one same-start strict-first shared-budget pair; HVP observations only, no generalized speedup",
+  "HVP_saved": 9,
+  "HVP_reduction_percent": 29.032258064516125,
+  "PCG_saved": 9,
+  "inexact_J_reduction_percent": 0.5464354968735208,
+  "inexact_Phi_reduction_percent": 12.784641647454487,
+  "inexact_gradient_inf_reduction_percent": 2.3684120865136493,
+  "J_endpoint_difference": -1.64281829945212e-08,
+  "Phi_endpoint_difference": -1.5150376691031031e-05,
+  "strict_endpoint": "e98657996ed55af7b4378d0ed978b19f3ef989785078ddcceaa5136387367827",
+  "inexact_selected_endpoint": "f462a4961634efa253e3757f7de44304386135eb3a229f3729a61eb911e6eed9",
+  "timing_interpretation": "per-arm time reported; strict-first caches/startup/order bias, no runtime causal speedup claim"
+}

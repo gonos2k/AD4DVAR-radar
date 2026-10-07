@@ -47,8 +47,12 @@ class ContinuationRefusal(search.StepRefusal):
         self.status = status
 
 
-def _policy() -> dict[str, Any]:
-    return {"max_iterations": MAX_ITERATIONS, "max_hvp_calls": MAX_HVP,
+def _policy(mode: str = "strict", max_iterations: int = MAX_ITERATIONS) -> dict[str, Any]:
+    if mode not in {"strict", "inexact"}:
+        raise ValueError("linear_mode must be 'strict' or 'inexact'")
+    if isinstance(max_iterations, bool) or not isinstance(max_iterations, int) or not 1 <= max_iterations <= MAX_ITERATIONS:
+        raise ValueError(f"max_iterations must be in [1, {MAX_ITERATIONS}]")
+    result = {"max_iterations": max_iterations, "max_hvp_calls": MAX_HVP,
             "pcg_max_iterations": PCG_MAX, "pcg_relative_tolerance": PCG_RTOL,
             "max_candidates": MAX_CANDIDATES, "radius": RADIUS,
             "j_armijo_c1": C1_J, "phi_armijo_c1": C1_PHI,
@@ -57,12 +61,27 @@ def _policy() -> dict[str, Any]:
             "rss_bytes": RSS_BYTES, "guarded_launches": 1,
             "cached_preconditioner_scope": "f82c SPD block inverse preconditioner only",
             "hvp_cap_includes": "all PCG products and independently recomputed true-residual Hs; 3 solves are not guaranteed"}
+    if mode == "inexact":
+        result.update(linear_mode="inexact", forcing_tolerance_min=PCG_RTOL,
+                      forcing_tolerance_max=1e-3, forcing_tolerance_scale=0.1,
+                      require_resolved_descent_for_relaxed_tolerance=True,
+                      forcing_tolerance_schedule="clip(0.1 * current_gradient_inf, [1e-10, 1e-3]); heuristic, not Eisenstat-Walker")
+    return result
 
 
-def policy_dict() -> dict[str, Any]:
+def policy_dict(mode: str = "strict", max_iterations: int = MAX_ITERATIONS) -> dict[str, Any]:
     """Public frozen policy for the evidence plan and review checklist."""
-    return _policy()
+    return _policy(mode, max_iterations)
 
+
+
+def forcing_tolerance(gradient_inf: float, mode: str = "strict") -> float:
+    """Return the strict tolerance or bounded current-gradient heuristic."""
+    if mode == "strict":
+        return PCG_RTOL
+    if mode != "inexact" or not math.isfinite(gradient_inf) or gradient_inf < 0:
+        raise ValueError("invalid linear mode or gradient scale")
+    return min(1e-3, max(PCG_RTOL, 0.1 * gradient_inf))
 
 def _check_deadline(deadline: float) -> None:
     if time.monotonic() >= deadline:
@@ -123,7 +142,7 @@ def _true_merit(control: Tensor, parameters: Tensor, objective: Callable[[Tensor
 def _solve_direction(control: Tensor, parameters: Tensor, gradient: Tensor,
                      hvp_fn: Callable[[Tensor, Tensor, Tensor], Tensor],
                      preconditioner: Callable[[Tensor], Tensor], deadline: float,
-                     counts: dict[str, int]) -> tuple[Tensor, Tensor, dict[str, Any]]:
+                     counts: dict[str, int], *, rtol: float = PCG_RTOL) -> tuple[Tensor, Tensor, dict[str, Any]]:
     """Use the existing matrix-free PCG recurrence with the continuation cap."""
     def operator(vector: Tensor) -> Tensor:
         _check_deadline(deadline)
@@ -144,7 +163,7 @@ def _solve_direction(control: Tensor, parameters: Tensor, gradient: Tensor,
 
     try:
         solve = matrix_free.pcg(operator, -gradient, preconditioner=checked_preconditioner,
-                                rtol=PCG_RTOL, max_iterations=PCG_MAX)
+                                rtol=rtol, max_iterations=PCG_MAX)
     except RuntimeError as error:
         known = {"operator must be symmetric positive definite", "preconditioner must be positive definite",
                  "PCG step is not finite", "PCG direction update is not finite",
@@ -162,20 +181,27 @@ def _solve_direction(control: Tensor, parameters: Tensor, gradient: Tensor,
     g_dot_s, g_dot_hs = float(gradient @ direction), float(gradient @ hs)
     curvature_value = float(direction @ hs)
     curvature_roundoff = 128 * EPS * float(torch.sum(torch.abs(direction * hs)))
+    slope_roundoff = 128 * EPS * float(torch.sum(torch.abs(gradient * direction)))
+    phi_slope_roundoff = 128 * EPS * float(torch.sum(torch.abs(gradient * hs)))
     audit = {"converged": bool(solve.converged), "iterations": int(solve.iterations),
              "pcg_relative_residual": float(solve.relative_residual),
              "true_relative_residual": relative, "g_dot_s": g_dot_s,
              "g_dot_Hs": g_dot_hs, "directional_curvature_s_H_s": curvature_value,
              "curvature_roundoff_budget": curvature_roundoff,
-             "rtol": PCG_RTOL, "max_iterations": PCG_MAX,
+             "g_dot_s_roundoff_budget": slope_roundoff,
+             "g_dot_Hs_roundoff_budget": phi_slope_roundoff,
+             "rtol": rtol, "strict_rtol_floor": PCG_RTOL, "max_iterations": PCG_MAX,
+             "rho": relative,
              "hvp_calls_including_true_residual": None}
-    if (not solve.converged or not math.isfinite(relative) or relative > PCG_RTOL
+    if (not solve.converged or not math.isfinite(relative) or relative > rtol
             or not math.isfinite(g_dot_s) or not math.isfinite(g_dot_hs)
             or not math.isfinite(curvature_value)):
         raise ContinuationRefusal("PCG convergence or true-residual gate failed", "linear_solve_refusal")
     if not curvature_value > curvature_roundoff:
         raise ContinuationRefusal("observed direction curvature is nonpositive or unresolved", "curvature_refusal")
-    if not g_dot_s < 0 or not g_dot_hs < 0:
+    if (not g_dot_s < 0 or not g_dot_hs < 0
+            or (rtol > PCG_RTOL
+                and (not g_dot_s < -slope_roundoff or not g_dot_hs < -phi_slope_roundoff))):
         raise ContinuationRefusal("current Newton direction lacks strict descent in both J and Phi",
                                   "dual_slope_refusal")
     return direction, hs, audit
@@ -188,6 +214,8 @@ def run_iterations(control: Tensor, parameters: Tensor,
                    hvp_fn: Callable[[Tensor, Tensor, Tensor], Tensor],
                    preconditioner: Callable[[Tensor], Tensor], deadline: float,
                    *, max_iterations: int = MAX_ITERATIONS,
+                   linear_mode: str = "strict",
+                   shared_counts: dict[str, int] | None = None,
                    initial_metadata: dict[str, Any] | None = None,
                    commit_candidate: Callable[[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor,
                                                dict[str, Any], float], dict[str, Any]] | None = None,
@@ -203,20 +231,30 @@ def run_iterations(control: Tensor, parameters: Tensor,
     if (not isinstance(parameters, Tensor) or parameters.shape != (13,) or parameters.dtype != torch.float64
             or parameters.device.type != "cpu" or not bool(torch.isfinite(parameters).all())):
         raise ValueError("parameters must be finite CPU FP64 length 13")
-    if isinstance(max_iterations, bool) or max_iterations < 1 or max_iterations > MAX_ITERATIONS:
-        raise ValueError(f"max_iterations must be in [1, {MAX_ITERATIONS}]")
-    counts = {"hvp_calls": 0, "hvp_calls_completed": 0, "pcg_iterations_completed": 0,
-              "pcg_solves_started": 0}
+    actual_policy = _policy(linear_mode, max_iterations)
+    counts = shared_counts if shared_counts is not None else {}
+    defaults = {"hvp_calls": 0, "hvp_calls_completed": 0,
+                "pcg_iterations_completed": 0, "pcg_solves_started": 0}
+    for key, default in defaults.items():
+        value = counts.setdefault(key, default)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ValueError(f"shared_counts[{key!r}] must be a nonnegative integer")
+    if counts["hvp_calls"] > MAX_HVP or counts["hvp_calls_completed"] > counts["hvp_calls"]:
+        raise ValueError("shared HVP counters exceed or contradict the global cap")
     record: dict[str, Any] = {"phase": "running", "execution_status": "completed",
         "numerical_status": "not_reached", "optimizer_steps_applied": 0,
         "accepted_control": c.tolist(), "accepted_control_sha256": curvature.tensor_sha(c),
         "parameters_sha256": curvature.tensor_sha(parameters), "iterations": [], "trials": [],
-        **counts, "policy": _policy(), "full_root_claim": False,
+        **counts, "policy": actual_policy, "linear_mode": linear_mode, "full_root_claim": False,
         "eligible_stationary_point": False, "accepted_point_curvature": "not_computed",
         "response_computed": False, "forecast_score_computed": False,
         "scope": "bounded repeated original-J dual-merit correction; no final root, adjoint, or forecast claim"}
     if initial_metadata:
         record.update(initial_metadata)
+    # Input metadata describes provenance only; the executed policy is derived
+    # from this invocation's actual keyword arguments.
+    record["policy"] = actual_policy
+    record["linear_mode"] = linear_mode
 
     def persist() -> None:
         record.update(counts)
@@ -254,8 +292,11 @@ def run_iterations(control: Tensor, parameters: Tensor,
             record["current_iteration"] = iteration
             counts["pcg_solves_started"] += 1
             persist()
+            rtol = forcing_tolerance(gradient_inf, linear_mode)
             direction, hs, solve = _solve_direction(c, parameters, gradient, hvp_fn,
-                                                     preconditioner, deadline, counts)
+                preconditioner, deadline, counts, rtol=rtol)
+            solve["linear_mode"] = linear_mode
+            solve["forcing_tolerance"] = rtol
             counts["pcg_iterations_completed"] += solve["iterations"]
             solve["hvp_calls_including_true_residual"] = counts["hvp_calls"] - start_hvp
             iteration.update(direction=direction.tolist(), H_s=hs.tolist(), solve=solve,
@@ -524,16 +565,36 @@ def load_base(plan_path: Path, plan_sha: str) -> tuple[dict[str, Any], dict[str,
 
 def run(plan_path: Path, plan_sha: str, output: Path, *,
         base_loader: Callable[[Path, str], tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]] | None = None,
-        base_path: Path = BASE) -> dict[str, Any]:
+        base_path: Path = BASE,
+        max_iterations: int = MAX_ITERATIONS,
+        linear_mode: str = "strict",
+        shared_counts: dict[str, int] | None = None,
+        absolute_deadline: float | None = None) -> dict[str, Any]:
     started = time.monotonic()
-    deadline = started + INTERNAL_SECONDS
+    deadline = started + INTERNAL_SECONDS if absolute_deadline is None else absolute_deadline
+    actual_policy = _policy(linear_mode, max_iterations)
+    counts = shared_counts if shared_counts is not None else {}
+    for key, default in {"hvp_calls": 0, "hvp_calls_completed": 0,
+                         "pcg_iterations_completed": 0, "pcg_solves_started": 0}.items():
+        value = counts.setdefault(key, default)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ValueError(f"shared_counts[{key!r}] must be a nonnegative integer")
+    if (counts["hvp_calls"] > MAX_HVP or counts["hvp_calls_completed"] > counts["hvp_calls"]):
+        raise ValueError("shared HVP counters exceed or contradict the global cap")
+    initial_hvp_calls = counts["hvp_calls"]
     if output.exists() or output.is_symlink():
         raise ValueError("continuation output must be fresh")
     preflight: dict[str, Any] = {"phase": "preflight", "execution_status": "running",
         "numerical_status": "not_reached", "optimizer_steps_applied": 0,
-        "hvp_calls": 0, "hvp_calls_completed": 0, "pcg_iterations_completed": 0,
-        "policy": _policy(), "plan_sha256": plan_sha}
+        **counts, "policy": actual_policy, "linear_mode": linear_mode,
+        "plan_sha256": plan_sha}
     search._write(output, preflight)
+    if time.monotonic() >= deadline:
+        preflight.update(phase="finished", execution_status="completed",
+            numerical_status="budget_refusal", refusal="shared absolute deadline exhausted",
+            elapsed_seconds=time.monotonic() - started)
+        search._write(output, preflight)
+        return preflight
     try:
         plan, accepted_raw, old, _ = (base_loader or load_base)(plan_path, plan_sha)
     except Exception as error:
@@ -625,7 +686,8 @@ def run(plan_path: Path, plan_sha: str, output: Path, *,
             "source_fixed_input_integrity_passed": True}
 
     record = run_iterations(control, parameters, objective, gradient_fn, branch_fn, hvp_fn,
-        old["preconditioner"], deadline,
+        old["preconditioner"], deadline, max_iterations=max_iterations,
+        linear_mode=linear_mode, shared_counts=counts,
         initial_metadata={"plan_sha256": plan_sha, "source_before": before,
             "accepted_step_sha256": curvature.sha(base_path), "input_before": identity,
             "runtime": accepted_raw["runtime"], "base_control_sha256": curvature.tensor_sha(control),
@@ -644,7 +706,8 @@ def run(plan_path: Path, plan_sha: str, output: Path, *,
         plan_sha256=plan_sha, accepted_step_sha256=curvature.sha(base_path),
         preconditioner_scope="cached f82c SPD block inverse preconditioner only",
         preconditioner_audit=old["preconditioner_audit"], elapsed_seconds=time.monotonic() - started,
-        new_hvp_calls=record["hvp_calls"])
+        new_hvp_calls=record["hvp_calls"] - initial_hvp_calls,
+        policy=actual_policy, linear_mode=linear_mode)
     if not intact:
         record.update(numerical_status="integrity_refusal", phase="integrity_refused",
                       execution_status="failed")

@@ -1,0 +1,25 @@
+{
+  "scope": "separate strict-first shared-budget heuristic inexact trial",
+  "plan_sha256": "d69ce3000f1605bed67ea67a4c6751bbbdf2ab142fa47bd24418c368d9220d41",
+  "state": "same-point pair completed; inexact selected by predeclared rule",
+  "fixed": [
+    "same d31 data/J/prior/control coordinates",
+    "one shared720/780/90HVP experiment",
+    "finalroot1e-10 andoriginaladjointcriteria unchanged"
+  ],
+  "source": "https://petsc.org/release/manual/snes/",
+  "remaining": [
+    "actualsamepointcost/outcomecomparison",
+    "eligible stationary point/currentfullcurvature/originaladjoint/reanalysis",
+    "independent forecasts"
+  ],
+  "result": "D31_INEXACT_RESULT_20261007.json",
+  "comparison_metrics": "D31_INEXACT_COMPARISON_METRICS_20261007.json",
+  "selected_control_sha256": "f462a4961634efa253e3757f7de44304386135eb3a229f3729a61eb911e6eed9",
+  "limitations": [
+    "one strict-first shared-budget pair; no equal reserves or general speedup",
+    "runtime order/cache bias not separated",
+    "branch changed; no smooth connecting path certificate",
+    "no stationary eligibility/fullcurvature/adjoint/reanalysis/independent forecast skill"
+  ]
+}
