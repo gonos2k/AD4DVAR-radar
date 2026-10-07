@@ -378,3 +378,122 @@ def test_continuation_classifies_its_own_actual_resource_plan(changes, expected)
     assert continuation.execution_status(resource) == expected
     assert historical["wall_limit_seconds"] == 780.0
     assert continuation.search.execution_status(historical) == "failed"
+
+
+def test_linear_mode_policy_and_forcing_schedule_preserve_strict_default():
+    assert continuation.policy_dict() == continuation.policy_dict("strict", 3)
+    assert continuation.policy_dict() == continuation._policy()
+    inexact = continuation.policy_dict("inexact", 1)
+    assert inexact["max_iterations"] == 1
+    assert inexact["linear_mode"] == "inexact"
+    assert inexact["forcing_tolerance_min"] == continuation.PCG_RTOL
+    assert inexact["forcing_tolerance_max"] == 1e-3
+    assert continuation.forcing_tolerance(1.0, "strict") == continuation.PCG_RTOL
+    assert continuation.forcing_tolerance(1.0, "inexact") == 1e-3
+    assert continuation.forcing_tolerance(1e-12, "inexact") == continuation.PCG_RTOL
+    assert continuation.forcing_tolerance(1e-2, "inexact") == 1e-3
+    with pytest.raises(ValueError):
+        continuation.forcing_tolerance(-1.0, "inexact")
+
+
+def test_inexact_pcg_meets_declared_residual_and_reduces_work(monkeypatch):
+    control = torch.zeros(26, dtype=torch.float64)
+    control[0], control[1] = 0.15, 1.5e-7
+    parameters = torch.zeros(13, dtype=torch.float64)
+    diagonal = torch.ones(26, dtype=torch.float64)
+    diagonal[1] = 1e6
+    hessian = torch.diag(diagonal)
+    objective = lambda c, _p: c @ hessian @ c / 2
+    gradient = lambda c, _p: hessian @ c
+    branch = _problem()[4]
+    hvp_calls = []
+
+    def hvp(_c, _p, vector):
+        hvp_calls.append(True)
+        return hessian @ vector
+
+    monkeypatch.setattr(continuation.dual.merit.seed_linear, "_valid_margins",
+                        lambda *_args, **_kwargs: True)
+    receipts = {}
+    for mode in ("strict", "inexact"):
+        counts = {"hvp_calls": 0, "hvp_calls_completed": 0,
+                  "pcg_iterations_completed": 0, "pcg_solves_started": 0}
+        receipts[mode] = continuation.run_iterations(control, parameters, objective, gradient,
+            branch, hvp, lambda v: v.clone(), time.monotonic() + 10,
+            max_iterations=1, linear_mode=mode, shared_counts=counts)
+
+    strict = receipts["strict"]["iterations"][0]["solve"]
+    inexact = receipts["inexact"]["iterations"][0]["solve"]
+    assert receipts["strict"]["iterations"][0]["status"] == "accepted"
+    assert receipts["inexact"]["iterations"][0]["status"] == "accepted"
+    assert strict["rtol"] == continuation.PCG_RTOL
+    assert inexact["rtol"] == 1e-3
+    assert inexact["true_relative_residual"] <= inexact["rtol"]
+    assert inexact["iterations"] < strict["iterations"]
+    assert receipts["strict"]["accepted_control"][0] == pytest.approx(
+        receipts["inexact"]["accepted_control"][0], abs=1e-10)
+    assert receipts["strict"]["policy"] == continuation.policy_dict("strict", 1)
+    assert receipts["inexact"]["policy"] == continuation.policy_dict("inexact", 1)
+
+
+def test_independent_true_residual_gate_rejects_bad_hvp(monkeypatch):
+    inputs = _problem()
+    calls = 0
+
+    def inconsistent_hvp(_point, _parameters, vector):
+        nonlocal calls
+        calls += 1
+        return vector.clone() if calls <= 2 else vector.clone() + 1e-4
+
+    monkeypatch.setattr(continuation.dual.merit.seed_linear, "_valid_margins",
+                        lambda *_args, **_kwargs: True)
+    record = continuation.run_iterations(inputs[0], inputs[1], inputs[2], inputs[3],
+        inputs[4], inconsistent_hvp, inputs[6], time.monotonic() + 10,
+        max_iterations=1)
+    assert record["numerical_status"] == "linear_solve_refusal"
+    assert record["optimizer_steps_applied"] == 0
+    assert record["current_iteration"]["pcg_iterations_failed_solve"] == "not_recorded"
+    assert "true-residual gate failed" in record["refusal"]
+
+
+def test_shared_hvp_budget_and_absolute_deadline_are_not_reset_between_arms(monkeypatch):
+    inputs = _problem()
+    monkeypatch.setattr(continuation.dual.merit.seed_linear, "_valid_margins",
+                        lambda *_args, **_kwargs: True)
+    counts = {"hvp_calls": 89, "hvp_calls_completed": 89,
+              "pcg_iterations_completed": 0, "pcg_solves_started": 0}
+    deadline = time.monotonic() + 10
+    first = continuation.run_iterations(inputs[0], inputs[1], inputs[2], inputs[3],
+        inputs[4], inputs[5], inputs[6], deadline, max_iterations=1,
+        shared_counts=counts)
+    second = continuation.run_iterations(inputs[0], inputs[1], inputs[2], inputs[3],
+        inputs[4], inputs[5], inputs[6], deadline, max_iterations=1,
+        shared_counts=counts)
+    assert first["numerical_status"] == second["numerical_status"] == "budget_refusal"
+    assert counts["hvp_calls"] == counts["hvp_calls_completed"] == 90
+    assert first["hvp_calls"] == second["hvp_calls"] == 90
+
+    expired = time.monotonic() - 1
+    third = continuation.run_iterations(inputs[0], inputs[1], inputs[2], inputs[3],
+        inputs[4], inputs[5], inputs[6], expired, max_iterations=1,
+        shared_counts=counts)
+    assert third["numerical_status"] == "budget_refusal"
+    assert third["hvp_calls"] == 90
+
+
+def test_run_uses_passed_absolute_deadline_instead_of_starting_a_new_budget(tmp_path):
+    output = tmp_path / "expired.json"
+    counts = {"hvp_calls": 90, "hvp_calls_completed": 90,
+              "pcg_iterations_completed": 0, "pcg_solves_started": 0}
+    loader_calls = []
+    def forbidden_loader(*_args):
+        loader_calls.append(True)
+        raise AssertionError("expired deadline must not load another arm")
+    receipt = continuation.run(tmp_path / "unused-plan.json", "unused-sha", output,
+        base_loader=forbidden_loader, max_iterations=1,
+        linear_mode="inexact", shared_counts=counts,
+        absolute_deadline=time.monotonic() - 1)
+    assert receipt["numerical_status"] == "budget_refusal"
+    assert receipt["policy"] == continuation.policy_dict("inexact", 1)
+    assert receipt["hvp_calls"] == 90
+    assert loader_calls == []

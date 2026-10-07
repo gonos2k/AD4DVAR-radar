@@ -1,0 +1,62 @@
+{
+  "scope": "saved-array/receipt arithmetic only; strict-first remaining-budget order, not equal reserves or global speedup",
+  "execution": "completed",
+  "numerical": "paired_comparison_completed",
+  "comparison_complete": true,
+  "selected_arm": "inexact",
+  "raw_sha256": "553f26ddb91a99c1110f9d901b50a55e3586904ef88c261f0dd5851254411b0c",
+  "arms": {
+    "inexact": {
+      "numerical_status": "iteration_limit",
+      "committed": 1,
+      "costs": {
+        "hvp_calls": 22,
+        "hvp_calls_completed": 22,
+        "pcg_iterations_completed": 20,
+        "pcg_solves_started": 1
+      },
+      "elapsed_seconds": 304.14713020808995,
+      "rtol": 0.001,
+      "true_relative_residual": 0.0003770484080240674,
+      "pcg_iterations": 20,
+      "direction_norm": 0.09359243260322712,
+      "control_sha256": "f462a4961634efa253e3757f7de44304386135eb3a229f3729a61eb911e6eed9",
+      "J": 0.06177954756643603,
+      "Phi": 0.28369125567712217,
+      "gradient_inf": 0.4166189970034922,
+      "alpha": 0.06677890323137615,
+      "step_l2": 0.006249999999999999,
+      "candidates": 4
+    },
+    "strict": {
+      "numerical_status": "iteration_limit",
+      "committed": 1,
+      "costs": {
+        "hvp_calls": 31,
+        "hvp_calls_completed": 31,
+        "pcg_iterations_completed": 29,
+        "pcg_solves_started": 1
+      },
+      "elapsed_seconds": 389.5555417910218,
+      "rtol": 1e-10,
+      "true_relative_residual": 8.103551399433103e-11,
+      "pcg_iterations": 29,
+      "direction_norm": 0.09359110543248583,
+      "control_sha256": "e98657996ed55af7b4378d0ed978b19f3ef989785078ddcceaa5136387367827",
+      "J": 0.06177956399461902,
+      "Phi": 0.2837064060538132,
+      "gradient_inf": 0.416619334052891,
+      "alpha": 0.06677985019109092,
+      "step_l2": 0.006249999999999998,
+      "candidates": 4
+    }
+  },
+  "HVP": 53,
+  "partial_arm_HVP_outside_completed_deltas": 0,
+  "guard_seconds": 695.5301165829878,
+  "sampled_peak_RSS_bytes": 373604352,
+  "remaining": [
+    "eligible stationary point/full curvature/adjoint/reanalysis",
+    "independent forecast skill"
+  ]
+}
