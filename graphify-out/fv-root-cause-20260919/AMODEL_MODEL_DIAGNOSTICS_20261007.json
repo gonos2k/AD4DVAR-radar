@@ -1,0 +1,35 @@
+{
+  "scope": "archived model-versus-actual arithmetic; no new FV/HVP or AD error certification",
+  "iterations": [
+    {
+      "index": 0,
+      "J_pred_quadratic": 0.06148549984853182,
+      "J_actual": 0.06148671835660233,
+      "Phi_pred_from_linear_gradient": 0.06489428626100845,
+      "Phi_actual": 0.06251719383725118,
+      "gradient_relative_error": 0.09877392314128108,
+      "predicted_actual_gradient_angle_deg": 5.506023182861019,
+      "actual_over_predicted_J_reduction": 0.9826455891653891
+    },
+    {
+      "index": 1,
+      "J_pred_quadratic": 0.06137729590942961,
+      "J_actual": 0.061377878814708416,
+      "Phi_pred_from_linear_gradient": 0.029982759423191032,
+      "Phi_actual": 0.041913938066009626,
+      "gradient_relative_error": 0.9566283455329797,
+      "predicted_actual_gradient_angle_deg": 61.767064400273895,
+      "actual_over_predicted_J_reduction": 0.9946728912223813
+    },
+    {
+      "index": 2,
+      "J_pred_quadratic": 0.06135109609004083,
+      "J_actual": 0.06136925244260338,
+      "Phi_pred_from_linear_gradient": 0.03252957476703128,
+      "Phi_actual": 0.018131732819468303,
+      "gradient_relative_error": 1.499171530542091,
+      "predicted_actual_gradient_angle_deg": 78.22757834037257,
+      "actual_over_predicted_J_reduction": 0.3220871741805678
+    }
+  ]
+}

@@ -1,0 +1,1687 @@
+{
+  "scope": "incremental AST of two isolated source copies; shared graph unchanged",
+  "stage": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6",
+  "extraction": {
+    "nodes": [
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "label": "fv_point_3h_model_guided_continuation.py",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L1",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_policy",
+        "label": "policy()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L45",
+        "_origin": "ast"
+      },
+      {
+        "id": "any",
+        "label": "Any",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L45",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_sha",
+        "label": "_sha()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L54",
+        "_origin": "ast"
+      },
+      {
+        "id": "path",
+        "label": "Path",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L54",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_model_alpha",
+        "label": "model_alpha()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L58",
+        "_origin": "ast"
+      },
+      {
+        "id": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "label": "Tensor",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L58",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_first_order_model",
+        "label": "first_order_model()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L84",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_merit_acceptance",
+        "label": "merit_acceptance()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L97",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_fixed_input",
+        "label": "_fixed_input()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L111",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_compact_state",
+        "label": "_compact_state()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L115",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_load_plan",
+        "label": "_load_plan()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L125",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_load_base",
+        "label": "_load_base()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L153",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_static_zero_faces",
+        "label": "_static_zero_faces()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L196",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_accepted_state",
+        "label": "_accepted_state()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L205",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_commit_iteration",
+        "label": "_commit_iteration()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L214",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_mark_active_not_committed",
+        "label": "_mark_active_not_committed()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L226",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_current_hvp",
+        "label": "_current_hvp()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L235",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "label": "_run_child()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L249",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_run",
+        "label": "run()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L556",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_main",
+        "label": "main()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L608",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_rationale_1",
+        "label": "Three full-space model-guided original-J iterations after the Qy32 step.",
+        "file_type": "rationale",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L1",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_rationale_59",
+        "label": "Bound a full-gradient model step by control radius and Phi-model minimizer.",
+        "file_type": "rationale",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L59",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_rationale_86",
+        "label": "Record exact linearized-gradient Phi and Taylor J models for a straight path.",
+        "file_type": "rationale",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L86",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_model_guided_continuation_rationale_99",
+        "label": "Apply dual Armijo and require a representable actual Phi decrease.",
+        "file_type": "rationale",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L99",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation",
+        "label": "test_fv_point_3h_model_guided_continuation.py",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L1",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_test_model_alpha_is_full_space_radius_and_phi_model_bound",
+        "label": "test_model_alpha_is_full_space_radius_and_phi_model_bound()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L15",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_test_linearized_phi_is_exact_norm_of_linearized_gradient",
+        "label": "test_linearized_phi_is_exact_norm_of_linearized_gradient()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L26",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_test_hvp_started_count_is_written_only_after_deadline_admission",
+        "label": "test_hvp_started_count_is_written_only_after_deadline_admission()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L35",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_test_actual_phi_armijo_refuses_nonlinear_phi_increase_without_j_floor",
+        "label": "test_actual_phi_armijo_refuses_nonlinear_phi_increase_without_j_floor()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L60",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_test_iteration_commit_updates_state_only_after_closure",
+        "label": "test_iteration_commit_updates_state_only_after_closure()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L70",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_quadratic",
+        "label": "_Quadratic",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L90",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_quadratic_init",
+        "label": ".__init__()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L91",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_quadratic_objective",
+        "label": ".objective()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L95",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_py_tensor",
+        "label": "Tensor",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L95",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_blackbox_case",
+        "label": "_blackbox_case()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L99",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_test_continuation_uses_each_new_point_gradient_and_hvp",
+        "label": "test_continuation_uses_each_new_point_gradient_and_hvp()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L171",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_blackbox_initial_gradient",
+        "label": "_blackbox_initial_gradient()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L187",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_test_second_iteration_budget_preserves_first_committed_point_and_hvp_count",
+        "label": "test_second_iteration_budget_preserves_first_committed_point_and_hvp_count()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L191",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_test_large_phi_increase_backtracks_to_smaller_candidate",
+        "label": "test_large_phi_increase_backtracks_to_smaller_candidate()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L204",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_model_guided_continuation_test_near_root_uses_gradient_threshold_without_an_objective_floor",
+        "label": "test_near_root_uses_gradient_threshold_without_an_objective_floor()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L225",
+        "_origin": "ast"
+      }
+    ],
+    "edges": [
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "argparse",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L4",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "hashlib",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L5",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "json",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L6",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "math",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L7",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "sys",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L8",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "time",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L9",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "pathlib",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L10",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "typing",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L11",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "torch",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L13",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "torch",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L14",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L20",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L21",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L22",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L23",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "examples_weather_scenarios_fv_diagnostic_guard",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L24",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_policy",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L45",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_policy",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L45",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_sha",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L54",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_sha",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L54",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_model_alpha",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L58",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_model_alpha",
+        "target": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L58",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_model_alpha",
+        "target": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L58",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_first_order_model",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L84",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_first_order_model",
+        "target": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L84",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_first_order_model",
+        "target": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L84",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_first_order_model",
+        "target": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L84",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_first_order_model",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L84",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_merit_acceptance",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L97",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_merit_acceptance",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L97",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_fixed_input",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L111",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_fixed_input",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L111",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_fixed_input",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L111",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_compact_state",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L115",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_compact_state",
+        "target": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L115",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_compact_state",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L115",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_compact_state",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L115",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_load_plan",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L125",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_load_plan",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L125",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_load_plan",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L125",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_load_base",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L153",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_load_base",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L153",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_static_zero_faces",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L196",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_static_zero_faces",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L196",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_static_zero_faces",
+        "target": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L196",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_static_zero_faces",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L196",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_accepted_state",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L205",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_accepted_state",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L205",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_accepted_state",
+        "target": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L205",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_accepted_state",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L205",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_accepted_state",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L205",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_commit_iteration",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L214",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_commit_iteration",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L214",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_commit_iteration",
+        "target": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L214",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_commit_iteration",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L214",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_commit_iteration",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L214",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_mark_active_not_committed",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L226",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_mark_active_not_committed",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L226",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_current_hvp",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L235",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_current_hvp",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L235",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_current_hvp",
+        "target": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L235",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_current_hvp",
+        "target": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L235",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_current_hvp",
+        "target": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L235",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_current_hvp",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L235",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_current_hvp",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L235",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_current_hvp",
+        "target": "examples_weather_scenarios_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "return_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L235",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L249",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L249",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L249",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L249",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_run",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L556",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L556",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L556",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L556",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L556",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L556",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_main",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L608",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_load_plan",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L127",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_load_plan",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_policy",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L134",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_load_base",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_load_plan",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L154",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_load_base",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L155",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_accepted_state",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_compact_state",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L207",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_commit_iteration",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_accepted_state",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L220",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_policy",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L254",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_load_plan",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L287",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_load_base",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L288",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L293",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_compact_state",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L329",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_static_zero_faces",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L345",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_current_hvp",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L371",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_model_alpha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L379",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_merit_acceptance",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L424",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_first_order_model",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L432",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_fixed_input",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L483",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_commit_iteration",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L493",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_mark_active_not_committed",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L530",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L559",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_load_plan",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L561",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_run",
+        "target": "path",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L566",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_main",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_run_child",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L620",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_main",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_run",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L622",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_rationale_1",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation",
+        "relation": "rationale_for",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L1",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_rationale_59",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_model_alpha",
+        "relation": "rationale_for",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L59",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_rationale_86",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_first_order_model",
+        "relation": "rationale_for",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L86",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_model_guided_continuation_rationale_99",
+        "target": "weather_scenarios_fv_point_3h_model_guided_continuation_merit_acceptance",
+        "relation": "rationale_for",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+        "source_location": "L99",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "hashlib",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L3",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "time",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L4",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "pathlib",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L5",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "typing",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L6",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "pytest",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L8",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "torch",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L9",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L11",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L12",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_test_model_alpha_is_full_space_radius_and_phi_model_bound",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L15",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_test_linearized_phi_is_exact_norm_of_linearized_gradient",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L26",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_test_hvp_started_count_is_written_only_after_deadline_admission",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L35",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_test_actual_phi_armijo_refuses_nonlinear_phi_increase_without_j_floor",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L60",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_test_iteration_commit_updates_state_only_after_closure",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L70",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_quadratic",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L90",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_quadratic",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_quadratic_init",
+        "relation": "method",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L91",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_quadratic",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_quadratic_objective",
+        "relation": "method",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L95",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_quadratic_objective",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L95",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_quadratic_objective",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L95",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_quadratic_objective",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "return_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L95",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_blackbox_case",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L99",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_test_continuation_uses_each_new_point_gradient_and_hvp",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L171",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_blackbox_initial_gradient",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L187",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_blackbox_initial_gradient",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_py_tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L187",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_test_second_iteration_budget_preserves_first_committed_point_and_hvp_count",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L191",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_test_large_phi_increase_backtracks_to_smaller_candidate",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L204",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_test_near_root_uses_gradient_threshold_without_an_objective_floor",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L225",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_blackbox_case",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_quadratic",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L107",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_blackbox_case",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_quadratic_objective",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L130",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_test_continuation_uses_each_new_point_gradient_and_hvp",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_blackbox_case",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L172",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_test_continuation_uses_each_new_point_gradient_and_hvp",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_blackbox_initial_gradient",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L180",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_test_second_iteration_budget_preserves_first_committed_point_and_hvp_count",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_blackbox_case",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L193",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_test_large_phi_increase_backtracks_to_smaller_candidate",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_blackbox_case",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L205",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_test_near_root_uses_gradient_threshold_without_an_objective_floor",
+        "target": "tests_test_fv_point_3h_model_guided_continuation_blackbox_case",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L226",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_model_guided_continuation_blackbox_case",
+        "target": "path",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "INFERRED",
+        "confidence_score": 0.8,
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-model-guided-graph-as0szgk6/tests/test_fv_point_3h_model_guided_continuation.py",
+        "source_location": "L156",
+        "weight": 1.0
+      }
+    ],
+    "input_tokens": 0,
+    "output_tokens": 0
+  },
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef"
+}

@@ -1,0 +1,60 @@
+{
+  "scope": "boundedmodel-guided full26 gradient continuation from05889584; temporaryQy32restrictionreleased",
+  "previous_review_arithmetic": "AMODEL_PR258_REARITHMETIC_20261007.json",
+  "GREEN_design": "AMODEL_GREEN_DESIGN_20261007.md",
+  "RED_design": "AMODEL_RED_DESIGN_20261007.md",
+  "direction": "d=\u2212current fullgradient eachiterate; notNewton/inexactNewton",
+  "initial_candidate": "min(1, .05/||d||, \u2212gTHd/||Hd||\u00b2) fromfreshcurrentHVP",
+  "mathematical_gate": "requiregTd/gTHdresolvednegative; actualdualArmijo withstrictpointbranch; alphaPhi notactualdecreaseguarantee",
+  "candidate_path": "full26 affine controls; targetQstar isfree andmeasured, notrestored/frozen",
+  "budget_proposal": {
+    "max_iterations": 3,
+    "max_hvp_calls": 3,
+    "max_candidates_per_iteration": 16,
+    "internal_seconds": 240,
+    "outer_seconds": 300,
+    "rss_bytes": 1073741824,
+    "guarded_launches": 1,
+    "PCG": 0
+  },
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "status": "single bounded run completed max3 commits",
+  "remaining": [
+    "originalfull26 eligiblestationarypoint",
+    "currentfullcurvature/originaladjoint/VJP/reanalysis",
+    "independentsyntheticfutureverification"
+  ],
+  "plan_sha256": "a75b5e474e68fb74475c3fd7fb2f31e85c891edcb06c40e83b4287b16a7b3136",
+  "source_count": 111,
+  "archive_count": 43,
+  "verification": {
+    "focused_tests": "18passed18existingwarnings2.69sec",
+    "typecheck": "errorlevel0",
+    "graphify": "AMODEL_GRAPHIFY_20261007.json isolatedcopies"
+  },
+  "preflight": {
+    "GREEN": "MODEL_GUIDED_GREEN_PREFLIGHT_20261007.md GO",
+    "RED": "AMODEL_RED_PREFLIGHT_20261007.md GO"
+  },
+  "nonblocking_test_limit": "closurefailure onlaterouterdirectionrefusal afterearliercommit notdirectlytested; codeinspectiononly",
+  "result": "AMODEL_RESULT_20261007.json",
+  "model_limits": "AMODEL_MODEL_DIAGNOSTICS_20261007.json",
+  "independent_checks": "AMODEL_INDEPENDENT_CHECKS_20261007.json",
+  "final_control_sha256": "69c4a794730750c09c1bcddf542b66131f64f5bfec362e02ac269413a75d4992",
+  "actual": {
+    "guard_seconds": 82.19918212504126,
+    "sampled_peak_RSS_bytes": 381239296,
+    "HVP_started": 3,
+    "HVP_completed": 3,
+    "PCG": 0,
+    "candidates": 3,
+    "commits": 3
+  },
+  "important_limits": [
+    "allanalysis/futurebranchhasheschanged",
+    "modelvectorerror up149.92% despiteactualmeritdecrease",
+    "step2gInfup whilecumulativeginfdown",
+    "gInf .097245>>1e\u221210",
+    "notNewton/fullSPD/response/forecastverification"
+  ]
+}

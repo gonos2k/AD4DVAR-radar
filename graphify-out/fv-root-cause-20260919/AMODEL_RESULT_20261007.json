@@ -1,0 +1,100 @@
+{
+  "scope": "three bounded full26 model-guided gradient steps; not Newton nor final root",
+  "raw_sha256": "92497babfe8eae3c55e2dcd4d244e533740b395f050e1a207612fcb78680cb0d",
+  "initial_control_sha256": "058895848fdeb348e8d6bb1f22ac13e3f2dadfa48bff46522ffbf94fedf72ffa",
+  "final_control_sha256": "69c4a794730750c09c1bcddf542b66131f64f5bfec362e02ac269413a75d4992",
+  "base_J": 0.06155571301117497,
+  "base_Phi": 0.22354015242492317,
+  "base_gL2": 0.6686406395440276,
+  "base_gInf": 0.5101284967056416,
+  "final_J": 0.06136925244260338,
+  "final_Phi": 0.018131732819468303,
+  "final_gL2": 0.1904296868635156,
+  "final_gInf": 0.09724503382238599,
+  "J_percent_decrease": 0.302913506237417,
+  "Phi_percent_decrease": 91.88882506217404,
+  "gL2_percent_decrease": 71.51987546054977,
+  "gInf_percent_decrease": 80.93714927701852,
+  "hvp_started": 3,
+  "hvp_completed": 3,
+  "numerical_status": "max_iterations_completed",
+  "iterations": [
+    {
+      "index": 0,
+      "control_sha256": "8508ea9ccf7aa0ed488aac5034a024db15d3950dbb0f16be0651519d8b8a3bfa",
+      "J": 0.06148671835660233,
+      "Phi": 0.06251719383725118,
+      "gL2": 0.353602018764744,
+      "gInf": 0.1652491921243579,
+      "alpha_start": 0.00024342849960299424,
+      "accepted_alpha": 0.00024342849960299424,
+      "candidates": 1,
+      "move": 0.00016276618765778773,
+      "Qy32": 1.829860184376919e-05,
+      "tangent_gL2": 0.3502087344968911,
+      "normal_gradient": -0.048869519709000435,
+      "analysis_branch_changed": true,
+      "future_branch_changed": true,
+      "block_norms": {
+        "field": 0.3408497567749362,
+        "flow": 0.06810179110222836,
+        "growth": 0.06494595468262558
+      }
+    },
+    {
+      "index": 1,
+      "control_sha256": "1b57c2b19e37c063cc0989156022c577b653601e696f17189fd0220fa4b1e24e",
+      "J": 0.061377878814708416,
+      "Phi": 0.041913938066009626,
+      "gL2": 0.28953044076922074,
+      "gInf": 0.17112358346049023,
+      "alpha_start": 0.0011829459725738473,
+      "accepted_alpha": 0.0011829459725738473,
+      "candidates": 1,
+      "move": 0.0004182920839917343,
+      "Qy32": 4.793660946448425e-05,
+      "tangent_gL2": 0.22263158081665382,
+      "normal_gradient": 0.18510282373615217,
+      "analysis_branch_changed": true,
+      "future_branch_changed": true,
+      "block_norms": {
+        "field": 0.14118772753844144,
+        "flow": 0.18603929936492106,
+        "growth": 0.17112358346049023
+      }
+    },
+    {
+      "index": 2,
+      "control_sha256": "69c4a794730750c09c1bcddf542b66131f64f5bfec362e02ac269413a75d4992",
+      "J": 0.06136925244260338,
+      "Phi": 0.018131732819468303,
+      "gL2": 0.1904296868635156,
+      "gInf": 0.09724503382238599,
+      "alpha_start": 0.00035977244555417435,
+      "accepted_alpha": 0.00035977244555417435,
+      "candidates": 1,
+      "move": 0.00010416507473792209,
+      "Qy32": 1.3794752635909457e-05,
+      "tangent_gL2": 0.16997884518246553,
+      "normal_gradient": -0.08585253536950446,
+      "analysis_branch_changed": true,
+      "future_branch_changed": true,
+      "block_norms": {
+        "field": 0.15553106431535302,
+        "flow": 0.09874771605150141,
+        "growth": 0.048191723838042766
+      }
+    }
+  ],
+  "resource": {
+    "elapsed_seconds": 82.19918212504126,
+    "sampled_peak_rss_bytes": 381239296,
+    "exit_code": 0,
+    "resource_termination": null
+  },
+  "remaining": [
+    "original full26 eligible3h root",
+    "current full curvature/original adjoint/VJP/reanalysis",
+    "independent synthetic future verification"
+  ]
+}

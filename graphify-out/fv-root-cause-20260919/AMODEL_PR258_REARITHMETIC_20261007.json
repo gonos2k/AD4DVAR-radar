@@ -1,0 +1,30 @@
+{
+  "scope": "PR258 archived arrays and static chain geometry, no new FV/J/g/HVP",
+  "alphaPhi": 0.00028953045674006203,
+  "alphaJ_curved": 0.000514012861868392,
+  "g_dot_chart_acceleration": 1.2337796654665234e-07,
+  "directional_curvature": 1087.0354619274924,
+  "model_candidates": [
+    {
+      "kind": "accepted",
+      "alpha": 0.0005224020700718299,
+      "predicted_J": 0.061555704562737026,
+      "Phi_of_linear_gradient": 0.22362989218896978,
+      "scope": "archived model only; untested candidates have no new FV evaluation"
+    },
+    {
+      "kind": "accepted_half",
+      "alpha": 0.00026120103503591495,
+      "predicted_J": 0.061590404604915036,
+      "Phi_of_linear_gradient": 0.12332723853430125,
+      "scope": "archived model only; untested candidates have no new FV evaluation"
+    },
+    {
+      "kind": "alphaPhi",
+      "alpha": 0.00028953045674006203,
+      "predicted_J": 0.061583055446451956,
+      "Phi_of_linear_gradient": 0.12182052724258735,
+      "scope": "archived model only; untested candidates have no new FV evaluation"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "source_PR": 258,
+  "base_control_sha256": "058895848fdeb348e8d6bb1f22ac13e3f2dadfa48bff46522ffbf94fedf72ffa",
+  "J": 0.06155571301117497,
+  "Phi": 0.22354015242492317,
+  "gInf": 0.5101284967056416,
+  "block_norms": {
+    "field": 0.392114200862212,
+    "flow": 0.1819221679204527,
+    "growth": 0.5101284967056416
+  },
+  "initial_to_final_actual_gradient_angle_deg": 63.1336231865215,
+  "angle_scope": "initial058 tofinal69; notpreviousE29to05891deg norpredictedvsactualmodel"
+}
