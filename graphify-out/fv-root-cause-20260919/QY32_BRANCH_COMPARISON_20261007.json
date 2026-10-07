@@ -1,0 +1,13 @@
+{
+  "scope": "exact comparison of recorded sign arrays at innercrossside finite samples",
+  "locations": [
+    [
+      "qy",
+      3,
+      2
+    ]
+  ],
+  "face_stage_changes": 3600,
+  "only_target_face_changed": true,
+  "analysis_limiter_choices_equal_all_four": true
+}

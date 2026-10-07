@@ -1,0 +1,59 @@
+{
+  "scope": "independent NumPy arithmetic of single FV diagnostic; no new FV/HVP",
+  "point_checks": [
+    {
+      "eta": 0.0,
+      "retained25_exact": true,
+      "control_hash": true,
+      "flux_residual": 6.938893903907228e-18
+    },
+    {
+      "eta": -2e-06,
+      "retained25_exact": true,
+      "control_hash": true,
+      "flux_residual": 4.938625598966198e-18,
+      "gradient_hash": true,
+      "Phi_error": 0.0,
+      "tangent_projection_error": 0.0,
+      "normal_error": 0.0,
+      "jeta_error": 0.0
+    },
+    {
+      "eta": -1e-06,
+      "retained25_exact": true,
+      "control_hash": true,
+      "flux_residual": -1.0001341524705151e-18,
+      "gradient_hash": true,
+      "Phi_error": 0.0,
+      "tangent_projection_error": 0.0,
+      "normal_error": 0.0,
+      "jeta_error": 0.0
+    },
+    {
+      "eta": 1e-06,
+      "retained25_exact": true,
+      "control_hash": true,
+      "flux_residual": 1.0001341524705151e-18,
+      "gradient_hash": true,
+      "Phi_error": 0.0,
+      "tangent_projection_error": -1.1102230246251565e-16,
+      "normal_error": 0.0,
+      "jeta_error": 0.0
+    },
+    {
+      "eta": 2e-06,
+      "retained25_exact": true,
+      "control_hash": true,
+      "flux_residual": 2.0002683049410303e-18,
+      "gradient_hash": true,
+      "Phi_error": 0.0,
+      "tangent_projection_error": 0.0,
+      "normal_error": 0.0,
+      "jeta_error": -6.938893903907228e-18
+    }
+  ],
+  "all_retained_coordinates_equal": true,
+  "source_closure": true,
+  "runtime_closure": true,
+  "input_closure": true
+}

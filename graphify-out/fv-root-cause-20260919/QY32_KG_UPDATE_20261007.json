@@ -1,0 +1,43 @@
+{
+  "scope": "PR256 archival review and Qy32 five-level design; no new FV yet",
+  "cached_structural_node": "advar_transport_face_volume_fluxes @ src/advar/transport.py:L368",
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "source_closure_checked": 104,
+  "archive_closure_checked": 28,
+  "review_rearithmetic": "QY32_PR256_REARITHMETIC_20261007.json",
+  "design_GREEN": "QY32_GREEN_DESIGN_20261007.md",
+  "design_RED": "QY32_RED_DESIGN_20261007.md",
+  "required_invariants": [
+    "full26 controls and all original priors",
+    "retain original objective, parameters, boundaries and time",
+    "fixed retained25, pivot24 atanh chart",
+    "eta0 primal cost only; no gradient certification",
+    "chart transverse derivative distinct from Euclidean normal",
+    "same-side and cross-side active signature comparisons",
+    "one bounded launch, no HVP/PCG/optimizer"
+  ],
+  "remaining": [
+    "eligible stationary point/currentcurvature/originaladjoint/reanalysis",
+    "independent future syntheticforecast verification"
+  ],
+  "plan_sha256": "bea4c3611e39d070a0234e9ed80b1a345e132926f97f63e325ba2c9cd53aa08f",
+  "new_manifest": {
+    "sources": 107,
+    "archives": 32,
+    "load_base": "passed"
+  },
+  "verification": {
+    "focused_tests": "18 passed in2.26s; QY32_TESTS_20261007.log",
+    "typecheck": "0errors levelerror; QY32_TYPES_20261007.log",
+    "incremental_AST": "QY32_GRAPHIFY_20261007.json; copiedfiles only"
+  },
+  "state": "one diagnostic completed; fixed-chart cost low near zero but tangent residual large; no optimizer applied",
+  "actual_result": "QY32_RESULT_20261007.json",
+  "interpretation": [
+    "fixed25 chart slopes change sign; geometric normal slopes positive on bothsides",
+    "large tangent residual remains .746-.749",
+    "analysis limiter choices unchanged; future choice events remain",
+    "originalNewton Jdown not isolatedfacecrossing effect"
+  ],
+  "raw_archive": "qy32_diagnostic_attempt1/archive.json"
+}
