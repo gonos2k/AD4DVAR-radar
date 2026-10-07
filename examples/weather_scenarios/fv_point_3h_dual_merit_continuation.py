@@ -1,4 +1,4 @@
-"""Bounded repeated dual-merit correction from the accepted e0b04a point.
+"""Bounded repeated dual-merit correction from a pinned accepted point.
 
 The original objective and fixed parameters remain unchanged. Each accepted
 point gets a fresh live-HVP PCG direction; line-search trials reuse that
@@ -522,7 +522,9 @@ def load_base(plan_path: Path, plan_sha: str) -> tuple[dict[str, Any], dict[str,
                                 "preconditioner": preconditioner, "preconditioner_audit": preconditioner_audit}, base_plan
 
 
-def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
+def run(plan_path: Path, plan_sha: str, output: Path, *,
+        base_loader: Callable[[Path, str], tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]] | None = None,
+        base_path: Path = BASE) -> dict[str, Any]:
     started = time.monotonic()
     deadline = started + INTERNAL_SECONDS
     if output.exists() or output.is_symlink():
@@ -533,7 +535,7 @@ def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
         "policy": _policy(), "plan_sha256": plan_sha}
     search._write(output, preflight)
     try:
-        plan, accepted_raw, old, _ = load_base(plan_path, plan_sha)
+        plan, accepted_raw, old, _ = (base_loader or load_base)(plan_path, plan_sha)
     except Exception as error:
         preflight.update(phase="execution_error", execution_status="failed", numerical_status="execution_error",
                          failure=f"{type(error).__name__}: {error}", elapsed_seconds=time.monotonic() - started)
@@ -552,10 +554,10 @@ def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
     if (curvature.tensor_sha(control) != accepted_raw["accepted_control_sha256"]
             or curvature.tensor_sha(parameters) != accepted_raw["parameters_sha256"]
             or curvature.blocks.runtime_identity() != accepted_raw["runtime"]):
-        raise ValueError("e0b04a control, fixed parameters, or runtime identity changed")
+        raise ValueError("accepted start control, fixed parameters, or runtime identity changed")
     identity = curvature.seed._input_identity(problem, original, control, parameters, truth)
     if identity != accepted_raw["input_after"]:
-        raise ValueError("reconstructed e0b04a fixed input identity changed")
+        raise ValueError("reconstructed accepted-start fixed input identity changed")
     gradient_fn = torch.func.grad(problem.objective, argnums=0)
 
     def objective(c: Tensor, p: Tensor) -> Tensor:
@@ -567,7 +569,12 @@ def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
     def hvp_fn(c: Tensor, p: Tensor, vector: Tensor) -> Tensor:
         return torch.func.jvp(lambda x: gradient_fn(x, p), (c,), (vector,))[1]
 
-    expected_trial = next(row for row in accepted_raw["trials"] if row["status"] == "accepted")
+    endpoint_trials = [row for row in accepted_raw["trials"]
+                       if row.get("status") == "accepted"
+                       and row.get("control_sha256") == accepted_raw["accepted_control_sha256"]]
+    if len(endpoint_trials) != 1:
+        raise ValueError("accepted start point must match exactly one committed trial")
+    expected_trial = endpoint_trials[0]
     _check_deadline(deadline)
     fresh = curvature.tail._fresh_merit(problem, control.clone(), parameters.clone(), gradient_fn)
     _check_deadline(deadline)
@@ -581,7 +588,7 @@ def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
             or current_branch.get("signature_sha256") != expected_trial["branch"].get("signature_sha256")
             or not _strict_branch(current_branch, current_margins)
             or checks is None or not curvature._endpoint_metrics_pass(checks)):
-        raise ContinuationRefusal("fresh e0b04a J/g/Phi/strict branch differs from accepted-step receipt")
+        raise ContinuationRefusal("fresh start J/g/Phi/strict branch differs from accepted-step receipt")
 
     def commit_candidate(base: Tensor, candidate: Tensor, p: Tensor, base_j: Tensor,
                          base_gradient: Tensor, hs: Tensor, row: dict[str, Any], deadline_at: float) -> dict[str, Any]:
@@ -620,7 +627,7 @@ def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
     record = run_iterations(control, parameters, objective, gradient_fn, branch_fn, hvp_fn,
         old["preconditioner"], deadline,
         initial_metadata={"plan_sha256": plan_sha, "source_before": before,
-            "accepted_step_sha256": curvature.sha(BASE), "input_before": identity,
+            "accepted_step_sha256": curvature.sha(base_path), "input_before": identity,
             "runtime": accepted_raw["runtime"], "base_control_sha256": curvature.tensor_sha(control),
             "parameters_sha256": curvature.tensor_sha(parameters),
             "preconditioner_scope": "cached f82c SPD block inverse preconditioner only"},
@@ -634,7 +641,7 @@ def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
     record.update(source_before=before, source_after=after, source_unchanged=before == after,
         fixed_input_unchanged=intact, input_before=identity, input_after=final_identity,
         runtime=accepted_raw["runtime"], runtime_after=curvature.blocks.runtime_identity(),
-        plan_sha256=plan_sha, accepted_step_sha256=curvature.sha(BASE),
+        plan_sha256=plan_sha, accepted_step_sha256=curvature.sha(base_path),
         preconditioner_scope="cached f82c SPD block inverse preconditioner only",
         preconditioner_audit=old["preconditioner_audit"], elapsed_seconds=time.monotonic() - started,
         new_hvp_calls=record["hvp_calls"])
@@ -645,9 +652,12 @@ def run(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
     return record
 
 
-def main() -> None:
+def main(*, run_fn: Callable[[Path, str, Path], dict[str, Any]] | None = None,
+         default_plan: Path = PLAN,
+         module_name: str = "examples.weather_scenarios.fv_point_3h_dual_merit_continuation") -> None:
+    runner = run_fn or run
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--plan", type=Path, default=PLAN)
+    parser.add_argument("--plan", type=Path, default=default_plan)
     parser.add_argument("--plan-sha256", required=True)
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--child", action="store_true", help=argparse.SUPPRESS)
@@ -656,7 +666,7 @@ def main() -> None:
     if args.child:
         output = directory / "step.json"
         try:
-            run(args.plan.resolve(), args.plan_sha256, output)
+            runner(args.plan.resolve(), args.plan_sha256, output)
         except search.StepRefusal as error:
             try:
                 partial = json.loads(output.read_text()) if output.exists() else {}
@@ -681,7 +691,7 @@ def main() -> None:
             raise
         return
     directory.mkdir(parents=True, exist_ok=False)
-    command = [str(ROOT / ".venv/bin/python"), "-m", "examples.weather_scenarios.fv_point_3h_dual_merit_continuation",
+    command = [str(ROOT / ".venv/bin/python"), "-m", module_name,
         "--child", "--plan", str(args.plan.resolve()), "--plan-sha256", args.plan_sha256,
         "--directory", str(directory)]
     resource = run_guarded_diagnostic(command, wall_seconds=WALL_SECONDS, rss_bytes=RSS_BYTES,
