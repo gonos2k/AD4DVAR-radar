@@ -76,6 +76,208 @@ def test_stationarity_stop_is_pending_audit_and_never_eligible(monkeypatch):
     assert record["full_root_claim"] is False
 
 
+@pytest.mark.parametrize("constant", [0.0, 1.0, 0.063])
+@pytest.mark.parametrize("initial_gradient", [1e-7, 1e-8])
+def test_root_candidate_survives_cost_roundoff_floor(constant, initial_gradient, monkeypatch):
+    control, parameters, _objective, _gradient, branch, hvp, preconditioner, _points = _problem()
+    control.zero_()
+    control[0] = initial_gradient
+
+    def objective(candidate, _parameters):
+        return torch.tensor(constant, dtype=torch.float64) + candidate @ candidate / 2
+
+    def gradient(candidate, _parameters):
+        return candidate.clone()
+
+    monkeypatch.setattr(continuation.dual.merit.seed_linear, "_valid_margins",
+                        lambda *_args, **_kwargs: True)
+    closure_calls = []
+    record = continuation.run_iterations(control, parameters, objective, gradient, branch, hvp,
+        preconditioner, time.monotonic() + 10, max_iterations=1,
+        commit_candidate=lambda *_args: closure_calls.append("closed") or {"closed": True})
+
+    assert record["numerical_status"] == "root_pending_audit"
+    assert record["optimizer_steps_applied"] == 1
+    assert record["iterations"][0]["accepted_gradient_inf"] == 0.0
+    assert closure_calls == ["closed"]
+    assert record["root_pending_audit"] is True
+    assert record["eligible_stationary_point"] is False
+    assert record["full_root_claim"] is False
+
+
+def test_exact_root_can_pass_below_displacement_roundoff_floor(monkeypatch):
+    control, parameters, _objective, _gradient, branch, _hvp, _preconditioner, _points = _problem()
+    control.zero_()
+    control[0] = 1e-22
+    curvature = 1e15
+    objective = lambda candidate, _parameters: torch.tensor(1.0, dtype=torch.float64) + curvature * (candidate @ candidate) / 2
+    gradient = lambda candidate, _parameters: curvature * candidate.clone()
+    hvp = lambda _point, _parameters, vector: curvature * vector.clone()
+    monkeypatch.setattr(continuation.dual.merit.seed_linear, "_valid_margins",
+                        lambda *_args, **_kwargs: True)
+    record = continuation.run_iterations(control, parameters, objective, gradient, branch, hvp,
+        lambda vector: vector.clone(), time.monotonic() + 10, max_iterations=1,
+        commit_candidate=lambda *_args: {"closed": True})
+
+    iteration = record["iterations"][0]
+    assert record["numerical_status"] == "root_pending_audit"
+    assert iteration["displacement_l2"] < 128 * continuation.EPS
+    assert iteration["displacement_below_roundoff"] is True
+    assert iteration["accepted_gradient_inf"] <= continuation.ROOT_GRADIENT_INF
+    assert record["eligible_stationary_point"] is False
+
+
+def test_nonroot_below_displacement_floor_is_still_refused(monkeypatch):
+    control, parameters, _objective, _gradient, branch, _hvp, _preconditioner, _points = _problem()
+    control.zero_()
+    control[0] = 4e-25
+    curvature = 1e15
+    objective = lambda candidate, _parameters: torch.tensor(1.0, dtype=torch.float64) + curvature * (candidate @ candidate) / 2
+    gradient = lambda candidate, _parameters: curvature * candidate.clone()
+    hvp = lambda _point, _parameters, vector: curvature * vector.clone()
+
+    def branch_with_root_boundary(candidate, parameters):
+        result, margins = branch(candidate, parameters)
+        if candidate[0] < 1e-25:
+            result = {**result, "status": "branch_boundary"}
+        return result, margins
+
+    monkeypatch.setattr(continuation.dual.merit.seed_linear, "_valid_margins",
+                        lambda *_args, **_kwargs: True)
+    commits = []
+    record = continuation.run_iterations(control, parameters, objective, gradient,
+        branch_with_root_boundary, hvp, lambda vector: vector.clone(),
+        time.monotonic() + 10, max_iterations=1,
+        commit_candidate=lambda *_args: commits.append(True) or {"closed": True})
+
+    assert record["numerical_status"] == "displacement_stagnation"
+    assert record["optimizer_steps_applied"] == 0
+    assert commits == []
+    assert max(abs(value) for value in record["current_iteration"]["trials"][-1]["gradient"]) > continuation.ROOT_GRADIENT_INF
+
+
+def test_nonroot_candidate_still_hits_numerically_zero_decrease_floor(monkeypatch):
+    inputs = list(_problem())
+    inputs[0].zero_()
+    inputs[0][0] = 1e-7
+
+    def objective(candidate, _parameters):
+        return torch.tensor(1.0, dtype=torch.float64) + candidate @ candidate / 2
+
+    def branch(candidate, parameters):
+        result, margins = inputs[4](candidate, parameters)
+        if candidate[0] <= 0:
+            result = {**result, "status": "branch_boundary"}
+        return result, margins
+
+    monkeypatch.setattr(continuation.dual.merit.seed_linear, "_valid_margins",
+                        lambda *_args, **_kwargs: True)
+    record = continuation.run_iterations(inputs[0], inputs[1], objective, inputs[3], branch,
+        inputs[5], inputs[6], time.monotonic() + 10, max_iterations=1)
+
+    assert record["numerical_status"] == "numerically_zero_decrease"
+    assert record["optimizer_steps_applied"] == 0
+    assert record["current_iteration"]["candidate_not_committed"] is True
+    assert max(abs(value) for value in record["current_iteration"]["trials"][-1]["gradient"]) > continuation.ROOT_GRADIENT_INF
+    assert record["eligible_stationary_point"] is False
+
+
+@pytest.mark.parametrize("failure", ["gradient", "branch", "closure"])
+def test_root_candidate_requires_re_evaluation_branch_and_closure(failure, monkeypatch):
+    inputs = list(_problem())
+    inputs[0].zero_()
+    inputs[0][0] = 1e-7
+    objective = lambda candidate, _parameters: candidate @ candidate / 2
+    gradient = lambda candidate, _parameters: candidate.clone()
+    branch = inputs[4]
+    def commit(*_args) -> dict[str, bool]:
+        if failure == "closure":
+            raise RuntimeError("candidate integrity closure failed")
+        return {"closed": True}
+    if failure == "gradient":
+        def gradient(candidate, _parameters):
+            result = candidate.clone()
+            if candidate[0] == 0:
+                result[0] = 1e-5
+            return result
+    elif failure == "branch":
+        def branch(candidate, parameters):
+            result, margins = inputs[4](candidate, parameters)
+            if not torch.equal(candidate, inputs[0]):
+                result = {**result, "status": "branch_boundary"}
+            return result, margins
+
+    monkeypatch.setattr(continuation.dual.merit.seed_linear, "_valid_margins",
+                        lambda *_args, **_kwargs: True)
+    record = continuation.run_iterations(inputs[0], inputs[1], objective, gradient, branch,
+        inputs[5], inputs[6], time.monotonic() + 10, max_iterations=1,
+        commit_candidate=commit)
+
+    assert record.get("root_pending_audit") is not True
+    assert record["eligible_stationary_point"] is False
+    assert record["full_root_claim"] is False
+    if failure == "gradient":
+        assert record["optimizer_steps_applied"] == 1
+        assert record["iterations"][0]["accepted_gradient_inf"] > continuation.ROOT_GRADIENT_INF
+    else:
+        assert record["optimizer_steps_applied"] == 0
+    if failure == "closure":
+        assert record["execution_status"] == "failed"
+        assert record["current_iteration"]["trials"][-1]["status"] == "candidate_not_committed"
+    elif failure == "branch":
+        assert all(not row.get("strict_point_passed", False) or
+                   max(abs(value) for value in row.get("gradient", [1.0])) > continuation.ROOT_GRADIENT_INF
+                   for row in record["trials"])
+    else:
+        assert all(max(abs(value) for value in row.get("gradient", [1.0])) > continuation.ROOT_GRADIENT_INF
+                   for row in record["trials"] if row.get("gradient") is not None)
+
+
+@pytest.mark.parametrize("failure", ["objective", "gradient", "branch"])
+def test_root_pending_requires_consistent_fresh_candidate_callbacks(failure, monkeypatch):
+    inputs = list(_problem())
+    inputs[0].zero_()
+    inputs[0][0] = 1e-7
+    objective_calls = 0
+    gradient_calls = 0
+    branch_calls = 0
+
+    def objective(candidate, _parameters):
+        nonlocal objective_calls
+        objective_calls += 1
+        value = candidate @ candidate / 2
+        return value + (1e-3 if failure == "objective" and objective_calls >= 3 else 0.0)
+
+    def gradient(candidate, _parameters):
+        nonlocal gradient_calls
+        gradient_calls += 1
+        result = candidate.clone()
+        if failure == "gradient" and gradient_calls >= 3:
+            result[0] += 1e-5
+        return result
+
+    def branch(candidate, parameters):
+        nonlocal branch_calls
+        branch_calls += 1
+        result, margins = inputs[4](candidate, parameters)
+        if failure == "branch" and branch_calls >= 3:
+            result = {**result, "signature_sha256": "changed"}
+        return result, margins
+
+    monkeypatch.setattr(continuation.dual.merit.seed_linear, "_valid_margins",
+                        lambda *_args, **_kwargs: True)
+    commits = []
+    record = continuation.run_iterations(inputs[0], inputs[1], objective, gradient, branch,
+        inputs[5], inputs[6], time.monotonic() + 10, max_iterations=1,
+        commit_candidate=lambda *_args: commits.append(True) or {"closed": True})
+
+    assert record["numerical_status"] == "root_candidate_recheck_failed"
+    assert record.get("root_pending_audit") is not True
+    assert record["optimizer_steps_applied"] == 0
+    assert commits == []
+    assert record["eligible_stationary_point"] is False
+
+
 def test_total_hvp_cap_keeps_prior_commit_and_records_failed_solve(monkeypatch):
     inputs = _problem()
     monkeypatch.setattr(continuation, "MAX_HVP", 3)
@@ -105,8 +307,10 @@ def test_nonpositive_curvature_refuses_without_j_only_fallback(monkeypatch):
     assert "fallback" not in record
 
 
-def test_later_commit_failure_discards_only_provisional_candidate(monkeypatch):
+@pytest.mark.parametrize("initial", [0.10, 0.15])
+def test_later_commit_failure_discards_only_provisional_candidate(initial, monkeypatch):
     inputs = _problem()
+    inputs[0][0] = initial
     calls = 0
 
     def commit(*_args):
@@ -125,7 +329,7 @@ def test_later_commit_failure_discards_only_provisional_candidate(monkeypatch):
     assert record["optimizer_steps_applied"] == 1
     assert record["iterations"][0]["status"] == "accepted"
     assert record["current_iteration"]["trials"][-1]["status"] == "candidate_not_committed"
-    assert record["accepted_control"][0] == pytest.approx(0.10)
+    assert record["accepted_control"][0] == pytest.approx(initial - 0.05)
     assert record["hvp_calls"] == record["hvp_calls_completed"]
 
 

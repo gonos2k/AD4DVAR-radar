@@ -1,0 +1,43 @@
+{
+  "scope": "unmodified PR252 main blob executed on consistent FP64 quadratic; real small repository PCG, explicit branch stub; no FV/HVP of FV",
+  "source_sha256": "c4bfa13b92d188a4201ccfe524552910cfd28c5a5c22fe48c050953a689c2fb6",
+  "source_git_commit": "1758a6467132602a46b603fbb54758af13d41317",
+  "runtime": {
+    "python": "3.12.13",
+    "torch": "2.13.0"
+  },
+  "cases": [
+    {
+      "C": 0.0,
+      "initial_gradient_inf": 1e-07,
+      "candidate_gradient_inf": 0.0,
+      "numerical_status": "root_pending_audit",
+      "committed": 1,
+      "trial_status": "accepted"
+    },
+    {
+      "C": 1.0,
+      "initial_gradient_inf": 1e-07,
+      "candidate_gradient_inf": 0.0,
+      "numerical_status": "numerically_zero_decrease",
+      "committed": 0,
+      "trial_status": "candidate_not_committed"
+    },
+    {
+      "C": 1.0,
+      "initial_gradient_inf": 1e-08,
+      "candidate_gradient_inf": 0.0,
+      "numerical_status": "numerically_zero_decrease",
+      "committed": 0,
+      "trial_status": "candidate_not_committed"
+    },
+    {
+      "C": 0.063,
+      "initial_gradient_inf": 1e-08,
+      "candidate_gradient_inf": 0.0,
+      "numerical_status": "numerically_zero_decrease",
+      "committed": 0,
+      "trial_status": "candidate_not_committed"
+    }
+  ]
+}
