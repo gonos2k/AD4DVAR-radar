@@ -1,0 +1,98 @@
+{
+  "scope": "independent NumPy arithmetic and static chart reconstruction of archived step; no new FV/J/g/HVP",
+  "raw_sha256": "061c51d2b016f024e24ef7e1afb30be1c1169836305c92e97d806301d3040c53",
+  "accepted_control_hash_matches": true,
+  "normal_dot_direction": 0.0,
+  "gTd": -0.5587502088011976,
+  "gTHd": -1087.1234794291438,
+  "new_gradient_dot_old_direction": 0.00912068924512214,
+  "gradient_linear_error_l2": 0.000620120557246506,
+  "gradient_linear_relative_error": 0.0009274347393382949,
+  "finite_path_delta_minus_alpha_d_l2": 1.130562559179247e-12,
+  "Phi_error_final": 0.0,
+  "trials": [
+    {
+      "index": 0,
+      "Phi_error": 0.0,
+      "J_threshold_error": 0.0,
+      "Phi_threshold_error": 0.0,
+      "acceptance_matches": true,
+      "tangent_projection_error": 0.0,
+      "static_reconstructed_control_hash_matches": true,
+      "actual_norm_error": 0.0
+    },
+    {
+      "index": 1,
+      "Phi_error": 0.0,
+      "J_threshold_error": 0.0,
+      "Phi_threshold_error": 0.0,
+      "acceptance_matches": true,
+      "tangent_projection_error": 0.0,
+      "static_reconstructed_control_hash_matches": true,
+      "actual_norm_error": 0.0
+    },
+    {
+      "index": 2,
+      "Phi_error": 0.0,
+      "J_threshold_error": 0.0,
+      "Phi_threshold_error": 0.0,
+      "acceptance_matches": true,
+      "tangent_projection_error": 3.552713678800501e-15,
+      "static_reconstructed_control_hash_matches": true,
+      "actual_norm_error": 1.734723475976807e-18
+    },
+    {
+      "index": 3,
+      "Phi_error": 0.0,
+      "J_threshold_error": 0.0,
+      "Phi_threshold_error": 0.0,
+      "acceptance_matches": true,
+      "tangent_projection_error": 0.0,
+      "static_reconstructed_control_hash_matches": true,
+      "actual_norm_error": 0.0
+    },
+    {
+      "index": 4,
+      "Phi_error": 0.0,
+      "J_threshold_error": 0.0,
+      "Phi_threshold_error": 0.0,
+      "acceptance_matches": true,
+      "tangent_projection_error": 0.0,
+      "static_reconstructed_control_hash_matches": true,
+      "actual_norm_error": 0.0
+    },
+    {
+      "index": 5,
+      "Phi_error": 0.0,
+      "J_threshold_error": 0.0,
+      "Phi_threshold_error": 0.0,
+      "acceptance_matches": true,
+      "tangent_projection_error": 0.0,
+      "static_reconstructed_control_hash_matches": true,
+      "actual_norm_error": 0.0
+    },
+    {
+      "index": 6,
+      "Phi_error": 0.0,
+      "J_threshold_error": 0.0,
+      "Phi_threshold_error": 0.0,
+      "acceptance_matches": true,
+      "tangent_projection_error": 0.0,
+      "static_reconstructed_control_hash_matches": true,
+      "actual_norm_error": 0.0
+    },
+    {
+      "index": 7,
+      "Phi_error": 0.0,
+      "J_threshold_error": 0.0,
+      "Phi_threshold_error": 0.0,
+      "acceptance_matches": true,
+      "tangent_projection_error": 0.0,
+      "static_reconstructed_control_hash_matches": true,
+      "actual_norm_error": 0.0
+    }
+  ],
+  "source_closed": true,
+  "fixed_input_unchanged": true,
+  "runtime_closed": true
+}

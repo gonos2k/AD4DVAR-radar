@@ -1,0 +1,64 @@
+{
+  "scope": "one restricted fixed nonzero Qy32 tangent exploration; original unconstrainedfull26 objective unchanged",
+  "base": "e29c348d51e7ec2de23f3f74d1522a34f58bf0bb72fd56e63d9b89cadea15e37",
+  "direction_evidence": "QY32_TANGENT_DIRECTION_20261007.json",
+  "GREEN": "QY32_TANGENT_GREEN_DESIGN_20261007.md",
+  "RED": "QY32_TANGENT_RED_DESIGN_20261007.md",
+  "mathematical_conditions": [
+    "fixed eta chartGamma(t+alpha dt, eta_e29)",
+    "full26 actual displacement norm <=.05 before objective evaluation",
+    "freshbaseline J/fullg/Phi/branch agrees archivale29",
+    "singlefreshfullJ gradientJVP producesHd atactuale29",
+    "resolvednegativegTd andgTHd before candidates",
+    "J andPhi Armijo constants1e\u22124",
+    "candidateownbranch only; nosmoothpath/samebranchclaim",
+    "finalrecheck/closure/deadline before commitment"
+  ],
+  "model_limit": "alpha Hd is path first-order gradient change, not exact H times curved finite displacement",
+  "budget_proposal": {
+    "internal_seconds": 240,
+    "outer_seconds": 300,
+    "rss_bytes": 1073741824,
+    "max_hvp_calls": 1,
+    "max_candidates": 16,
+    "guarded_launches": 1,
+    "pcg_solves": 0
+  },
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "remaining": [
+    "eligible original3h fullroot",
+    "currentfullcurvature/originaladjoint/reanalysis",
+    "independentsyntheticfuture/finiterangeverification"
+  ],
+  "status": "one restricted chart step committed",
+  "plan_sha256": "70f9560c0355fa6b65927ac70fb4de2c055f338d5dd276c8fa453fc30379ecf9",
+  "source_count": 109,
+  "archive_count": 39,
+  "verification": {
+    "focused": "27passed18existingwarnings1.55sec",
+    "types": "errorlevel0",
+    "AST": "QY32_TANGENT_GRAPHIFY_20261007.json isolatedcopies sharedgraphunchanged"
+  },
+  "resolved_code_gaps": [
+    "properexpectednumericaldirectionrefusal",
+    "staticchartdomainbackoffbeforeFV",
+    "finaldeadlineafterclosurebeforecommit",
+    "validbaseg/Hd savedbeforedescentrefusal"
+  ],
+  "result": "QY32_TANGENT_RESULT_20261007.json",
+  "accepted_control_sha256": "058895848fdeb348e8d6bb1f22ac13e3f2dadfa48bff46522ffbf94fedf72ffa",
+  "actual": {
+    "guard_seconds": 59.293617916991934,
+    "sampled_peak_RSS_bytes": 521453568,
+    "HVP": 1,
+    "PCG": 0,
+    "candidates": 8
+  },
+  "important_limits": [
+    "gInf increased23.35%; growthmaximum",
+    "flow/growthblocknorms increased",
+    "analysis andfuture branchsignatures changed",
+    "fixedeta exploratorysubstep notpermanentconstraint/fullroot"
+  ],
+  "independent_check": "QY32_TANGENT_INDEPENDENT_CHECKS_20261007.json"
+}

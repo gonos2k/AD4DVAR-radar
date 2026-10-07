@@ -1,0 +1,32 @@
+{
+  "child_read_error": null,
+  "child_sha256": "061c51d2b016f024e24ef7e1afb30be1c1169836305c92e97d806301d3040c53",
+  "execution_status": "completed",
+  "numerical_status": "one_qy32_tangent_dual_armijo_step_accepted",
+  "resource": {
+    "child_pid": 98330,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_qy32_tangent_step.py",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/QY32_TANGENT_STEP_PLAN_20261007.json",
+      "--plan-sha256",
+      "70f9560c0355fa6b65927ac70fb4de2c055f338d5dd276c8fa453fc30379ecf9",
+      "--output",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/qy32_tangent_step_attempt1/step.json"
+    ],
+    "elapsed_seconds": 59.293617916991934,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 211,
+    "sampled_peak_rss_bytes": 521453568,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300.0
+  }
+}
