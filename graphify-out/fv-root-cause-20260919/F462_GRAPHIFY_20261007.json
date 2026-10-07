@@ -1,0 +1,25 @@
+{
+  "scope": "cached prior structure consulted; isolated4-file refresh; shared unchanged",
+  "cached_ast_sha256": "8fd0ca4890bc0a351a9607dc6449c8b30a60c7868a4ff6e3a5987173627c60f9",
+  "reused_structure": [
+    "run_iterations()",
+    "_accepted_endpoint()"
+  ],
+  "files": {
+    "examples/weather_scenarios/fv_point_3h_inexact_continuation.py": "e8008aef62908286d2d7bb13a109b83382310ececbcd28aa6ea8148e6cbfab04",
+    "tests/test_fv_point_3h_inexact_continuation.py": "7c18145c5c6f33c0498eb0cfe4cf7b67f07ea4c4b17b89863dcfff9fed6c2974",
+    "examples/weather_scenarios/fv_point_3h_committed_base.py": "4b5c2cd1ff9703afeb17c9e78669af0695e8e9bd0a4536cc4f4ffe00cd07a541",
+    "tests/test_fv_point_3h_committed_base.py": "04c291f79bccbcdf594f281ff7021c876b5ee3783cc104aeb699b5f076edabad"
+  },
+  "nodes": 40,
+  "edges": 107,
+  "ast_sha256": "220b5107a19ae1bb53459a4eb437ee42c099d9f6ead67a1ba2941a3e44e834e0",
+  "shared_before": {
+    "graphify-out/graph.json": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+    "graphify-out/GRAPH_REPORT.md": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491"
+  },
+  "shared_after": {
+    "graphify-out/graph.json": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+    "graphify-out/GRAPH_REPORT.md": "15bc98dc32c4c547e99606104cf91e3c58f8ab0cef10325d0d1f35128d757491"
+  }
+}

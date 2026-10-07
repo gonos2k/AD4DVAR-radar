@@ -1,0 +1,20 @@
+{
+  "scope": "bounded repeat from selectedinexactf462",
+  "plan_sha256": "499e89862d86c8e4258e5199194674714c9001c59fca00e5436c935d98a3e33b",
+  "state": "single bounded run ended:2commits then3rd solvebudgetrefusal; slowprogress and shrinkingsteps",
+  "resolved": [
+    "parentcomparisonreceipt andnestedselectedarm closed",
+    "newbasepoint differs from producingancestor d31; bindsf462 correctly",
+    "normalinexact reusableplan loader samecaps"
+  ],
+  "separate_completion": "F462_RESEARCH_SCOPE_20261007.json",
+  "remaining": [
+    "diagnose approached Qy3,2 branchsurface beforeblindrepeat",
+    "actualtighteningzone not reached",
+    "eligible stationary point/fullcurvature/originaladjoint/reanalysis",
+    "independent syntheticfutureverification"
+  ],
+  "result": "F462_RESULT_20261007.json",
+  "boundary_diagnostic": "F462_BOUNDARY_PROGRESS_20261007.json",
+  "final_control_sha256": "e29c348d51e7ec2de23f3f74d1522a34f58bf0bb72fd56e63d9b89cadea15e37"
+}

@@ -79,16 +79,21 @@ def _require_plan(plan_path: Path, plan_sha: str) -> dict[str, Any]:
             or curvature.sha(plan_path) != plan_sha):
         raise ValueError("committed-base plan identity mismatch")
     plan = json.loads(plan_path.read_text())
-    if (plan.get("policy") != continuation.policy_dict()
-            or not isinstance(plan.get("comparison_policy"), dict)
-            or not isinstance(plan.get("source_files"), dict)
+    if (not isinstance(plan.get("source_files"), dict)
             or not isinstance(plan.get("archive_files"), dict)):
-        raise ValueError("plan must preserve the strict continuation policy and declare comparison pins")
-    comparison = plan["comparison_policy"]
-    common_comparison = {"arm_order": ["strict", "inexact"], "arm_max_iterations": 1,
-        "shared_hvp_cap": 90, "internal_seconds": 720.0, "outer_seconds": 780.0}
-    if any(comparison.get(key) != value for key, value in common_comparison.items()):
-        raise ValueError("comparison plan must declare the fixed one-step cold-start shared-budget arms")
+        raise ValueError("plan must declare source and archive pins")
+    if "comparison_policy" in plan:
+        if plan.get("policy") != continuation.policy_dict() or not isinstance(plan["comparison_policy"], dict):
+            raise ValueError("comparison plan must preserve the strict common caps")
+        comparison = plan["comparison_policy"]
+        common_comparison = {"arm_order": ["strict", "inexact"], "arm_max_iterations": 1,
+            "shared_hvp_cap": 90, "internal_seconds": 720.0, "outer_seconds": 780.0}
+        if any(comparison.get(key) != value for key, value in common_comparison.items()):
+            raise ValueError("comparison plan must declare the fixed one-step cold-start shared-budget arms")
+    elif (plan.get("experiment_kind") != "inexact_continuation"
+            or plan.get("linear_mode") != "inexact"
+            or plan.get("policy") != continuation.policy_dict("inexact", 3)):
+        raise ValueError("continuation plan must declare the unchanged bounded inexact policy")
 
     prior_name = plan.get("base_plan")
     if not isinstance(prior_name, str) or prior_name not in plan["archive_files"]:
