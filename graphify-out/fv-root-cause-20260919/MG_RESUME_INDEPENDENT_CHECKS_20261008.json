@@ -1,0 +1,149 @@
+{
+  "scope": "archived NumPy vector arithmetic only; no new FV/J/g/HVP",
+  "raw_sha256": "66aa57c3056220a7057a5b3c3cca2a09c06d44ed34279b055174e6930ab1838e",
+  "checks": [
+    {
+      "index": 0,
+      "negative_current_gradient": true,
+      "accepted_hash_matches": true,
+      "affine_control_hash_matches": true,
+      "alpha_model_error": -6.505213034913027e-19,
+      "Phi_error": 0.0,
+      "gradient_prediction_relative_error": 0.0033714790596259814,
+      "actual_over_quadratic_J_reduction": 0.999642756497202,
+      "analysis_branch_changed": true,
+      "future_branch_changed": true,
+      "trials": [
+        {
+          "index": 0,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        },
+        {
+          "index": 1,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        },
+        {
+          "index": 2,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "negative_current_gradient": true,
+      "accepted_hash_matches": true,
+      "affine_control_hash_matches": true,
+      "alpha_model_error": 0.0,
+      "Phi_error": 0.0,
+      "gradient_prediction_relative_error": 0.006353327248844949,
+      "actual_over_quadratic_J_reduction": 0.9997801551301418,
+      "analysis_branch_changed": true,
+      "future_branch_changed": true,
+      "trials": [
+        {
+          "index": 0,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        },
+        {
+          "index": 1,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        },
+        {
+          "index": 2,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        },
+        {
+          "index": 3,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "negative_current_gradient": true,
+      "accepted_hash_matches": true,
+      "affine_control_hash_matches": true,
+      "alpha_model_error": 4.336808689942018e-19,
+      "Phi_error": 0.0,
+      "gradient_prediction_relative_error": 0.0019119115494123534,
+      "actual_over_quadratic_J_reduction": 1.0002760496764096,
+      "analysis_branch_changed": true,
+      "future_branch_changed": true,
+      "trials": [
+        {
+          "index": 0,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        },
+        {
+          "index": 1,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        },
+        {
+          "index": 2,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        },
+        {
+          "index": 3,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        },
+        {
+          "index": 4,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        },
+        {
+          "index": 5,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        },
+        {
+          "index": 6,
+          "control_hash_matches": true,
+          "Phi_error": 0.0,
+          "J_threshold_error": 0.0,
+          "Phi_threshold_error": 0.0
+        }
+      ]
+    }
+  ],
+  "source_closed": true,
+  "fixed_input_unchanged": true,
+  "runtime_closed": true
+}

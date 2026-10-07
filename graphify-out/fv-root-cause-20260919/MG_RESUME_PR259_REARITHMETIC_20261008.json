@@ -1,0 +1,74 @@
+{
+  "scope": "PR259 saved controls/static streamfunction only; no FV/HVP",
+  "per_step_face_sign_changes": [
+    {
+      "step": 1,
+      "changes": [
+        {
+          "axis": "Qy",
+          "index": [
+            3,
+            2
+          ],
+          "before": -5.910612738066479e-07,
+          "after": 1.829860184376919e-05
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "changes": [
+        {
+          "axis": "Qy",
+          "index": [
+            4,
+            3
+          ],
+          "before": -5.640603796867871e-05,
+          "after": 1.5063489619410175e-06
+        }
+      ]
+    },
+    {
+      "step": 3,
+      "changes": [
+        {
+          "axis": "Qy",
+          "index": [
+            4,
+            3
+          ],
+          "before": 1.5063489619410175e-06,
+          "after": -5.752197991078928e-05
+        }
+      ]
+    }
+  ],
+  "final_max_gradient_index": 24,
+  "archive_alpha_checks": [
+    {
+      "step": 1,
+      "alphaPhi": 0.00024342849960299422,
+      "alphaJ": 0.00034300322612629817,
+      "ratio": 0.70969740533391,
+      "model_conservative": true,
+      "negative_gradient_direction": true
+    },
+    {
+      "step": 2,
+      "alphaPhi": 0.0011829459725738471,
+      "alphaJ": 0.002273113517978801,
+      "ratio": 0.5204077857166125,
+      "model_conservative": true,
+      "negative_gradient_direction": true
+    },
+    {
+      "step": 3,
+      "alphaPhi": 0.00035977244555417446,
+      "alphaJ": 0.0016068729993068524,
+      "ratio": 0.2238960052906281,
+      "model_conservative": true,
+      "negative_gradient_direction": true
+    }
+  ]
+}

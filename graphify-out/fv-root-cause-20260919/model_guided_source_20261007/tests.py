@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import time
-from pathlib import Path
 from pathlib import Path
 from typing import Any
 
@@ -146,7 +144,7 @@ def _blackbox_case(monkeypatch, *, fail_second_hvp: bool = False,
     monkeypatch.setattr(guided, "CONTROL_SHA", tangent._tensor_sha(control))
     monkeypatch.setattr(guided, "PARAMETERS_SHA", parameter_sha)
     monkeypatch.setattr(guided, "_load_plan", lambda *_args: {"source_files": {}, "archive_files": {}})
-    monkeypatch.setattr(guided, "_load_base", lambda *_args: raw)
+    monkeypatch.setattr(guided, "_load_base", lambda: raw)
     monkeypatch.setattr(guided.seed, "_prepare_fixed_seed", lambda: (
         problem, original, control, parameters, truth, base_identity))
     monkeypatch.setattr(guided.seed, "_input_identity", input_identity)
@@ -234,172 +232,3 @@ def test_near_root_uses_gradient_threshold_without_an_objective_floor(monkeypatc
     assert result["optimizer_steps_applied"] == 0
     assert result["current_control"] == control.tolist()
     assert result["current_state"]["objective"] == 1.0
-
-
-def _resume_artifacts(tmp_path, monkeypatch):
-    root = tmp_path
-    monkeypatch.setattr(guided, "ROOT", root)
-    plan_path = root / "MODEL_GUIDED_FULL_SPACE_PLAN_20261008.json"
-    legacy_plan_path = root / "MODEL_GUIDED_FULL_SPACE_PLAN_20261007.json"
-    manifest_path = root / "model_guided_source_20261007/manifest.json"
-    step_path = root / "model_guided_attempt1/step.json"
-    parent_path = step_path.with_suffix(".run.json")
-    resource_path = step_path.with_suffix(".resource.json")
-    monkeypatch.setattr(guided, "PLAN", plan_path)
-    monkeypatch.setattr(guided, "LEGACY_PLAN", legacy_plan_path)
-    monkeypatch.setattr(guided, "SOURCE_SNAPSHOT_MANIFEST", manifest_path)
-    monkeypatch.setattr(guided, "LEGACY_STEP", step_path)
-    monkeypatch.setattr(guided, "LEGACY_STEP_PARENT", parent_path)
-    monkeypatch.setattr(guided, "LEGACY_STEP_RESOURCE", resource_path)
-
-    snapshot_values = {
-        guided.SELF: ("model_guided_source_20261007/producer.py", "old producer bytes"),
-        guided.TEST: ("model_guided_source_20261007/tests.py", "old test bytes"),
-    }
-    source_hashes: dict[str, str] = {}
-    snapshots: dict[str, dict[str, str]] = {}
-    for source, (archive, contents) in snapshot_values.items():
-        old_bytes = contents.encode()
-        source_hashes[source] = hashlib.sha256(old_bytes).hexdigest()
-        snapshots[source] = {"archive_path": archive, "sha256": source_hashes[source]}
-        archived = root / archive
-        archived.parent.mkdir(parents=True, exist_ok=True)
-        archived.write_bytes(old_bytes)
-        current = root / source
-        current.parent.mkdir(parents=True, exist_ok=True)
-        current.write_text(f"new live {source}")
-    op_name = "src/operator.py"
-    op_path = root / op_name
-    op_path.parent.mkdir(parents=True, exist_ok=True)
-    op_path.write_text("immutable operator")
-    source_hashes[op_name] = hashlib.sha256(op_path.read_bytes()).hexdigest()
-    old_archive_path = root / "evidence/old.json"
-    old_archive_path.parent.mkdir(parents=True, exist_ok=True)
-    old_archive_path.write_text("old producer archive")
-    old_archive_hash = hashlib.sha256(old_archive_path.read_bytes()).hexdigest()
-    legacy_plan = {"source_files": source_hashes.copy(),
-                   "archive_files": {"evidence/old.json": old_archive_hash}}
-    legacy_plan_path.write_text(json.dumps(legacy_plan))
-    legacy_plan_sha = hashlib.sha256(legacy_plan_path.read_bytes()).hexdigest()
-    manifest = {"snapshots": snapshots}
-    manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    manifest_path.write_text(json.dumps(manifest))
-    manifest_sha = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
-    monkeypatch.setattr(guided, "LEGACY_PLAN_SHA", legacy_plan_sha)
-    monkeypatch.setattr(guided, "SOURCE_SNAPSHOT_MANIFEST_SHA", manifest_sha)
-    monkeypatch.setattr(guided, "RESUME_CONTROL_SHA", "new-control-sha")
-    monkeypatch.setattr(guided.tangent, "_load_plan", lambda *_args: legacy_plan)
-    monkeypatch.setattr(guided.tangent, "_pinned_path", lambda name, digest: _pin(root, name, digest))
-
-    control = [0.0] * 26
-    control[0] = 0.1
-    branch = {"status": "passed_strict_branch", "signature_sha256": "branch-final"}
-    params_sha = guided.PARAMETERS_SHA
-    input_before = {"control_sha256": "old-control", "parameters_sha256": params_sha,
-                    "terminal_truth_sha256": "truth", "archived_input": {"fixed": 1}}
-    input_after = {**input_before, "control_sha256": "new-control-sha"}
-    gradient = [0.0] * 26
-    current_state = {"objective": 0.9, "phi": 0.01, "gradient": gradient,
-                     "gradient_inf": 0.0, "branch": branch,
-                     "branch_partition": {"full_sha256": "branch-final"}}
-    accepted_trial = {"status": "accepted", "control_sha256": "new-control-sha",
-        "objective": 0.9, "phi": 0.01, "gradient": gradient,
-        "J_armijo_passed": True, "Phi_armijo_passed": True,
-        "strict_point_passed": True, "branch": branch}
-    step: dict[str, Any] = {"phase": "finished", "execution_status": "completed",
-        "numerical_status": "direction_refusal", "plan_sha256": legacy_plan_sha,
-        "optimizer_steps_applied": 1, "hvp_calls": 2, "hvp_calls_completed": 2,
-        "candidate_committed": True, "active_candidate_committed": False,
-        "base_control_sha256": "old-control", "current_control": control,
-        "current_control_sha256": "new-control-sha", "parameters_sha256": params_sha,
-        "current_state": current_state, "iterations": [{"status": "accepted",
-            "committed": True, "base_control_sha256": "old-control",
-            "accepted_control": control, "accepted_control_sha256": "new-control-sha",
-            "accepted_objective": 0.9, "accepted_phi": 0.01,
-            "accepted_gradient": gradient, "accepted_gradient_inf": 0.0,
-            "trials": [accepted_trial]}],
-        "source_before": source_hashes, "source_after": source_hashes,
-        "source_unchanged": True, "fixed_input_unchanged": True,
-        "input_before": input_before, "input_after": input_after,
-        "runtime": {"runtime": "fixed"}, "runtime_after": {"runtime": "fixed"}}
-    step_path.parent.mkdir(parents=True, exist_ok=True)
-    step_path.write_text(json.dumps(step))
-    step_sha = hashlib.sha256(step_path.read_bytes()).hexdigest()
-    monkeypatch.setattr(guided, "LEGACY_STEP_SHA", step_sha)
-    resource = {"exit_code": 0, "resource_termination": None, "monitor_error": None,
-        "received_sigterm": False, "wall_limit_seconds": guided.WALL_SECONDS,
-        "rss_limit_bytes": guided.RSS_BYTES, "elapsed_seconds": 1.0,
-        "sampled_peak_rss_bytes": 1000, "child_process_group_cleanup_sent": False,
-        "child_process_group_cleanup_error": None}
-    resource_path.write_text(json.dumps(resource))
-    resource_sha = hashlib.sha256(resource_path.read_bytes()).hexdigest()
-    monkeypatch.setattr(guided, "LEGACY_STEP_RESOURCE_SHA", resource_sha)
-    parent = {"execution_status": "completed", "child_read_error": None,
-              "child_sha256": step_sha, "numerical_status": step["numerical_status"]}
-    parent_path.write_text(json.dumps(parent))
-    parent_sha = hashlib.sha256(parent_path.read_bytes()).hexdigest()
-    monkeypatch.setattr(guided, "LEGACY_STEP_PARENT_SHA", parent_sha)
-    archive_files = {**legacy_plan["archive_files"],
-        legacy_plan_path.relative_to(root).as_posix(): legacy_plan_sha,
-        step_path.relative_to(root).as_posix(): step_sha,
-        parent_path.relative_to(root).as_posix(): parent_sha,
-        resource_path.relative_to(root).as_posix(): resource_sha,
-        manifest_path.relative_to(root).as_posix(): manifest_sha}
-    archive_files.update({entry["archive_path"]: entry["sha256"]
-                          for entry in snapshots.values()})
-    live_sources = dict(source_hashes)
-    for source in snapshots:
-        live_sources[source] = hashlib.sha256((root / source).read_bytes()).hexdigest()
-    plan: dict[str, Any] = {"experiment_kind": "model_guided_resume",
-        "producing_plan": legacy_plan_path.relative_to(root).as_posix(),
-        "producing_plan_sha256": legacy_plan_sha,
-        "base_step": step_path.relative_to(root).as_posix(), "base_step_sha256": step_sha,
-        "base_run": parent_path.relative_to(root).as_posix(), "base_run_sha256": parent_sha,
-        "base_resource": resource_path.relative_to(root).as_posix(),
-        "base_resource_sha256": resource_sha, "base_control_sha256": "new-control-sha",
-        "producer_source_snapshots": snapshots, "policy": guided.policy(),
-        "source_files": live_sources, "archive_files": archive_files}
-    plan_path.write_text(json.dumps(plan))
-    plan_sha = hashlib.sha256(plan_path.read_bytes()).hexdigest()
-    return plan, plan_sha, step, parent, resource
-
-
-def _pin(root: Path, name: str, digest: str) -> Path:
-    path = root / name
-    assert path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == digest
-    return path
-
-
-def test_resume_loader_checks_archived_source_lineage_and_last_state(tmp_path, monkeypatch):
-    plan, plan_sha, step, _, _ = _resume_artifacts(tmp_path, monkeypatch)
-    loaded = guided._load_plan(guided.PLAN, plan_sha)
-    normalized = guided._load_resume_base(loaded)
-    assert normalized["accepted_control_sha256"] == "new-control-sha"
-    assert normalized["accepted_objective"] == normalized["current_state"]["objective"]
-
-    bad_plan: dict[str, Any] = dict(plan)
-    bad_plan["producer_source_snapshots"] = dict(plan["producer_source_snapshots"])
-    bad_plan["producer_source_snapshots"][guided.SELF] = {
-        **bad_plan["producer_source_snapshots"][guided.SELF], "sha256": "bad"}
-    guided.PLAN.write_text(json.dumps(bad_plan))
-    bad_sha = hashlib.sha256(guided.PLAN.read_bytes()).hexdigest()
-    with pytest.raises(ValueError, match="snapshot"):
-        guided._load_plan(guided.PLAN, bad_sha)
-
-    plan["producer_source_snapshots"] = json.loads(
-        (tmp_path / "model_guided_source_20261007/manifest.json").read_text())["snapshots"]
-    step["current_state"]["phi"] = 0.5
-    step_path = tmp_path / plan["base_step"]
-    step_path.write_text(json.dumps(step))
-    new_step_sha = hashlib.sha256(step_path.read_bytes()).hexdigest()
-    plan["base_step_sha256"] = new_step_sha
-    plan["archive_files"][plan["base_step"]] = new_step_sha
-    parent_path = tmp_path / plan["base_run"]
-    parent = json.loads(parent_path.read_text())
-    parent["child_sha256"] = new_step_sha
-    parent_path.write_text(json.dumps(parent))
-    new_parent_sha = hashlib.sha256(parent_path.read_bytes()).hexdigest()
-    plan["base_run_sha256"] = new_parent_sha
-    plan["archive_files"][plan["base_run"]] = new_parent_sha
-    with pytest.raises(ValueError, match="resume point"):
-        guided._load_resume_base(plan)

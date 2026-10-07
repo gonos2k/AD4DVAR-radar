@@ -1,0 +1,10 @@
+{
+  "scope": "metadata-only rejected preflight beforeanyFVlaunch; corrected missingaccepted_branch field expectation",
+  "rejected_plan_sha": "af4a8c49e34be0321aed2a9070f5bd9893d4d61acffd7c3111b4885b593ad5a3",
+  "fresh_plan_sha": "9fc5e046ca484737ebd040469990f10cc918fcd9dc245d0762e65f297151440c",
+  "actual_guarded_launches_before_fix": 0,
+  "actual_HVP_before_fix": 0,
+  "old_numerical_data_changed": false,
+  "real_loaders": "PASS",
+  "base": "69c4a794730750c09c1bcddf542b66131f64f5bfec362e02ac269413a75d4992"
+}

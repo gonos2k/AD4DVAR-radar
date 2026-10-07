@@ -1,0 +1,15 @@
+{
+  "scope": "immutable exact pre-resume producer/test bytes; archival proof only, not executable copiedmodule",
+  "producer_commit": "75cfeba272d1a584dc03c316d98913fcba3b3615",
+  "producer_plan_sha256": "a75b5e474e68fb74475c3fd7fb2f31e85c891edcb06c40e83b4287b16a7b3136",
+  "snapshots": {
+    "examples/weather_scenarios/fv_point_3h_model_guided_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/model_guided_source_20261007/producer.py",
+      "sha256": "67341f6d53c1a8dc9e867c9b359136575b6a5a4f207c5441a1eb4d75300b6492"
+    },
+    "tests/test_fv_point_3h_model_guided_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/model_guided_source_20261007/tests.py",
+      "sha256": "852d8054c0e1d1f180c155df846fde842daa302dcacf9e135d2fff57d371961c"
+    }
+  }
+}
