@@ -1,0 +1,32 @@
+{
+  "child_read_error": null,
+  "child_sha256": "66aa57c3056220a7057a5b3c3cca2a09c06d44ed34279b055174e6930ab1838e",
+  "execution_status": "completed",
+  "numerical_status": "max_iterations_completed",
+  "resource": {
+    "child_pid": 9429,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_model_guided_continuation.py",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/MODEL_GUIDED_FULL_SPACE_PLAN_20261008.json",
+      "--plan-sha256",
+      "9fc5e046ca484737ebd040469990f10cc918fcd9dc245d0762e65f297151440c",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/model_guided_resume_20261008_attempt1/step.json"
+    ],
+    "elapsed_seconds": 188.2606546250172,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 524,
+    "sampled_peak_rss_bytes": 385761280,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300.0
+  }
+}

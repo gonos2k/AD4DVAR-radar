@@ -1,0 +1,56 @@
+{
+  "scope": "bounded same-kernel continuation fromPR259final69c4a794; numericalpolicy unchanged",
+  "base_control_sha256": "69c4a794730750c09c1bcddf542b66131f64f5bfec362e02ac269413a75d4992",
+  "producer_plan_sha256": "a75b5e474e68fb74475c3fd7fb2f31e85c891edcb06c40e83b4287b16a7b3136",
+  "producer_raw_sha256": "92497babfe8eae3c55e2dcd4d244e533740b395f050e1a207612fcb78680cb0d",
+  "producer_snapshots": "model_guided_source_20261007/manifest.json",
+  "allowed_current_source_changes": [
+    "modelguidedproducer input/provenanceloader",
+    "associatedtests"
+  ],
+  "mathematical_helpers_and_iteration_loop": "mustremainASTidenticaltoarchivedproducer",
+  "budget": {
+    "max_steps": 3,
+    "max_HVP": 3,
+    "max_candidates_per_step": 16,
+    "internal_seconds": 240,
+    "outer_seconds": 300,
+    "RSS_bytes": 1073741824,
+    "launches": 1
+  },
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "remaining": [
+    "eligible original3hroot",
+    "currentfullcurvature/originaladjoint/VJP/reanalysis",
+    "independentsyntheticfutureverification"
+  ],
+  "state": "boundedresumecompleted3steps maxiterations",
+  "plan_sha256": "9fc5e046ca484737ebd040469990f10cc918fcd9dc245d0762e65f297151440c",
+  "source_count": 111,
+  "archive_count": 50,
+  "numerical_ast": "MG_RESUME_NUMERICAL_AST_20261008.json allunchanged",
+  "verification": {
+    "focused": "19passed18existingwarnings1.60sec",
+    "types": "errorlevel0",
+    "graphify": "MG_RESUME_GRAPHIFY_20261008.json isolatedchangedcopies"
+  },
+  "metadata_preflight_correction": "MG_RESUME_PREFLIGHT_CORRECTION_20261008.json; beforeanyFV/HVP",
+  "result": "MG_RESUME_RESULT_20261008.json",
+  "boundary": "MG_RESUME_BOUNDARY_DIAGNOSTIC_20261008.json",
+  "checks": "MG_RESUME_INDEPENDENT_CHECKS_20261008.json",
+  "actual": {
+    "guard_seconds": 188.2606546250172,
+    "sampled_peak_RSS_bytes": 385761280,
+    "HVP": 3,
+    "PCG": 0,
+    "candidates": 14,
+    "commits": 3
+  },
+  "final_control_sha256": "2cdccade81a8cf218dd7cad97adf71f6675f8445481dd8f6394ec337ea8e8007",
+  "limits": [
+    "shrinkingsteps/morebacktracks",
+    "externalQy4,3 approacheszero; largerpositivecandidates mostlyJ+branchpassPhifail",
+    "largeexternalfacetangentresidual .13657",
+    "fullroot/curvature/response/futurevalidation remainopen"
+  ]
+}

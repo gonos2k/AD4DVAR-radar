@@ -24,17 +24,7 @@ from examples.weather_scenarios import fv_point_3h_seed_linear_probe as seed
 from examples.weather_scenarios.fv_diagnostic_guard import run_guarded_diagnostic
 
 EVIDENCE = ROOT / "graphify-out/fv-root-cause-20260919"
-PLAN = EVIDENCE / "MODEL_GUIDED_FULL_SPACE_PLAN_20261008.json"
-LEGACY_PLAN = EVIDENCE / "MODEL_GUIDED_FULL_SPACE_PLAN_20261007.json"
-LEGACY_PLAN_SHA = "a75b5e474e68fb74475c3fd7fb2f31e85c891edcb06c40e83b4287b16a7b3136"
-LEGACY_STEP = EVIDENCE / "model_guided_attempt1/step.json"
-LEGACY_STEP_PARENT = LEGACY_STEP.with_suffix(".run.json")
-LEGACY_STEP_RESOURCE = LEGACY_STEP.with_suffix(".resource.json")
-LEGACY_STEP_SHA = "92497babfe8eae3c55e2dcd4d244e533740b395f050e1a207612fcb78680cb0d"
-LEGACY_STEP_PARENT_SHA = "686a43f22088ca44025a29e7b52689848fe4ba37b1f3f14fae631bcf87a98f8a"
-LEGACY_STEP_RESOURCE_SHA = "f1e1ca5e7329a76308dc4e6b58db6129ec5e157324f89fa64c8dee25359f8149"
-SOURCE_SNAPSHOT_MANIFEST = EVIDENCE / "model_guided_source_20261007/manifest.json"
-SOURCE_SNAPSHOT_MANIFEST_SHA = "d713ccf9b68295abafeab4e833ac92989aca0a513bc5aac51153effd59828233"
+PLAN = EVIDENCE / "MODEL_GUIDED_FULL_SPACE_PLAN_20261007.json"
 TANGENT_PLAN = EVIDENCE / "QY32_TANGENT_STEP_PLAN_20261007.json"
 TANGENT_PLAN_SHA = "70f9560c0355fa6b65927ac70fb4de2c055f338d5dd276c8fa453fc30379ecf9"
 STEP = EVIDENCE / "qy32_tangent_step_attempt1/step.json"
@@ -44,10 +34,6 @@ STEP_SHA = "061c51d2b016f024e24ef7e1afb30be1c1169836305c92e97d806301d3040c53"
 STEP_PARENT_SHA = "e84cd4b87a22ebceeb5d625d15eb6043d5434b5a855e66703e0513ddda9487d7"
 STEP_RESOURCE_SHA = "ab0d550cf94d75df79bf3017cc1b3583736afe5f665e0c7f4d879557b5e1c316"
 CONTROL_SHA = "058895848fdeb348e8d6bb1f22ac13e3f2dadfa48bff46522ffbf94fedf72ffa"
-RESUME_CONTROL_SHA = "69c4a794730750c09c1bcddf542b66131f64f5bfec362e02ac269413a75d4992"
-VALID_RESUME_STATUSES = {"max_iterations_completed", "budget_refusal", "direction_refusal",
-    "dual_armijo_refusal", "root_pending_audit", "static_face_zero_refusal",
-    "zero_displacement_refusal", "unresolved_phi_decrease"}
 PARAMETERS_SHA = qy.PARAMETERS_SHA
 SELF = "examples/weather_scenarios/fv_point_3h_model_guided_continuation.py"
 TEST = "tests/test_fv_point_3h_model_guided_continuation.py"
@@ -142,82 +128,29 @@ def _load_plan(path: Path, digest: str) -> dict[str, Any]:
         raise ValueError("model-guided continuation plan identity mismatch")
     plan = json.loads(path.read_text())
     sources, archives = plan.get("source_files"), plan.get("archive_files")
-    if (plan.get("experiment_kind") not in {"model_guided_full_space_continuation", "model_guided_resume"}
+    if (plan.get("experiment_kind") != "model_guided_full_space_continuation"
+            or plan.get("producing_plan") != TANGENT_PLAN.relative_to(ROOT).as_posix()
+            or plan.get("producing_plan_sha256") != TANGENT_PLAN_SHA
             or plan.get("policy") != policy()
             or not isinstance(sources, dict) or not isinstance(archives, dict)):
         raise ValueError("model-guided plan scope, policy, or pin maps changed")
-    if plan.get("experiment_kind") == "model_guided_full_space_continuation":
-        old = cast(dict[str, Any], tangent._load_plan(TANGENT_PLAN, TANGENT_PLAN_SHA))
-        inherited_plan, inherited_sha = TANGENT_PLAN, TANGENT_PLAN_SHA
-        snapshots = {}
-        if (plan.get("producing_plan") != inherited_plan.relative_to(ROOT).as_posix()
-                or plan.get("producing_plan_sha256") != inherited_sha):
-            raise ValueError("legacy full-space plan does not name the tangent-step producer")
-    else:
-        inherited_plan, inherited_sha = LEGACY_PLAN, LEGACY_PLAN_SHA
-        if (_sha(inherited_plan) != inherited_sha
-                or plan.get("producing_plan") != inherited_plan.relative_to(ROOT).as_posix()
-                or plan.get("producing_plan_sha256") != inherited_sha
-                or _sha(SOURCE_SNAPSHOT_MANIFEST) != SOURCE_SNAPSHOT_MANIFEST_SHA):
-            raise ValueError("resume plan does not name the archived PR259 producer lineage")
-        old = json.loads(inherited_plan.read_text())
-        manifest = json.loads(SOURCE_SNAPSHOT_MANIFEST.read_text())
-        snapshots = plan.get("producer_source_snapshots")
-        if snapshots != manifest.get("snapshots"):
-            raise ValueError("resume plan producer source snapshot map differs from immutable manifest")
+    old = cast(dict[str, Any], tangent._load_plan(TANGENT_PLAN, TANGENT_PLAN_SHA))
     if (not set(old["source_files"]) <= set(sources)
-            or not set(old["archive_files"]) <= set(archives)):
-        raise ValueError("model-guided plan omits inherited producer pins")
-    changed_paths = set(snapshots)
-    for name, value in old["source_files"].items():
-        if name in changed_paths:
-            snapshot = snapshots[name]
-            if (snapshot.get("sha256") != value
-                    or archives.get(snapshot.get("archive_path")) != value):
-                raise ValueError("resume source snapshot does not preserve the producer's pinned bytes")
-        elif sources[name] != value:
-            raise ValueError(f"model-guided plan changed immutable inherited source: {name}")
-    if any(archives.get(name) != value for name, value in old["archive_files"].items()):
-        raise ValueError("model-guided plan changed inherited producer archive pins")
-    if plan.get("experiment_kind") == "model_guided_resume":
-        expected_sources = set(old["source_files"])
-        expected_archives = set(old["archive_files"]) | {
-            LEGACY_PLAN.relative_to(ROOT).as_posix(),
-            LEGACY_STEP.relative_to(ROOT).as_posix(),
-            LEGACY_STEP_PARENT.relative_to(ROOT).as_posix(),
-            LEGACY_STEP_RESOURCE.relative_to(ROOT).as_posix(),
-            SOURCE_SNAPSHOT_MANIFEST.relative_to(ROOT).as_posix(),
-            *(value["archive_path"] for value in snapshots.values())}
-        if (set(changed_paths) != {SELF, TEST}
-                or set(sources) != expected_sources
-                or set(archives) != expected_archives
-                or plan.get("base_control_sha256") != RESUME_CONTROL_SHA
-                or archives.get(SOURCE_SNAPSHOT_MANIFEST.relative_to(ROOT).as_posix())
-                != SOURCE_SNAPSHOT_MANIFEST_SHA
-                or sources.get(SELF) != _sha(ROOT / SELF)
-                or sources.get(TEST) != _sha(ROOT / TEST)):
-            raise ValueError("resume plan base or producer snapshot lineage is incomplete")
+            or any(sources[name] != value for name, value in old["source_files"].items())
+            or any(archives.get(name) != value for name, value in old["archive_files"].items())):
+        raise ValueError("model-guided plan changed inherited tangent-step evidence pins")
     if sources.get(SELF) != _sha(ROOT / SELF) or sources.get(TEST) != _sha(ROOT / TEST):
         raise ValueError("model-guided plan must pin its producer and tests")
     for name, value in {**sources, **archives}.items():
         tangent._pinned_path(name, value)
-    if plan.get("experiment_kind") == "model_guided_full_space_continuation":
-        required_files = ((TANGENT_PLAN, TANGENT_PLAN_SHA), (STEP, STEP_SHA),
-                          (STEP_PARENT, STEP_PARENT_SHA), (STEP_RESOURCE, STEP_RESOURCE_SHA))
-    else:
-        required_files = ((LEGACY_PLAN, LEGACY_PLAN_SHA), (LEGACY_STEP, LEGACY_STEP_SHA),
-                          (LEGACY_STEP_PARENT, LEGACY_STEP_PARENT_SHA),
-                          (LEGACY_STEP_RESOURCE, LEGACY_STEP_RESOURCE_SHA),
-                          (SOURCE_SNAPSHOT_MANIFEST, SOURCE_SNAPSHOT_MANIFEST_SHA))
-        for snapshot in snapshots.values():
-            required_files += ((ROOT / snapshot["archive_path"], snapshot["sha256"]),)
-    for path_, value in required_files:
+    for path_, value in ((TANGENT_PLAN, TANGENT_PLAN_SHA), (STEP, STEP_SHA),
+                         (STEP_PARENT, STEP_PARENT_SHA), (STEP_RESOURCE, STEP_RESOURCE_SHA)):
         if archives.get(path_.relative_to(ROOT).as_posix()) != value:
-            raise ValueError("model-guided plan omits a required accepted endpoint/snapshot receipt")
+            raise ValueError("model-guided plan omits an exact accepted tangent-step receipt")
     return plan
 
 
-def _load_legacy_base() -> dict[str, Any]:
+def _load_base() -> dict[str, Any]:
     _ = tangent._load_plan(TANGENT_PLAN, TANGENT_PLAN_SHA)
     if _sha(STEP) != STEP_SHA or _sha(STEP_PARENT) != STEP_PARENT_SHA or _sha(STEP_RESOURCE) != STEP_RESOURCE_SHA:
         raise ValueError("accepted PR #258 tangent step artifact changed")
@@ -258,99 +191,6 @@ def _load_legacy_base() -> dict[str, Any]:
             or any(_sha(ROOT / name) != value for name, value in raw.get("source_before", {}).items())):
         raise ValueError("PR #258 accepted endpoint or closed receipts are invalid")
     return raw
-
-
-def _load_resume_base(plan: dict[str, Any]) -> dict[str, Any]:
-    snapshots = plan["producer_source_snapshots"]
-    snapshot_hashes = {name: value["sha256"] for name, value in snapshots.items()}
-    step_path = ROOT / plan["base_step"]
-    parent_path = ROOT / plan["base_run"]
-    resource_path = ROOT / plan["base_resource"]
-    for path, key in ((step_path, "base_step_sha256"), (parent_path, "base_run_sha256"),
-                      (resource_path, "base_resource_sha256")):
-        if (_sha(path) != plan.get(key)
-                or plan["archive_files"].get(path.relative_to(ROOT).as_posix()) != plan.get(key)):
-            raise ValueError("resume base step/run/resource hash differs from plan")
-    raw = json.loads(step_path.read_text())
-    parent = json.loads(parent_path.read_text())
-    resource = json.loads(resource_path.read_text())
-    iterations = raw.get("iterations")
-    state = raw.get("current_state", {})
-    lineage_ok = isinstance(iterations, list) and bool(iterations)
-    if lineage_ok:
-        for index, item in enumerate(iterations):
-            expected_base = raw.get("base_control_sha256") if index == 0 else iterations[index - 1].get("accepted_control_sha256")
-            if item.get("base_control_sha256") != expected_base:
-                lineage_ok = False
-                break
-        last_trials = iterations[-1].get("trials", [])
-        accepted_last = [item for item in last_trials if item.get("status") == "accepted"]
-        lineage_ok = lineage_ok and len(accepted_last) == 1
-        if lineage_ok:
-            trial = accepted_last[0]
-            final = iterations[-1]
-            lineage_ok = (trial.get("control_sha256") == RESUME_CONTROL_SHA
-                and trial.get("J_armijo_passed") is True
-                and trial.get("Phi_armijo_passed") is True
-                and trial.get("strict_point_passed") is True
-                and trial.get("objective") == final.get("accepted_objective")
-                and trial.get("phi") == final.get("accepted_phi")
-                and trial.get("gradient") == final.get("accepted_gradient")
-                and trial.get("branch", {}).get("signature_sha256")
-                == state.get("branch", {}).get("signature_sha256"))
-    if (raw.get("phase") != "finished" or raw.get("execution_status") != "completed"
-            or raw.get("numerical_status") not in VALID_RESUME_STATUSES
-            or raw.get("plan_sha256") != LEGACY_PLAN_SHA
-            or not isinstance(iterations, list) or not 1 <= len(iterations) <= MAX_ITERATIONS
-            or not lineage_ok
-            or raw.get("optimizer_steps_applied") != len(iterations)
-            or isinstance(raw.get("hvp_calls"), bool) or not 1 <= raw.get("hvp_calls", 0) <= MAX_HVP
-            or isinstance(raw.get("hvp_calls_completed"), bool)
-            or raw.get("hvp_calls_completed") > raw.get("hvp_calls")
-            or raw.get("candidate_committed") is not True
-            or raw.get("active_candidate_committed") is not False
-            or raw.get("current_control_sha256") != RESUME_CONTROL_SHA
-            or raw.get("parameters_sha256") != PARAMETERS_SHA
-            or raw.get("source_unchanged") is not True
-            or raw.get("source_before") != raw.get("source_after")
-            or raw.get("fixed_input_unchanged") is not True
-            or raw.get("runtime") != raw.get("runtime_after")
-            or not tangent._check_fixed_input(raw.get("input_after", {}),
-                raw.get("input_before", {}), RESUME_CONTROL_SHA)
-            or any(item.get("status") != "accepted" or item.get("committed") is not True
-                   for item in iterations)
-            or iterations[-1].get("accepted_control_sha256") != RESUME_CONTROL_SHA
-            or iterations[-1].get("accepted_control") != raw.get("current_control")
-            or iterations[-1].get("accepted_objective") != state.get("objective")
-            or iterations[-1].get("accepted_phi") != state.get("phi")
-            or iterations[-1].get("accepted_gradient") != state.get("gradient")
-            or iterations[-1].get("accepted_gradient_inf") != state.get("gradient_inf")
-            or parent.get("execution_status") != "completed"
-            or parent.get("child_read_error") is not None
-            or parent.get("child_sha256") != plan["base_step_sha256"]
-            or parent.get("numerical_status") != raw.get("numerical_status")
-            or guard_policy.execution_status(resource) != "completed"):
-        raise ValueError("PR #259 resume point or parent/resource closure is invalid")
-    for name, digest in raw.get("source_before", {}).items():
-        actual = snapshot_hashes.get(name, _sha(ROOT / name))
-        if digest != actual:
-            raise ValueError(f"resume producer source no longer matches archived bytes: {name}")
-    return {"accepted_control": raw["current_control"],
-        "accepted_control_sha256": raw["current_control_sha256"],
-        "accepted_objective": state["objective"], "accepted_phi": state["phi"],
-        "accepted_gradient": state["gradient"], "accepted_gradient_inf": state["gradient_inf"],
-        "accepted_branch": state["branch"], "accepted_branch_partition": state["branch_partition"],
-        "current_state": state, "parameters_sha256": raw["parameters_sha256"],
-        "input_before": raw["input_before"], "input_after": raw["input_after"],
-        "runtime": raw["runtime"], "resume_plan_sha256": LEGACY_PLAN_SHA,
-        "resume_step_sha256": plan["base_step_sha256"]}
-
-
-def _load_base(plan: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Normalize either the original tangent seed or a closed continuation endpoint."""
-    if plan is not None and plan.get("experiment_kind") == "model_guided_resume":
-        return _load_resume_base(plan)
-    return _load_legacy_base()
 
 
 def _static_zero_faces(problem: Any, control: Tensor) -> list[dict[str, Any]]:
@@ -445,8 +285,7 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
 
     try:
         plan = _load_plan(plan_path, plan_sha)
-        tangent_raw = _load_base(plan)
-        base_sha = tangent_raw["accepted_control_sha256"]
+        tangent_raw = _load_base()
         source_names = set(plan["source_files"]) | set(plan["archive_files"]) | {
             plan_path.resolve().relative_to(ROOT.resolve()).as_posix()}
         expected = {**plan["source_files"], **plan["archive_files"],
@@ -457,21 +296,19 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
         record["source_before"] = before
         problem, original, _, parameters, truth, _ = seed._prepare_fixed_seed()
         control = torch.tensor(tangent_raw["accepted_control"], dtype=torch.float64)
-        if (tangent._tensor_sha(control) != base_sha
+        if (_sha(TANGENT_PLAN) != TANGENT_PLAN_SHA
+                or tangent._tensor_sha(control) != CONTROL_SHA
                 or tangent._tensor_sha(parameters) != PARAMETERS_SHA):
-            raise ValueError("reconstructed accepted continuation control/parameters changed")
+            raise ValueError("reconstructed accepted PR #258 control/parameters changed")
         base_identity = seed._input_identity(problem, original, control, parameters, truth)
         if base_identity != tangent_raw["input_after"]:
             raise ValueError("reconstructed original fixed input differs from accepted tangent receipt")
         runtime = guard_policy.blocks.runtime_identity()
         if runtime != tangent_raw["runtime"]:
             raise ValueError("runtime differs from accepted tangent endpoint")
-        record.update(base_control_sha256=base_sha, parameters_sha256=PARAMETERS_SHA,
-                      current_control=control.tolist(), current_control_sha256=base_sha,
+        record.update(base_control_sha256=CONTROL_SHA, parameters_sha256=PARAMETERS_SHA,
+                      current_control=control.tolist(), current_control_sha256=CONTROL_SHA,
                       input_before=base_identity, runtime=runtime)
-        if tangent_raw.get("resume_plan_sha256"):
-            record["resume_from"] = {"plan_sha256": tangent_raw["resume_plan_sha256"],
-                                     "step_sha256": tangent_raw["resume_step_sha256"]}
         current_problem = problem
         current_parameters = parameters
         current_original = original
@@ -480,23 +317,18 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
         current_measure = qy._measure(current_problem, current_parameters, control,
             float(qy.production_qy32(current_problem, control)), gradient_fn,
             with_gradient=True, deadline=deadline)
-        baseline_state = tangent_raw.get("current_state") or {
-            "objective": tangent_raw["accepted_objective"], "phi": tangent_raw["accepted_phi"],
-            "gradient": tangent_raw["accepted_gradient"],
-            "gradient_inf": tangent_raw["accepted_gradient_inf"],
-            "branch": tangent_raw["accepted_branch"]}
+        saved_trial = [item for item in tangent_raw["trials"] if item.get("status") == "accepted"][-1]
         baseline_ok = (current_measure["branch"].get("status") == "passed_strict_branch"
-            and current_measure["branch"].get("signature_sha256")
-            == baseline_state.get("branch", {}).get("signature_sha256")
-            and tangent._metric(float(baseline_state["objective"]), current_measure["objective"])["passed"]
-            and tangent._metric(float(baseline_state["phi"]), current_measure["phi"])["passed"]
+            and current_measure["branch"].get("signature_sha256") == saved_trial["branch_signature_sha256"]
+            and tangent._metric(float(tangent_raw["accepted_objective"]), current_measure["objective"])["passed"]
+            and tangent._metric(float(tangent_raw["accepted_phi"]), current_measure["phi"])["passed"]
             and all(tangent._metric(a, float(b))["passed"] for a, b in
-                    zip(baseline_state["gradient"], current_measure["gradient"], strict=True)))
+                    zip(tangent_raw["accepted_gradient"], current_measure["gradient"], strict=True)))
         if not baseline_ok:
             raise ValueError("fresh full J/g/Phi/branch differs from accepted PR #258 endpoint")
         current_state = _compact_state(control, current_measure)
         record.update(current_state={key: value for key, value in current_state.items() if key != "control"},
-                      current_control=control.tolist(), current_control_sha256=base_sha,
+                      current_control=control.tolist(), current_control_sha256=CONTROL_SHA,
                       numerical_status="iterating")
         current_measure.pop("branch_signature", None)
         current_measure.pop("static_flux_signs", None)
@@ -726,8 +558,7 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
     plan_path = plan_path.resolve()
     if plan_path != PLAN.resolve() or _sha(plan_path) != plan_sha:
         raise ValueError("caller model-guided plan identity mismatch")
-    plan = _load_plan(plan_path, plan_sha)
-    expected_base_sha = plan.get("base_control_sha256", CONTROL_SHA)
+    _load_plan(plan_path, plan_sha)
     parent_path = output.with_suffix(".run.json")
     if any(path.exists() or path.is_symlink() for path in (output, resource, log, parent_path)):
         raise ValueError("model-guided report/resource/log paths must be fresh")
@@ -748,8 +579,7 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
         closed = (child.get("phase") == "finished" and child.get("execution_status") == "completed"
             and child.get("source_unchanged") is True and child.get("fixed_input_unchanged") is True
             and child.get("runtime_after") == child.get("runtime")
-            and child.get("plan_sha256") == plan_sha
-            and child.get("base_control_sha256") == expected_base_sha)
+            and child.get("plan_sha256") == plan_sha and child.get("base_control_sha256") == CONTROL_SHA)
         if execution == "completed" and not closed:
             parent.update(execution_status="failed", execution_failure_reason="child closure refused")
         iterations = child.get("iterations", [])
@@ -758,7 +588,7 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
             and child.get("optimizer_steps_applied") == len(iterations)
             and child.get("candidate_committed") is (len(iterations) > 0)
             and child.get("active_candidate_committed") is False
-            and (iterations or child.get("current_control_sha256") == expected_base_sha)
+            and (iterations or child.get("current_control_sha256") == CONTROL_SHA)
             and (not iterations or (iterations[-1].get("committed") is True
                 and iterations[-1].get("accepted_control_sha256") == current_sha
                 and iterations[-1].get("accepted_control") == child.get("current_control"))))

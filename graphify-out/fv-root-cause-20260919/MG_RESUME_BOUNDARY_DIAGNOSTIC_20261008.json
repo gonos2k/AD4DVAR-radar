@@ -1,0 +1,165 @@
+{
+  "scope": "savedcontrols/directions andstaticstreamfunction arithmetic; noFV ornewbranchcertification",
+  "iterations": [
+    {
+      "iteration": 0,
+      "accepted_Qy43": -2.6699874443494864e-05,
+      "minimum_static_flux": 2.6699874443494864e-05,
+      "trials": [
+        {
+          "index": 0,
+          "J_pass": true,
+          "Phi_pass": false,
+          "branch": "passed_strict_branch",
+          "Qy43": 6.576643667298432e-05,
+          "Qy32": 7.959163191873647e-05,
+          "status": "rejected"
+        },
+        {
+          "index": 1,
+          "J_pass": true,
+          "Phi_pass": false,
+          "branch": "passed_strict_branch",
+          "Qy43": 4.122230196648702e-06,
+          "Qy32": 4.669319321309179e-05,
+          "status": "rejected"
+        },
+        {
+          "index": 2,
+          "J_pass": true,
+          "Phi_pass": true,
+          "branch": "passed_strict_branch",
+          "Qy43": -2.6699874443494864e-05,
+          "Qy32": 3.0243973136862e-05,
+          "status": "accepted"
+        }
+      ]
+    },
+    {
+      "iteration": 1,
+      "accepted_Qy43": -5.555030079915091e-06,
+      "minimum_static_flux": 5.555030079915091e-06,
+      "trials": [
+        {
+          "index": 0,
+          "J_pass": true,
+          "Phi_pass": false,
+          "branch": "passed_strict_branch",
+          "Qy43": 0.00014245886714150252,
+          "Qy32": 0.00012012733153826671,
+          "status": "rejected"
+        },
+        {
+          "index": 1,
+          "J_pass": true,
+          "Phi_pass": false,
+          "branch": "passed_strict_branch",
+          "Qy43": 5.787950036964529e-05,
+          "Qy32": 7.518565440167713e-05,
+          "status": "rejected"
+        },
+        {
+          "index": 2,
+          "J_pass": true,
+          "Phi_pass": false,
+          "branch": "passed_strict_branch",
+          "Qy43": 1.5589813861280333e-05,
+          "Qy32": 5.2714814228034534e-05,
+          "status": "rejected"
+        },
+        {
+          "index": 3,
+          "J_pass": true,
+          "Phi_pass": true,
+          "branch": "passed_strict_branch",
+          "Qy43": -5.555030079915091e-06,
+          "Qy32": 4.147939378997684e-05,
+          "status": "accepted"
+        }
+      ]
+    },
+    {
+      "iteration": 2,
+      "accepted_Qy43": -2.3750409847561604e-06,
+      "minimum_static_flux": 2.3750409847561604e-06,
+      "trials": [
+        {
+          "index": 0,
+          "J_pass": false,
+          "Phi_pass": false,
+          "branch": "passed_strict_branch",
+          "Qy43": 0.00019796424862632278,
+          "Qy32": 0.00014912239753946815,
+          "status": "rejected"
+        },
+        {
+          "index": 1,
+          "J_pass": true,
+          "Phi_pass": false,
+          "branch": "passed_strict_branch",
+          "Qy43": 9.620461570679362e-05,
+          "Qy32": 9.530089893365623e-05,
+          "status": "rejected"
+        },
+        {
+          "index": 2,
+          "J_pass": true,
+          "Phi_pass": false,
+          "branch": "passed_strict_branch",
+          "Qy43": 4.5324794230312826e-05,
+          "Qy32": 6.839014707652608e-05,
+          "status": "rejected"
+        },
+        {
+          "index": 3,
+          "J_pass": true,
+          "Phi_pass": false,
+          "branch": "passed_strict_branch",
+          "Qy43": 1.988488240547287e-05,
+          "Qy32": 5.493477059911184e-05,
+          "status": "rejected"
+        },
+        {
+          "index": 4,
+          "J_pass": true,
+          "Phi_pass": false,
+          "branch": "passed_strict_branch",
+          "Qy43": 7.1649262423506554e-06,
+          "Qy32": 4.820708223440828e-05,
+          "status": "rejected"
+        },
+        {
+          "index": 5,
+          "J_pass": true,
+          "Phi_pass": false,
+          "branch": "passed_strict_branch",
+          "Qy43": 8.049481007368908e-07,
+          "Qy32": 4.484323802195905e-05,
+          "status": "rejected"
+        },
+        {
+          "index": 6,
+          "J_pass": true,
+          "Phi_pass": true,
+          "branch": "passed_strict_branch",
+          "Qy43": -2.3750409847561604e-06,
+          "Qy32": 4.316131590838268e-05,
+          "status": "accepted"
+        }
+      ]
+    }
+  ],
+  "final_Qy43_geometry": {
+    "weights_in_tanh_control": [
+      -0.08,
+      -0.28,
+      -0.14,
+      -0.84
+    ],
+    "normal_norm": 0.8998356525688448,
+    "euclidean_unit_control_normal_gradient": -0.08182526030182867,
+    "tangent_gradient_norm": 0.13656910259073465,
+    "full_gradient_norm": 0.15920581963578034,
+    "scope": "projectionatcurrentnegativeQy43point; notboundarypointgradient orconditionalminimum"
+  }
+}
