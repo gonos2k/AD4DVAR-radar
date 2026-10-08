@@ -1,0 +1,30 @@
+[
+  {
+    "eta": -2e-06,
+    "control_hash_matches": true,
+    "gradient_hash_matches": true,
+    "retained_controls_exact": true,
+    "Phi_error": 0.0
+  },
+  {
+    "eta": -1e-06,
+    "control_hash_matches": true,
+    "gradient_hash_matches": true,
+    "retained_controls_exact": true,
+    "Phi_error": 0.0
+  },
+  {
+    "eta": 1e-06,
+    "control_hash_matches": true,
+    "gradient_hash_matches": true,
+    "retained_controls_exact": true,
+    "Phi_error": 0.0
+  },
+  {
+    "eta": 2e-06,
+    "control_hash_matches": true,
+    "gradient_hash_matches": true,
+    "retained_controls_exact": true,
+    "Phi_error": 0.0
+  }
+]

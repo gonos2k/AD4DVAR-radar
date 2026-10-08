@@ -1,0 +1,7 @@
+{
+  "scope": "PR260 archived controls/gradient static projection only; noFV/J/AD",
+  "normal_angle_deg": 7.869540137718032,
+  "unitnormal_column_condition": 14.538505970315974,
+  "tangent_fraction": 0.7358461692549204,
+  "base_control_sha256": "2cdccade81a8cf218dd7cad97adf71f6675f8445481dd8f6394ec337ea8e8007"
+}

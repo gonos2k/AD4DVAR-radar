@@ -1,0 +1,64 @@
+{
+  "scope": "one genericface transition diagnostic atPR260final2cd, defaultQy4,3",
+  "eta_values": [
+    -2e-06,
+    -1e-06,
+    1e-06,
+    2e-06
+  ],
+  "zero": "costonly noAD/strictcertification",
+  "invariants": [
+    "original full26J/prior/p/observations/boundaries/time unchanged",
+    "fixed retained25 coordinates; pivot inverse restoresflux",
+    "productionoperator sources unchanged; diagnosticobserver outsideADonly",
+    "effectiveEulerboundary traces reflectevenpositivegrowthscaling andoddunscaledstage",
+    "analysis360 andfuture3240 branches separate",
+    "finitepair gradientjump/minnorm direction diagnosticonly noactualstep"
+  ],
+  "budgets": {
+    "internal_seconds": 240,
+    "outer_seconds": 300,
+    "RSS_bytes": 1073741824,
+    "launches": 1,
+    "HVP": 0,
+    "PCG": 0,
+    "optimizer_steps": 0
+  },
+  "source_graph_sha": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "remaining": [
+    "originaleligible3hroot",
+    "currentfullcurvature/originaladjoint/VJP/reanalysis",
+    "independentsyntheticfutureverification"
+  ],
+  "plan_sha256": "6b79d07ce609ebe35879dcb3f1cec95649a786155c392e7ea041063b4e19283e",
+  "source_count": 113,
+  "archive_count": 54,
+  "verification": {
+    "focused": "22passed2.15sec",
+    "types": "errorlevel0",
+    "graphify": "FACE_TRANSITION_GRAPHIFY_20261008.json copiednewfiles"
+  },
+  "scope_limits": [
+    "analysis360detaileddonortrace only; future3240branchpartition",
+    "finitepairs noexactgradientlimit/Clarkenormality orsinglecause",
+    "convexsegmentdirection diagnostic unapplied"
+  ],
+  "state": "singlefinite4sidedonortrace diagnostic completed",
+  "result": "FACE_TRANSITION_RESULT_20261008.json",
+  "independent_checks": "FACE_TRANSITION_INDEPENDENT_CHECKS_20261008.json",
+  "actual": {
+    "guard_seconds": 33.73961008293554,
+    "sampled_peak_RSS_bytes": 824360960,
+    "HVP": 0,
+    "PCG": 0,
+    "optimizer": 0
+  },
+  "raw_archive": "face_transition_attempt1/archive.json",
+  "key_findings": [
+    "analysischoicesidentical target43onlycross-sign",
+    "innergradientjump99.99717%normal squared",
+    "finitehullvnorm.136798 commonJslopesnegative directionUNAPPLIED",
+    "effectiveanalysis donortrace differs/signchanges; noadjoint-weightedcause",
+    "futureeventsirrelevanttoJanalysis-only"
+  ]
+}
