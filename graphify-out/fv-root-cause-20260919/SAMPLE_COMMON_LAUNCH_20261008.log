@@ -1,0 +1,5 @@
+usage: fv_point_3h_sample_common_search.py [-h] --plan PLAN --plan-sha256
+                                           PLAN_SHA256 --output OUTPUT
+                                           --resource RESOURCE --log LOG
+                                           [--child]
+fv_point_3h_sample_common_search.py: error: the following arguments are required: --plan, --output, --resource, --log

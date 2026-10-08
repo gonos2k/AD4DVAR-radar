@@ -1,0 +1,1618 @@
+{
+  "scope": "AST isolated copies of owned adapter and tests; shared graph unchanged",
+  "stage": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74",
+  "extraction": {
+    "nodes": [
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search",
+        "label": "fv_point_3h_sample_common_search.py",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L1",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_searchrefusal",
+        "label": "SearchRefusal",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L49",
+        "_origin": "ast"
+      },
+      {
+        "id": "runtimeerror",
+        "label": "RuntimeError",
+        "file_type": "code",
+        "source_file": "",
+        "source_location": "",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_policy",
+        "label": "policy()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L53",
+        "_origin": "ast"
+      },
+      {
+        "id": "any",
+        "label": "Any",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L53",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_sha",
+        "label": "_sha()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L64",
+        "_origin": "ast"
+      },
+      {
+        "id": "path",
+        "label": "Path",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L64",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_tensor_sha",
+        "label": "_tensor_sha()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L68",
+        "_origin": "ast"
+      },
+      {
+        "id": "tensor",
+        "label": "Tensor",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L68",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_write",
+        "label": "_write()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L72",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_sample_direction",
+        "label": "sample_direction()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L76",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_initial_scale",
+        "label": "initial_scale()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L105",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_descent_pairing",
+        "label": "descent_pairing()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L142",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_actual_step_metrics",
+        "label": "actual_step_metrics()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L156",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_load_plan",
+        "label": "_load_plan()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L167",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_load_sample_diagnostic",
+        "label": "_load_sample_diagnostic()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L200",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_branch",
+        "label": "_branch()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L241",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_fresh",
+        "label": "_fresh()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L264",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_candidate_objective",
+        "label": "_candidate_objective()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L283",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_final_recheck",
+        "label": "_final_recheck()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L291",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_mark_uncommitted",
+        "label": "_mark_uncommitted()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L307",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "label": "_run_child()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L314",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_run",
+        "label": "run()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L493",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_main",
+        "label": "main()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L536",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_rationale_1",
+        "label": "One bounded original-J search along the sampled common full-gradient direction.",
+        "file_type": "rationale",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L1",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_rationale_50",
+        "label": "Known refusal before a candidate can be committed.",
+        "file_type": "rationale",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L50",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_rationale_77",
+        "label": "Reconstruct the minimum-norm point on the two sampled gradient segment.",
+        "file_type": "rationale",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L77",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_sample_common_search_rationale_107",
+        "label": "Choose a capped scale; curvature affects the cap only when resolved positive.",
+        "file_type": "rationale",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L107",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_sample_common_search",
+        "label": "test_fv_point_3h_sample_common_search.py",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L1",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_sample_common_search_test_sample_direction_uses_fixed_inner_gradient_pair",
+        "label": "test_sample_direction_uses_fixed_inner_gradient_pair()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L11",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_sample_common_search_test_sample_direction_rejects_other_base_lineage",
+        "label": "test_sample_direction_rejects_other_base_lineage()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L28",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_sample_common_search_test_initial_scale_enforces_radius_and_uses_resolved_positive_curvature",
+        "label": "test_initial_scale_enforces_radius_and_uses_resolved_positive_curvature()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L35",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_sample_common_search_test_unresolved_curvature_keeps_radius_cap",
+        "label": "test_unresolved_curvature_keeps_radius_cap()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L47",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_sample_common_search_test_positive_phi_slope_is_diagnostic_and_does_not_refuse_cost_search",
+        "label": "test_positive_phi_slope_is_diagnostic_and_does_not_refuse_cost_search()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L58",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_sample_common_search_test_finite_hvp_with_overflowing_curvature_is_refused",
+        "label": "test_finite_hvp_with_overflowing_curvature_is_refused()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L67",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_sample_common_search_test_actual_alpha_and_norm_include_both_search_scales",
+        "label": "test_actual_alpha_and_norm_include_both_search_scales()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L74",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_sample_common_search_test_original_j_armijo_can_accept_phi_increase",
+        "label": "test_original_j_armijo_can_accept_phi_increase()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L86",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_sample_common_search_test_final_recheck_requires_exact_fresh_gradient_and_branch",
+        "label": "test_final_recheck_requires_exact_fresh_gradient_and_branch()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L119",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_sample_common_search_test_failed_final_recheck_marks_trial_not_committed",
+        "label": "test_failed_final_recheck_marks_trial_not_committed()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L142",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_sample_common_search_test_parent_child_command_is_accepted_by_real_cli_parser",
+        "label": "test_parent_child_command_is_accepted_by_real_cli_parser()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L154",
+        "_origin": "ast"
+      }
+    ],
+    "edges": [
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "argparse",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L4",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "gzip",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L5",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "hashlib",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L6",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "json",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L7",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "math",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L8",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "sys",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L9",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "time",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L10",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "pathlib",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L11",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "typing",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L12",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "torch",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L14",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "torch",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L15",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L21",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L22",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L23",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L24",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "examples_weather_scenarios_fv_diagnostic_guard",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L25",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_searchrefusal",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L49",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_searchrefusal",
+        "target": "runtimeerror",
+        "relation": "inherits",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L49",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_policy",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L53",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_policy",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L53",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_sha",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L64",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_sha",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L64",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_tensor_sha",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L68",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_tensor_sha",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L68",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_write",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L72",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_write",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L72",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_write",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L72",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_sample_direction",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L76",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_sample_direction",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L76",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_sample_direction",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L76",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_sample_direction",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L76",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_initial_scale",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L105",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_initial_scale",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L105",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_initial_scale",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L105",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_initial_scale",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L105",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_descent_pairing",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L142",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_descent_pairing",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L142",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_descent_pairing",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L142",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_actual_step_metrics",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L156",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_load_plan",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L167",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_load_plan",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L167",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_load_plan",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L167",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_load_sample_diagnostic",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L200",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_load_sample_diagnostic",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L200",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_load_sample_diagnostic",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L200",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_branch",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L241",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_branch",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L241",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_branch",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L241",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_branch",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L241",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_branch",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L241",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_branch",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L241",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_fresh",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L264",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_fresh",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L264",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_fresh",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L264",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_fresh",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L264",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_fresh",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L264",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_fresh",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L264",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_fresh",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L264",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_fresh",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L264",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_candidate_objective",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L283",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_candidate_objective",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L283",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_candidate_objective",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L283",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_candidate_objective",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L283",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_final_recheck",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L291",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_final_recheck",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L291",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_final_recheck",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L291",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_final_recheck",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L291",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_final_recheck",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L291",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_final_recheck",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L291",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_final_recheck",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L291",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_final_recheck",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L291",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_mark_uncommitted",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L307",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_mark_uncommitted",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L307",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L314",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L314",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L314",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L314",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_run",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L493",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L493",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L493",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L493",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L493",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L493",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_main",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L536",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_initial_scale",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_descent_pairing",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L119",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_initial_scale",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_searchrefusal",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L126",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_descent_pairing",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_searchrefusal",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L152",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_load_plan",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L169",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_load_plan",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_policy",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L182",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_fresh",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_searchrefusal",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L267",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_policy",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L319",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_write",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L327",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_load_plan",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L355",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_load_sample_diagnostic",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L356",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_sample_direction",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L357",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L361",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_tensor_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L373",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_branch",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L378",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_searchrefusal",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L381",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_fresh",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L383",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_descent_pairing",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L393",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_initial_scale",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L410",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_candidate_objective",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L437",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_final_recheck",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L448",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_actual_step_metrics",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L459",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_mark_uncommitted",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L476",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_load_plan",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L496",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run",
+        "target": "path",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L501",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_write",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L509",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L514",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_run",
+        "target": "runtimeerror",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L529",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_main",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_run_child",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L546",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_main",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_run",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L548",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_rationale_1",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search",
+        "relation": "rationale_for",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L1",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_rationale_50",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_searchrefusal",
+        "relation": "rationale_for",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L50",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_rationale_77",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_sample_direction",
+        "relation": "rationale_for",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L77",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_sample_common_search_rationale_107",
+        "target": "weather_scenarios_fv_point_3h_sample_common_search_initial_scale",
+        "relation": "rationale_for",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+        "source_location": "L107",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "typing",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L3",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "torch",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L5",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "pytest",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L6",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L8",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "tests_test_fv_point_3h_sample_common_search_test_sample_direction_uses_fixed_inner_gradient_pair",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L11",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "tests_test_fv_point_3h_sample_common_search_test_sample_direction_rejects_other_base_lineage",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L28",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "tests_test_fv_point_3h_sample_common_search_test_initial_scale_enforces_radius_and_uses_resolved_positive_curvature",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L35",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "tests_test_fv_point_3h_sample_common_search_test_unresolved_curvature_keeps_radius_cap",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L47",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "tests_test_fv_point_3h_sample_common_search_test_positive_phi_slope_is_diagnostic_and_does_not_refuse_cost_search",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L58",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "tests_test_fv_point_3h_sample_common_search_test_finite_hvp_with_overflowing_curvature_is_refused",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L67",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "tests_test_fv_point_3h_sample_common_search_test_actual_alpha_and_norm_include_both_search_scales",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L74",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "tests_test_fv_point_3h_sample_common_search_test_original_j_armijo_can_accept_phi_increase",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L86",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "tests_test_fv_point_3h_sample_common_search_test_final_recheck_requires_exact_fresh_gradient_and_branch",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L119",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "tests_test_fv_point_3h_sample_common_search_test_failed_final_recheck_marks_trial_not_committed",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L142",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_sample_common_search",
+        "target": "tests_test_fv_point_3h_sample_common_search_test_parent_child_command_is_accepted_by_real_cli_parser",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-sample-common-final-graph-_yt8vq74/tests/test_fv_point_3h_sample_common_search.py",
+        "source_location": "L154",
+        "weight": 1.0
+      }
+    ],
+    "input_tokens": 0,
+    "output_tokens": 0
+  },
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef"
+}
