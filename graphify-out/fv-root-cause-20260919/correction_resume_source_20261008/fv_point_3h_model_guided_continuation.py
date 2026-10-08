@@ -138,10 +138,6 @@ def _compact_state(control: Tensor, measured: dict[str, Any]) -> dict[str, Any]:
 
 def _load_plan(path: Path, digest: str) -> dict[str, Any]:
     path = path.resolve()
-    correction_plan = (EVIDENCE / "CORRECTION_RESUME_PLAN_20261008.json").resolve()
-    if path == correction_plan:
-        from examples.weather_scenarios import fv_point_3h_correction_resume as resume
-        return resume._load_plan(path, digest)
     cycle_plan = (EVIDENCE / "EXPLORATION_CORRECTION_CYCLE_PLAN_20261008.json").resolve()
     if path == cycle_plan:
         from examples.weather_scenarios import fv_point_3h_exploration_correction_cycle as cycle
@@ -356,9 +352,6 @@ def _load_resume_base(plan: dict[str, Any]) -> dict[str, Any]:
 
 def _load_base(plan: dict[str, Any] | None = None) -> dict[str, Any]:
     """Normalize either the original tangent seed or a closed continuation endpoint."""
-    if plan is not None and plan.get("experiment_kind") == "model_guided_correction_resume":
-        from examples.weather_scenarios import fv_point_3h_correction_resume as resume
-        return resume._load_base(plan)
     if plan is not None and plan.get("experiment_kind") == "exploration_correction_cycle":
         from examples.weather_scenarios import fv_point_3h_exploration_correction_cycle as cycle
         return cycle._load_base(plan)
@@ -773,8 +766,7 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
         log: Path) -> dict[str, Any]:
     plan_path = plan_path.resolve()
     cycle_plan = (ROOT / "graphify-out/fv-root-cause-20260919/EXPLORATION_CORRECTION_CYCLE_PLAN_20261008.json").resolve()
-    correction_plan = (EVIDENCE / "CORRECTION_RESUME_PLAN_20261008.json").resolve()
-    if plan_path not in {PLAN.resolve(), cycle_plan, correction_plan} or _sha(plan_path) != plan_sha:
+    if plan_path not in {PLAN.resolve(), cycle_plan} or _sha(plan_path) != plan_sha:
         raise ValueError("caller model-guided plan identity mismatch")
     plan = _load_plan(plan_path, plan_sha)
     expected_base_sha = plan.get("base_control_sha256", CONTROL_SHA)

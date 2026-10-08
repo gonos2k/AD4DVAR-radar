@@ -1,0 +1,177 @@
+{
+  "scope": "saved vectors/static face geometry/receipt arithmetic only; no new FV/HVP",
+  "checks": {
+    "child_hash_matches": true,
+    "resource_matches": true,
+    "source_closure": true,
+    "input_closure": true,
+    "runtime_closure": true,
+    "no_cycle_gate": true,
+    "base_lineage": true,
+    "current_control_hash": true,
+    "count_closure": true
+  },
+  "points": [
+    {
+      "J": 0.0613117140406184,
+      "Phi": 0.010815707540872811,
+      "gInf": 0.11651289508164255,
+      "gNorm": 0.14707622201343637,
+      "control_sha256": "6c0fe4858631513f665f91c77006d4641e564862d8141111c0030c91d2bb74bd",
+      "Qy43_static": -2.1172343357621706e-05,
+      "Qy43_unit_normal_gradient": -0.11262696629281706,
+      "Qy43_tangent_gradient_norm": 0.09458637082276851,
+      "blocks": {
+        "field": 0.0821804657573916,
+        "flow": 0.11880326430379139,
+        "growth": 0.027632779816864184
+      }
+    },
+    {
+      "J": 0.061308720524486535,
+      "Phi": 0.0086153163212145,
+      "gInf": 0.107542109290469,
+      "gNorm": 0.13126550438873497,
+      "control_sha256": "9235262965dcd84a15d40fb333b01cb1b9cb10246b0ab64007ebf573905e08b6",
+      "Qy43_static": -6.1292828677488725e-06,
+      "Qy43_unit_normal_gradient": -0.10238526860959209,
+      "Qy43_tangent_gradient_norm": 0.08214553800524214,
+      "blocks": {
+        "field": 0.0708201088084477,
+        "flow": 0.11051577296906315,
+        "growth": 0.0011869102068482185
+      }
+    },
+    {
+      "J": 0.06130758895915894,
+      "Phi": 0.008245115668396481,
+      "gInf": 0.10513958818244266,
+      "gNorm": 0.1284142956870183,
+      "control_sha256": "cf44478f7df4ba90e7fab2ef3e3da27139b45e819f8148026c5078a5898aefd5",
+      "Qy43_static": -8.818126949125538e-09,
+      "Qy43_unit_normal_gradient": -0.09967234767114841,
+      "Qy43_tangent_gradient_norm": 0.0809669960324247,
+      "blocks": {
+        "field": 0.06893013594030788,
+        "flow": 0.10831535656005192,
+        "growth": 0.0025789977340930637
+      }
+    },
+    {
+      "J": 0.06130758760875752,
+      "Phi": 0.008244737124116911,
+      "gInf": 0.10513700083904698,
+      "gNorm": 0.12841134781721522,
+      "control_sha256": "95a55578eea1d3b9600a210e7bdba37c21d7d7a1baf07244afc513a46df8c842",
+      "Qy43_static": -1.4733278676931638e-09,
+      "Qy43_unit_normal_gradient": -0.09966943514535659,
+      "Qy43_tangent_gradient_norm": 0.08096590607187314,
+      "blocks": {
+        "field": 0.06892826453533397,
+        "flow": 0.1083129790018132,
+        "growth": 0.0025820875534379173
+      }
+    }
+  ],
+  "iterations": [
+    {
+      "index": 0,
+      "checks": {
+        "base_hash": true,
+        "accepted_hash": true,
+        "fresh_direction": true,
+        "affine_control": true,
+        "J_armijo": true,
+        "Phi_armijo": true,
+        "Phi_arithmetic": true,
+        "strict_branch": true,
+        "committed": true
+      },
+      "alpha_start": 0.00029686600304006864,
+      "accepted_alpha": 0.00014843300152003432,
+      "candidate_count": 2,
+      "displacement": 2.183096508568176e-05,
+      "g_dot_d": -0.021631415081745622,
+      "g_dot_Hd": -19.61960155615766,
+      "gradient_linearization_relative_error": 0.008038868090702929,
+      "J_armijo_upper": 0.061311713719536816,
+      "Phi_armijo_upper": 0.01081541632123805,
+      "old_direction_at_new_point": -0.018700652428017286,
+      "analysis_signature": "679ba9c175eea9ea0a80a94af3c9918da793275f01b9714ec368767b12afdea0",
+      "future_signature": "d9ee4cdc29a6289549c4434790ab55053f7bfc09e271aa4d911db302f396640a"
+    },
+    {
+      "index": 1,
+      "checks": {
+        "base_hash": true,
+        "accepted_hash": true,
+        "fresh_direction": true,
+        "affine_control": true,
+        "J_armijo": true,
+        "Phi_armijo": true,
+        "Phi_arithmetic": true,
+        "strict_branch": true,
+        "committed": true
+      },
+      "alpha_start": 0.0005314636628216393,
+      "accepted_alpha": 6.643295785270491e-05,
+      "candidate_count": 4,
+      "displacement": 8.720355720572582e-06,
+      "g_dot_d": -0.017230632642429,
+      "g_dot_Hd": -5.9440536354836855,
+      "gradient_linearization_relative_error": 1.320628827702389e-06,
+      "J_armijo_upper": 0.06130872041001834,
+      "Phi_armijo_upper": 0.008615276833108037,
+      "old_direction_at_new_point": -0.01683575139593365,
+      "analysis_signature": "679ba9c175eea9ea0a80a94af3c9918da793275f01b9714ec368767b12afdea0",
+      "future_signature": "d78efcb45611905e13fb6c29e75cdd7262cc45738ff727673048b6b011ea47be"
+    },
+    {
+      "index": 2,
+      "checks": {
+        "base_hash": true,
+        "accepted_hash": true,
+        "fresh_direction": true,
+        "affine_control": true,
+        "J_armijo": true,
+        "Phi_armijo": true,
+        "Phi_arithmetic": true,
+        "strict_branch": true,
+        "committed": true
+      },
+      "alpha_start": 0.0006708599143689967,
+      "accepted_alpha": 8.189207939074667e-08,
+      "candidate_count": 14,
+      "displacement": 1.0516113694204764e-08,
+      "g_dot_d": -0.016490231336792963,
+      "g_dot_Hd": -4.622761089281502,
+      "gradient_linearization_relative_error": 3.7765722798302556e-11,
+      "J_armijo_upper": 0.0613075889590239,
+      "Phi_armijo_upper": 0.008245115630539729,
+      "old_direction_at_new_point": -0.016489852769407492,
+      "analysis_signature": "679ba9c175eea9ea0a80a94af3c9918da793275f01b9714ec368767b12afdea0",
+      "future_signature": "d78efcb45611905e13fb6c29e75cdd7262cc45738ff727673048b6b011ea47be"
+    }
+  ],
+  "changes_vs_resume_base": {
+    "J": -0.006730250369690882,
+    "Phi": -23.770709470833438,
+    "gNorm": -12.69061303091943,
+    "gInf": -9.763635376688807
+  },
+  "numerical_status": "max_iterations_completed",
+  "full_root_claim": false,
+  "HVP_started": 3,
+  "HVP_completed": 3,
+  "PCG": 0,
+  "resource": {
+    "elapsed_seconds": 117.1353983329609,
+    "sampled_peak_rss_bytes": 377700352,
+    "exit_code": 0
+  },
+  "remaining": [
+    "eligible original3h root",
+    "curvature/original adjoint/reanalysis",
+    "independent synthetic future verification"
+  ]
+}

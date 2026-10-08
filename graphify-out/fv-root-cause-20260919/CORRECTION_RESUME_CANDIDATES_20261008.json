@@ -1,0 +1,73 @@
+[
+  {
+    "index": 0,
+    "alpha_start": 0.00029686600304006864,
+    "accepted_alpha": 0.00014843300152003432,
+    "displacement": 2.1830965085681756e-05,
+    "reject_counts": {
+      "J=True,Phi=False,strict=True": 1
+    },
+    "immediate_larger": {
+      "alpha": 0.00029686600304006864,
+      "objective": 0.06130901473312432,
+      "phi": 0.02284031057035561,
+      "J_armijo_passed": true,
+      "Phi_armijo_passed": false,
+      "strict_point_passed": true,
+      "control_sha256": "da8a1dfa6f13ae7d771e5026b644bdf37a7a24355bf32c0ff746f5b850c974c9",
+      "status": "rejected",
+      "refusal": null,
+      "control_reconstruction_hash_matches": true,
+      "Qy43_static": 8.91377730366169e-06
+    },
+    "accepted_Qy43_static": -6.1292828677488725e-06
+  },
+  {
+    "index": 1,
+    "alpha_start": 0.0005314636628216393,
+    "accepted_alpha": 6.643295785270491e-05,
+    "displacement": 8.720355720572582e-06,
+    "reject_counts": {
+      "J=False,Phi=False,strict=True": 2,
+      "J=True,Phi=False,strict=True": 1
+    },
+    "immediate_larger": {
+      "alpha": 0.00013286591570540982,
+      "objective": 0.06130843738762752,
+      "phi": 0.02139246997216735,
+      "J_armijo_passed": true,
+      "Phi_armijo_passed": false,
+      "strict_point_passed": true,
+      "control_sha256": "c3aeab88d37a1e69b475f0df2203970a1f7a5c5ad181497c8cf2d7efaf591904",
+      "status": "rejected",
+      "refusal": null,
+      "control_reconstruction_hash_matches": true,
+      "Qy43_static": 6.111646562891385e-06
+    },
+    "accepted_Qy43_static": -8.818126949125538e-09
+  },
+  {
+    "index": 2,
+    "alpha_start": 0.0006708599143689967,
+    "accepted_alpha": 8.189207939074667e-08,
+    "displacement": 1.0516113694204764e-08,
+    "reject_counts": {
+      "J=False,Phi=False,strict=True": 12,
+      "J=True,Phi=False,strict=True": 1
+    },
+    "immediate_larger": {
+      "alpha": 1.6378415878149335e-07,
+      "objective": 0.0613075881367031,
+      "phi": 0.020986581678630226,
+      "J_armijo_passed": true,
+      "Phi_armijo_passed": false,
+      "strict_point_passed": true,
+      "control_sha256": "db49d68ead68f4add03f55a13dd3d0ae00e98cbb919c5f89751839a896d7dfab",
+      "status": "rejected",
+      "refusal": null,
+      "control_reconstruction_hash_matches": true,
+      "Qy43_static": 5.8714712120044865e-09
+    },
+    "accepted_Qy43_static": -1.4733278676931638e-09
+  }
+]
