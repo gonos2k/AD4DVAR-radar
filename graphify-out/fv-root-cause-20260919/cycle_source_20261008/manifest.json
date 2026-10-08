@@ -1,0 +1,27 @@
+{
+  "prior_producer_manifest": {
+    "archive_path": "graphify-out/fv-root-cause-20260919/model_guided_source_20261007/manifest.json",
+    "sha256": "d713ccf9b68295abafeab4e833ac92989aca0a513bc5aac51153effd59828233"
+  },
+  "prior_producer_snapshots": {
+    "examples/weather_scenarios/fv_point_3h_model_guided_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/model_guided_source_20261007/producer.py",
+      "sha256": "67341f6d53c1a8dc9e867c9b359136575b6a5a4f207c5441a1eb4d75300b6492"
+    },
+    "tests/test_fv_point_3h_model_guided_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/model_guided_source_20261007/tests.py",
+      "sha256": "852d8054c0e1d1f180c155df846fde842daa302dcacf9e135d2fff57d371961c"
+    }
+  },
+  "scope": "byte-exact source/test state before PR263 cycle extension; preserves the current PR262 source pins and prior PR259 producer pins",
+  "snapshots": {
+    "examples/weather_scenarios/fv_point_3h_model_guided_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/cycle_source_20261008/fv_point_3h_model_guided_continuation.py",
+      "sha256": "73eedaca542fbeae0765806955f14156f0b9bcee3b6791ca0883291511357864"
+    },
+    "tests/test_fv_point_3h_model_guided_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/cycle_source_20261008/test_fv_point_3h_model_guided_continuation.py",
+      "sha256": "100a2774bf04eb915e2ffd3a8195a70dfb4f12f204615821ef4d7824462291b9"
+    }
+  }
+}
