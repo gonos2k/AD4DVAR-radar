@@ -138,10 +138,6 @@ def _compact_state(control: Tensor, measured: dict[str, Any]) -> dict[str, Any]:
 
 def _load_plan(path: Path, digest: str) -> dict[str, Any]:
     path = path.resolve()
-    cycle_plan = (EVIDENCE / "EXPLORATION_CORRECTION_CYCLE_PLAN_20261008.json").resolve()
-    if path == cycle_plan:
-        from examples.weather_scenarios import fv_point_3h_exploration_correction_cycle as cycle
-        return cycle._load_plan(path, digest)
     if path != PLAN.resolve() or path.is_symlink() or not path.resolve().is_relative_to(ROOT.resolve()) or _sha(path) != digest:
         raise ValueError("model-guided continuation plan identity mismatch")
     plan = json.loads(path.read_text())
@@ -352,9 +348,6 @@ def _load_resume_base(plan: dict[str, Any]) -> dict[str, Any]:
 
 def _load_base(plan: dict[str, Any] | None = None) -> dict[str, Any]:
     """Normalize either the original tangent seed or a closed continuation endpoint."""
-    if plan is not None and plan.get("experiment_kind") == "exploration_correction_cycle":
-        from examples.weather_scenarios import fv_point_3h_exploration_correction_cycle as cycle
-        return cycle._load_base(plan)
     if plan is not None and plan.get("experiment_kind") == "model_guided_resume":
         return _load_resume_base(plan)
     return _load_legacy_base()
@@ -450,18 +443,6 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
         record["runtime_after"] = guard_policy.blocks.runtime_identity()
         record["elapsed_seconds"] = time.monotonic() - started
 
-    def assess_cycle(closure_ok: bool) -> None:
-        if record.get("cycle_reference") is None:
-            return
-        if not closure_ok:
-            record["cycle_assessment"] = {"status": "closure_failed", "recovered": False}
-            return
-        from examples.weather_scenarios import fv_point_3h_exploration_correction_cycle as cycle
-        record["cycle_assessment"] = cycle.recovery_assessment(
-            record["cycle_reference"]["preexploration_state"],
-            record["cycle_reference"]["correction_start_state"],
-            record["current_state"])
-
     try:
         plan = _load_plan(plan_path, plan_sha)
         tangent_raw = _load_base(plan)
@@ -517,12 +498,6 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
         record.update(current_state={key: value for key, value in current_state.items() if key != "control"},
                       current_control=control.tolist(), current_control_sha256=base_sha,
                       numerical_status="iterating")
-        if tangent_raw.get("cycle_reference"):
-            record["cycle_reference"] = {
-                "control_sha256": tangent_raw["cycle_reference_control_sha256"],
-                "step_sha256": tangent_raw["cycle_reference_step_sha256"],
-                "preexploration_state": tangent_raw["cycle_reference"],
-                "correction_start_state": record["current_state"]}
         current_measure.pop("branch_signature", None)
         current_measure.pop("static_flux_signs", None)
         guard_policy._write(output, record)
@@ -697,28 +672,15 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
                 record.update(phase="finished", execution_status="completed",
                               numerical_status="root_pending_audit", root_pending_audit=True)
                 break
-            if record.get("cycle_reference"):
-                from examples.weather_scenarios import fv_point_3h_exploration_correction_cycle as cycle
-                assessment = cycle.recovery_assessment(
-                    record["cycle_reference"]["preexploration_state"],
-                    record["cycle_reference"]["correction_start_state"],
-                    record["current_state"])
-                record["cycle_assessment"] = assessment
-                if assessment["recovered"]:
-                    record.update(phase="finished", execution_status="completed",
-                                  numerical_status="cycle_recovered")
-                    break
             guard_policy._write(output, record)
         if record.get("phase") != "finished":
             record.update(phase="finished", execution_status="completed",
-                          numerical_status="cycle_unrecovered" if record.get("cycle_reference")
-                          else "max_iterations_completed")
+                          numerical_status="max_iterations_completed")
         close(control)
         if (record.get("source_unchanged") is not True
                 or record.get("fixed_input_unchanged") is not True
                 or record.get("runtime_after") != record.get("runtime")):
             raise ValueError("final model-guided source/input/runtime closure refused")
-        assess_cycle(True)
         if time.monotonic() >= deadline:
             raise TimeoutError("240-second budget expired after final receipt closure")
         record["elapsed_seconds"] = time.monotonic() - started
@@ -729,7 +691,6 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
         closure = (record.get("source_unchanged") is True
                    and record.get("fixed_input_unchanged") is True
                    and record.get("runtime_after") == record.get("runtime"))
-        assess_cycle(closure)
         record.update(phase="finished", execution_status="completed" if closure else "failed",
                       numerical_status="budget_refusal" if closure else "integrity_refusal",
                       refusal=str(error),
@@ -742,7 +703,6 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
         closure = (record.get("source_unchanged") is True
                    and record.get("fixed_input_unchanged") is True
                    and record.get("runtime_after") == record.get("runtime"))
-        assess_cycle(closure)
         record.update(phase="finished", execution_status="completed" if closure else "failed",
                       numerical_status="direction_refusal" if closure else "integrity_refusal",
                       refusal=str(error),
@@ -752,7 +712,6 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
         return record
     except Exception as error:
         close(control)
-        assess_cycle(False)
         record.update(phase="finished", execution_status="failed",
                       numerical_status="continuation_error",
                       refusal=f"{type(error).__name__}: {error}",
@@ -765,8 +724,7 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
 def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
         log: Path) -> dict[str, Any]:
     plan_path = plan_path.resolve()
-    cycle_plan = (ROOT / "graphify-out/fv-root-cause-20260919/EXPLORATION_CORRECTION_CYCLE_PLAN_20261008.json").resolve()
-    if plan_path not in {PLAN.resolve(), cycle_plan} or _sha(plan_path) != plan_sha:
+    if plan_path != PLAN.resolve() or _sha(plan_path) != plan_sha:
         raise ValueError("caller model-guided plan identity mismatch")
     plan = _load_plan(plan_path, plan_sha)
     expected_base_sha = plan.get("base_control_sha256", CONTROL_SHA)

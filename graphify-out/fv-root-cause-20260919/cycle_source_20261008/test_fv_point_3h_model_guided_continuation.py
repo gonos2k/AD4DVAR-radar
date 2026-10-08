@@ -11,7 +11,6 @@ import pytest
 import torch
 
 from examples.weather_scenarios import fv_point_3h_model_guided_continuation as guided
-from examples.weather_scenarios import fv_point_3h_exploration_correction_cycle as cycle
 from examples.weather_scenarios import fv_point_3h_qy32_tangent_step as tangent
 
 
@@ -235,52 +234,6 @@ def test_near_root_uses_gradient_threshold_without_an_objective_floor(monkeypatc
     assert result["optimizer_steps_applied"] == 0
     assert result["current_control"] == control.tolist()
     assert result["current_state"]["objective"] == 1.0
-
-
-def _run_cycle_blackbox(monkeypatch, tmp_path, *, reference, fail_second_hvp=False,
-                        scale=1.0, offset=0.0, initial=0.2):
-    control, raw, _ = _blackbox_case(monkeypatch, fail_second_hvp=fail_second_hvp,
-                                     scale=scale, offset=offset, initial=initial)
-    raw["cycle_reference"] = {"objective": reference["objective"],
-        "phi": reference["phi"], "gradient": [1.0] * 26}
-    raw["cycle_reference_control_sha256"] = "historical-control"
-    raw["cycle_reference_step_sha256"] = "historical-step"
-    monkeypatch.setattr(guided, "_load_base", lambda *_args: raw)
-    plan_sha = "cycle-plan-sha"
-    monkeypatch.setattr(guided, "_sha", lambda path: plan_sha if Path(path) == cycle.PLAN
-                        else hashlib.sha256(Path(path).read_bytes()).hexdigest())
-    return control, guided._run_child(cycle.PLAN, plan_sha, tmp_path / "cycle.json")
-
-
-def test_cycle_starts_with_fresh_current_hvp_and_stops_on_recovery(monkeypatch, tmp_path):
-    control, result = _run_cycle_blackbox(monkeypatch, tmp_path,
-        reference={"objective": 0.015, "phi": 0.015})
-    assert result["numerical_status"] == "cycle_recovered"
-    assert result["optimizer_steps_applied"] == 1
-    assert result["hvp_calls"] == result["hvp_calls_completed"] == 1
-    assert torch.allclose(torch.tensor(result["iterations"][0]["direction"], dtype=torch.float64),
-                          -control)
-    assert result["cycle_assessment"]["recovered"] is True
-    assert result["cycle_reference"]["control_sha256"] == "historical-control"
-
-
-def test_cycle_root_pending_keeps_priority_over_recovery(monkeypatch, tmp_path):
-    _, result = _run_cycle_blackbox(monkeypatch, tmp_path,
-        reference={"objective": 2.0, "phi": 1.0}, scale=1e-8,
-        offset=1.0, initial=1e-4)
-    assert result["numerical_status"] == "root_pending_audit"
-    assert result["hvp_calls"] == 0
-    assert result["optimizer_steps_applied"] == 0
-
-
-def test_cycle_hvp_failure_preserves_committed_correction(monkeypatch, tmp_path):
-    _, result = _run_cycle_blackbox(monkeypatch, tmp_path,
-        reference={"objective": 1e-4, "phi": 1e-4}, fail_second_hvp=True)
-    assert result["numerical_status"] == "budget_refusal"
-    assert result["optimizer_steps_applied"] == 1
-    assert result["candidate_committed"] is True
-    assert result["current_control_sha256"] == result["iterations"][0]["accepted_control_sha256"]
-    assert result["cycle_assessment"]["status"] == "unrecovered"
 
 
 def _resume_artifacts(tmp_path, monkeypatch):

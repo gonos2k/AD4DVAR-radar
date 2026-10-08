@@ -1,0 +1,24 @@
+{
+  "scope": "One historical PR262 exploration plus bounded fresh full-space dual-merit correction phase",
+  "plan_sha256": "a91588d2281325c95518c79e677043823b18ed52e51ee0557d55c6e3e51dec12",
+  "source_pins": 117,
+  "archive_pins": 66,
+  "result": "CYCLE_RESULT_20261008.json",
+  "new_control_sha256": "6c0fe4858631513f665f91c77006d4641e564862d8141111c0030c91d2bb74bd",
+  "status": "cycle_recovered",
+  "not_root": true,
+  "corrections": 2,
+  "current_HVP": 2,
+  "PCG": 0,
+  "GREEN": "CYCLE_GREEN_FINAL_20261008.md",
+  "RED": "CYCLE_RED_FINAL_20261008.md",
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "phase1_historical": "8/8",
+  "FV_external_weighted_milestones": "70/100 unchanged",
+  "remaining": [
+    "original eligible3h root",
+    "full curvature/original adjoint/reanalysis",
+    "independent synthetic future validation"
+  ],
+  "parent_limit": "generic parent closes identity/count; actual child cycle metadata independently audited in this run"
+}
