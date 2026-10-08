@@ -1,0 +1,37 @@
+{
+  "scope": "Closed PR263 final endpoint -> same full-space correction kernel, no cost exploration",
+  "base_control_sha256": "6c0fe4858631513f665f91c77006d4641e564862d8141111c0030c91d2bb74bd",
+  "base_J": 0.0613117140406184,
+  "base_Phi": 0.010815707540872811,
+  "base_gInf": 0.11651289508164255,
+  "policy": {
+    "max_iterations": 3,
+    "max_current_HVP": 3,
+    "max_candidates_per_iteration": 16,
+    "internal_seconds": 240,
+    "outer_seconds": 300,
+    "rss_bytes": 1073741824,
+    "guarded_launches": 1,
+    "PCG": 0
+  },
+  "GREEN_RED_design": "Closed checkpoint suitable; omit historical cycle_reference from new active state; validate full sequential commit/receipt/input/runtime/source ancestry; fresh current g/HVP and final recheck required",
+  "invariants": [
+    "original26variableJ/prior/observations/boundaries/time unchanged",
+    "d=-g at each fresh point",
+    "alphaPhi/radius caps and dual Armijo unchanged",
+    "root1e-10 then pendingaudit not publication",
+    "no olddirection/HVP inherited",
+    "last committed point preserved on refusal"
+  ],
+  "diagnostics": [
+    "J/Phi trend vs6c start",
+    "gradientInf and field/flow/growth norms",
+    "Qy43 endpoint signs via static geometry",
+    "analysis/future branch hashes"
+  ],
+  "remaining": [
+    "eligible original3h root",
+    "curvature/originaladjoint/reanalysis",
+    "independent synthetic future verification"
+  ]
+}

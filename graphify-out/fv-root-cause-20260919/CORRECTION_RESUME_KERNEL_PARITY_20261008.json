@@ -1,0 +1,11 @@
+{
+  "scope": "existing model runner AST comparison against archived PR263 producer",
+  "changed_functions": [
+    "_load_plan",
+    "_load_base",
+    "run"
+  ],
+  "numerical_child_loop_identical": true,
+  "math_helpers_unchanged": true,
+  "prior_source_sha256": "79ff65062e110a9d1ebfe7a05d8486dc2e9bf93125ccb8a65756eadfc8671a31"
+}

@@ -1,0 +1,39 @@
+{
+  "scope": "same full-space dual-merit kernel resumed from closed PR263 final point",
+  "plan_sha256": "9c29f4c0882272dccd68e2a35abf9a1fe9ff5b2fc5d5adc1502fe9a6ee8e9130",
+  "result": "CORRECTION_RESUME_RESULT_20261008.json",
+  "source_pins": 119,
+  "archive_pins": 72,
+  "numerical_kernel_AST_unchanged": true,
+  "new_control_sha256": "95a55578eea1d3b9600a210e7bdba37c21d7d7a1baf07244afc513a46df8c842",
+  "status": "max_iterations_completed",
+  "changes_vs_resume_base": {
+    "J": -0.006730250369690882,
+    "Phi": -23.770709470833438,
+    "gNorm": -12.69061303091943,
+    "gInf": -9.763635376688807
+  },
+  "final_gradient_inf": 0.10513700083904698,
+  "final_Qy43_static": -1.4733278676931638e-09,
+  "candidates": [
+    2,
+    4,
+    14
+  ],
+  "current_HVP": 3,
+  "PCG": 0,
+  "verification": {
+    "focused_tests": 38,
+    "type_errors": 0,
+    "GREEN": "CORRECTION_RESUME_GREEN_FINAL_20261008.md",
+    "RED": "CORRECTION_RESUME_RED_FINAL_20261008.md"
+  },
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "phase1_historical": "8/8",
+  "FV_external_weighted_milestones": "70/100 unchanged",
+  "remaining": [
+    "eligible original3h root",
+    "curvature/original adjoint/reanalysis",
+    "independent synthetic future verification"
+  ]
+}
