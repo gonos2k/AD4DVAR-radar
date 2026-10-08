@@ -1,0 +1,30 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_sample_common_search.py",
+    "--child",
+    "--plan",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/SAMPLE_COMMON_COST_SEARCH_PLAN_20261008.json",
+    "--plan-sha256",
+    "617a81486352591f3e17068be78fc4047db5bd4e07333b84dba48297ba9dcc3e",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/sample_common_search_20261008_attempt1/step.json",
+    "--resource",
+    "graphify-out/fv-root-cause-20260919/sample_common_search_20261008_attempt1/step.resource.json",
+    "--log",
+    "graphify-out/fv-root-cause-20260919/sample_common_search_20261008_attempt1/step.log"
+  ],
+  "child_pid": 60302,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 24.230606416007504,
+  "sampled_peak_rss_bytes": 529743872,
+  "rss_samples": 91,
+  "wall_limit_seconds": 300.0,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}

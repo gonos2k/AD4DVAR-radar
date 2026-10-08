@@ -1,0 +1,8 @@
+{
+  "scope": "parentargumentparser rejectionbeforeguard; missingchildresource/log args fixedbeforeanyguard/FV/HVP",
+  "previous_plan_sha256": "34fb8a57266a45041535dcc8ccceb8d645707df524426b568e66eee541969dce",
+  "plan_sha256": "617a81486352591f3e17068be78fc4047db5bd4e07333b84dba48297ba9dcc3e",
+  "guarded_launches_before_fix": 0,
+  "actual_FV_before_fix": 0,
+  "regression": "realCLI parser exercised usingcapturedchildcommand"
+}

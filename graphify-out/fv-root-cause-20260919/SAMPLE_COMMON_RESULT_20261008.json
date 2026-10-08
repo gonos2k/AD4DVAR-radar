@@ -1,0 +1,70 @@
+{
+  "scope": "saved vectors, static flow geometry and receipts only; no new FV/HVP",
+  "checks": {
+    "base_control_hash": true,
+    "accepted_control_hash": true,
+    "parent_raw_hash": true,
+    "step_affine": true,
+    "J_Armijo": true,
+    "Phi_base": true,
+    "Phi_accepted": true,
+    "actual_alpha": true,
+    "radius": true,
+    "closure": true,
+    "final_recheck": true,
+    "single_HVP": true,
+    "committed": true
+  },
+  "J_change_percent": -0.04973815433954032,
+  "Phi_change_percent": 136.3607691067449,
+  "gInf_before": 0.0885108925278776,
+  "gInf_after": 0.1385229536890205,
+  "gradient_norm_before": 0.15920581963578034,
+  "gradient_norm_after": 0.24476348953701005,
+  "actual_alpha": 0.003298560528788054,
+  "actual_step_norm": 0.00045123575227979946,
+  "g_dot_d": -0.018690766253264518,
+  "d_dot_Hd": 5.6663402384590515,
+  "g_dot_Hd": -4.291966693063273,
+  "new_g_dot_old_direction": 0.00019300370461948274,
+  "J_armijo_upper": 0.06134763215782301,
+  "J_quadratic_model": 0.06131681201117749,
+  "Phi_linear_gradient_model": 0.03006481548567659,
+  "gradient_linearization_error_norm": 0.004820952920872815,
+  "base_geometry": {
+    "Qy43": -2.3750409847544257e-06,
+    "normal_gradient": -0.08182526030182867,
+    "tangent_gradient_norm": 0.13656910259073465
+  },
+  "accepted_geometry": {
+    "Qy43": -2.0345637339116984e-06,
+    "normal_gradient": -0.13375761222334975,
+    "tangent_gradient_norm": 0.20498308950409064
+  },
+  "blocks": {
+    "field": {
+      "before": 0.12348588234442154,
+      "after": 0.14793695312696284
+    },
+    "flow": {
+      "before": 0.09056365335285277,
+      "after": 0.13724144786147624
+    },
+    "growth": {
+      "before": 0.04354256031636894,
+      "after": 0.1385229536890205
+    }
+  },
+  "branch_signature_changed": true,
+  "resource": {
+    "elapsed_seconds": 24.230606416007504,
+    "sampled_peak_rss_bytes": 529743872,
+    "exit_code": 0
+  },
+  "accepted_control_sha256": "26e830dc1cb1bce1240b09f0f88ddf616cb279414fa1eb46d01b94e0f52dde14",
+  "remaining": [
+    "original eligible stationary point",
+    "curvature/original adjoint/reanalysis",
+    "independent synthetic future verification"
+  ]
+}

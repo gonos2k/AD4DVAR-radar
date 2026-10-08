@@ -1,0 +1,42 @@
+{
+  "scope": "one original-J-only cost exploration usingfinite-innerpaircommon fullgradient direction atPR2602cd",
+  "direction_source": "SAMPLE_COMMON_DIRECTION_20261008.json andPR261gzipraw ffa947",
+  "policy_proposal": {
+    "mode": "J-only costexploration; Phi diagnostic",
+    "max_new_points": 1,
+    "max_HVP": 1,
+    "max_candidates": 16,
+    "internal_seconds": 240,
+    "outer_seconds": 300,
+    "RSS_bytes": 1073741824,
+    "launches": 1
+  },
+  "invariants": [
+    "freshbaseJ/g/branch withsourceclosure",
+    "requirecurrentgTdnegative",
+    "onefreshHd; dHd costmodelpositivecapelseoriginalradius",
+    "full26affine c+alpha d nofacefix/noforcedcross",
+    "actualJArmijo+ownstrictbranch+freshendpointclosure commits",
+    "final1e\u221210/root/responsecriteriaunchanged"
+  ],
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "remaining": [
+    "originaleligible3hroot",
+    "currentfullcurvature/originaladjoint/reanalysis",
+    "independentsyntheticfutureverification"
+  ],
+  "final_plan_sha256": "617a81486352591f3e17068be78fc4047db5bd4e07333b84dba48297ba9dcc3e",
+  "result": "SAMPLE_COMMON_RESULT_20261008.json",
+  "accepted_control_sha256": "26e830dc1cb1bce1240b09f0f88ddf616cb279414fa1eb46d01b94e0f52dde14",
+  "J_change_percent": -0.04973815433954032,
+  "Phi_change_percent": 136.3607691067449,
+  "classification": "One original-J-only cost step; stationarity worsened; selected face not crossed",
+  "verification": {
+    "focused_tests": 11,
+    "type_errors": 0,
+    "GREEN": "SAMPLE_COMMON_GREEN_FINAL_20261008.md",
+    "RED": "SAMPLE_COMMON_RED_FINAL_20261008.md"
+  },
+  "phase1_historical_completion": "8/8",
+  "FV_external_weighted_milestones": "70/100 unchanged"
+}
