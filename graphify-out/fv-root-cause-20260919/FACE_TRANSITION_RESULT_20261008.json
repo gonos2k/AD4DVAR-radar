@@ -1,0 +1,173 @@
+{
+  "raw_sha256": "ffa9473e5c0852c8f525665d8e7ac4255ad19820aca9951ef6c137ea905798ce",
+  "scope": "one generic face diagnostic at fixed retained coordinates; no optimization/HVP/PCG",
+  "base_control_sha256": "2cdccade81a8cf218dd7cad97adf71f6675f8445481dd8f6394ec337ea8e8007",
+  "zero_J": 0.06134738901443547,
+  "points": [
+    {
+      "eta": -2e-06,
+      "J": 0.061347598828659734,
+      "Phi": 0.012669366047165226,
+      "gInf": 0.08840481128542209,
+      "eta_chart_slope": -0.10524384140183622,
+      "unit_normal_gradient": -0.08170551037229108,
+      "tangent_norm": 0.13661237743752902,
+      "trace_stages": 360,
+      "effective_donor_gap_min": -0.9151228117921022,
+      "effective_donor_gap_max": 3.6875979243883847,
+      "effective_donor_gap_rms": 1.9037473344423639,
+      "strict_branch": "passed_strict_branch"
+    },
+    {
+      "eta": -1e-06,
+      "J": 0.06134749375318033,
+      "Phi": 0.012659437405444724,
+      "gInf": 0.08812195851846764,
+      "eta_chart_slope": -0.10490711196306843,
+      "unit_normal_gradient": -0.0813862116297116,
+      "tangent_norm": 0.13673024306075537,
+      "trace_stages": 360,
+      "effective_donor_gap_min": -0.9151228117921022,
+      "effective_donor_gap_max": 3.6876236252971566,
+      "effective_donor_gap_rms": 1.903758904158295,
+      "strict_branch": "passed_strict_branch"
+    },
+    {
+      "eta": 1e-06,
+      "J": 0.06134759702383599,
+      "Phi": 0.029450162097754105,
+      "gInf": 0.1748478718109342,
+      "eta_chart_slope": 0.20815226544814733,
+      "unit_normal_gradient": 0.2003486298559076,
+      "tangent_norm": 0.13696988979468716,
+      "trace_stages": 360,
+      "effective_donor_gap_min": -0.9151228117921022,
+      "effective_donor_gap_max": 3.6876592686201377,
+      "effective_donor_gap_rms": 1.9037763372420795,
+      "strict_branch": "passed_strict_branch"
+    },
+    {
+      "eta": 2e-06,
+      "J": 0.06134780531895703,
+      "Phi": 0.029521848585510536,
+      "gInf": 0.175087857310346,
+      "eta_chart_slope": 0.20843796273200008,
+      "unit_normal_gradient": 0.20062226578458345,
+      "tangent_norm": 0.13709268267300415,
+      "trace_stages": 360,
+      "effective_donor_gap_min": -0.9151228117921022,
+      "effective_donor_gap_max": 3.6876692108771536,
+      "effective_donor_gap_rms": 1.9037822005452996,
+      "strict_branch": "passed_strict_branch"
+    }
+  ],
+  "pairs": {
+    "inner": {
+      "etas": [
+        -1e-06,
+        1e-06
+      ],
+      "gradient_jump_norm": 0.28173883054237026,
+      "tangent_jump_norm": 0.0014992469047401906,
+      "normal_squared_fraction": 0.9999716826305736,
+      "Phi_jump": 0.016790724692309383,
+      "Phi_identity": 0.016790724692309383,
+      "Phi_normal_part": 0.016757929019489127,
+      "Phi_tangent_part": 3.279567282026144e-05,
+      "segment_theta": 0.2884680243228639,
+      "segment_gradient_norm": 0.1367977784071735,
+      "sample_directional_pairings": [
+        -0.018713632177138145,
+        -0.018713632177138152
+      ],
+      "scope": "finite sampled-gradient algebra; no limiting/Clarke/root certificate or applied direction"
+    },
+    "outer": {
+      "etas": [
+        -2e-06,
+        2e-06
+      ],
+      "gradient_jump_norm": 0.2823436985915623,
+      "tangent_jump_norm": 0.00299849468615707,
+      "normal_squared_fraction": 0.999887215253418,
+      "Phi_jump": 0.016852482538345308,
+      "Phi_identity": 0.0168524825383453,
+      "Phi_normal_part": 0.016786751548930494,
+      "Phi_tangent_part": 6.573098941480728e-05,
+      "segment_theta": 0.2885986838557393,
+      "segment_gradient_norm": 0.13674460358705437,
+      "sample_directional_pairings": [
+        -0.018699086610180646,
+        -0.018699086610180646
+      ],
+      "scope": "finite sampled-gradient algebra; no limiting/Clarke/root certificate or applied direction"
+    }
+  },
+  "inner_cross_changed_face_locations": [
+    [
+      "qy",
+      4,
+      3
+    ]
+  ],
+  "branch_pair_counts": {
+    "inner_cross_side": {
+      "choices": {
+        "analysis_changed_count": 0,
+        "changed_count": 2,
+        "future_changed_count": 2
+      },
+      "face_signs": {
+        "analysis_changed_count": 360,
+        "changed_count": 3600,
+        "future_changed_count": 3240
+      }
+    },
+    "outer_cross_side": {
+      "choices": {
+        "analysis_changed_count": 0,
+        "changed_count": 6,
+        "future_changed_count": 6
+      },
+      "face_signs": {
+        "analysis_changed_count": 360,
+        "changed_count": 3600,
+        "future_changed_count": 3240
+      }
+    },
+    "same_negative_side": {
+      "choices": {
+        "analysis_changed_count": 0,
+        "changed_count": 2,
+        "future_changed_count": 2
+      },
+      "face_signs": {
+        "analysis_changed_count": 0,
+        "changed_count": 0,
+        "future_changed_count": 0
+      }
+    },
+    "same_positive_side": {
+      "choices": {
+        "analysis_changed_count": 0,
+        "changed_count": 2,
+        "future_changed_count": 2
+      },
+      "face_signs": {
+        "analysis_changed_count": 0,
+        "changed_count": 0,
+        "future_changed_count": 0
+      }
+    }
+  },
+  "resource": {
+    "elapsed_seconds": 33.73961008293554,
+    "sampled_peak_rss_bytes": 824360960,
+    "exit_code": 0
+  },
+  "remaining": [
+    "eligible original3h root",
+    "current full curvature/original adjoint/reanalysis",
+    "independent future validation"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "child_read_error": null,
+  "child_sha256": "ffa9473e5c0852c8f525665d8e7ac4255ad19820aca9951ef6c137ea905798ce",
+  "execution_status": "completed",
+  "numerical_status": "finite_two_sided_donor_trace_diagnostic",
+  "resource": {
+    "child_pid": 20802,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/FACE_TRANSITION_DIAGNOSTIC_PLAN_20261008.json",
+      "--plan-sha256",
+      "6b79d07ce609ebe35879dcb3f1cec95649a786155c392e7ea041063b4e19283e",
+      "--output",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/face_transition_attempt1/diagnostic.json"
+    ],
+    "elapsed_seconds": 33.73961008293554,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 119,
+    "sampled_peak_rss_bytes": 824360960,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300.0
+  }
+}

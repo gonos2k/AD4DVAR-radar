@@ -1,0 +1,11 @@
+{
+  "scope": "losslessarchive oforiginalraw bytes; localoriginalunchanged",
+  "raw_path": "graphify-out/fv-root-cause-20260919/face_transition_attempt1/diagnostic.json",
+  "archive_path": "graphify-out/fv-root-cause-20260919/face_transition_attempt1/diagnostic.json.gz",
+  "raw_bytes": 52715699,
+  "archive_bytes": 367446,
+  "raw_sha256": "ffa9473e5c0852c8f525665d8e7ac4255ad19820aca9951ef6c137ea905798ce",
+  "archive_sha256": "1a6f02acf0bdfc70466067c73cc804658d4de38c5567be362dd71fd92ff9490e",
+  "decompress_condition": "onlywhenoriginalrawabsent; gzip -dk diagnostic.json.gz",
+  "byte_equality": true
+}

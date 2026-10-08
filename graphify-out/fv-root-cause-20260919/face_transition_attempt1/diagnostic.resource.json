@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+    "--child",
+    "--plan",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/FACE_TRANSITION_DIAGNOSTIC_PLAN_20261008.json",
+    "--plan-sha256",
+    "6b79d07ce609ebe35879dcb3f1cec95649a786155c392e7ea041063b4e19283e",
+    "--output",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/face_transition_attempt1/diagnostic.json"
+  ],
+  "child_pid": 20802,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 33.73961008293554,
+  "sampled_peak_rss_bytes": 824360960,
+  "rss_samples": 119,
+  "wall_limit_seconds": 300.0,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}

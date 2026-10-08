@@ -1,0 +1,2331 @@
+{
+  "scope": "incremental AST finalcopiednewfiles sharedgraphunchanged",
+  "stage": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub",
+  "extraction": {
+    "nodes": [
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "label": "fv_point_3h_face_transition_diagnostic.py",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L1",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_policy",
+        "label": "policy()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L47",
+        "_origin": "ast"
+      },
+      {
+        "id": "any",
+        "label": "Any",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L47",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_sha",
+        "label": "_sha()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L55",
+        "_origin": "ast"
+      },
+      {
+        "id": "path",
+        "label": "Path",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L55",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_tensor_sha",
+        "label": "_tensor_sha()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L59",
+        "_origin": "ast"
+      },
+      {
+        "id": "tensor",
+        "label": "Tensor",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L59",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_weights",
+        "label": "_face_weights()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L63",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_value",
+        "label": "_face_value()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L84",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_normal",
+        "label": "_face_normal()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L90",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_pivot",
+        "label": "_pivot()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L96",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart",
+        "label": "_chart()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L105",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart_jacobian",
+        "label": "_chart_jacobian()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L120",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_geometry",
+        "label": "_geometry()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L135",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "label": "_donors()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_effective_edges",
+        "label": "_effective_edges()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L185",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_stage_schedule",
+        "label": "_stage_schedule()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L195",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "label": "_schedule_edges()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L218",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_verify_face_value",
+        "label": "_verify_face_value()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L229",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_cost_only",
+        "label": "_cost_only()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L244",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "label": "_measure()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L260",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_load_plan",
+        "label": "_load_plan()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L360",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_validate_model_source",
+        "label": "_validate_model_source()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L396",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_pair",
+        "label": "_gradient_pair()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L442",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_jump",
+        "label": "_gradient_jump()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L466",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_signature_differences",
+        "label": "_signature_differences()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L482",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "label": "_run_child()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L512",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run",
+        "label": "run()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L632",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_main",
+        "label": "main()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L672",
+        "_origin": "ast"
+      },
+      {
+        "id": "weather_scenarios_fv_point_3h_face_transition_diagnostic_rationale_1",
+        "label": "Bounded two-sided donor-trace diagnostic at a selected FV face transition.",
+        "file_type": "rationale",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L1",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "label": "test_fv_point_3h_face_transition_diagnostic.py",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L1",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_face_transition_diagnostic_profile",
+        "label": "profile()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L13",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_face_transition_diagnostic_test_generic_chart_keeps_retained_controls_and_matches_production",
+        "label": "test_generic_chart_keeps_retained_controls_and_matches_production()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L25",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_face_transition_diagnostic_test_external_weights_and_projection_metric",
+        "label": "test_external_weights_and_projection_metric()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L40",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_face_transition_diagnostic_test_effective_edge_growth_matches_euler_parity",
+        "label": "test_effective_edge_growth_matches_euler_parity()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L54",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_face_transition_diagnostic_test_boundary_donors_distinguish_raw_effective_and_internal",
+        "label": "test_boundary_donors_distinguish_raw_effective_and_internal()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L65",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_face_transition_diagnostic_test_segment_minimizer_is_full_gradient_not_tangent_mean",
+        "label": "test_segment_minimizer_is_full_gradient_not_tangent_mean()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L86",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_face_transition_diagnostic_test_inner_and_outer_pairs_are_distinct_finite_diagnostics",
+        "label": "test_inner_and_outer_pairs_are_distinct_finite_diagnostics()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L100",
+        "_origin": "ast"
+      },
+      {
+        "id": "tests_test_fv_point_3h_face_transition_diagnostic_test_zero_cost_keeps_full_prior_without_gradient_or_branch",
+        "label": "test_zero_cost_keeps_full_prior_without_gradient_or_branch()",
+        "file_type": "code",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L111",
+        "_origin": "ast"
+      }
+    ],
+    "edges": [
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "argparse",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L4",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "hashlib",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L5",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "json",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L6",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "math",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L7",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "sys",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L8",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "time",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L9",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "pathlib",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L10",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "typing",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L11",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "torch",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L13",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "torch",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L14",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "advar",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L20",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L21",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L22",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L23",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L24",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "examples_weather_scenarios_fv_diagnostic_guard",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L25",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_policy",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L47",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_policy",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L47",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_sha",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L55",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_sha",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L55",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_tensor_sha",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L59",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_tensor_sha",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L59",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_weights",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L63",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_weights",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L63",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_weights",
+        "target": "tensor",
+        "relation": "references",
+        "context": "return_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L63",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_value",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L84",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_value",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L84",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_value",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L84",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_value",
+        "target": "tensor",
+        "relation": "references",
+        "context": "return_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L84",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_normal",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L90",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_normal",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L90",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_normal",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L90",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_normal",
+        "target": "tensor",
+        "relation": "references",
+        "context": "return_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L90",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_pivot",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L96",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_pivot",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L96",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_pivot",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L96",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L105",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L105",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L105",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart",
+        "target": "tensor",
+        "relation": "references",
+        "context": "return_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L105",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart_jacobian",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L120",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart_jacobian",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L120",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart_jacobian",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L120",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart_jacobian",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L120",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart_jacobian",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L120",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart_jacobian",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L120",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_geometry",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L135",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_geometry",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L135",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_geometry",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L135",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_geometry",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L135",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_geometry",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L135",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_donors",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L157",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_effective_edges",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L185",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_effective_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L185",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_effective_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L185",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_effective_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L185",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_effective_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L185",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_effective_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L185",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_effective_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L185",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_effective_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L185",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_effective_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L185",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_effective_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L185",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_stage_schedule",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L195",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_stage_schedule",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L195",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_stage_schedule",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L195",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_stage_schedule",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L195",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_stage_schedule",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L195",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_stage_schedule",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L195",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L218",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L218",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L218",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L218",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L218",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L218",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L218",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L218",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L218",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L218",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L218",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "target": "tensor",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L218",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_verify_face_value",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L229",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_verify_face_value",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L229",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_verify_face_value",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L229",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_verify_face_value",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L229",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_verify_face_value",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L229",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_cost_only",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L244",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_cost_only",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L244",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_cost_only",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L244",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_cost_only",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L244",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_cost_only",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L244",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_cost_only",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L244",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_cost_only",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L244",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L260",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L260",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L260",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L260",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L260",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L260",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "target": "any",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L260",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L260",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L260",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L260",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_load_plan",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L360",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_load_plan",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L360",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_load_plan",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L360",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_validate_model_source",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L396",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_validate_model_source",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L396",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_validate_model_source",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L396",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_pair",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L442",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_pair",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L442",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_pair",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L442",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_pair",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L442",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_pair",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L442",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_jump",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L466",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_jump",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L466",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_jump",
+        "target": "tensor",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L466",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_jump",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L466",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_jump",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L466",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_signature_differences",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L482",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_signature_differences",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L482",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_signature_differences",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L482",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L512",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L512",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L512",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L512",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L632",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L632",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L632",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L632",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run",
+        "target": "path",
+        "relation": "references",
+        "context": "parameter_type",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L632",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run",
+        "target": "any",
+        "relation": "references",
+        "context": "generic_arg",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L632",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_main",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L672",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_pivot",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_normal",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L97",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart_jacobian",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L122",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart_jacobian",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_normal",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L126",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_geometry",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart_jacobian",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L137",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_geometry",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_normal",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L138",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_schedule_edges",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_effective_edges",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L226",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_verify_face_value",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_value",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L233",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_cost_only",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_verify_face_value",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L248",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_cost_only",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_tensor_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L257",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_verify_face_value",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L264",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_geometry",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L322",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_value",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L345",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_tensor_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L346",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_load_plan",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L363",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_load_plan",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_policy",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L370",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_validate_model_source",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L397",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_validate_model_source",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_load_plan",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L399",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_jump",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_normal",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L473",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_jump",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L473",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_jump",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_pair",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L475",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_jump",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_geometry",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L477",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_policy",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L517",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_load_plan",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L543",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_validate_model_source",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L544",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L549",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_tensor_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L555",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_face_weights",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L564",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_pivot",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L565",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_verify_face_value",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L570",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_stage_schedule",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L577",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_chart",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L581",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_cost_only",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L582",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_measure",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L592",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_signature_differences",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L597",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_gradient_jump",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L600",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_sha",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L635",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_load_plan",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L637",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run",
+        "target": "path",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L642",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_main",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run_child",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L684",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_main",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic_run",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L686",
+        "weight": 1.0
+      },
+      {
+        "source": "weather_scenarios_fv_point_3h_face_transition_diagnostic_rationale_1",
+        "target": "weather_scenarios_fv_point_3h_face_transition_diagnostic",
+        "relation": "rationale_for",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/examples/weather_scenarios/fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L1",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "time",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L3",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "types",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L4",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "pytest",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L6",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "torch",
+        "relation": "imports",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L7",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "advar",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L9",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "examples_weather_scenarios",
+        "relation": "imports_from",
+        "context": "import",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L10",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "tests_test_fv_point_3h_face_transition_diagnostic_profile",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L13",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "tests_test_fv_point_3h_face_transition_diagnostic_test_generic_chart_keeps_retained_controls_and_matches_production",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L25",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "tests_test_fv_point_3h_face_transition_diagnostic_test_external_weights_and_projection_metric",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L40",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "tests_test_fv_point_3h_face_transition_diagnostic_test_effective_edge_growth_matches_euler_parity",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L54",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "tests_test_fv_point_3h_face_transition_diagnostic_test_boundary_donors_distinguish_raw_effective_and_internal",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L65",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "tests_test_fv_point_3h_face_transition_diagnostic_test_segment_minimizer_is_full_gradient_not_tangent_mean",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L86",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "tests_test_fv_point_3h_face_transition_diagnostic_test_inner_and_outer_pairs_are_distinct_finite_diagnostics",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L100",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic",
+        "target": "tests_test_fv_point_3h_face_transition_diagnostic_test_zero_cost_keeps_full_prior_without_gradient_or_branch",
+        "relation": "contains",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L111",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic_test_generic_chart_keeps_retained_controls_and_matches_production",
+        "target": "tests_test_fv_point_3h_face_transition_diagnostic_profile",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L26",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic_test_external_weights_and_projection_metric",
+        "target": "tests_test_fv_point_3h_face_transition_diagnostic_profile",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L41",
+        "weight": 1.0
+      },
+      {
+        "source": "tests_test_fv_point_3h_face_transition_diagnostic_test_zero_cost_keeps_full_prior_without_gradient_or_branch",
+        "target": "tests_test_fv_point_3h_face_transition_diagnostic_profile",
+        "relation": "calls",
+        "context": "call",
+        "confidence": "EXTRACTED",
+        "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-face-final-eulp6_ub/tests/test_fv_point_3h_face_transition_diagnostic.py",
+        "source_location": "L112",
+        "weight": 1.0
+      }
+    ],
+    "input_tokens": 0,
+    "output_tokens": 0
+  },
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef"
+}
