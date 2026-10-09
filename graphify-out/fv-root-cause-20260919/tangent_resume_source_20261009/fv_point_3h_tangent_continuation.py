@@ -39,7 +39,6 @@ CURRENT_ARCHIVE = EVIDENCE / "candidate_requalification_20261009_attempt1/step.j
 CURRENT_RUN = EVIDENCE / "candidate_requalification_20261009_attempt1/step.run.json"
 CURRENT_RESOURCE = EVIDENCE / "candidate_requalification_20261009_attempt1/step.resource.json"
 BASE_CONTROL_SHA = "6b29dacd01fc30ee4041e93dd3ad110c29699c4553d098694086eadeb580a743"
-BASE_THETA = 0.3504554198817298
 FACE_AXIS: Literal["y"] = "y"
 FACE_ROW, FACE_COLUMN = 4, 3
 FACE: dict[str, Any] = {"axis": FACE_AXIS, "row": FACE_ROW, "column": FACE_COLUMN}
@@ -528,25 +527,18 @@ def _observe(probe: Any, problem: Any, control: Tensor, parameters: Tensor,
         "side_gradients_finite": gradients_finite}
 
 
-def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
-                    plan_loader: Callable[[Path, str], dict[str, Any]] | None = None,
-                    base_loader: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
-                    base_control_sha256: str | None = None) -> dict[str, Any]:
+def _run_child_impl(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
     start = time.monotonic()
-    plan = (plan_loader or _load_plan)(plan_path, plan_sha)
-    base = (base_loader or _load_current_base)(plan)
-    actual_base_sha = _tensor_sha(base["control"])
-    if base_control_sha256 is not None and actual_base_sha != base_control_sha256:
-        raise ValueError("loaded continuation control differs from its frozen base hash")
-    expected_base_sha = base_control_sha256 or actual_base_sha
+    plan = _load_plan(plan_path, plan_sha)
+    base = _load_current_base(plan)
     deadline = start + POLICY["internal_seconds"]
     record: dict[str, Any] = {"phase": "running", "execution_status": "running",
         "numerical_status": "preflight", "plan_sha256": plan_sha,
-        "base_control_sha256": actual_base_sha, "policy": POLICY,
+        "base_control_sha256": BASE_CONTROL_SHA, "policy": POLICY,
         "current_control": base["control"].tolist(),
-        "current_control_sha256": actual_base_sha, "current_theta": base["theta"],
+        "current_control_sha256": BASE_CONTROL_SHA, "current_theta": base["theta"],
         "last_confirmed_control": base["control"].tolist(),
-        "last_confirmed_control_sha256": actual_base_sha,
+        "last_confirmed_control_sha256": BASE_CONTROL_SHA,
         "last_confirmed_theta": base["theta"], "last_confirmed_iterations": 0,
         "hvp_calls_started": 0, "hvp_calls_completed": 0, "hvp_history": [],
         "iterations": [], "candidate_committed": False, "active_candidate_committed": False,
@@ -556,23 +548,13 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
     record["source_before"] = source_before
     record["plan_hashes"] = {"source_files": plan["source_files"],
                              "archive_files": plan["archive_files"]}
-    if isinstance(base.get("resume_efficiency"), dict):
-        record["resume_anchor"] = {"source_child_sha256": base.get("child_sha256"),
-            "control_sha256": actual_base_sha, "theta": base["theta"],
-            "objective": base["objective"],
-            "F_squared_at_endpoint": base["accepted"].get("F_squared"),
-            "preceding_step_efficiency_source_control_sha256":
-                base.get("resume_efficiency_source_control_sha256"),
-            "preceding_step_efficiency_source_theta":
-                base.get("resume_efficiency_source_theta"),
-            "preceding_step_efficiency": base["resume_efficiency"]}
     _write(output, record)
     problem, original, _, parameters, truth, _ = seed._prepare_fixed_seed()
     input_before = shared._input_identity(problem, original, base["control"], parameters, truth)
     runtime_before = shared._runtime()
     if (input_before != base["raw"].get("input_after")
             or runtime_before != base["raw"].get("runtime_after")):
-        raise ValueError("reconstructed fixed input/runtime differs from predecessor endpoint receipt")
+        raise ValueError("reconstructed fixed input/runtime differs from accepted PR266 receipt")
     weights = geometry._face_weights(problem, axis=FACE_AXIS, row=FACE_ROW, column=FACE_COLUMN)
     if abs(float(weights.abs().max()) - FACE_SCALE) > 128 * torch.finfo(weights.dtype).eps * FACE_SCALE:
         raise ValueError("selected-face scale differs from the frozen 0.84 policy")
@@ -591,7 +573,7 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
         receipt_gradients = {side: torch.as_tensor(base["accepted"]["side_gradients"][str(side)],
             dtype=base["control"].dtype) for side in (-1, 1)}
     except (KeyError, TypeError, ValueError) as error:
-        raise ValueError("accepted continuation base lacks both side-gradient vectors") from error
+        raise ValueError("accepted PR266 base lacks both side-gradient vectors") from error
     gradients_match = shared._gradient_pair_match(
         {side: initial["side"][side][1] for side in (-1, 1)}, receipt_gradients)
     accepted_traces = base["accepted"].get("branch_trace", {})
@@ -602,8 +584,8 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
             or not gradients_match or not traces_match
             or not initial["pair"]["passed"] or not initial["face_ok"]
             or not initial["side_objectives_match_native"] or not initial["side_gradients_finite"]):
-        raise ValueError("fresh J/F/side gradients/traces/branch pair failed at continuation base")
-    record.update(numerical_status="fresh_current_base_closed", initial_theta=base["theta"],
+        raise ValueError("fresh J/F/side gradients/traces/branch pair failed at PR266 base")
+    record.update(numerical_status="fresh_pr266_base_closed", initial_theta=base["theta"],
         current_native_objective=float(initial["native_j"]),
         initial_F_squared=initial_f2, accepted_F_squared=accepted_f2,
         initial_F=initial_f.tolist(),
@@ -617,7 +599,7 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
     closure_state: dict[str, Any] = {"control": base["control"], "theta": base["theta"],
                                     "accepted_count": 0}
     record["last_confirmed_control"] = base["control"].tolist()
-    record["last_confirmed_control_sha256"] = actual_base_sha
+    record["last_confirmed_control_sha256"] = BASE_CONTROL_SHA
     record["last_confirmed_theta"] = base["theta"]
     _write(output, record)
     model_state: dict[str, Any] = {}
@@ -828,30 +810,16 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
     return record
 
 
-def _run_child(plan_path: Path, plan_sha: str, output: Path, *,
-               plan_loader: Callable[[Path, str], dict[str, Any]] | None = None,
-               base_loader: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
-               base_control_sha256: str | None = None,
-               initial_theta: float | None = None) -> dict[str, Any]:
-    expected_base_sha = base_control_sha256 or BASE_CONTROL_SHA
-    fallback_theta = BASE_THETA if initial_theta is None else initial_theta
+def _run_child(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
     try:
         if not output.exists():
             _write(output, {"phase": "running", "execution_status": "running",
                 "numerical_status": "preflight", "plan_sha256": plan_sha,
-                "base_control_sha256": expected_base_sha, "current_theta": fallback_theta,
-                "candidate_committed": False,
+                "base_control_sha256": BASE_CONTROL_SHA, "candidate_committed": False,
                 "active_candidate_committed": False, "optimizer_steps_applied": 0,
                 "hvp_calls_started": 0, "hvp_calls_completed": 0,
                 "full_smooth_root": False, "minimum_claim": False, "response_claim": False})
-        injected: dict[str, Any] = {}
-        if plan_loader is not None:
-            injected["plan_loader"] = plan_loader
-        if base_loader is not None:
-            injected["base_loader"] = base_loader
-        if base_control_sha256 is not None:
-            injected["base_control_sha256"] = base_control_sha256
-        return _run_child_impl(plan_path, plan_sha, output, **injected)
+        return _run_child_impl(plan_path, plan_sha, output)
     except Exception as error:
         try:
             record = json.loads(output.read_text())
@@ -868,12 +836,12 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path, *,
         confirmed_sha = record.get("last_confirmed_control_sha256")
         confirmed_theta = record.get("last_confirmed_theta")
         confirmed_count = record.get("last_confirmed_iterations")
+        committed = confirmed_sha is not None and confirmed_sha != BASE_CONTROL_SHA
         theta_valid = (isinstance(confirmed_theta, (int, float))
             and not isinstance(confirmed_theta, bool)
             and 0.0 <= confirmed_theta <= 1.0 and math.isfinite(float(confirmed_theta)))
         count_valid = (isinstance(confirmed_count, int) and not isinstance(confirmed_count, bool)
             and 0 <= confirmed_count <= MAX_ACCEPTED)
-        committed = confirmed_sha is not None and confirmed_sha != expected_base_sha
         control_valid = (confirmed.shape == (26,) and bool(torch.isfinite(confirmed).all())
                          and confirmed_sha == _tensor_sha(confirmed))
         commit_count_valid = (count_valid and
@@ -903,12 +871,12 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path, *,
             except (OverflowError, TypeError, ValueError, RuntimeError):
                 base_control = torch.empty(0, dtype=torch.float64)
             exact_base = (base_control.shape == (26,)
-                and record.get("current_control_sha256") == expected_base_sha
-                and _tensor_sha(base_control) == expected_base_sha)
-            record["current_control_sha256"] = expected_base_sha
+                and record.get("current_control_sha256") == BASE_CONTROL_SHA
+                and _tensor_sha(base_control) == BASE_CONTROL_SHA)
+            record["current_control_sha256"] = BASE_CONTROL_SHA
             if exact_base:
                 record["current_control"] = base_control.tolist()
-                record["current_theta"] = fallback_theta
+                record["current_theta"] = 0.3504554198817298
             else:
                 record.pop("current_control", None)
                 record.pop("current_theta", None)
@@ -917,7 +885,7 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path, *,
                           current_theta=confirmed_theta)
         else:
             record.update(candidate_committed=False, optimizer_steps_applied=0,
-                          accepted_iterations=0, current_control_sha256=expected_base_sha)
+                          accepted_iterations=0, current_control_sha256=BASE_CONTROL_SHA)
             record.pop("current_control", None)
             record.pop("current_theta", None)
         _write(output, record)
@@ -925,21 +893,16 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path, *,
 
 
 def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
-        log: Path, *,
-        plan_loader: Callable[[Path, str], dict[str, Any]] | None = None,
-        child_script: Path | None = None,
-        base_control_sha256: str | None = None) -> dict[str, Any]:
+        log: Path) -> dict[str, Any]:
     if plan_path.is_symlink():
         raise ValueError("tangent-continuation plan must not be a symbolic link")
     plan_path = plan_path.resolve()
-    plan = (plan_loader or _load_plan)(plan_path, plan_sha)
-    expected_base_sha = base_control_sha256 or plan.get("base_control_sha256", BASE_CONTROL_SHA)
+    plan = _load_plan(plan_path, plan_sha)
     if any(path.exists() or path.is_symlink() for path in
            (output, resource, log, output.with_suffix(".run.json"))):
         raise ValueError("output/resource/log paths must be fresh")
     output.parent.mkdir(parents=True, exist_ok=True)
-    command = [str(ROOT / ".venv/bin/python"),
-        str((child_script or Path(__file__)).resolve()),
+    command = [str(ROOT / ".venv/bin/python"), str(Path(__file__).resolve()),
         "--child", "--plan", str(plan_path), "--plan-sha256", plan_sha,
         "--output", str(output)]
     resource_result = run_guarded_diagnostic(command,
@@ -967,11 +930,7 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
         accepted = [item for item in iterations if item.get("accepted") is True] \
             if isinstance(iterations, list) else []
         accepted_controls = [item.get("committed_control") for item in accepted]
-        final_commit_matches = ((not accepted
-            and child.get("current_control_sha256") == expected_base_sha
-            and child.get("current_theta") == plan.get("initial_theta"))
-            or (len(accepted) > 0 and child.get("current_control") == accepted_controls[-1]
-                and child.get("current_theta") == accepted[-1].get("committed_theta")))
+        final_commit_matches = (not accepted or child.get("current_control") == accepted_controls[-1])
         history = child.get("hvp_history", [])
         history_ok = (isinstance(history, list)
             and len(history) == child.get("hvp_calls_completed")
@@ -983,7 +942,7 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
                 and {entry.get("side") for entry in current_point_hvps} == {-1, 1}
         closed = (child.get("phase") == "finished"
             and child.get("plan_sha256") == plan_sha
-            and child.get("base_control_sha256") == expected_base_sha
+            and child.get("base_control_sha256") == BASE_CONTROL_SHA
             and child.get("execution_status") == "completed"
             and child.get("source_unchanged") is True
             and child.get("fixed_input_unchanged") is True

@@ -1,0 +1,168 @@
+{
+  "scope": "Saved-array/receipt/static geometry arithmetic; no production reexecution",
+  "plan_sha256": "d5c4fa93ff4c3fddedb6d458fedea916c0f06d32edfe8bf55d2fd44449ac9d10",
+  "raw_sha256": "15c780de8e6b55216407d399d7ce1984280024cfb7f53cbc0ce9e6e4a644db1d",
+  "execution_status": "completed",
+  "numerical_status": "tangent_continuation_cap_reached",
+  "accepted_iterations": 3,
+  "current_HVP_calls": 6,
+  "points": [
+    {
+      "control_sha256": "ed106d7bc277906141e9d4a52aea529c575c9ac17df334fcbfb8d9c5013d44f7",
+      "objective": 0.0612512070514904,
+      "theta": 0.332026125873074,
+      "F_squared": 0.005238386295728529,
+      "F_norm": 0.07237669718720612,
+      "mixed_gradient_inf": 0.029792523644067155,
+      "tangent_gradient_norm": 0.07237388241205849,
+      "normal_mixture": 0.0006383105310589993,
+      "normal_minus": -0.09429104901940608,
+      "normal_plus": 0.1916182579691482,
+      "static_face_value": 0.0,
+      "block_gradient_norms": [
+        0.05905682964044574,
+        0.041471604880439175,
+        0.005548257130724071
+      ]
+    },
+    {
+      "control_sha256": "ab27d91716eb3776adfcdff1c7deb096f2f80f8196f2e197d7056883a9468e05",
+      "objective": 0.0612490486358514,
+      "theta": 0.3287746173484855,
+      "F_squared": 0.005199882044995634,
+      "F_norm": 0.07211020763384081,
+      "mixed_gradient_inf": 0.029658212631439036,
+      "tangent_gradient_norm": 0.07210738500914891,
+      "normal_mixture": 0.0006380220513430273,
+      "normal_minus": -0.0933618234234229,
+      "normal_plus": 0.1925478560793915,
+      "static_face_value": 1.734723475976807e-18,
+      "block_gradient_norms": [
+        0.058703136904165024,
+        0.041869108913185155,
+        0.0008952549482311722
+      ]
+    },
+    {
+      "control_sha256": "a579d4227116136a9ad6c906cfa4b69b83fe1673bd7f8af7dbf3cf3de5bd781b",
+      "objective": 0.061246448532841814,
+      "theta": 0.33200978626458416,
+      "F_squared": 0.005170556247982506,
+      "F_norm": 0.07190658000477082,
+      "mixed_gradient_inf": 0.029549688043088357,
+      "tangent_gradient_norm": 0.07190395579818225,
+      "normal_mixture": 0.0006143195874776103,
+      "normal_minus": -0.09419487964023818,
+      "normal_plus": 0.19136658014203686,
+      "static_face_value": 0.0,
+      "block_gradient_norms": [
+        0.05866682589164077,
+        0.04122069465844837,
+        0.00544188567110529
+      ]
+    },
+    {
+      "control_sha256": "33cb86ca73a404e6ff9260acbf63ee97f248ac0c1f529427eb1af1ec85a43586",
+      "objective": 0.06124426330405451,
+      "theta": 0.3295008210283633,
+      "F_squared": 0.005145254919599806,
+      "F_norm": 0.07173043231153571,
+      "mixed_gradient_inf": 0.02944709307629615,
+      "tangent_gradient_norm": 0.07172799072721413,
+      "normal_mixture": 0.0005918326085049535,
+      "normal_minus": -0.093509534238246,
+      "normal_plus": 0.19207812090951082,
+      "static_face_value": 0.0,
+      "block_gradient_norms": [
+        0.05844439100918846,
+        0.04156169839494285,
+        0.0014605840245264234
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "base_control_sha256": "ed106d7bc277906141e9d4a52aea529c575c9ac17df334fcbfb8d9c5013d44f7",
+      "accepted_control_sha256": "ab27d91716eb3776adfcdff1c7deb096f2f80f8196f2e197d7056883a9468e05",
+      "alpha": 0.00041359048189960646,
+      "model_optimal_alpha": 0.0004135904818996065,
+      "actual_path_norm": 2.993314887788789e-05,
+      "candidate_slots": 1,
+      "evaluated_candidates": 1,
+      "F_directional_derivative": -0.09310016593665772,
+      "predicted_F_squared": 0.005199880953233852,
+      "predicted_F_squared_decrease_percent": 0.7350611490045121,
+      "actual_F_squared_decrease_percent": 0.7350403074376458,
+      "model_cos_squared": 0.007350611490044849,
+      "model_angle_degrees": 85.08166776861839,
+      "finite_F_linearization_relative_error": 1.920521842200783e-06,
+      "branch_pair_signature": "67524657bd4168588075f4ee0285dd7bbf9f95f33d9bf33b9c0836497a652c69"
+    },
+    {
+      "base_control_sha256": "ab27d91716eb3776adfcdff1c7deb096f2f80f8196f2e197d7056883a9468e05",
+      "accepted_control_sha256": "a579d4227116136a9ad6c906cfa4b69b83fe1673bd7f8af7dbf3cf3de5bd781b",
+      "alpha": 0.0005016066213102947,
+      "model_optimal_alpha": 0.0005016066213102948,
+      "actual_path_norm": 3.616954171681421e-05,
+      "candidate_slots": 1,
+      "evaluated_candidates": 1,
+      "F_directional_derivative": -0.06353462604694912,
+      "predicted_F_squared": 0.005168012655888011,
+      "predicted_F_squared_decrease_percent": 0.6128867699661437,
+      "actual_F_squared_decrease_percent": 0.563970427778291,
+      "model_cos_squared": 0.006128867699661436,
+      "model_angle_degrees": 85.50988588876557,
+      "finite_F_linearization_relative_error": 0.0021352453282423418,
+      "branch_pair_signature": "9a22a18598c74d2e01b9e3a21189aecca71f540a6f5a4d2b03f9d25fba136ff7"
+    },
+    {
+      "base_control_sha256": "a579d4227116136a9ad6c906cfa4b69b83fe1673bd7f8af7dbf3cf3de5bd781b",
+      "accepted_control_sha256": "33cb86ca73a404e6ff9260acbf63ee97f248ac0c1f529427eb1af1ec85a43586",
+      "alpha": 0.0004237054182016173,
+      "model_optimal_alpha": 0.0004237054182016173,
+      "actual_path_norm": 3.046609563890242e-05,
+      "candidate_slots": 1,
+      "evaluated_candidates": 1,
+      "F_directional_derivative": -0.06603532358993372,
+      "predicted_F_squared": 0.005142576723584754,
+      "predicted_F_squared_decrease_percent": 0.5411318058607159,
+      "actual_F_squared_decrease_percent": 0.48933474793107506,
+      "model_cos_squared": 0.005411318058607194,
+      "model_angle_degrees": 85.78141672357151,
+      "finite_F_linearization_relative_error": 0.002127629783820336,
+      "branch_pair_signature": "0351f7b280a889e4d2a04c6667321c4df21264876366d2d976d6adf6b5743b3d"
+    }
+  ],
+  "resource": {
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/TANGENT_RESUME_PLAN_20261009.json",
+      "--plan-sha256",
+      "d5c4fa93ff4c3fddedb6d458fedea916c0f06d32edfe8bf55d2fd44449ac9d10",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/tangent_resume_20261009_attempt1/step.json"
+    ],
+    "child_pid": 46230,
+    "exit_code": 0,
+    "resource_termination": null,
+    "monitor_error": null,
+    "elapsed_seconds": 79.27848654217087,
+    "sampled_peak_rss_bytes": 565248000,
+    "rss_samples": 297,
+    "wall_limit_seconds": 300.0,
+    "rss_limit_bytes": 1073741824,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "received_sigterm": false,
+    "child_process_group_cleanup_sent": false,
+    "child_process_group_cleanup_error": null
+  },
+  "J_decrease_percent": 0.011336507099446447,
+  "F_squared_decrease_percent": 1.777863847205452,
+  "F_norm_decrease_percent": 0.8929184403079438,
+  "minimum_claim": false,
+  "response_claim": false,
+  "FV_completeness_external_estimate": 70
+}

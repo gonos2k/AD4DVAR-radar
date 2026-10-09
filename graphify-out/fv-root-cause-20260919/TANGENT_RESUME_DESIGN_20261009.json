@@ -1,0 +1,38 @@
+{
+  "scope": "Same current-HVP tangent correction resumed from actual accepted ed106 endpoint; limited trend measurement before changing solver",
+  "base_control_sha256": "ed106d7bc277906141e9d4a52aea529c575c9ac17df334fcbfb8d9c5013d44f7",
+  "theta": 0.332026125873074,
+  "planned_steps": 3,
+  "planned_current_HVP": 6,
+  "guarded_runs": 1,
+  "internal_seconds": 240,
+  "outer_seconds": 300,
+  "sampled_RSS_limit": 1073741824,
+  "radius": 0.05,
+  "candidates_per_step": 16,
+  "PCG_dense_basis_HVP": 0,
+  "metrics": [
+    "actual/predicted F\u00b2 decrease per step",
+    "cos\u00b2(F,-DFv) and angle",
+    "F norm/mixed infinity/tangent/normal/block residuals",
+    "theta/current pair signature/candidate counts"
+  ],
+  "unchanged": [
+    "original26-control J,priors,observations,boundary,time",
+    "tangent/ambient DF formulas and dual actual Armijo",
+    "P2 individual-gradient and PR268 atomic checkpoint gates"
+  ],
+  "remaining": [
+    "theta-only cleanup when tangent stationarity reached",
+    "current constrained curvature/minimum/active-structure qualification",
+    "coupled adjoint/reanalysis",
+    "independent synthetic future verification"
+  ],
+  "claims": {
+    "smooth_root": false,
+    "minimum": false,
+    "forecast": false,
+    "phase1_historical": 100,
+    "FV_external_estimate": 70
+  }
+}
