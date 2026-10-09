@@ -1,0 +1,11 @@
+{
+  "scope": "Exact lossless raw requalification archive; original raw retained locally",
+  "raw_path": "graphify-out/fv-root-cause-20260919/candidate_requalification_20261009_attempt1/step.json",
+  "raw_sha256": "14a4b1c05363e316fddd3291946852e3334232388f975f1316030e85a4a0abfc",
+  "gzip_path": "graphify-out/fv-root-cause-20260919/candidate_requalification_20261009_attempt1/step.json.gz",
+  "gzip_sha256": "7ce26c707bb05d6f79a4355161caf2c411fd417c697908404b8f9831bff0cdd9",
+  "raw_bytes": 39315464,
+  "gzip_bytes": 287859,
+  "guarded_launch_count": 1,
+  "execution_owner": "GREEN team launched declared single guard during preflight; root did not launch another; RED/root verified saved receipts"
+}

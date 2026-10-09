@@ -31,6 +31,7 @@ from examples.weather_scenarios.fv_diagnostic_guard import run_guarded_diagnosti
 
 EVIDENCE = ROOT / "graphify-out/fv-root-cause-20260919"
 PLAN = EVIDENCE / "NONSMOOTH_COUPLED_FACE_PLAN_20261009.json"
+REQUALIFICATION_PLAN = EVIDENCE / "CANDIDATE_REQUALIFICATION_PLAN_20261009.json"
 PRODUCER_PLAN = EVIDENCE / "CORRECTION_RESUME_PLAN_20261008.json"
 PRODUCER_PLAN_SHA = "9c29f4c0882272dccd68e2a35abf9a1fe9ff5b2fc5d5adc1502fe9a6ee8e9130"
 BASE_DIR = EVIDENCE / "correction_resume_20261008_attempt1"
@@ -387,9 +388,12 @@ def _load_plan(path: Path, digest: str) -> dict[str, Any]:
     if path.is_symlink():
         raise ValueError("nonsmooth coupled-face plan must not be a symbolic link")
     path = path.resolve()
-    if path != PLAN.resolve() or path.is_symlink() or _sha(path) != digest:
+    if path not in (PLAN.resolve(), REQUALIFICATION_PLAN.resolve()) or path.is_symlink() or _sha(path) != digest:
         raise ValueError("nonsmooth coupled-face plan identity mismatch")
     plan = json.loads(path.read_text())
+    if plan.get("experiment_kind") == "nonsmooth_candidate_requalification":
+        from examples.weather_scenarios import fv_point_3h_candidate_requalification as requalification
+        return requalification._load_plan(path, digest)
     if (plan.get("experiment_kind") != "nonsmooth_coupled_face_step"
             or plan.get("policy") != policy()
             or plan.get("producing_plan") != PRODUCER_PLAN.relative_to(ROOT).as_posix()
@@ -484,14 +488,17 @@ def _input_identity(problem: Any, original: Tensor, control: Tensor,
     return seed._input_identity(problem, original, control, parameters, truth)
 
 
-def _deadline(deadline: float) -> None:
+def _deadline(deadline: float, seconds: float = INTERNAL_SECONDS) -> None:
     if time.monotonic() >= deadline:
-        raise TimeoutError("600-second internal deadline reached")
+        raise TimeoutError(f"{seconds:g}-second internal deadline reached")
 
 
 def _counted_hvp(record: dict[str, Any], output: Path, deadline: float,
                  label: dict[str, Any], call: Any) -> Tensor:
     _deadline(deadline)
+    limit = int(record.get("policy", {}).get("hvp_calls", MAX_HVP))
+    if int(record.get("hvp_calls_started", 0)) >= limit:
+        raise ValueError(f"plan HVP limit of {limit} calls reached")
     record["hvp_calls_started"] = int(record.get("hvp_calls_started", 0)) + 1
     record["current_hvp"] = {**label, "status": "started"}
     _write(output, record)
@@ -580,15 +587,21 @@ def _parity_gate(native: tuple[Tensor, Tensor, Tensor | None], extended: tuple[T
 
 
 def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
-                    closure_state: dict[str, Any]) -> dict[str, Any]:
+                    closure_state: dict[str, Any], *, requalification: bool = False) -> dict[str, Any]:
     start = time.monotonic()
-    deadline = start + INTERNAL_SECONDS
     plan = _load_plan(plan_path, plan_sha)
+    if plan.get("experiment_kind") == "nonsmooth_candidate_requalification" and not requalification:
+        from examples.weather_scenarios import fv_point_3h_candidate_requalification as requal
+        return requal._run_child_impl(plan_path, plan_sha, output, closure_state, probe_module=sys.modules[__name__])
+    if requalification != (plan.get("experiment_kind") == "nonsmooth_candidate_requalification"):
+        raise ValueError("child mode and plan kind disagree")
+    active_policy = plan.get("policy", policy())
+    deadline = start + float(active_policy["internal_seconds"])
     base = _load_base(plan)
     record: dict[str, Any] = {"phase": "running", "execution_status": "running",
         "numerical_status": "preflight", "plan_sha256": plan_sha,
         "base_control_sha256": BASE_CONTROL_SHA, "face": FACE,
-        "policy": policy(), "hvp_calls_started": 0, "hvp_calls_completed": 0,
+        "policy": active_policy, "hvp_calls_started": 0, "hvp_calls_completed": 0,
         "hvp_history": [],
         "hvp_columns": [], "iterations": [], "candidate_committed": False,
         "active_candidate_committed": False, "optimizer_steps_applied": 0,
@@ -676,6 +689,8 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
     parity_direction = normal / torch.linalg.vector_norm(normal)
     parity_results: dict[str, Any] = {}
     for side, eta in zip((-1, 1), eta_parity):
+        if requalification:
+            break
         _deadline(deadline)
         point = _chart(control, weights, pivot, eta)
         probe_q, probe_bound, probe_face_passed = _face_audit(problem, point, weights, FACE, eta)
@@ -733,9 +748,23 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
             plan=plan, plan_path=plan_path, plan_sha=plan_sha, deadline=deadline)
 
     hessians: dict[int, Tensor] = {}
+    archived_direction: dict[str, Any] | None = None
+    if requalification:
+        from examples.weather_scenarios import fv_point_3h_candidate_requalification as requal
+        archived_direction = requal.load_archived_direction(
+            (ROOT / plan["direction_archive"]) if not Path(plan["direction_archive"]).is_absolute()
+                else Path(plan["direction_archive"]), base_control_sha256=BASE_CONTROL_SHA,
+            old_plan_sha256=plan["producing_plan_sha256"],
+            expected_child_sha256=plan.get("direction_child_sha256"))
+        record["same_point_archived_evidence"] = requal.validate_same_point_evidence(
+            archived_direction, control, traces,
+            {side: side_data[side]["gradient"] for side in (-1, 1)},
+            source_before, input_before, runtime_before)
+        hessians[-1] = archived_direction["hessian_minus"]
+        hessians[1] = archived_direction["hessian_plus"]
     counts = {"started": int(record["hvp_calls_started"]),
               "completed": int(record["hvp_calls_completed"])}
-    for side in (-1, 1):
+    for side in (() if requalification else (-1, 1)):
         cols = []
         for column in range(26):
             _deadline(deadline)
@@ -758,7 +787,7 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
         hessians[side] = torch.stack(cols, dim=1)
     hminus, hplus = hessians[-1], hessians[1]
     symmetry = {}
-    for side, hessian in hessians.items():
+    for side, hessian in (() if requalification else hessians.items()):
         relative = float(torch.linalg.vector_norm(hessian - hessian.T) /
                          torch.linalg.vector_norm(hessian).clamp_min(torch.finfo(control.dtype).tiny))
         symmetry[str(side)] = {"relative": relative, "tolerance": 1e-9,
@@ -772,16 +801,36 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
             input_before=input_before, runtime_before=runtime_before, source_before=source_before,
             plan=plan, plan_path=plan_path, plan_sha=plan_sha, deadline=deadline)
 
-    theta, mixed_gradient, mix_info = _min_norm_mix(side_data[-1]["gradient"], side_data[1]["gradient"])
-    matrix, residual, hmix = _coupled_matrix(hminus, hplus, side_data[-1]["gradient"],
-        side_data[1]["gradient"], normal, face0, theta, face_scale)
-    delta, solve_info = _solve_coupled(matrix, residual)
+    current_merit_product: Tensor | None = None
+    if requalification:
+        assert archived_direction is not None
+        from examples.weather_scenarios import fv_point_3h_candidate_requalification as requal
+        matrix, residual, theta, delta, requal_info = requal.prepare_current_direction(
+            requal._probe(sys.modules[__name__]), record, output, deadline, problem, control,
+            parameters, archived_direction, side_data[-1]["gradient"],
+            side_data[1]["gradient"], normal, face_scale, face0)
+        mixed_gradient = (1 - theta) * side_data[-1]["gradient"] + theta * side_data[1]["gradient"]
+        mix_info = {**_min_norm_mix(side_data[-1]["gradient"], side_data[1]["gradient"])[2],
+                    "current_requalification": True}
+        solve_info = requal_info["solve"]
+        current_merit_product = requal_info["check"]["actual_product"]
+        hminus, hplus = hessians[-1], hessians[1]
+        hmix = (1 - theta) * hminus + theta * hplus
+        counts["started"] = int(record["hvp_calls_started"])
+        counts["completed"] = int(record["hvp_calls_completed"])
+    else:
+        theta, mixed_gradient, mix_info = _min_norm_mix(side_data[-1]["gradient"], side_data[1]["gradient"])
+        matrix, residual, hmix = _coupled_matrix(hminus, hplus, side_data[-1]["gradient"],
+            side_data[1]["gradient"], normal, face0, theta, face_scale)
+        delta, solve_info = _solve_coupled(matrix, residual)
     record.update(numerical_status="coupled_system_solved", symmetry_audit=symmetry,
         hessian_minus=hminus.tolist(), hessian_plus=hplus.tolist(),
         mix=mix_info, theta=theta, matrix=matrix.tolist(), residual=residual.tolist(),
         delta=delta.tolist(), solve=solve_info,
-        curvature_diagnostic=_diagnostic_curvature(hmix, mixed_gradient, control, weights, normal),
-        hessian_scope="full 26x26 ambient FP64 one-sided Hessians; exact selected branch contexts",
+        curvature_diagnostic=({"scope": "archived same-point reference only; not current curvature"}
+            if requalification else _diagnostic_curvature(hmix, mixed_gradient, control, weights, normal)),
+        hessian_scope=("same-point archived reference matrices; current full Hessians not computed"
+            if requalification else "full 26x26 ambient FP64 one-sided Hessians; exact selected branch contexts"),
         hvp_calls_started=counts["started"], hvp_calls_completed=counts["completed"])
     _write(output, record)
     if not solve_info["passed"]:
@@ -796,10 +845,12 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
     path_norm = torch.linalg.vector_norm(path_direction)
     tangent_slopes = [float(torch.dot(side_data[s]["gradient"], path_direction)) for s in (-1, 1)]
     coupled_tangent = torch.cat((path_direction, delta[-1:].clone()))
-    merit_direction = matrix @ coupled_tangent
+    merit_direction = (current_merit_product if current_merit_product is not None
+                       else matrix @ coupled_tangent)
     directional_model = torch.dot(residual, merit_direction)
-    max_alpha = min(1.0, RADIUS / max(float(path_norm), torch.finfo(control.dtype).tiny))
-    alphas = [max_alpha / (2**i) for i in range(MAX_CANDIDATES)]
+    radius = float(active_policy["radius"])
+    max_alpha = min(1.0, radius / max(float(path_norm), torch.finfo(control.dtype).tiny))
+    alphas = [max_alpha / (2**i) for i in range(int(active_policy["max_candidates"]))]
     base_f_norm2 = torch.dot(residual, residual)
     iteration: dict[str, Any] = {"index": 0, "base_control_sha256": BASE_CONTROL_SHA,
         "alpha_limit": max_alpha, "trials": [], "proposal": None, "accepted": None,
@@ -822,7 +873,7 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
                 continue
             actual_delta = candidate - control
             actual_norm = torch.linalg.vector_norm(actual_delta)
-            if float(actual_norm) > RADIUS * (1 + 64 * torch.finfo(control.dtype).eps):
+            if float(actual_norm) > radius * (1 + 64 * torch.finfo(control.dtype).eps):
                 iteration["trials"].append({"alpha": alpha, "status": "radius_refused",
                     "actual_path_norm": float(actual_norm)})
                 continue
@@ -831,11 +882,27 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
                 "control_sha256": _tensor_sha(candidate)}
             jnative = problem.objective(candidate, parameters)
             branch_trace = {side: _analysis_trace(problem, candidate, parameters, side) for side in (-1, 1)}
-            branch_ok = all(not branch_trace[s]["nonfinite_or_tie"]
-                and branch_trace[s]["stage_count"] == ANALYSIS_STAGES
-                and branch_trace[s]["choices"] == traces[s]["choices"]
-                and branch_trace[s]["face_signs"] == traces[s]["face_signs"] for s in (-1, 1))
-            gs = {side: _eval_side(problem, candidate, parameters, side)[1] for side in (-1, 1)}
+            if requalification:
+                from examples.weather_scenarios import fv_point_3h_candidate_requalification as requal
+                pair = requal.current_branch_pair_gate(branch_trace[-1], branch_trace[1], dtype=control.dtype)
+                branch_ok = pair["passed"]
+                branch_changes = {str(s): {
+                    "choices_changed_from_base": branch_trace[s]["choices"] != traces[s]["choices"],
+                    "face_signs_changed_from_base": branch_trace[s]["face_signs"] != traces[s]["face_signs"]}
+                    for s in (-1, 1)}
+            else:
+                pair = None
+                branch_changes = {}
+                branch_ok = all(not branch_trace[s]["nonfinite_or_tie"]
+                    and branch_trace[s]["stage_count"] == ANALYSIS_STAGES
+                    and branch_trace[s]["choices"] == traces[s]["choices"]
+                    and branch_trace[s]["face_signs"] == traces[s]["face_signs"] for s in (-1, 1))
+            side_eval = {side: _eval_side(problem, candidate, parameters, side) for side in (-1, 1)}
+            gs = {side: side_eval[side][1] for side in (-1, 1)}
+            candidate_side_j_match = all(abs(float(side_eval[s][0]) - float(jnative)) <=
+                128 * torch.finfo(control.dtype).eps * max(abs(float(side_eval[s][0])),
+                    abs(float(jnative)), torch.finfo(control.dtype).tiny) for s in (-1, 1))
+            candidate_gradients_finite = all(bool(torch.isfinite(gs[s]).all()) for s in (-1, 1))
             qtrial = _face_value(candidate, weights)
             qtrial_production, q_bound_tensor, q_audit = _face_audit(
                 problem, candidate, weights, FACE, 0.0)
@@ -861,9 +928,14 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
                 "production_face_value": float(qtrial_production),
                 "face_reduction_residual": float(qtrial_production - qtrial),
                 "face_roundoff_passed": q_pass, "branch_support_passed": branch_ok,
+                "current_branch_pair_gate": pair, "branch_changes_from_base": branch_changes,
+                "side_objectives_match_native": candidate_side_j_match,
+                "side_gradients_finite": candidate_gradients_finite,
                 "side_gradients": {str(s): gs[s].tolist() for s in (-1, 1)},
                 "branch_trace": {str(k): v for k, v in branch_trace.items()},
-                "status": "accepted" if all((j_pass, f_pass, q_pass, branch_ok)) else "rejected"})
+                "status": "accepted" if all((j_pass, f_pass, q_pass, branch_ok,
+                    candidate_side_j_match if requalification else True,
+                    candidate_gradients_finite if requalification else True)) else "rejected"})
             iteration["trials"].append(trial)
             if trial["status"] == "accepted":
                 iteration["proposal"] = trial
@@ -885,6 +957,7 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
         <= 128 * torch.finfo(control.dtype).eps * max(abs(float(final_native_j)),
             abs(proposal["objective"]), torch.finfo(control.dtype).tiny))
     gradient_match = True
+    final_pair_gate: dict[str, Any] | None = None
     objective_extension_match = True
     branch_match = True
     merit_match = True
@@ -902,6 +975,12 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
         branch_match = all(not final_trace[s]["nonfinite_or_tie"]
             and final_trace[s]["signature_sha256"] == proposal["branch_trace"][str(s)]["signature_sha256"]
             for s in (-1, 1))
+        if requalification:
+            from examples.weather_scenarios import fv_point_3h_candidate_requalification as requal
+            final_pair_gate = requal.current_branch_pair_gate(final_trace[-1], final_trace[1], dtype=control.dtype)
+            branch_match = branch_match and final_pair_gate["passed"]
+        else:
+            final_pair_gate = None
         final_f = _residual_measure((1 - proposal["theta"]) * final_side[-1][1]
             + proposal["theta"] * final_side[1][1], eval_face, face_scale)
         merit_value = float(torch.dot(final_f, final_f))
@@ -925,15 +1004,17 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
         "face_value": float(eval_face), "production_face_value": float(eval_production_face),
         "face_roundoff_bound": eval_q_bound, "face_roundoff_passed": final_face_ok,
         "side_trace_signatures": {str(s): final_trace[s]["signature_sha256"] for s in (-1, 1)},
+        "current_branch_pair_gate": final_pair_gate,
         "source_unchanged": final_source_ok, "fixed_input_unchanged": bool(final_fixed),
         "runtime_unchanged": final_runtime == runtime_before,
         "deadline_passed": final_deadline}
-    closure_ok = all((final_repeat["side_gradients_finite"], objective_match,
+    closure_ok = all((final_repeat["side_gradients_finite"], gradient_match, objective_match,
         objective_extension_match, branch_match, merit_match, final_face_ok, final_source_ok,
         bool(final_fixed), final_runtime == runtime_before, final_deadline))
     if proposal is not None and closure_ok:
         iteration["accepted"] = proposal
-        iteration["candidate_type"] = "one_nonsmooth_coupled_step"
+        iteration["candidate_type"] = ("one_nonsmooth_requalified_step" if requalification
+                                       else "one_nonsmooth_coupled_step")
     elif proposal is not None:
         proposal["status"] = "final_closure_refused"
         iteration["refusal"] = "independent final J/g/F/trace/source/input/runtime/deadline repeat failed"
@@ -950,7 +1031,8 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
         numerical_status=("one_nonsmooth_coupled_step_accepted" if committed else "coupled_step_refused"),
         optimizer_steps_applied=int(committed), candidate_committed=committed,
         active_candidate_committed=False,
-        candidate_type="one_nonsmooth_coupled_step" if committed else None,
+        candidate_type=("one_nonsmooth_requalified_step" if requalification else "one_nonsmooth_coupled_step")
+            if committed else None,
         current_control=final_control.tolist(), current_control_sha256=final_control_sha,
         input_before=input_before, input_after=final_input_after,
         fixed_input_unchanged=bool(fixed_ok), runtime=runtime_before,
@@ -1032,19 +1114,20 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
         return record
 
 
-def _execution_status(resource: dict[str, Any]) -> str:
-    elapsed = float(resource.get("elapsed_seconds", WALL_SECONDS + 1))
-    peak = int(resource.get("sampled_peak_rss_bytes", RSS_BYTES + 1))
-    if (resource.get("wall_limit_seconds") == WALL_SECONDS
-            and resource.get("rss_limit_bytes") == RSS_BYTES
+def _execution_status(resource: dict[str, Any], *, wall_seconds: float = WALL_SECONDS,
+                      rss_bytes: int = RSS_BYTES) -> str:
+    elapsed = float(resource.get("elapsed_seconds", wall_seconds + 1))
+    peak = int(resource.get("sampled_peak_rss_bytes", rss_bytes + 1))
+    if (resource.get("wall_limit_seconds") == wall_seconds
+            and resource.get("rss_limit_bytes") == rss_bytes
             and resource.get("exit_code") == 0 and resource.get("resource_termination") is None
             and resource.get("monitor_error") is None and not resource.get("received_sigterm")
-            and elapsed <= WALL_SECONDS and peak < RSS_BYTES):
+            and elapsed <= wall_seconds and peak < rss_bytes):
         return "completed"
     termination = resource.get("resource_termination")
-    if termination == "wall_time_limit" or elapsed > WALL_SECONDS:
+    if termination == "wall_time_limit" or elapsed > wall_seconds:
         return "wall_timeout"
-    if termination == "rss_limit" or peak >= RSS_BYTES:
+    if termination == "rss_limit" or peak >= rss_bytes:
         return "rss_limit"
     if termination == "cancelled" or resource.get("received_sigterm"):
         return "cancelled"
@@ -1060,14 +1143,17 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
         raise ValueError("nonsmooth coupled-face plan must not be a symbolic link")
     plan_path = plan_path.resolve()
     plan = _load_plan(plan_path, plan_sha)
+    active_policy = plan["policy"]
     if any(p.exists() or p.is_symlink() for p in (output, resource, log, output.with_suffix(".run.json"))):
         raise ValueError("output/resource/log paths must be fresh")
     output.parent.mkdir(parents=True, exist_ok=True)
     command = [str(ROOT / ".venv/bin/python"), str(Path(__file__).resolve()), "--child",
         "--plan", str(plan_path), "--plan-sha256", plan_sha, "--output", str(output)]
-    resource_result = run_guarded_diagnostic(command, wall_seconds=WALL_SECONDS,
-        rss_bytes=RSS_BYTES, report_path=resource, log_path=log)
-    status = _execution_status(resource_result)
+    wall_seconds = float(active_policy["outer_seconds"])
+    rss_bytes = int(active_policy["rss_bytes"])
+    resource_result = run_guarded_diagnostic(command, wall_seconds=wall_seconds,
+        rss_bytes=rss_bytes, report_path=resource, log_path=log)
+    status = _execution_status(resource_result, wall_seconds=wall_seconds, rss_bytes=rss_bytes)
     parent = {"execution_status": status, "resource": resource_result,
         "child_sha256": _sha(output) if output.exists() else None,
         "numerical_status": "not_reached", "child_read_error": None}
@@ -1099,9 +1185,12 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
             and child.get("optimizer_steps_applied") == int(child.get("candidate_committed") is True)
             and child.get("candidate_committed") is (len(accepted) == 1)
             and child.get("hvp_calls_started") == child.get("hvp_calls_completed")
-            and child.get("hvp_calls_completed", 0) <= MAX_HVP
+            and child.get("hvp_calls_completed", 0) <= int(active_policy["hvp_calls"])
             and ((not accepted and current_sha == BASE_CONTROL_SHA)
-                 or (len(accepted) == 1 and child.get("candidate_type") == "one_nonsmooth_coupled_step"
+                 or (len(accepted) == 1 and child.get("candidate_type") == (
+                         "one_nonsmooth_requalified_step"
+                         if plan.get("experiment_kind") == "nonsmooth_candidate_requalification"
+                         else "one_nonsmooth_coupled_step")
                      and accepted[0].get("accepted", {}).get("control_sha256") == current_sha)))
         if status == "completed" and not closed:
             parent.update(execution_status="failed", execution_failure_reason="child closure refused")

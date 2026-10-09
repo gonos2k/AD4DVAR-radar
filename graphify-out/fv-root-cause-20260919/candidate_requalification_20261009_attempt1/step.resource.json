@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_nonsmooth_coupled_probe.py",
+    "--child",
+    "--plan",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/CANDIDATE_REQUALIFICATION_PLAN_20261009.json",
+    "--plan-sha256",
+    "5b7ebac50ebc38c0eaf34539c5bdf89e00c4d342ef96f2a96bc12a93fa30bfb4",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/candidate_requalification_20261009_attempt1/step.json"
+  ],
+  "child_pid": 69542,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 50.69912995910272,
+  "sampled_peak_rss_bytes": 656474112,
+  "rss_samples": 190,
+  "wall_limit_seconds": 300.0,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}

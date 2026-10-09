@@ -1,0 +1,32 @@
+{
+  "child_read_error": null,
+  "child_sha256": "14a4b1c05363e316fddd3291946852e3334232388f975f1316030e85a4a0abfc",
+  "execution_status": "completed",
+  "numerical_status": "one_nonsmooth_coupled_step_accepted",
+  "resource": {
+    "child_pid": 69542,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_nonsmooth_coupled_probe.py",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/CANDIDATE_REQUALIFICATION_PLAN_20261009.json",
+      "--plan-sha256",
+      "5b7ebac50ebc38c0eaf34539c5bdf89e00c4d342ef96f2a96bc12a93fa30bfb4",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/candidate_requalification_20261009_attempt1/step.json"
+    ],
+    "elapsed_seconds": 50.69912995910272,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 190,
+    "sampled_peak_rss_bytes": 656474112,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300.0
+  }
+}
