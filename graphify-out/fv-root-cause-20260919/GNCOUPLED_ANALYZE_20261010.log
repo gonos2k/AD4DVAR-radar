@@ -1,0 +1,43 @@
+{
+  "selected_direction": "robust_gn_coupled",
+  "selected_endpoint": {
+    "control_sha256": "4035904e46c11c67a6f937039fe3c88b0516330b05f3ba9d57c4cfa619423ab7",
+    "theta_star": 0.4829044955080727,
+    "native_J": 0.061202333947534084,
+    "F_squared": 0.004490021941881948,
+    "gradient_norm": 0.067007625997956,
+    "gradient_linf": 0.02869620469236976,
+    "J_decrease_percent": 0.050885616479201534,
+    "F_squared_decrease_percent": 2.5173794664254734
+  },
+  "checks": {
+    "parent_completed": true,
+    "raw_digest_matches_parent": true,
+    "resource_matches_parent": true,
+    "source_receipts_match": true,
+    "all_plan_pins_match": true,
+    "winner_matches_saved": true,
+    "only_selected_final_control": true,
+    "final_control_digest": true,
+    "final_min_theta_matches": true,
+    "final_F_squared_matches": true,
+    "per_side_gradient_matches": true,
+    "all_final_closure_flags": true,
+    "HVP_provenance": true,
+    "rows_complete": true,
+    "resource_closed": true
+  },
+  "accounting": {
+    "guarded_launches": 1,
+    "row_started": 24,
+    "row_completed": 24,
+    "HVP_started": 4,
+    "HVP_completed": 4,
+    "dense_started": 1,
+    "dense_completed": 1,
+    "candidate_slots": 8,
+    "optimizer_steps": 1,
+    "elapsed_seconds": 92.53458608314395,
+    "sampled_peak_rss_bytes": 984743936
+  }
+}

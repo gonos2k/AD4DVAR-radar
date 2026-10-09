@@ -1,0 +1,10 @@
+{
+  "scope": "Existing saved PR272 residual arrays only; no model execution",
+  "delta_2_3_angle_degrees": 168.67682806841802,
+  "delta_sum_vs_sum_norms": 0.0987124185246398,
+  "error_c12_c13_c14_share_percent": [
+    99.91607635152008,
+    99.97560596647045
+  ],
+  "source": "MIXMIN_RESUME_RESULT_20261010.json"
+}

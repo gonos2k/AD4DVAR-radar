@@ -1,0 +1,49 @@
+{
+  "scope": "Same-point baseline versus coupled robust GN under identical candidate-minimum theta policy",
+  "base_control_sha256": "c8fba1f93ee0b6c83edc5b56792de158921c0a64bab41eef5403c2a514b1fc33",
+  "base_theta": 0.4818866600367756,
+  "base_objective": 0.06123349298793274,
+  "base_carried_F_squared": 0.004605971728402105,
+  "math": {
+    "tangent": "t=P*g_star",
+    "B": "sqrt(D)*A_minus*P (12x26); projected opposite-side rows agree",
+    "S": "I12+B*B^T SPD",
+    "direction": "d=-t+B^T solve(S,B*t); chart repair with true pivot; no diagonalization",
+    "curvature": "search GN approximation I+observational term, omits residual Hessian; exact minimum mixture has zero normal multiplier under supported common face",
+    "merit": "current/candidate interior theta minimization; full theta_prime vector derivative and envelope scalar",
+    "comparison": "each direction first passing candidate; smaller actual F_squared, then original J, then baseline with128eps ties; selected only final repeat"
+  },
+  "policy": {
+    "guarded_launches": 1,
+    "internal_seconds": 600.0,
+    "outer_seconds": 660.0,
+    "rss_bytes": 1073741824,
+    "direction_models": 2,
+    "candidate_grid_per_direction": 16,
+    "max_accepted_iterations": 1,
+    "optimizer_steps": 1,
+    "radius": 0.05,
+    "face_scale": 0.84,
+    "jacobian_row_vjp_calls": 24,
+    "hvp_calls": 4,
+    "pcg_solves": 0,
+    "dense_solves": 1,
+    "root_claim": false,
+    "minimum_claim": false,
+    "response_claim": false,
+    "score_claim": false
+  },
+  "support": [
+    "26controls12all-detectedwhitenedrows",
+    "identitycontrolprior/no neural/no field smoothness",
+    "one regular common face/interiorresolvedtheta",
+    "current strict paired branches and residual/tangent row parity",
+    "native J decomposition unchanged and actual endpoint reevaluation"
+  ],
+  "remaining": [
+    "qualified optimum/tangent curvature/normalminimum/activestability",
+    "coupledadjoint/VJP/reanalysis",
+    "independent synthetic forecasts"
+  ],
+  "milestones": "phase1historical100,FV70unchanged"
+}

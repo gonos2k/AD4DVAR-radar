@@ -1,0 +1,11 @@
+# GREEN code preflight: coupled robust-GN comparison
+
+**Decision: GREEN clear for the planned one-point guarded comparison.** This is source, plan, and synthetic-test review only; no production FV, seed preparation, HVP, or guard was run.
+
+The frozen plan is SHA 18be87cdbb6d084ff7248339bf81b749edca4e55dbd9d3a3d9d692d5c37f611d with 137 source and 141 archive pins. I checked all 278 pinned paths against the workspace; there were no mismatches. The key reviewed source hashes are adapter 4b2091f1…, shared continuation dcfbf4e8…, mixing-minimum model eb8568c0…, and focused test dd63cc1e….
+
+The adapter closes the PR272 c8 predecessor from its selected final-repeat receipt, then requires the fixed 26-control, 13-parameter, all-detected 12-row profile, identity prior, zero smoothness weight, residual-row parity, and projected side-row parity before constructing the GN direction. It uses B=sqrt(D)(A−P), S=I+BBᵀ, one Cholesky row-space solve, and chart-repair/descent checks; it records the solve operands and outputs. The shared continuation builds baseline and coupled-GN arms at the same fresh theta-star, obtains two separate direction-tagged HVPs per arm, uses each arm's own full theta-prime residual derivative, and runs the same bounded actual J/minimum-F² candidate gates. It compares first-passing actual endpoints by F², J, then the frozen baseline tie rule; only the selected proposal gets final closure. The parent validates 24 rows, four HVPs, one dense solve, arm directions/histories, accepted control/theta chain, and the selected closure. No full/control Hessian or PCG path is added.
+
+The saved focused log reports 83 passed with 18 existing TorchScript deprecation warnings; the saved type-check log reports zero errors. Tests exercise the tiny Woodbury reference, full theta-prime residual JVP, fake child row/HVP/solve counts, and parent closure. I inspected the saved logs without rerunning them. Resource policy is one guard, 600-second inner /660-second outer, 1-GiB RSS, 24 row VJPs, four HVPs, one 12×12 solve, and up to 16 first-passing candidates per arm.
+
+No code or plan blocker remains for this bounded comparison. The actual candidate outcomes and model-vs-actual residual errors remain to be audited from the saved run arrays after the root-owned attempt.

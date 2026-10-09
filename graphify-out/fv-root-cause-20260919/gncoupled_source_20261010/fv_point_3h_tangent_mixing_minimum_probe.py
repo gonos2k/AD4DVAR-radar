@@ -236,15 +236,10 @@ def _load_current_base(plan: dict[str, Any]) -> dict[str, Any]:
 
 def minimum_tangent_model(gminus: Tensor, gplus: Tensor, hminus: Tensor, hplus: Tensor,
         normal: Tensor, chart: Tensor, theta_star: float, q: float, pivot: int,
-        face_scale: float, *, direction_override: Tensor | None = None) -> tangent.TangentModel:
+        face_scale: float) -> tangent.TangentModel:
     """Build the full residual derivative of the interior mixing-minimum envelope."""
     mixed, tangent_gradient, direction, support = tangent.tangent_direction(
         gminus, gplus, normal, chart, theta_star, pivot=pivot)
-    direction_override_chart_error = 0.0
-    if direction_override is not None:
-        direction_override_chart_error = tangent._validate_direction_override(
-            gminus, normal, chart, pivot, direction_override)
-        direction = direction_override
     jump = gplus - gminus
     jump_squared = torch.dot(jump, jump)
     if not bool(torch.isfinite(jump_squared) & (jump_squared > torch.finfo(gminus.dtype).tiny)):
@@ -273,7 +268,6 @@ def minimum_tangent_model(gminus: Tensor, gplus: Tensor, hminus: Tensor, hplus: 
         residual_direction, envelope_slope))
     gates = {"finite": finite, **support,
         "candidate_mixing_minimum": True,
-        "direction_override_chart_error": direction_override_chart_error,
         "theta_stationarity": float(torch.dot(jump, mixed)),
         "theta_star_interior": True,
         "theta_prime_finite": bool(torch.isfinite(theta_prime)),
