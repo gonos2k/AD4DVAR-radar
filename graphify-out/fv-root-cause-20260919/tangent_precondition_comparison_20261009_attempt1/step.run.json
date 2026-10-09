@@ -1,0 +1,32 @@
+{
+  "child_read_error": null,
+  "child_sha256": "c64480cfdc8b011b63b8bec4fd0e704187b28657d47e5e51b63f606406e0c4cf",
+  "execution_status": "completed",
+  "numerical_status": "tangent_precondition_comparison_accepted",
+  "resource": {
+    "child_pid": 91565,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_precondition_comparison.py",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/TANGENT_PRECONDITION_COMPARISON_PLAN_20261009.json",
+      "--plan-sha256",
+      "be2886f2686cd04e71d3d244967da378bae9c22e39168c5f22bd85e7801169a4",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/tangent_precondition_comparison_20261009_attempt1/step.json"
+    ],
+    "elapsed_seconds": 91.36848312499933,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 342,
+    "sampled_peak_rss_bytes": 951271424,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 660.0
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "scope": "Samepoint baseline versus current robust-GN Jacobi; baseline wins actual eligible F\u00b2; non-target boundary and theta-lag diagnostic recorded without posthoc acceptance",
+  "plan_sha256": "be2886f2686cd04e71d3d244967da378bae9c22e39168c5f22bd85e7801169a4",
+  "source_pins": 131,
+  "archive_pins": 116,
+  "result": "PRECOND_RESULT_20261009.json",
+  "selected_direction": "baseline_tangent",
+  "selected_control_sha256": "0da57dbc5a4c101c2f24204835a746514b110f4548fe64de40455f4478dfbed1",
+  "row_reverse_products": 24,
+  "direction_HVPs": 4,
+  "candidate_evaluations": 9,
+  "guarded_launches": 1,
+  "optimizer_steps": 1,
+  "GREEN": "PRECOND_GREEN_FINAL_20261009.md",
+  "RED": "PRECOND_RED_FINAL_20261009.md",
+  "phase1_historical": "8/8",
+  "FV_external_weighted_milestones": "70/100 unchanged",
+  "remaining": [
+    "new-point coupled nonlinear mixing/branch handling comparison",
+    "current directional coupling/curvature improvement",
+    "qualified optimum/curvature/active-structure audit",
+    "coupled adjoint/reanalysis",
+    "independent synthetic future verification"
+  ]
+}

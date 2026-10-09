@@ -1,0 +1,14 @@
+{
+  "scope": "Lossless archive of the recorded single root comparison; archiving performed no additional production candidate evaluations",
+  "guarded_launch_count": 1,
+  "raw_path": "graphify-out/fv-root-cause-20260919/tangent_precondition_comparison_20261009_attempt1/step.json",
+  "raw_sha256": "c64480cfdc8b011b63b8bec4fd0e704187b28657d47e5e51b63f606406e0c4cf",
+  "gzip_path": "graphify-out/fv-root-cause-20260919/tangent_precondition_comparison_20261009_attempt1/step.json.gz",
+  "gzip_sha256": "e7b28a8693e0d1fe62f963bf9e5e714434d8ae0686a23e4ed20407adcb078ddb",
+  "raw_bytes": 102618544,
+  "gzip_bytes": 744512,
+  "run_path": "graphify-out/fv-root-cause-20260919/tangent_precondition_comparison_20261009_attempt1/step.run.json",
+  "run_sha256": "bfc6c8fd8c4d92ffa7e7ad435993c8148322f0e098ce0daafdf3f3ad60ccaf0a",
+  "resource_path": "graphify-out/fv-root-cause-20260919/tangent_precondition_comparison_20261009_attempt1/step.resource.json",
+  "resource_sha256": "b7d391a2f955c95dcb283afb85b3200210adc5ad99b96774f28d12573930288b"
+}

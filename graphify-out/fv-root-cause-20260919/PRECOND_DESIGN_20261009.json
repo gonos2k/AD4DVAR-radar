@@ -1,0 +1,41 @@
+{
+  "scope": "One same-base paired comparison; baseline against SPD current robust-GN Jacobi tangent metric",
+  "base_control_sha256": "33cb86ca73a404e6ff9260acbf63ee97f248ac0c1f529427eb1af1ec85a43586",
+  "initial_theta": 0.3295008210283633,
+  "residual_rows": 12,
+  "row_reverse_products": 24,
+  "row_forward_passes": 2,
+  "HVP": 4,
+  "matrix": "W diagonal inverse of max(1, diag(P G_robust P) - mu diag(P Qcc P))",
+  "G_robust": "theta-weighted side Jacobian outer-curvature matrices + exact plain identity prior; L=0 in this profile",
+  "robust_outer_curvature": "(delta/hypot(delta,r))^3 in exact standardized/whitened point-residual coordinates",
+  "direction": "-P W P mixed_gradient, repaired in current Q=0 chart",
+  "unchanged": [
+    "original26control J/prior/observations/boundaries/time",
+    "actual J/F\u00b2 Armijo",
+    "actual curved radius .05",
+    "current strict two-side branch/face qualification",
+    "individual side-gradient fresh closure/atomic current theta checkpoint"
+  ],
+  "policy": {
+    "direction_models": 2,
+    "max_candidate_slots_per_arm": 16,
+    "arm_search": "first pass or grid exhausted",
+    "commit": "at most1 selected winner after both arms attempted",
+    "winner": "lowest actual F\u00b2 thenJ thenbaseline with128eps ties",
+    "guard": 1,
+    "internal_seconds": 600,
+    "outer_seconds": 660,
+    "sampled_RSS_bytes": 1073741824,
+    "PCG_dense_basis_HVP": 0
+  },
+  "qualification_limits": [
+    "GN omits sum rho_prime(r)*residual_Hessian; not exact manifold Hessian",
+    "retained full-mu Qcc correction in an approximate mixed-branch metric may leave theta/extension dependence",
+    "SPD metric guarantees common-face J descent, not F merit decrease or efficiency",
+    "W=cI endpoint invariance requires zero normal mixture and nonbinding alpha cap; W=I direction compatibility tested",
+    "no current minimum/curvature/response/forecast claim"
+  ],
+  "phase1_historical": "100%",
+  "FV_external_estimate": "70%"
+}

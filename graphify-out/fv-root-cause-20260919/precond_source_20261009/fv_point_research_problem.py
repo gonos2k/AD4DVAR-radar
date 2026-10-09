@@ -317,10 +317,8 @@ class FVPointResearchProblem:
         return replace(self.frozen,
                        initial_background_dbz=self.background_dbz + parameters[-1] * self.background_pattern)
 
-    def _observation_residual_groups(
-        self, control: Tensor, parameters: Tensor, contract: v.FrozenOuterState,
-    ) -> tuple[Tensor, ...]:
-        """Return the exact standardized/whitened residual tensors used by J."""
+    def objective(self, control: Tensor, parameters: Tensor) -> Tensor:
+        contract = self.contract(parameters)
         observed = parameters[:-1].reshape_as(self.observation_dbz)
         predicted_echo = v.analysis_trajectory(control, contract).frames_linear
         predicted_dbz = echo_to_dbz(predicted_echo, min_dbz=contract.nowcast_config.min_dbz)
@@ -329,41 +327,24 @@ class FVPointResearchProblem:
             residual = self.quality_weight.sqrt() * (sampled_dbz - observed) / self.observation_std_dbz
             if self._correlation_whitener is not None:
                 residual = residual @ self._correlation_whitener.T
-            return (residual,)
-        groups: list[Tensor] = []
-        for time_index in range(3):
-            indices = self._detected_mask[time_index].nonzero().flatten()
-            if indices.numel() == 0:
-                continue
-            residual = (
-                self.quality_weight[time_index, indices].sqrt()
-                * (sampled_dbz[time_index, indices] - observed[time_index, indices])
-                / self.observation_std_dbz[time_index, indices]
-            )
-            whitener = self._masked_whiteners[time_index]
-            if whitener is not None:
-                residual = whitener @ residual
-            groups.append(residual)
-        return tuple(groups)
-
-    def observation_residual(self, control: Tensor, parameters: Tensor) -> Tensor:
-        """Expose all detected rows for bounded local diagnostics.
-
-        This row form is defined only when every fixed point observation is
-        detected; masked rows use the objective's grouped segment contract.
-        """
-        if not bool(self._detected_mask.all()):
-            raise ValueError("point row Jacobian requires all fixed observations detected")
-        return self._observation_residual_groups(
-            control, parameters, self.contract(parameters))[0]
-
-    def objective(self, control: Tensor, parameters: Tensor) -> Tensor:
-        contract = self.contract(parameters)
-        data_cost = control.new_zeros(())
-        for residual in self._observation_residual_groups(control, parameters, contract):
-            data_cost = data_cost + v._pseudo_huber_cost(
-                residual, contract.analysis_config.pseudo_huber_delta
-            ).sum()
+            data_cost = v._pseudo_huber_cost(residual, contract.analysis_config.pseudo_huber_delta).sum()
+        else:
+            data_cost = control.new_zeros(())
+            for time_index in range(3):
+                indices = self._detected_mask[time_index].nonzero().flatten()
+                if indices.numel() == 0:
+                    continue
+                residual = (
+                    self.quality_weight[time_index, indices].sqrt()
+                    * (sampled_dbz[time_index, indices] - observed[time_index, indices])
+                    / self.observation_std_dbz[time_index, indices]
+                )
+                whitener = self._masked_whiteners[time_index]
+                if whitener is not None:
+                    residual = whitener @ residual
+                data_cost = data_cost + v._pseudo_huber_cost(
+                    residual, contract.analysis_config.pseudo_huber_delta
+                ).sum()
         prior = v._control_prior_residual(control, contract)
         return (data_cost
                 + 0.5 * torch.dot(prior, prior)

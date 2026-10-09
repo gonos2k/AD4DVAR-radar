@@ -126,32 +126,6 @@ def test_tangent_uses_the_actual_chart_pivot_instead_of_inferring_from_normal():
     torch.testing.assert_close(direction, torch.tensor([-2.0, 1.0], dtype=dtype))
 
 
-def test_tangent_model_accepts_only_finite_exact_chart_tangent_overrides():
-    base = _model()
-    direction = torch.tensor([0.0, 0.5], dtype=torch.float64)
-    scaled_hminus = base.hminus * 0.5
-    scaled_hplus = base.hplus * 0.5
-    model = tangent.tangent_model(torch.tensor([-1.0, -1.0], dtype=torch.float64),
-        torch.tensor([1.0, -1.0], dtype=torch.float64), scaled_hminus, scaled_hplus,
-        torch.tensor([1.0, 0.0], dtype=torch.float64),
-        torch.tensor([[0.0], [1.0]], dtype=torch.float64), 0.25,
-        pivot=0, direction_override=direction)
-    torch.testing.assert_close(model.direction, direction)
-    assert model.gates["direction_override_chart_error"] == 0.0
-    with pytest.raises(ValueError, match="not tangent"):
-        tangent.tangent_model(torch.tensor([-1.0, -1.0], dtype=torch.float64),
-            torch.tensor([1.0, -1.0], dtype=torch.float64), scaled_hminus, scaled_hplus,
-            torch.tensor([1.0, 0.0], dtype=torch.float64),
-            torch.tensor([[0.0], [1.0]], dtype=torch.float64), 0.25,
-            pivot=0, direction_override=torch.tensor([0.1, 0.5], dtype=torch.float64))
-    with pytest.raises(ValueError, match="retained-coordinate chart"):
-        tangent.tangent_model(torch.tensor([-1.0, -1.0], dtype=torch.float64),
-            torch.tensor([1.0, -1.0], dtype=torch.float64), scaled_hminus, scaled_hplus,
-            torch.tensor([1.0, 0.0], dtype=torch.float64),
-            torch.tensor([[0.0], [0.9]], dtype=torch.float64), 0.25,
-            pivot=0, direction_override=direction)
-
-
 def test_actual_chart_radius_and_theta_domain_are_checked_in_search():
     model = _model()
     current = torch.zeros(2, dtype=torch.float64)
