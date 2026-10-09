@@ -1075,9 +1075,6 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
     elif plan.get("experiment_kind") == "current_tangent_mixing_minimum_resume":
         numerical_status = _mixing_minimum_resume_status(
             committed, int(active_policy["max_accepted_iterations"]))
-    elif plan.get("experiment_kind") == "current_tangent_coupled_gn_comparison":
-        numerical_status = ("tangent_coupled_gn_comparison_accepted" if committed
-            else "tangent_coupled_gn_comparison_refused")
     elif plan.get("experiment_kind") == "current_tangent_precondition_comparison":
         numerical_status = ("tangent_precondition_comparison_accepted" if committed
             else "tangent_precondition_comparison_refused")
@@ -1386,18 +1383,15 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
             and len(history) == child.get("hvp_calls_completed")
             and all(item.get("status") == "completed" for item in history))
         comparison = plan.get("experiment_kind") == "current_tangent_precondition_comparison"
-        coupled_comparison = plan.get("experiment_kind") == "current_tangent_coupled_gn_comparison"
-        two_arm_comparison = comparison or coupled_comparison
         mixing_minimum = plan.get("experiment_kind") == "current_tangent_mixing_minimum"
         mixing_minimum_resume = plan.get("experiment_kind") == "current_tangent_mixing_minimum_resume"
         mixing_minimum_mode = mixing_minimum or mixing_minimum_resume
         for item in accepted:
             current_point_hvps = [entry for entry in history
                 if entry.get("base_control_sha256") == item.get("base_control_sha256")]
-            if two_arm_comparison:
+            if comparison:
                 arms = item.get("model_comparisons", [])
-                expected_names = ({"baseline_tangent", "robust_gn_jacobi"} if comparison else
-                    {"baseline_tangent", "robust_gn_coupled"})
+                expected_names = {"baseline_tangent", "robust_gn_jacobi"}
                 history_ok = history_ok and len(arms) == 2 \
                     and {arm.get("name") for arm in arms} == expected_names
                 for arm in arms:
@@ -1409,8 +1403,6 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
                         and {entry.get("side") for entry in arm_hvps} == {-1, 1} \
                         and all(entry.get("direction_sha256") == direction_sha
                             and entry.get("theta") == item.get("theta")
-                            and (not coupled_comparison
-                                or entry.get("working_theta") == arm.get("working_theta"))
                             and entry.get("operator") == "selected_face_extension"
                             and entry.get("scope") == "one current chart tangent"
                             for entry in arm_hvps)
@@ -1418,13 +1410,13 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
                 history_ok = history_ok and len(current_point_hvps) == 2 \
                     and {entry.get("side") for entry in current_point_hvps} == {-1, 1}
         row_history = child.get("jacobian_row_history", [])
-        row_accounting_ok = ((two_arm_comparison and
+        row_accounting_ok = ((comparison and
             child.get("jacobian_rows_started") == child.get("jacobian_rows_completed") == 24
             and len(row_history) == 24
             and all(row.get("status") == "completed" for row in row_history))
             or (mixing_minimum_mode and child.get("jacobian_rows_started")
                 == child.get("jacobian_rows_completed") == 0 and len(row_history) == 0)
-            or (not two_arm_comparison and not mixing_minimum_mode))
+            or (not comparison and not mixing_minimum_mode))
         comparison_structure_ok = True
         if comparison:
             comparison_rows = child.get("iterations", [])
@@ -1456,71 +1448,6 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
                         and isinstance(arm.get("hplus_direction"), list)
                         and arm.get("accepted") is any(
                             trial.get("accepted") is True for trial in arm.get("trials", [])))
-        coupled_structure_ok = True
-        if coupled_comparison:
-            coupled_rows = child.get("iterations", [])
-            coupled_structure_ok = isinstance(coupled_rows, list) and len(coupled_rows) == 1
-            if coupled_structure_ok:
-                coupled_item = coupled_rows[0]
-                arms = coupled_item.get("model_comparisons", [])
-                if not arms and coupled_item.get("accepted") is not True:
-                    coupled_structure_ok = (child.get("current_control_sha256") == expected_base_sha
-                        and child.get("current_theta") == plan.get("initial_theta")
-                        and child.get("hvp_calls_completed", 0) == 0
-                        and child.get("dense_solves_started", 0) == 0
-                        and child.get("dense_solves_completed", 0) == 0
-                        and (child.get("jacobian_rows_completed", 0) in (0, 24)))
-                else:
-                    expected_names = {"baseline_tangent", "robust_gn_coupled"}
-                    coupled_structure_ok = (len(arms) == 2
-                        and {arm.get("name") for arm in arms} == expected_names
-                        and coupled_item.get("candidate_mixing_minimum") is True
-                        and child.get("jacobian_rows_started") == child.get("jacobian_rows_completed") == 24
-                        and len(child.get("jacobian_row_history", [])) == 24
-                        and {(row.get("side"), row.get("row"))
-                            for row in child.get("jacobian_row_history", [])}
-                            == {(side, row) for side in (-1, 1) for row in range(12)}
-                        and all(row.get("status") == "completed"
-                            and row.get("base_control_sha256") == coupled_item.get("base_control_sha256")
-                            and row.get("theta") == arms[0].get("working_theta")
-                            for row in child.get("jacobian_row_history", []))
-                        and child.get("dense_solves_started") == child.get("dense_solves_completed") == 1
-                        and all(isinstance(arm.get("trials"), list)
-                            and len(arm.get("trials", [])) <= int(plan["policy"]["candidate_grid_per_direction"])
-                            and arm.get("accepted") is any(
-                                trial.get("accepted") is True for trial in arm.get("trials", []))
-                            for arm in arms))
-                    if coupled_structure_ok:
-                        for arm in arms:
-                            direction = torch.as_tensor(arm.get("direction", []), dtype=torch.float64)
-                            arm_hvps = [entry for entry in history
-                                if entry.get("base_control_sha256") == coupled_item.get("base_control_sha256")
-                                and entry.get("direction_model") == arm.get("name")]
-                            direction_sha = _tensor_sha(direction) if direction.shape == (26,) else None
-                            coupled_structure_ok = (coupled_structure_ok and direction.shape == (26,)
-                                and bool(torch.isfinite(direction).all())
-                                and len(arm_hvps) == 2
-                                and {entry.get("side") for entry in arm_hvps} == {-1, 1}
-                                and all(entry.get("direction_sha256") == direction_sha
-                                    and entry.get("theta") == coupled_item.get("theta")
-                                    and entry.get("working_theta") == arm.get("working_theta")
-                                    and entry.get("operator") == "selected_face_extension"
-                                    and entry.get("scope") == "one current chart tangent"
-                                    for entry in arm_hvps)
-                                and isinstance(arm.get("hminus_direction"), list)
-                                and isinstance(arm.get("hplus_direction"), list))
-                    if coupled_item.get("accepted") is True:
-                        repeat = coupled_item.get("final_repeat", {})
-                        coupled_structure_ok = (coupled_structure_ok
-                            and coupled_item.get("selected_direction_model") in expected_names
-                            and repeat.get("mixing_minimum_valid") is True
-                            and repeat.get("minimum_theta_matches_proposal") is True
-                            and all(repeat.get(key) is True for key in (
-                                "side_gradients_finite", "native_objective_matches_proposal",
-                                "side_objectives_match_native", "merit_matches_proposal",
-                                "face_audit_passed", "branch_pair_passed", "trace_matches_proposal",
-                                "source_unchanged", "fixed_input_unchanged", "runtime_unchanged",
-                                "deadline_passed")))
         mixing_minimum_structure_ok = True
         if mixing_minimum:
             mix_rows = child.get("iterations", [])
@@ -1579,11 +1506,10 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
             and child.get("optimizer_steps_applied") == len(accepted)
             and child.get("hvp_calls_started") == child.get("hvp_calls_completed")
             and child.get("hvp_calls_completed", 0) <= int(plan["policy"]["hvp_calls"])
-            and (not two_arm_comparison or child.get("hvp_calls_completed") == int(plan["policy"]["hvp_calls"]))
+            and (not comparison or child.get("hvp_calls_completed") == int(plan["policy"]["hvp_calls"]))
             and history_ok
             and row_accounting_ok
             and comparison_structure_ok
-            and coupled_structure_ok
             and mixing_minimum_structure_ok
             and len(accepted) <= int(plan["policy"]["max_accepted_iterations"])
             and final_commit_matches

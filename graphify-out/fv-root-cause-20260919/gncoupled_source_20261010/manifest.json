@@ -1,0 +1,16 @@
+{
+  "snapshots": {
+    "examples/weather_scenarios/fv_point_3h_tangent_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/gncoupled_source_20261010/fv_point_3h_tangent_continuation.py",
+      "sha256": "32113dd56cdf9cf44b01f0b20ceb896a827b407273015d23ef11af5b3fdaa998"
+    },
+    "examples/weather_scenarios/fv_point_3h_tangent_mixing_minimum_probe.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/gncoupled_source_20261010/fv_point_3h_tangent_mixing_minimum_probe.py",
+      "sha256": "45b0f41607bc317b17c7fa6059fe291b5d1c53902dec8ca8f1c09cc902e347e8"
+    },
+    "examples/weather_scenarios/fv_point_3h_tangent_precondition_comparison.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/gncoupled_source_20261010/fv_point_3h_tangent_precondition_comparison.py",
+      "sha256": "c9bc9b11d750c6431de1a18967725abc603053125cf55568ce4dc8e3ff029283"
+    }
+  }
+}

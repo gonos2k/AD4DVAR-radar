@@ -1,0 +1,25 @@
+{
+  "scope": "동일 최소 theta 정책에서 baseline/결합 robust GN 실제 대조",
+  "plan_sha256": "18be87cdbb6d084ff7248339bf81b749edca4e55dbd9d3a3d9d692d5c37f611d",
+  "source_pins": 137,
+  "archive_pins": 141,
+  "selected_direction": "robust_gn_coupled",
+  "selected_control_sha256": "4035904e46c11c67a6f937039fe3c88b0516330b05f3ba9d57c4cfa619423ab7",
+  "row_reverse_products": 24,
+  "current_HVP": 4,
+  "dense_12_solves": 1,
+  "candidate_evaluations": 8,
+  "optimizer_steps": 1,
+  "guarded_launches": 1,
+  "result": "GNCOUPLED_RESULT_20261010.json",
+  "GREEN": "GNCOUPLED_GREEN_FINAL_20261010.md",
+  "RED": "GNCOUPLED_RED_FINAL_20261010.md",
+  "phase1_historical": "8/8=100%",
+  "FV_external_weighted_milestones": "70/100 unchanged",
+  "remaining": [
+    "새점 결합 GN 반복 적용 범위/실제 감소",
+    "적격점/정확 곡률/법선 최소/활성구조",
+    "최적조건의 수반/VJP/재분석",
+    "독립 합성 수송/미래검증"
+  ]
+}
