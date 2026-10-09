@@ -1,0 +1,19 @@
+# GREEN code preflight: mixing-minimum step
+
+**Final decision: GREEN clear for the reviewed no-op issue.** The first preflight found a P2 at the then-frozen plan `e593b4516c06644190bdac7dd9ab295ba20152c4ce2730cf998cf90d6866a3f6`; the fix and regression are verified below against the refrozen plan. The initial review covered the shared continuation `1bc2874156661e614221fb9c333e095c8afddaac45a832df959f9e4e7e1208fd`, probe `45b0f41607bc317b17c7fa6059fe291b5d1c53902dec8ca8f1c09cc902e347e8`, and earlier focused test `a537a97f58695f6ac794460ac1076ae0f4d4477551447895bb9031adc4e925f4`.
+
+The main mixing-minimum contracts look correct: the base `theta_star` is separate from carried theta; candidate evaluation recomputes its own strict-interior minimum from fresh side gradients; the linearly transported theta is diagnostic only; final closure recomputes the minimum and compares it with the proposal; and transactional state changes only after that closure passes. The envelope residual derivative includes `theta_star'`, and candidate merit uses the true candidate minimum. The plan keeps this to one baseline arm, two current-point HVPs, zero row VJPs, 16 candidate slots, and no full-GN work.
+
+## P2: search can accept a rounded no-op as a committed step
+
+[The shared search](/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_continuation.py:294) rejects nonfinite or over-radius paths but allows `actual_path_norm == 0`. I reproduced an accepted no-op using synthetic side gradients `g-=[-1e-13, 0.2]`, `g+=[-1e-13, -0.4]`, face normal `[0,1]`, zero face residual, and finite equal HVP vectors `[1000,0]`. The model had a resolved strict-interior `theta_star=1/3`, passed both-side descent and envelope-slope gates, and proposed `alpha≈1e-16`. Adding `alpha*d` to base `[1,0]` rounded to the identical control; the evaluator's valid gates then led the search to accept it with path norm zero.
+
+In the real runner, this can increment the accepted/optimizer-step count and commit the new mixture theta without moving the control. Refuse a candidate when its actual chart displacement is not representably positive, and add a saved synthetic regression verifying that a no-op cannot commit or change the carried control/theta. This is the only actionable blocker found; root has delegated that narrow fix. No production FV, seed preparation, HVP, or guarded run was performed.
+
+The first focused test run passed 6 tests in 3.37s, but did not cover this zero-path case. After the delegated fix, I reran the focused suite as described below.
+
+## Final clearance of the no-op fix
+
+The shared search now refuses exact-equal candidates or a computed path norm `<=0` before calling the candidate evaluator at [fv_point_3h_tangent_continuation.py](/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_continuation.py:294). The new regression uses a chart callback that returns an exact clone, verifies all 16 slots get `zero_control_movement_refused`, and proves the evaluator is never called at [test_fv_point_3h_tangent_mixing_minimum_probe.py](/Users/yhlee/ADVAR/tests/test_fv_point_3h_tangent_mixing_minimum_probe.py:122). This closes the reproduced P2 for the requested contract: an exact no-op cannot be accepted or commit the theta-star.
+
+I reran only the focused saved/synthetic test file: 6 passed, 18 existing TorchScript deprecation warnings, 3.42 s. The final frozen plan SHA is `9611b13d3392c198f0a92436c1e9536a6286363a2c64a70a48e5b43f6c480576`, with 133 source and 124 archive pins; every pin matched. The reviewed shared source SHA is `9231ac2e48ccb953eb9265cbbfc33cc2cb7952c56238ebe40baaa7f048c2f7fe`, probe `45b0f41607bc317b17c7fa6059fe291b5d1c53902dec8ca8f1c09cc902e347e8`, and test `bf4ca71b8f72156b42e64cb0ca8ff47335d4ca7d4e006ee8ea850cedc984cc34`. GREEN clearance is clear for the reviewed no-op finding. No FV, seed preparation, production HVP, guard, or production run was performed.

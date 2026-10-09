@@ -114,29 +114,6 @@ def _roundoff(dtype: torch.dtype, *scales: float) -> float:
     return EPS_MULTIPLIER * torch.finfo(dtype).eps * scale
 
 
-def minimum_mixture_weight(gminus: Tensor, gplus: Tensor) -> Tensor:
-    """Return the differentiable strict-interior minimizer of the side-gradient norm."""
-    if (gminus.ndim != 1 or gplus.shape != gminus.shape or not _finite(gminus)
-            or not _finite(gplus) or gminus.dtype != gplus.dtype or gminus.device != gplus.device):
-        raise ValueError("minimum-mixture gradients must be matching finite vectors")
-    jump = gplus - gminus
-    jump_norm = torch.linalg.vector_norm(jump)
-    scale = max(float(torch.linalg.vector_norm(gminus).detach()),
-        float(torch.linalg.vector_norm(gplus).detach()), torch.finfo(gminus.dtype).tiny)
-    jump_budget = EPS_MULTIPLIER * torch.finfo(gminus.dtype).eps * scale
-    if not bool(torch.isfinite(jump_norm)) or float(jump_norm.detach()) <= jump_budget:
-        raise ValueError("minimum-mixture gradient jump is unresolved")
-    jump_squared = torch.dot(jump, jump)
-    if not bool(torch.isfinite(jump_squared) & (jump_squared > torch.finfo(gminus.dtype).tiny)):
-        raise ValueError("minimum-mixture denominator is unresolved")
-    theta = -torch.dot(gminus, jump) / jump_squared
-    boundary_margin = EPS_MULTIPLIER * torch.finfo(gminus.dtype).eps
-    theta_value = float(theta.detach())
-    if not math.isfinite(theta_value) or not boundary_margin < theta_value < 1.0 - boundary_margin:
-        raise ValueError("minimum-mixture weight is not resolved strictly inside (0, 1)")
-    return theta
-
-
 def tangent_direction(gminus: Tensor, gplus: Tensor, normal: Tensor,
                       chart_jacobian: Tensor, theta: float, *, pivot: int | None = None
                       ) -> tuple[Tensor, Tensor, Tensor, dict[str, Any]]:
@@ -267,8 +244,7 @@ def candidate_alphas(model: TangentModel, *, radius: float = RADIUS,
 def search_candidates(model: TangentModel, current: Tensor,
                       candidate_eval: Callable[[Tensor, float, float], dict[str, Any]], *,
                       chart_candidate: Callable[[Tensor, Tensor, float], Tensor] | None = None,
-                      radius: float = RADIUS, limit: int = MAX_CANDIDATES,
-                      candidate_mixing_minimum: bool = False
+                      radius: float = RADIUS, limit: int = MAX_CANDIDATES
                       ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
     """Search actual chart points; candidate_eval returns independent gate facts.
 
@@ -281,13 +257,8 @@ def search_candidates(model: TangentModel, current: Tensor,
     trials: list[dict[str, Any]] = []
     for alpha in candidate_alphas(model, radius=radius, limit=limit):
         theta = model.theta + alpha * model.delta_theta
-        trial: dict[str, Any] = {"alpha": alpha, "accepted": False}
-        if candidate_mixing_minimum:
-            trial["linear_theta_prediction"] = theta
-            trial["candidate_mixing_minimum"] = True
-        else:
-            trial["theta"] = theta
-        if not candidate_mixing_minimum and not 0.0 <= theta <= 1.0:
+        trial: dict[str, Any] = {"alpha": alpha, "theta": theta, "accepted": False}
+        if not 0.0 <= theta <= 1.0:
             trial["status"] = "theta_domain_refused"
             trials.append(trial)
             continue
@@ -300,31 +271,10 @@ def search_candidates(model: TangentModel, current: Tensor,
             trial["status"] = "actual_chart_radius_refused"
             trials.append(trial)
             continue
-        if candidate_mixing_minimum and (torch.equal(candidate, current) or actual_norm <= 0.0):
-            trial["status"] = "zero_control_movement_refused"
-            trial["control"] = candidate.detach().tolist()
-            trials.append(trial)
-            continue
         facts = candidate_eval(candidate, theta, alpha)
         trial.update(facts)
-        if candidate_mixing_minimum:
-            actual_theta = facts.get("theta")
-            theta_valid = (facts.get("mixing_minimum_valid") is True
-                and isinstance(actual_theta, (int, float)) and not isinstance(actual_theta, bool)
-                and math.isfinite(float(actual_theta))
-                and EPS_MULTIPLIER * torch.finfo(current.dtype).eps < float(actual_theta)
-                < 1.0 - EPS_MULTIPLIER * torch.finfo(current.dtype).eps)
-            if not theta_valid:
-                trial["status"] = "mixing_minimum_refused"
-                trial["accepted"] = False
-                trial["control"] = candidate.detach().tolist()
-                trials.append(trial)
-                continue
-            trial["theta"] = float(cast(float, actual_theta))
         required = ("J_armijo_passed", "F_squared_armijo_passed", "face_audit_passed",
                     "branch_pair_passed", "side_objectives_match_native", "side_gradients_finite")
-        if candidate_mixing_minimum:
-            required += ("mixing_minimum_valid",)
         trial["accepted"] = all(facts.get(name) is True for name in required)
         trial["status"] = "accepted" if trial["accepted"] else "rejected"
         trial["control"] = candidate.detach().tolist()
@@ -342,10 +292,6 @@ def fresh_final_closure(proposal: dict[str, Any], repeat: dict[str, Any]) -> boo
         "branch_pair_passed", "trace_matches_proposal", "source_unchanged", "fixed_input_unchanged",
         "runtime_unchanged", "deadline_passed")
     if not all(repeat.get(key) is True for key in required):
-        return False
-    if proposal.get("candidate_mixing_minimum") is True and not all(
-            repeat.get(key) is True for key in (
-                "mixing_minimum_valid", "minimum_theta_matches_proposal")):
         return False
     for key in ("theta", "control", "objective", "F_squared", "side_gradients"):
         if key not in proposal:
@@ -456,31 +402,19 @@ def bounded_continuation(initial_control: Tensor, theta: float,
                     lambda point, vector, side: model_side_hvp(point, vector, side, name))
                 hminus = calculate_hvp(control, direction, -1)
                 hplus = calculate_hvp(control, direction, 1)
-                model_builder = spec.get("model_builder")
-                if model_builder is None:
-                    model = tangent_model(gminus, gplus, hminus, hplus, normal, z,
-                        current_theta, q=q, pivot=selected_pivot,
-                        direction_override=direction_override)
-                else:
-                    builder = cast(Callable[[Tensor, Tensor, Tensor, Tensor, Tensor,
-                        Tensor, float, float, int], TangentModel], model_builder)
-                    model = builder(gminus, gplus, hminus, hplus, normal, z,
-                        current_theta, q, selected_pivot)
-                    if not isinstance(model, TangentModel):
-                        raise ValueError("direction model builder did not return a TangentModel")
+                model = tangent_model(gminus, gplus, hminus, hplus, normal, z,
+                    current_theta, q=q, pivot=selected_pivot,
+                    direction_override=direction_override)
                 if model_candidate_eval is None:
                     evaluator = candidate_eval
                 else:
                     evaluator = lambda candidate, trial_theta, alpha, active=model: model_candidate_eval(
                         active, candidate, trial_theta, alpha)
                 accepted, trials = search_candidates(model, control, evaluator,
-                    chart_candidate=chart_candidate, radius=radius, limit=candidate_limit,
-                    candidate_mixing_minimum=spec.get("candidate_mixing_minimum") is True)
+                    chart_candidate=chart_candidate, radius=radius, limit=candidate_limit)
                 for trial in trials:
                     trial["direction_model"] = name
                 arm = {"name": name, "direction": model.direction.detach().tolist(),
-                    "reference_theta": current_theta, "working_theta": model.theta,
-                    "candidate_mixing_minimum": spec.get("candidate_mixing_minimum") is True,
                     "hminus_direction": hminus.detach().tolist(),
                     "hplus_direction": hplus.detach().tolist(),
                     "delta_theta": model.delta_theta,
@@ -518,8 +452,7 @@ def bounded_continuation(initial_control: Tensor, theta: float,
                 "direction", "hminus_direction", "hplus_direction", "delta_theta",
                 "delta_theta_numerator", "delta_theta_denominator", "mixed_gradient",
                 "tangent_gradient", "residual", "residual_direction", "side_products",
-                "merit_product", "gates", "reference_theta", "working_theta",
-                "candidate_mixing_minimum")})
+                "merit_product", "gates")})
             item["selected_direction_model"] = winner_name
             item["trials"] = [trial for arm in model_runs for trial in arm["trials"]]
         else:
@@ -863,8 +796,6 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
              "base_control_sha256": _tensor_sha(control), "theta": model_state["theta"],
              "direction_sha256": _tensor_sha(direction),
              "operator": "selected_face_extension", "scope": "one current chart tangent"}
-        if "working_theta" in model_state:
-            label["working_theta"] = model_state["working_theta"]
         if model_name is not None:
             label["direction_model"] = model_name
         return shared._counted_hvp(record, output, deadline, label, calculate)
@@ -892,19 +823,8 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
                              theta: float, alpha: float) -> dict[str, Any]:
         shared._deadline(deadline, float(active_policy["internal_seconds"]))
         observed = _observe(shared, problem, candidate, parameters, weights)
-        candidate_mixing_minimum = model.gates.get("candidate_mixing_minimum") is True
-        candidate_theta: float | None = theta
-        minimum_valid = True
-        minimum_refusal: str | None = None
-        if candidate_mixing_minimum:
-            try:
-                candidate_theta = float(minimum_mixture_weight(
-                    observed["side"][-1][1], observed["side"][1][1]))
-            except ValueError as error:
-                candidate_theta, minimum_valid, minimum_refusal = None, False, str(error)
-        merit_theta = theta if candidate_theta is None else candidate_theta
-        ftrial = torch.cat(((1 - merit_theta) * observed["side"][-1][1]
-                             + merit_theta * observed["side"][1][1],
+        ftrial = torch.cat(((1 - theta) * observed["side"][-1][1]
+                             + theta * observed["side"][1][1],
                              (observed["q"] / FACE_SCALE).reshape(1)))
         f2 = float(torch.dot(ftrial, ftrial))
         fbase2 = float(torch.dot(model.residual, model.residual))
@@ -912,16 +832,11 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
         jslope = max(float(torch.dot(model_state["gm"], model.direction)),
                      float(torch.dot(model_state["gp"], model.direction)))
         jbound = float(model_state["observed"]["native_j"]) + J_C1 * alpha * jslope
-        return {"objective": float(observed["native_j"]), "theta": candidate_theta,
-            "candidate_theta_star": candidate_theta if candidate_mixing_minimum else None,
-            "mixing_minimum_valid": minimum_valid,
-            "minimum_theta_refusal": minimum_refusal,
+        return {"objective": float(observed["native_j"]), "theta": theta,
             "J_armijo_passed": bool(float(observed["native_j"]) <= jbound),
             "J_armijo_bound": jbound, "J_actual_path_slope": jslope,
-            "F_squared": f2 if minimum_valid else None,
-            "Psi": 0.5 * f2 if minimum_valid else None,
-            "F_squared_armijo_bound": fbound,
-            "F_squared_armijo_passed": bool(minimum_valid and f2 <= fbound),
+            "F_squared": f2, "F_squared_armijo_bound": fbound,
+            "F_squared_armijo_passed": f2 <= fbound,
             "face_value": float(observed["q"]),
             "production_face_value": float(observed["production_q"]),
             "face_roundoff_bound": observed["face_bound"],
@@ -949,24 +864,6 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
         f = torch.cat(((1 - proposal["theta"]) * observed["side"][-1][1]
                        + proposal["theta"] * observed["side"][1][1],
                        (observed["q"] / FACE_SCALE).reshape(1)))
-        minimum_valid = True
-        minimum_theta: float | None = None
-        minimum_theta_match = True
-        if proposal.get("candidate_mixing_minimum") is True:
-            try:
-                minimum_theta = float(minimum_mixture_weight(
-                    observed["side"][-1][1], observed["side"][1][1]))
-            except ValueError:
-                minimum_valid = False
-            minimum_theta_match = (minimum_valid and minimum_theta is not None
-                and abs(minimum_theta - float(proposal["theta"])) <= EPS_MULTIPLIER
-                    * torch.finfo(candidate.dtype).eps
-                    * max(abs(minimum_theta), abs(float(proposal["theta"])),
-                          torch.finfo(candidate.dtype).tiny))
-            if minimum_valid and minimum_theta is not None:
-                f = torch.cat(((1 - minimum_theta) * observed["side"][-1][1]
-                               + minimum_theta * observed["side"][1][1],
-                               (observed["q"] / FACE_SCALE).reshape(1)))
         merit = float(torch.dot(f, f))
         merit_match = abs(merit - float(proposal["F_squared"])) <= 128 * torch.finfo(candidate.dtype).eps * max(
             abs(merit), abs(float(proposal["F_squared"])), torch.finfo(candidate.dtype).tiny)
@@ -977,10 +874,7 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
         deadline_ok = time.monotonic() < deadline
         closure_state["pending_observed"] = observed
         return {"theta": float(proposal["theta"]), "control": proposal["control"],
-            "objective": float(observed["native_j"]), "F_squared": merit, "Psi": 0.5 * merit,
-            "recomputed_mixing_theta_star": minimum_theta,
-            "mixing_minimum_valid": minimum_valid,
-            "minimum_theta_matches_proposal": minimum_theta_match,
+            "objective": float(observed["native_j"]), "F_squared": merit,
             "side_gradients_finite": observed["side_gradients_finite"],
             "side_gradients": {str(s): observed["side"][s][1].tolist() for s in (-1, 1)},
             "native_objective_matches_proposal": native_match,
@@ -1069,10 +963,7 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
         numerical_status = "tangent_continuation_stopped_after_commit"
     else:
         numerical_status = "tangent_continuation_refused"
-    if plan.get("experiment_kind") == "current_tangent_mixing_minimum":
-        numerical_status = ("tangent_mixing_minimum_accepted" if committed
-            else "tangent_mixing_minimum_refused")
-    elif plan.get("experiment_kind") == "current_tangent_precondition_comparison":
+    if direction_models is not None:
         numerical_status = ("tangent_precondition_comparison_accepted" if committed
             else "tangent_precondition_comparison_refused")
     record.update(phase="finished", execution_status="completed" if closure_ok else "failed",
@@ -1256,7 +1147,6 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
             and len(history) == child.get("hvp_calls_completed")
             and all(item.get("status") == "completed" for item in history))
         comparison = plan.get("experiment_kind") == "current_tangent_precondition_comparison"
-        mixing_minimum = plan.get("experiment_kind") == "current_tangent_mixing_minimum"
         for item in accepted:
             current_point_hvps = [entry for entry in history
                 if entry.get("base_control_sha256") == item.get("base_control_sha256")]
@@ -1281,13 +1171,10 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
                 history_ok = history_ok and len(current_point_hvps) == 2 \
                     and {entry.get("side") for entry in current_point_hvps} == {-1, 1}
         row_history = child.get("jacobian_row_history", [])
-        row_accounting_ok = ((comparison and
+        row_accounting_ok = (not comparison or (
             child.get("jacobian_rows_started") == child.get("jacobian_rows_completed") == 24
             and len(row_history) == 24
-            and all(row.get("status") == "completed" for row in row_history))
-            or (mixing_minimum and child.get("jacobian_rows_started")
-                == child.get("jacobian_rows_completed") == 0 and len(row_history) == 0)
-            or (not comparison and not mixing_minimum))
+            and all(row.get("status") == "completed" for row in row_history)))
         comparison_structure_ok = True
         if comparison:
             comparison_rows = child.get("iterations", [])
@@ -1319,47 +1206,6 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
                         and isinstance(arm.get("hplus_direction"), list)
                         and arm.get("accepted") is any(
                             trial.get("accepted") is True for trial in arm.get("trials", [])))
-        mixing_minimum_structure_ok = True
-        if mixing_minimum:
-            mix_rows = child.get("iterations", [])
-            mixing_minimum_structure_ok = isinstance(mix_rows, list) and len(mix_rows) == 1
-            if mixing_minimum_structure_ok:
-                mix_item = mix_rows[0]
-                arms = mix_item.get("model_comparisons", [])
-                if not arms and mix_item.get("accepted") is not True:
-                    mixing_minimum_structure_ok = (
-                        child.get("current_control_sha256") == expected_base_sha
-                        and child.get("current_theta") == plan.get("initial_theta")
-                        and child.get("hvp_calls_completed", 0) <= int(plan["policy"]["hvp_calls"]))
-                else:
-                    mixing_minimum_structure_ok = (len(arms) == 1
-                        and arms[0].get("name") == "candidate_mixing_minimum"
-                        and arms[0].get("candidate_mixing_minimum") is True
-                        and len(arms[0].get("trials", [])) <= int(plan["policy"]["max_candidates_per_iteration"])
-                        and isinstance(mix_item.get("working_theta"), (int, float))
-                        and not isinstance(mix_item.get("working_theta"), bool)
-                        and math.isfinite(float(mix_item["working_theta"]))
-                        and 0.0 < float(mix_item["working_theta"]) < 1.0)
-                if mix_item.get("accepted") is True:
-                    repeat = mix_item.get("final_repeat", {})
-                    mix_hvps = [entry for entry in history
-                        if entry.get("base_control_sha256") == mix_item.get("base_control_sha256")]
-                    mix_direction_sha = _tensor_sha(torch.as_tensor(
-                        arms[0].get("direction", []), dtype=torch.float64)) if arms else None
-                    mixing_minimum_structure_ok = (mixing_minimum_structure_ok
-                        and mix_item.get("candidate_mixing_minimum") is True
-                        and mix_item.get("committed_theta") == repeat.get("theta")
-                        and repeat.get("mixing_minimum_valid") is True
-                        and repeat.get("minimum_theta_matches_proposal") is True
-                        and len(mix_hvps) == 2
-                        and {entry.get("side") for entry in mix_hvps} == {-1, 1}
-                        and all(entry.get("direction_model") == "candidate_mixing_minimum"
-                            and entry.get("direction_sha256") == mix_direction_sha
-                            and entry.get("theta") == mix_item.get("theta")
-                            and entry.get("working_theta") == mix_item.get("working_theta")
-                            and entry.get("operator") == "selected_face_extension"
-                            and entry.get("scope") == "one current chart tangent"
-                            for entry in mix_hvps))
         closed = (child.get("phase") == "finished"
             and child.get("plan_sha256") == plan_sha
             and child.get("base_control_sha256") == expected_base_sha
@@ -1378,7 +1224,6 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
             and history_ok
             and row_accounting_ok
             and comparison_structure_ok
-            and mixing_minimum_structure_ok
             and len(accepted) <= int(plan["policy"]["max_accepted_iterations"])
             and final_commit_matches
             and child.get("current_control_sha256") == _tensor_sha(torch.as_tensor(

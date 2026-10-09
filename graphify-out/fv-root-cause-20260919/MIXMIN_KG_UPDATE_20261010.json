@@ -1,0 +1,24 @@
+{
+  "scope": "후보별 내부 theta 최소화 정책의 실제 한 스텝; 원래 J 유지",
+  "plan_sha256": "9611b13d3392c198f0a92436c1e9536a6286363a2c64a70a48e5b43f6c480576",
+  "source_pins": 133,
+  "archive_pins": 124,
+  "result": "MIXMIN_RESULT_20261010.json",
+  "selected_control_sha256": "e801cf4651233ec11b2ec98ac9569e411b8e62e68511440e39db1cb9c3872567",
+  "guarded_launches": 1,
+  "direction_HVPs": 2,
+  "row_reverse_products": 0,
+  "candidate_evaluations": 1,
+  "optimizer_steps": 1,
+  "GREEN": "MIXMIN_GREEN_FINAL_20261010.md",
+  "RED": "MIXMIN_RED_FINAL_20261010.md",
+  "phase1_historical": "8/8",
+  "FV_external_weighted_milestones": "70/100 unchanged",
+  "remaining": [
+    "새점 최소 merit 반복 감소",
+    "별도 결합 GN 방향 비교",
+    "적격점/곡률/활성구조 감사",
+    "결합 수반·재분석",
+    "독립 합성 미래검증"
+  ]
+}

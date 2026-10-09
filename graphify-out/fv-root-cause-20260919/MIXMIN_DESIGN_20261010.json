@@ -1,0 +1,30 @@
+{
+  "scope": "Strict-interior candidate mixing minimization with original J and reduced-merit envelope from current point",
+  "base_control_sha256": "0da57dbc5a4c101c2f24204835a746514b110f4548fe64de40455f4478dfbed1",
+  "carried_theta": 0.3298981720696071,
+  "historical_theta_min_diagnostic": 0.3277376621747043,
+  "base_mixing_normalization_is_optimizer_step": false,
+  "merit": "Psi=.5 min_theta ||[gminus+theta jump,Q/.84]||\u00b2",
+  "derivative": "envelope slope gmin dot hmix +Q n dot d/.84\u00b2; full residual derivative includes theta_prime=-(jump dot hmix+gmin dot(hplus-hminus))/||jump||\u00b2",
+  "support": "unique resolved jump and128eps strict interior theta minima; candidate boundaries/jump ambiguity refuse/backtrack; original state retained on failure",
+  "direction": "same chart tangent constructed at current theta minimum",
+  "policy": {
+    "current_HVP": 2,
+    "Jacobian_rows": 0,
+    "max_candidate_slots": 16,
+    "max_commit": 1,
+    "inner_seconds": 240,
+    "outer_seconds": 300,
+    "sampled_RSS_bytes": 1073741824,
+    "guard": 1,
+    "PCG_dense": 0
+  },
+  "remaining": [
+    "boundary/multiple-branch support",
+    "qualified optimum/curvature/active-structure audit",
+    "coupled adjoint/VJP/reanalysis",
+    "independent synthetic future verification"
+  ],
+  "phase1_historical": "100%",
+  "FV_external_estimate": "70%"
+}
