@@ -234,6 +234,58 @@ def test_toy_child_acceptance_commits_only_after_closed_final_repeat(tmp_path, m
     assert result["final_repeat"]["deadline_passed"] is True
 
 
+def test_toy_child_rejects_changed_final_side_gradients_even_when_mixture_is_unchanged(
+        tmp_path, monkeypatch):
+    _toy_child(monkeypatch)
+    original_eval_side = probe._eval_side
+    original_coupled_matrix = probe._coupled_matrix
+    original_candidate_path = probe._candidate_path
+    theta_state = {"base": None, "proposal": None}
+    seen = {}
+
+    def capture_base_theta(*args, **kwargs):
+        theta_state["base"] = args[6]
+        return original_coupled_matrix(*args, **kwargs)
+
+    def capture_proposal_theta(problem, control, weights, pivot, eta, delta, alpha):
+        candidate, chart_eta = original_candidate_path(
+            problem, control, weights, pivot, eta, delta, alpha)
+        theta_state["proposal"] = theta_state["base"] + alpha * float(delta[-1])
+        return candidate, chart_eta
+
+    def perturb_final_repeat(problem, control, parameters, side, *args, **kwargs):
+        result = original_eval_side(problem, control, parameters, side, *args, **kwargs)
+        key = (probe._tensor_sha(control), side)
+        seen[key] = seen.get(key, 0) + 1
+        if seen[key] == 2:
+            # The accepted line-search point is evaluated once for its trial and
+            # once for final closure. Perturb only the latter by the exact face
+            # normal e20, with weights that cancel in the saved convex mixture.
+            assert theta_state["proposal"] is not None
+            objective, gradient, hvp = result
+            change = torch.zeros_like(gradient)
+            change[20] = 1.0
+            if side == -1:
+                gradient = gradient + theta_state["proposal"] * change
+            else:
+                gradient = gradient - (1 - theta_state["proposal"]) * change
+            return objective, gradient, hvp
+        return result
+
+    monkeypatch.setattr(probe, "_coupled_matrix", capture_base_theta)
+    monkeypatch.setattr(probe, "_candidate_path", capture_proposal_theta)
+    monkeypatch.setattr(probe, "_eval_side", perturb_final_repeat)
+
+    result = probe._run_child(probe.ROOT / "toy-plan.json", "plan-sha", tmp_path / "child.json")
+
+    assert result["final_repeat"]["merit_matches_proposal"] is True
+    assert result["final_repeat"]["gradient_matches_proposal"] is False
+    assert result["candidate_committed"] is False
+    assert result["optimizer_steps_applied"] == 0
+    assert result["current_control_sha256"] == probe.BASE_CONTROL_SHA
+    assert result["numerical_status"] == "coupled_step_refused"
+
+
 def test_toy_child_source_drift_rejects_the_proposal_without_committing(tmp_path, monkeypatch):
     _toy_child(monkeypatch, source_drift=True)
     output = tmp_path / "child.json"

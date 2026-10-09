@@ -28,5 +28,9 @@
     "endpoint minimum/curvature qualification",
     "response/reanalysis",
     "independent synthetic future verification"
-  ]
+  ],
+  "linear_residual_definitions": {
+    "normwise_backward_error": 3.146914098961318e-18,
+    "rhs_relative_residual": 6.058191324570872e-14
+  }
 }

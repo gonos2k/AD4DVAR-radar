@@ -1,0 +1,89 @@
+{
+  "scope": "stored vectors, exact byte hashes and receipts only; no new FV/HVP",
+  "checks": {
+    "child_hash": true,
+    "resource_equal": true,
+    "current_hash": true,
+    "committed": true,
+    "individual_gradient_repeat": true,
+    "all_final_checks": true,
+    "current_pair": true,
+    "HVP_count": true,
+    "new_dense_solves": true,
+    "F_arithmetic": true,
+    "radius": true,
+    "source_closure": true,
+    "runtime_closure": true,
+    "actual_direction_RHS_gate": true,
+    "J_acceptance": true,
+    "F_acceptance": true
+  },
+  "candidate_type": "one_nonsmooth_requalified_step",
+  "inherited_numerical_status": "one_nonsmooth_coupled_step_accepted",
+  "current_control_sha256": "6b29dacd01fc30ee4041e93dd3ad110c29699c4553d098694086eadeb580a743",
+  "alpha": 0.013141672926849611,
+  "theta": 0.3504554198817298,
+  "displacement_l2": 0.0007812501553931093,
+  "base_face_J": 0.061307587424344834,
+  "candidate_J": 0.06126370581028981,
+  "J_change_percent_vs_face": -0.07157615541335538,
+  "base_scaled_F_norm": 0.08096580117955689,
+  "candidate_scaled_F_norm": 0.07946310139690609,
+  "candidate_scaled_F_squared": 0.006314384483614977,
+  "F_squared_change_percent": -3.677490850448839,
+  "mixed_gradient_inf": 0.034521734392372626,
+  "minus_gradient_inf": 0.10521213785442046,
+  "plus_gradient_inf": 0.16265689855454568,
+  "minus_unit_normal_gradient": -0.0998791204463552,
+  "plus_unit_normal_gradient": 0.18707171887596477,
+  "mixed_tangent_gradient_norm": 0.07946015441645293,
+  "weighted_Q_static": 1.734723475976807e-18,
+  "production_Q": -0.0,
+  "Q_roundoff_bound": 5.199265539511744e-16,
+  "actual_current_direction_rhs_relative": 5.354634073739147e-13,
+  "archived_matrix_backward_error": 3.146914098961318e-18,
+  "candidate_count": 7,
+  "evaluated_candidates": 6,
+  "current_pair_signatures": {
+    "-1": "e795b2e48856ac5107c92e2a1461c89267ffc916c84e8826ac92a4133c165442",
+    "1": "e795b2e48856ac5107c92e2a1461c89267ffc916c84e8826ac92a4133c165442"
+  },
+  "branch_changes_from_base": {
+    "-1": {
+      "choices_changed_from_base": true,
+      "face_signs_changed_from_base": false
+    },
+    "1": {
+      "choices_changed_from_base": true,
+      "face_signs_changed_from_base": false
+    }
+  },
+  "support_margins": {
+    "-1": {
+      "active_limiter_gap_over_q": 1.3769299287800174e-06,
+      "x_other_face_flux_abs_over_scale": 0.26893348376259046,
+      "x_slope_abs_over_q": 0.001178226023146358,
+      "y_other_face_flux_abs_over_scale": 0.0008211834962352455,
+      "y_slope_abs_over_q": 3.746310302672686e-05
+    },
+    "1": {
+      "active_limiter_gap_over_q": 1.3769299287800174e-06,
+      "x_other_face_flux_abs_over_scale": 0.26893348376259046,
+      "x_slope_abs_over_q": 0.001178226023146358,
+      "y_other_face_flux_abs_over_scale": 0.0008211834962352455,
+      "y_slope_abs_over_q": 3.746310302672686e-05
+    }
+  },
+  "resource": {
+    "elapsed_seconds": 50.69912995910272,
+    "sampled_peak_rss_bytes": 656474112,
+    "exit_code": 0
+  },
+  "not_a_smooth_or_nonsmooth_root": true,
+  "remaining": [
+    "newpoint operator/Hessian refresh",
+    "minimum/curvature/active-structure qualification",
+    "appropriate coupled adjoint/reanalysis",
+    "independent synthetic future validation"
+  ]
+}

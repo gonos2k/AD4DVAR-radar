@@ -1,0 +1,19 @@
+{
+  "scope": "Pure geometry/objective derivative/trace helpers AST-identical to the actual PR265 producer; requalification/approval/resource logic differs",
+  "helpers": {
+    "_eval_side": true,
+    "_eval_native": true,
+    "_analysis_trace": true,
+    "_fresh_native": true,
+    "_face_value": true,
+    "_face_audit": true,
+    "_pivot": true,
+    "_coupled_matrix": true,
+    "_min_norm_mix": true,
+    "_path_direction": true,
+    "_residual_measure": true,
+    "_candidate_path": true,
+    "_diagnostic_curvature": true
+  },
+  "unchanged_core_transport_sha256": "93bacc2ec0aef671df488025b280d46d79ed6613acf78b33072efbd8e701738c"
+}

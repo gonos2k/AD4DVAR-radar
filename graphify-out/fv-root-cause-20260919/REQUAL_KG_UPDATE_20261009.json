@@ -1,0 +1,29 @@
+{
+  "scope": "P2 final gradient gate closed; current candidate-pair requalification accepted one original-objective step",
+  "plan_sha256": "5b7ebac50ebc38c0eaf34539c5bdf89e00c4d342ef96f2a96bc12a93fa30bfb4",
+  "source_pins": 124,
+  "archive_pins": 86,
+  "result": "REQUAL_RESULT_20261009.json",
+  "current_control_sha256": "6b29dacd01fc30ee4041e93dd3ad110c29699c4553d098694086eadeb580a743",
+  "candidate_type": "one_nonsmooth_requalified_step",
+  "committed_steps": 1,
+  "guarded_launches": 1,
+  "current_HVP": 2,
+  "dense_solves": 0,
+  "J_change_percent": -0.07157615541335538,
+  "F_squared_change_percent": -3.677490850448839,
+  "current_direction_rhs_relative": 5.354634073739147e-13,
+  "same_point_reference_Hessians_not_regenerated": true,
+  "no_candidate_Hessian_or_minimum_claim": true,
+  "P2_regression": "individual side gradients can change while mix is equal; corrected actual commit path refuses",
+  "GREEN": "REQUAL_GREEN_FINAL_20261009.md",
+  "RED": "REQUAL_RED_FINAL_20261009.md",
+  "phase1_historical": "8/8",
+  "FV_external_weighted_milestones": "70/100 unchanged",
+  "remaining": [
+    "newpoint operator/Hessian refresh",
+    "minimum/curvature/active-structure qualification",
+    "appropriate coupled adjoint/reanalysis",
+    "independent synthetic future validation"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "scope": "Saved-record arithmetic and wording correction; no new FV/Hessian",
+  "P2": "final closure omits gradient_match; corrected with cancelling-pair regression",
+  "oldrun_impact": "none; zero candidates were committed",
+  "residual_definitions": {
+    "normwise_backward_recorded": 3.146914098961318e-18,
+    "rhs_relative_saved_arithmetic": 6.058191324570872e-14
+  },
+  "largest_evaluated_candidate_alpha": 0.42053353365918755,
+  "largest_candidate_changed_spatial_faces": [
+    [
+      "y",
+      1,
+      0,
+      1,
+      -1
+    ],
+    [
+      "y",
+      2,
+      1,
+      1,
+      -1
+    ],
+    [
+      "y",
+      3,
+      2,
+      1,
+      -1
+    ]
+  ],
+  "changed_other_face_sign_stages": 360,
+  "smallest_two_changed_other_face_sign_stages": 0,
+  "historical_raw_and_plan_unchanged": true
+}
