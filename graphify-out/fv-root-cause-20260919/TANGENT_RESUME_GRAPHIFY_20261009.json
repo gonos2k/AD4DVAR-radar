@@ -1,0 +1,3198 @@
+{
+  "scope": "Isolated incremental AST refresh for resume and affected shared runner/tests; original audit graph consulted; no shared full rebuild",
+  "llm_tokens": 0,
+  "consulted_graph": "AUDIT267_GRAPHIFY_20261009.json",
+  "sources": {
+    "examples/weather_scenarios/fv_point_3h_tangent_continuation.py": "f9255098fbdc49b888ff1f43ce132339994deab56cf4c219e869437efc5261fe",
+    "examples/weather_scenarios/fv_point_3h_tangent_resume.py": "31bf18924c1ce0a525c9be55d65fbc9cbe841850d068717f70eb0efe7a827213",
+    "tests/test_fv_point_3h_tangent_resume.py": "20e18e3a399e770d7f33bd122edc0f08b5fc9988f1f4712ac4775e3146369265",
+    "tests/test_fv_point_3h_tangent_continuation.py": "5ae92474279e5312a05c6f987ad93fdc7e320665c77c22fe149598dda3f282f0",
+    "tests/test_fv_point_3h_tangent_checkpoint.py": "48dcde2b810767c77aa8dd83d532d12489f7890ea8cc4eb3a11202be92832c12"
+  },
+  "nodes": [
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "label": "fv_point_3h_tangent_continuation.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "label": "TangentModel",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L67",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_finite",
+      "label": "_finite()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L87",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L87",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_roundoff",
+      "label": "_roundoff()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L91",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_dtype",
+      "label": "dtype",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L91",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "label": "tangent_direction()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L96",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L96",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "label": "tangent_model()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L131",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_candidate_alphas",
+      "label": "candidate_alphas()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L194",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "label": "search_candidates()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L215",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_fresh_final_closure",
+      "label": "fresh_final_closure()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L258",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "label": "bounded_continuation()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_sha",
+      "label": "_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L365",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L365",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "label": "_tensor_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L369",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "label": "_write()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L373",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_load_plan",
+      "label": "_load_plan()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L380",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_load_current_base",
+      "label": "_load_current_base()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L441",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "label": "_observe()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L510",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "label": "_run_child_impl()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L531",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "label": "_run_child()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L831",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L927",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1013",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_1",
+      "label": "Guarded fresh-HVP continuation along the selected-face tangent.  This is a model",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_68",
+      "label": "One current point's face-tangent model and its two fresh HVPs.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L68",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_99",
+      "label": "Return current mixture, projected gradient, and exact chart tangent.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L99",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_135",
+      "label": "Build the correction from current side products only.      ``chart_jacobian`` ma",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L135",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_196",
+      "label": "Stable radius/merit cap followed by bounded halvings.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L196",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_220",
+      "label": "Search actual chart points; candidate_eval returns independent gate facts.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L220",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_259",
+      "label": "P2 closure: require both fresh side gradients to match the proposal.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L259",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_295",
+      "label": "Run at most three accepted tangent corrections with transactional commit.      `",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L295",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume",
+      "label": "fv_point_3h_tangent_resume.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_sha",
+      "label": "_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L46",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L46",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_tensor_sha",
+      "label": "_tensor_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L50",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L50",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_function_ast",
+      "label": "_function_ast()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_load_plan",
+      "label": "_load_plan()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L63",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L63",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_check_close",
+      "label": "_check_close()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L139",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_dtype",
+      "label": "dtype",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L139",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_validate_iteration_chain",
+      "label": "_validate_iteration_chain()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L144",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_load_current_base",
+      "label": "_load_current_base()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L194",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_resume_efficiency",
+      "label": "_resume_efficiency()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L330",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_run_child_impl",
+      "label": "_run_child_impl()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L368",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_run_child",
+      "label": "_run_child()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L374",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L380",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L387",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_rationale_1",
+      "label": "Resume bounded current-point tangent corrections from the accepted PR267 endpoin",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_rationale_148",
+      "label": "Close every saved commit and its two current-point HVP labels in order.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L148",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_tangent_resume_rationale_331",
+      "label": "Summarize the saved F/DF prediction without adding an optimization gate.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L331",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_resume",
+      "label": "test_fv_point_3h_tangent_resume.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_resume_test_resume_base_loader_uses_the_last_accepted_trial_and_final_repeat",
+      "label": "test_resume_base_loader_uses_the_last_accepted_trial_and_final_repeat()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L16",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_resume_test_saved_commit_chain_rejects_base_theta_or_hvp_label_drift",
+      "label": "test_saved_commit_chain_rejects_base_theta_or_hvp_label_drift()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L30",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_resume_test_normalized_quadratic_prediction_matches_cos_squared_at_optimal_alpha",
+      "label": "test_normalized_quadratic_prediction_matches_cos_squared_at_optimal_alpha()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L51",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_resume_test_resume_cli_routes_through_shared_guarded_runner_with_injected_loaders",
+      "label": "test_resume_cli_routes_through_shared_guarded_runner_with_injected_loaders()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L72",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_resume_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L72",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_resume_test_parent_runner_rejects_committed_theta_drift",
+      "label": "test_parent_runner_rejects_committed_theta_drift()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L93",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_continuation",
+      "label": "test_fv_point_3h_tangent_continuation.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_continuation_model",
+      "label": "_model()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L13",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_continuation_test_fresh_tangent_products_match_analytic_face_model",
+      "label": "test_fresh_tangent_products_match_analytic_face_model()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L24",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_continuation_test_26d_curved_face_hvps_match_autodiff_along_true_chart_tangent",
+      "label": "test_26d_curved_face_hvps_match_autodiff_along_true_chart_tangent()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_continuation_test_jump_must_be_common_face_supported_and_normal_component_resolved",
+      "label": "test_jump_must_be_common_face_supported_and_normal_component_resolved()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L106",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_continuation_test_tangent_uses_the_actual_chart_pivot_instead_of_inferring_from_normal",
+      "label": "test_tangent_uses_the_actual_chart_pivot_instead_of_inferring_from_normal()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L119",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_continuation_test_actual_chart_radius_and_theta_domain_are_checked_in_search",
+      "label": "test_actual_chart_radius_and_theta_domain_are_checked_in_search()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L129",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_continuation_test_final_closure_requires_each_p2_side_gradient_and_every_closure_fact",
+      "label": "test_final_closure_requires_each_p2_side_gradient_and_every_closure_fact()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L160",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_continuation_test_bounded_loop_recomputes_direction_and_two_hvps_after_each_commit",
+      "label": "test_bounded_loop_recomputes_direction_and_two_hvps_after_each_commit()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L178",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_continuation_test_failed_fresh_final_repeat_preserves_last_confirmed_point_and_theta",
+      "label": "test_failed_fresh_final_repeat_preserves_last_confirmed_point_and_theta()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L220",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_continuation_test_second_iteration_exception_keeps_the_first_confirmed_commit",
+      "label": "test_second_iteration_exception_keeps_the_first_confirmed_commit()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L255",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_continuation_test_child_exception_keeps_durable_two_commit_count",
+      "label": "test_child_exception_keeps_durable_two_commit_count()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L294",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_checkpoint",
+      "label": "test_fv_point_3h_tangent_checkpoint.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_checkpoint.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_checkpoint_test_interrupted_child_checkpoint_matches_latest_confirmed_commit",
+      "label": "test_interrupted_child_checkpoint_matches_latest_confirmed_commit()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_checkpoint.py",
+      "source_location": "L12",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_tangent_checkpoint_test_malformed_recovery_checkpoint_is_not_promoted",
+      "label": "test_malformed_recovery_checkpoint_is_not_promoted()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_tangent_checkpoint.py",
+      "source_location": "L132",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "dataclasses",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "gzip",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "os",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_finite",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_finite",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_roundoff",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L91",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_roundoff",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_dtype",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L91",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_candidate_alphas",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L194",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_candidate_alphas",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L194",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L215",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L215",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L215",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L215",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L215",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L215",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L215",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L215",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L215",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L215",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_fresh_final_closure",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L258",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_fresh_final_closure",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L258",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_fresh_final_closure",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L258",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L286",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L365",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_sha",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L365",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L369",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L369",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L373",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L373",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L373",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_load_plan",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L380",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_plan",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L380",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_plan",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L380",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_load_current_base",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L441",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_current_base",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L441",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_current_base",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L441",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L510",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L510",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L510",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L510",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L510",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L510",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L510",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L531",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L531",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L531",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L531",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L531",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L531",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L531",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L531",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L831",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L831",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L831",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L831",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L831",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L831",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L831",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L831",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L927",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L927",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L927",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L927",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L927",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L927",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L927",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L927",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L927",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1013",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_finite",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_roundoff",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_finite",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L142",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L161",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_roundoff",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L174",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_candidate_alphas",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L229",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L311",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L315",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L317",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L323",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_fresh_final_closure",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L346",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_plan",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L381",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_current_base",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L448",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_current_base",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L487",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L538",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L569",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L580",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L781",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L840",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L854",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L878",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_continuation_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L942",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L952",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L963",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1001",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_main",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1026",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_main",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1028",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_68",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_99",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_135",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L135",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_196",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_candidate_alphas",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L196",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_220",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L220",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_259",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_fresh_final_closure",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L259",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_295",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L295",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "ast",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "gzip",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_sha",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_tensor_sha",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_function_ast",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_function_ast",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_load_plan",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_load_plan",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_load_plan",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_check_close",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L139",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_check_close",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_dtype",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L139",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_validate_iteration_chain",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_validate_iteration_chain",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_validate_iteration_chain",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_validate_iteration_chain",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_validate_iteration_chain",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_load_current_base",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L194",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_load_current_base",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L194",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_load_current_base",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L194",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_resume_efficiency",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L330",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_resume_efficiency",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L330",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_resume_efficiency",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L330",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_run_child_impl",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L368",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_run_child_impl",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L368",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_run_child_impl",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L368",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_run_child_impl",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L368",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_run_child",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L374",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L374",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L374",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L374",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L380",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L380",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L380",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L380",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L380",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L380",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L387",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_load_plan",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_load_plan",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_function_ast",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L121",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_validate_iteration_chain",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_load_current_base",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L195",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_load_current_base",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_validate_iteration_chain",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L260",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_load_current_base",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L269",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_load_current_base",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_check_close",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L309",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_load_current_base",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_resume_efficiency",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L325",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_run",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_resume_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L383",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_main",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_run_child",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L400",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_main",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L402",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_rationale_148",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_validate_iteration_chain",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L148",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_tangent_resume_rationale_331",
+      "target": "weather_scenarios_fv_point_3h_tangent_resume_resume_efficiency",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+      "source_location": "L331",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "copy",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "gzip",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "tests_test_fv_point_3h_tangent_resume_test_resume_base_loader_uses_the_last_accepted_trial_and_final_repeat",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "tests_test_fv_point_3h_tangent_resume_test_saved_commit_chain_rejects_base_theta_or_hvp_label_drift",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "tests_test_fv_point_3h_tangent_resume_test_normalized_quadratic_prediction_matches_cos_squared_at_optimal_alpha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "tests_test_fv_point_3h_tangent_resume_test_resume_cli_routes_through_shared_guarded_runner_with_injected_loaders",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume_test_resume_cli_routes_through_shared_guarded_runner_with_injected_loaders",
+      "target": "tests_test_fv_point_3h_tangent_resume_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume",
+      "target": "tests_test_fv_point_3h_tangent_resume_test_parent_runner_rejects_committed_theta_drift",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume_test_parent_runner_rejects_committed_theta_drift",
+      "target": "tests_test_fv_point_3h_tangent_resume_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_resume_test_resume_cli_routes_through_shared_guarded_runner_with_injected_loaders",
+      "target": "tests_test_fv_point_3h_tangent_resume_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_resume.py",
+      "source_location": "L89",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "dataclasses",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "tests_test_fv_point_3h_tangent_continuation_model",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "tests_test_fv_point_3h_tangent_continuation_test_fresh_tangent_products_match_analytic_face_model",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "tests_test_fv_point_3h_tangent_continuation_test_26d_curved_face_hvps_match_autodiff_along_true_chart_tangent",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "tests_test_fv_point_3h_tangent_continuation_test_jump_must_be_common_face_supported_and_normal_component_resolved",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "tests_test_fv_point_3h_tangent_continuation_test_tangent_uses_the_actual_chart_pivot_instead_of_inferring_from_normal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L119",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "tests_test_fv_point_3h_tangent_continuation_test_actual_chart_radius_and_theta_domain_are_checked_in_search",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L129",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "tests_test_fv_point_3h_tangent_continuation_test_final_closure_requires_each_p2_side_gradient_and_every_closure_fact",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L160",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "tests_test_fv_point_3h_tangent_continuation_test_bounded_loop_recomputes_direction_and_two_hvps_after_each_commit",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L178",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "tests_test_fv_point_3h_tangent_continuation_test_failed_fresh_final_repeat_preserves_last_confirmed_point_and_theta",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L220",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "tests_test_fv_point_3h_tangent_continuation_test_second_iteration_exception_keeps_the_first_confirmed_commit",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L255",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation",
+      "target": "tests_test_fv_point_3h_tangent_continuation_test_child_exception_keeps_durable_two_commit_count",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L294",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation_test_fresh_tangent_products_match_analytic_face_model",
+      "target": "tests_test_fv_point_3h_tangent_continuation_model",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_continuation_test_actual_chart_radius_and_theta_domain_are_checked_in_search",
+      "target": "tests_test_fv_point_3h_tangent_continuation_model",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_continuation.py",
+      "source_location": "L130",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_checkpoint",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_checkpoint.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_checkpoint",
+      "target": "types",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_checkpoint.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_checkpoint",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_checkpoint.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_checkpoint",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_checkpoint.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_checkpoint",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_checkpoint.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_checkpoint",
+      "target": "tests_test_fv_point_3h_tangent_checkpoint_test_interrupted_child_checkpoint_matches_latest_confirmed_commit",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_checkpoint.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_tangent_checkpoint",
+      "target": "tests_test_fv_point_3h_tangent_checkpoint_test_malformed_recovery_checkpoint_is_not_promoted",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/advar-tangent-resume-ast-hjdyvy33/tests/test_fv_point_3h_tangent_checkpoint.py",
+      "source_location": "L132",
+      "weight": 1.0
+    }
+  ]
+}

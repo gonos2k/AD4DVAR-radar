@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_resume.py",
+    "--child",
+    "--plan",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/TANGENT_RESUME_PLAN_20261009.json",
+    "--plan-sha256",
+    "d5c4fa93ff4c3fddedb6d458fedea916c0f06d32edfe8bf55d2fd44449ac9d10",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/tangent_resume_20261009_attempt1/step.json"
+  ],
+  "child_pid": 46230,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 79.27848654217087,
+  "sampled_peak_rss_bytes": 565248000,
+  "rss_samples": 297,
+  "wall_limit_seconds": 300.0,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}

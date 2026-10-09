@@ -1,0 +1,33 @@
+{
+  "scope": "Current-HVP tangent resume from ed106; declining model/actual effectiveness tracked without policy change",
+  "plan_sha256": "d5c4fa93ff4c3fddedb6d458fedea916c0f06d32edfe8bf55d2fd44449ac9d10",
+  "source_pins": 129,
+  "archive_pins": 105,
+  "new_control_sha256": "33cb86ca73a404e6ff9260acbf63ee97f248ac0c1f529427eb1af1ec85a43586",
+  "accepted_steps": 3,
+  "current_HVP": 6,
+  "guarded_launches": 1,
+  "PCG_dense_solves": 0,
+  "result": "TANGENT_RESUME_RESULT_20261009.json",
+  "GREEN": "TANGENT_RESUME_GREEN_FINAL_20261009.md",
+  "RED": "TANGENT_RESUME_RED_FINAL_20261009.md",
+  "actual_step_F_squared_decrease_percent": [
+    0.7350403074376458,
+    0.563970427778291,
+    0.48933474793107506
+  ],
+  "predicted_step_F_squared_decrease_percent": [
+    0.7350611490045121,
+    0.6128867699661437,
+    0.5411318058607159
+  ],
+  "remaining": [
+    "current tangent curvature correction comparison (not executed)",
+    "qualified optimum/curvature/active-structure audit",
+    "theta-only finishing when tangency qualifies",
+    "coupled adjoint/VJP/reanalysis",
+    "independent synthetic future verification"
+  ],
+  "phase1_historical": "8/8",
+  "FV_external_weighted_milestones": "70/100 unchanged"
+}
