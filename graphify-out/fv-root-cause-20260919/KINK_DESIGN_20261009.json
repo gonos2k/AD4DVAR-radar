@@ -1,0 +1,48 @@
+{
+  "scope": "Same-point original-objective local two-sided upwind extensions, prerequisite gates followed by one optional 27-variable Newton-like trial",
+  "base_control_sha256": "95a55578eea1d3b9600a210e7bdba37c21d7d7a1baf07244afc513a46df8c842",
+  "face": {
+    "axis": "y",
+    "row": 4,
+    "column": 3
+  },
+  "policy_proposal": {
+    "internal_seconds": 600,
+    "outer_seconds": 660,
+    "sampled_RSS_bytes": 1073741824,
+    "guarded_launches": 1,
+    "parity_HVP_max": 4,
+    "basis_HVP_max": 52,
+    "total_HVP_max": 56,
+    "linear_solves_max": 1,
+    "candidate_max": 8,
+    "committed_steps_max": 1,
+    "radius": 0.05,
+    "gradient_scale": 1.0,
+    "face_scale": "max(abs(loaded basis/limit face weights))=.84",
+    "linear_relative_residual": 1e-10,
+    "J_Armijo_c1": 0.0001,
+    "F_squared_Armijo_c1": 0.0001
+  },
+  "equations": [
+    "F=[(1-theta)g_minus+theta g_plus, Q/face_scale]",
+    "DF top-left=(1-theta)H_minus+theta H_plus; theta column=g_plus-g_minus; bottom=n/face_scale",
+    "tangent curvature T^T(H_mix-lambda H_Q)T where lambda=n^Tg_mix/(n^Tn)"
+  ],
+  "gates": [
+    "production current95a J/g/branch recheck",
+    "samepointQ0chart roundoff-bound and nativeJ versus both branch primal values",
+    "all analysis360 other faces/slopes/active gaps strict with component scale",
+    "both side traces match non-target selectors at face",
+    "native own-side J/g/HVP parity at eta +/-1e-8",
+    "Hessian symmetry/finite and actual bordered-solve residual",
+    "chart-retracted candidate J+scaledF merit reduction and unchanged other selectors",
+    "fresh bothside/nativeJ/input/source/runtime/deadline closure beforecommit"
+  ],
+  "limits": [
+    "finite numerical branch-extension assessment, not interval one-sided-limit certification",
+    "no smoothroot/minimum/response claim",
+    "base curvature diagnosis cannot certify accepted candidate curvature",
+    "multiple active switches => refusal, not absence of a minimum"
+  ]
+}

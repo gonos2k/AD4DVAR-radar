@@ -1,0 +1,9 @@
+{
+  "scope": "Pre-PR265 transport bytes preserved before optional selected-face extension; historical producer/source hashes stay immutable",
+  "snapshots": {
+    "src/advar/transport.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/kink_source_20261009/transport.py",
+      "sha256": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf"
+    }
+  }
+}
