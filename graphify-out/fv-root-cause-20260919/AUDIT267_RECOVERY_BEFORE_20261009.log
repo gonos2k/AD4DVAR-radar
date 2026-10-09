@@ -1,0 +1,122 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+___ test_malformed_recovery_checkpoint_is_not_promoted[theta-out-of-domain] ____
+
+tmp_path = PosixPath('/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/pytest-of-yhlee/pytest-71/test_malformed_recovery_checkp0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11007eb10>
+confirmed_theta = 99.0, confirmed_count = 1
+
+    @pytest.mark.parametrize(
+        ("confirmed_theta", "confirmed_count"),
+        [(99.0, 1), (0.4, -4), (0.4, True)],
+        ids=("theta-out-of-domain", "negative-count", "boolean-count"),
+    )
+    def test_malformed_recovery_checkpoint_is_not_promoted(
+        tmp_path, monkeypatch, confirmed_theta, confirmed_count,
+    ):
+        candidate = torch.linspace(-0.1, 0.2, 26, dtype=torch.float64)
+        candidate_sha = tangent._tensor_sha(candidate)
+
+        def fail_after_writing_checkpoint(_plan, _plan_sha, output):
+            tangent._write(output, {
+                "last_confirmed_control": candidate.tolist(),
+                "last_confirmed_control_sha256": candidate_sha,
+                "last_confirmed_theta": confirmed_theta,
+                "last_confirmed_iterations": confirmed_count,
+            })
+            raise TimeoutError("synthetic stop with malformed durable state")
+
+        monkeypatch.setattr(tangent, "_run_child_impl", fail_after_writing_checkpoint)
+        result = tangent._run_child(tmp_path / "plan.json", "mock-plan-digest",
+                                    tmp_path / "child.json")
+
+        assert result["execution_status"] == "failed"
+>       assert result["numerical_status"] == "invalid_checkpoint"
+E       AssertionError: assert 'internal_deadline_refused' == 'invalid_checkpoint'
+E
+E         - invalid_checkpoint
+E         + internal_deadline_refused
+
+tests/test_fv_point_3h_tangent_checkpoint.py:152: AssertionError
+______ test_malformed_recovery_checkpoint_is_not_promoted[negative-count] ______
+
+tmp_path = PosixPath('/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/pytest-of-yhlee/pytest-71/test_malformed_recovery_checkp1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1100d2d50>
+confirmed_theta = 0.4, confirmed_count = -4
+
+    @pytest.mark.parametrize(
+        ("confirmed_theta", "confirmed_count"),
+        [(99.0, 1), (0.4, -4), (0.4, True)],
+        ids=("theta-out-of-domain", "negative-count", "boolean-count"),
+    )
+    def test_malformed_recovery_checkpoint_is_not_promoted(
+        tmp_path, monkeypatch, confirmed_theta, confirmed_count,
+    ):
+        candidate = torch.linspace(-0.1, 0.2, 26, dtype=torch.float64)
+        candidate_sha = tangent._tensor_sha(candidate)
+
+        def fail_after_writing_checkpoint(_plan, _plan_sha, output):
+            tangent._write(output, {
+                "last_confirmed_control": candidate.tolist(),
+                "last_confirmed_control_sha256": candidate_sha,
+                "last_confirmed_theta": confirmed_theta,
+                "last_confirmed_iterations": confirmed_count,
+            })
+            raise TimeoutError("synthetic stop with malformed durable state")
+
+        monkeypatch.setattr(tangent, "_run_child_impl", fail_after_writing_checkpoint)
+        result = tangent._run_child(tmp_path / "plan.json", "mock-plan-digest",
+                                    tmp_path / "child.json")
+
+        assert result["execution_status"] == "failed"
+>       assert result["numerical_status"] == "invalid_checkpoint"
+E       AssertionError: assert 'internal_deadline_refused' == 'invalid_checkpoint'
+E
+E         - invalid_checkpoint
+E         + internal_deadline_refused
+
+tests/test_fv_point_3h_tangent_checkpoint.py:152: AssertionError
+______ test_malformed_recovery_checkpoint_is_not_promoted[boolean-count] _______
+
+tmp_path = PosixPath('/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/pytest-of-yhlee/pytest-71/test_malformed_recovery_checkp2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1100d32c0>
+confirmed_theta = 0.4, confirmed_count = True
+
+    @pytest.mark.parametrize(
+        ("confirmed_theta", "confirmed_count"),
+        [(99.0, 1), (0.4, -4), (0.4, True)],
+        ids=("theta-out-of-domain", "negative-count", "boolean-count"),
+    )
+    def test_malformed_recovery_checkpoint_is_not_promoted(
+        tmp_path, monkeypatch, confirmed_theta, confirmed_count,
+    ):
+        candidate = torch.linspace(-0.1, 0.2, 26, dtype=torch.float64)
+        candidate_sha = tangent._tensor_sha(candidate)
+
+        def fail_after_writing_checkpoint(_plan, _plan_sha, output):
+            tangent._write(output, {
+                "last_confirmed_control": candidate.tolist(),
+                "last_confirmed_control_sha256": candidate_sha,
+                "last_confirmed_theta": confirmed_theta,
+                "last_confirmed_iterations": confirmed_count,
+            })
+            raise TimeoutError("synthetic stop with malformed durable state")
+
+        monkeypatch.setattr(tangent, "_run_child_impl", fail_after_writing_checkpoint)
+        result = tangent._run_child(tmp_path / "plan.json", "mock-plan-digest",
+                                    tmp_path / "child.json")
+
+        assert result["execution_status"] == "failed"
+>       assert result["numerical_status"] == "invalid_checkpoint"
+E       AssertionError: assert 'internal_deadline_refused' == 'invalid_checkpoint'
+E
+E         - invalid_checkpoint
+E         + internal_deadline_refused
+
+tests/test_fv_point_3h_tangent_checkpoint.py:152: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_fv_point_3h_tangent_checkpoint.py::test_malformed_recovery_checkpoint_is_not_promoted[theta-out-of-domain]
+FAILED tests/test_fv_point_3h_tangent_checkpoint.py::test_malformed_recovery_checkpoint_is_not_promoted[negative-count]
+FAILED tests/test_fv_point_3h_tangent_checkpoint.py::test_malformed_recovery_checkpoint_is_not_promoted[boolean-count]
+3 failed in 0.05s
+Expected predecessor recovery defects reproduced; no source files modified

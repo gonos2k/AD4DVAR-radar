@@ -1,0 +1,124 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_interrupted_child_checkpoint_matches_latest_confirmed_commit _______
+
+tmp_path = PosixPath('/private/var/folders/k4/qf6g1w213_x9dq8ht2rkg3z00000gn/T/pytest-of-yhlee/pytest-67/test_interrupted_child_checkpo0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ddfbb30>
+
+    def test_interrupted_child_checkpoint_matches_latest_confirmed_commit(tmp_path, monkeypatch):
+        base_control = torch.zeros(26, dtype=torch.float64)
+        committed_control = base_control.clone()
+        committed_control[0] = 0.01
+        base_theta = 0.3504554198817298
+        committed_theta = 0.4
+        runtime = {"python": "mock-runtime"}
+        source_hashes = {"source.py": "mock-source-digest"}
+        traces = {str(side): {"signature_sha256": f"trace-{side}"} for side in (-1, 1)}
+        gradients = {str(side): [0.0] * 26 for side in (-1, 1)}
+
+        def input_identity(_problem, _original, control, _parameters, _truth):
+            return {"control_sha256": tangent._tensor_sha(control)}
+
+        base = {
+            "control": base_control,
+            "theta": base_theta,
+            "objective": 1.0,
+            "accepted": {
+                "F_squared": 0.0,
+                "side_gradients": gradients,
+                "branch_trace": traces,
+            },
+            "raw": {
+                "input_after": input_identity(None, None, base_control, None, None),
+                "runtime_after": runtime,
+            },
+        }
+
+        def observed(_probe, _problem, _control, _parameters, _weights):
+            zero = torch.zeros(26, dtype=torch.float64)
+            return {
+                "native_j": torch.tensor(1.0, dtype=torch.float64),
+                "side": {
+                    -1: (torch.tensor(1.0, dtype=torch.float64), zero.clone()),
+                    1: (torch.tensor(1.0, dtype=torch.float64), zero.clone()),
+                },
+                "traces": {-1: traces["-1"], 1: traces["1"]},
+                "pair": {"passed": True},
+                "q": torch.tensor(0.0, dtype=torch.float64),
+                "production_q": torch.tensor(0.0, dtype=torch.float64),
+                "face_bound": 1e-12,
+                "face_ok": True,
+                "side_objectives_match_native": True,
+                "side_gradients_finite": True,
+            }
+
+        monkeypatch.setattr(tangent, "_load_plan", lambda *_: {
+            "source_files": {}, "archive_files": {},
+        })
+        monkeypatch.setattr(tangent, "_load_current_base", lambda _plan: base)
+        monkeypatch.setattr(tangent.shared, "_source_hashes", lambda *_: source_hashes)
+        monkeypatch.setattr(tangent.shared, "_runtime", lambda: runtime)
+        monkeypatch.setattr(tangent.shared, "_input_identity", input_identity)
+        monkeypatch.setattr(tangent, "_observe", observed)
+        monkeypatch.setattr(tangent.seed, "_prepare_fixed_seed", lambda: (
+            SimpleNamespace(), base_control.clone(), None, torch.zeros(1), torch.zeros(1), None,
+        ))
+        monkeypatch.setattr(tangent.geometry, "_face_weights", lambda *_args, **_kwargs:
+            torch.tensor([0.84, 0.0, 0.0, 0.0, 0.0], dtype=torch.float64))
+        monkeypatch.setattr(tangent.geometry.model, "_fixed_input", lambda *_args: True)
+
+        def stop_after_durable_commit(
+            initial_control, theta, _current_products, _side_hvp, _chart_candidate,
+            _candidate_eval, final_repeat, *, committed_progress, **_kwargs,
+        ):
+            proposal = {
+                "control": committed_control.tolist(),
+                "theta": committed_theta,
+                "objective": 1.0,
+                "F_squared": 0.0,
+                "side_gradients": gradients,
+                "branch_trace": traces,
+            }
+            repeat = final_repeat(proposal)
+            assert tangent.fresh_final_closure(proposal, repeat)
+            assert torch.equal(initial_control, base_control)
+            assert theta == base_theta
+            item = {
+                "index": 0,
+                "base_control_sha256": tangent._tensor_sha(base_control),
+                "accepted": True,
+                "committed_control": committed_control.tolist(),
+                "committed_theta": committed_theta,
+                "final_repeat": repeat,
+            }
+            committed_progress([item])
+            # SystemExit models an external termination after the atomic checkpoint
+            # and bypasses the child's Exception recovery/final-report write.
+            raise SystemExit("simulated guard stop during the next iteration")
+
+        monkeypatch.setattr(tangent, "bounded_continuation", stop_after_durable_commit)
+        output = tmp_path / "child.json"
+
+        try:
+            tangent._run_child_impl(tmp_path / "plan.json", "mock-plan-digest", output)
+        except SystemExit as error:
+            assert "simulated guard stop" in str(error)
+        else:
+            raise AssertionError("mock child did not stop after its checkpoint")
+
+        checkpoint = json.loads(output.read_text())
+        expected_digest = tangent._tensor_sha(committed_control)
+        assert checkpoint["phase"] == "running"
+        assert checkpoint["accepted_iterations"] == 1
+        assert checkpoint["optimizer_steps_applied"] == 1
+>       assert checkpoint["current_control"] == committed_control.tolist()
+E       assert [0.0, 0.0, 0....0.0, 0.0, ...] == [0.01, 0.0, 0...0.0, 0.0, ...]
+E
+E         At index 0 diff: 0.0 != 0.01
+E         Use -v to get more diff
+
+tests/test_fv_point_3h_tangent_checkpoint.py:117: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_fv_point_3h_tangent_checkpoint.py::test_interrupted_child_checkpoint_matches_latest_confirmed_commit
+1 failed in 0.04s
+Expected predecessor defect reproduced; no source files modified

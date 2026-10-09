@@ -746,18 +746,10 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path) -> dict[str, A
         return result
 
     def committed_progress(iterations: list[dict[str, Any]]) -> None:
-        confirmed = closure_state["control"]
         record["iterations"] = iterations
         record["optimizer_steps_applied"] = closure_state["accepted_count"]
         record["accepted_iterations"] = closure_state["accepted_count"]
         record["candidate_committed"] = True
-        record["current_control"] = confirmed.tolist()
-        record["current_control_sha256"] = _tensor_sha(confirmed)
-        record["current_theta"] = closure_state["theta"]
-        record["last_confirmed_control"] = confirmed.tolist()
-        record["last_confirmed_control_sha256"] = _tensor_sha(confirmed)
-        record["last_confirmed_theta"] = closure_state["theta"]
-        record["last_confirmed_iterations"] = closure_state["accepted_count"]
         _write(output, record)
 
     result = bounded_continuation(base["control"], base["theta"], current_products,
@@ -825,69 +817,24 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path) -> dict[str, Any]:
             record = json.loads(output.read_text())
         except (OSError, ValueError):
             record = {}
-        checkpoint_fields = ("last_confirmed_control", "last_confirmed_control_sha256",
-            "last_confirmed_theta", "last_confirmed_iterations")
-        has_checkpoint = any(key in record for key in checkpoint_fields)
-        try:
-            confirmed = torch.as_tensor(record.get("last_confirmed_control", []),
-                                        dtype=torch.float64)
-        except (OverflowError, TypeError, ValueError, RuntimeError):
-            confirmed = torch.empty(0, dtype=torch.float64)
+        confirmed = torch.as_tensor(record.get("last_confirmed_control", []), dtype=torch.float64)
         confirmed_sha = record.get("last_confirmed_control_sha256")
-        confirmed_theta = record.get("last_confirmed_theta")
-        confirmed_count = record.get("last_confirmed_iterations")
         committed = confirmed_sha is not None and confirmed_sha != BASE_CONTROL_SHA
-        theta_valid = (isinstance(confirmed_theta, (int, float))
-            and not isinstance(confirmed_theta, bool)
-            and 0.0 <= confirmed_theta <= 1.0 and math.isfinite(float(confirmed_theta)))
-        count_valid = (isinstance(confirmed_count, int) and not isinstance(confirmed_count, bool)
-            and 0 <= confirmed_count <= MAX_ACCEPTED)
-        control_valid = (confirmed.shape == (26,) and bool(torch.isfinite(confirmed).all())
-                         and confirmed_sha == _tensor_sha(confirmed))
-        commit_count_valid = (count_valid and
-            (confirmed_count != 0 if committed else confirmed_count == 0))
-        checkpoint_valid = (has_checkpoint and control_valid and theta_valid
-                            and commit_count_valid)
-        committed_count = confirmed_count if checkpoint_valid and committed else 0
-        invalid_checkpoint = has_checkpoint and not checkpoint_valid
+        committed_count = int(record.get("last_confirmed_iterations", 0)) if committed else 0
         record.update(phase="finished", execution_status="failed",
-            numerical_status=("invalid_checkpoint" if invalid_checkpoint else
-                "internal_deadline_refused" if isinstance(error, TimeoutError)
-                else "prerequisite_or_execution_refused"),
+            numerical_status="internal_deadline_refused" if isinstance(error, TimeoutError)
+                else "prerequisite_or_execution_refused",
             refusal=f"{type(error).__name__}: {error}", candidate_committed=committed,
             active_candidate_committed=False, optimizer_steps_applied=committed_count,
             accepted_iterations=committed_count,
             full_smooth_root=False, minimum_claim=False, response_claim=False)
-        if invalid_checkpoint:
-            record["refusal"] = f"invalid last-confirmed checkpoint; {record['refusal']}"
-            record.update(candidate_committed=False, optimizer_steps_applied=0,
-                          accepted_iterations=0)
-            record.pop("last_confirmed_closure", None)
-            for key in checkpoint_fields:
-                record.pop(key, None)
-            try:
-                base_control = torch.as_tensor(record.get("current_control", []),
-                                               dtype=torch.float64)
-            except (OverflowError, TypeError, ValueError, RuntimeError):
-                base_control = torch.empty(0, dtype=torch.float64)
-            exact_base = (base_control.shape == (26,)
-                and record.get("current_control_sha256") == BASE_CONTROL_SHA
-                and _tensor_sha(base_control) == BASE_CONTROL_SHA)
-            record["current_control_sha256"] = BASE_CONTROL_SHA
-            if exact_base:
-                record["current_control"] = base_control.tolist()
-                record["current_theta"] = 0.3504554198817298
-            else:
-                record.pop("current_control", None)
-                record.pop("current_theta", None)
-        elif checkpoint_valid:
+        if confirmed.shape == (26,) and confirmed_sha == _tensor_sha(confirmed):
             record.update(current_control=confirmed.tolist(), current_control_sha256=confirmed_sha,
-                          current_theta=confirmed_theta)
+                          current_theta=record.get("last_confirmed_theta"))
         else:
             record.update(candidate_committed=False, optimizer_steps_applied=0,
-                          accepted_iterations=0, current_control_sha256=BASE_CONTROL_SHA)
-            record.pop("current_control", None)
-            record.pop("current_theta", None)
+                accepted_iterations=0, current_control_sha256=BASE_CONTROL_SHA,
+                current_theta=0.3504554198817298)
         _write(output, record)
         return record
 

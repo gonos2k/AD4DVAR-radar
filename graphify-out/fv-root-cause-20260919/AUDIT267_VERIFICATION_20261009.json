@@ -1,0 +1,38 @@
+{
+  "focused_command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_fv_point_3h_tangent_continuation.py",
+    "tests/test_fv_point_3h_tangent_checkpoint.py",
+    "tests/test_fv_point_3h_nonsmooth_coupled_probe.py",
+    "tests/test_fv_point_3h_candidate_requalification.py",
+    "tests/test_fv_selected_face_extension.py"
+  ],
+  "focused_result": "49 passed,18 existing warnings,2.17s",
+  "type_command": [
+    "uvx",
+    "--offline",
+    "--from",
+    "basedpyright==1.39.9",
+    "basedpyright",
+    "--pythonpath",
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "--level",
+    "error",
+    "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+    "tests/test_fv_point_3h_tangent_continuation.py",
+    "tests/test_fv_point_3h_tangent_checkpoint.py"
+  ],
+  "types": "0 errors",
+  "before_checkpoint_reproduction": "Archived _run_child_impl AST loaded in memory; new regression fails at stale current_control assertion",
+  "before_recovery_reproduction": "Archived _run_child AST loaded in memory; three malformed \u03b8/count cases fail",
+  "before_logs": [
+    "AUDIT267_CHECKPOINT_BEFORE_20261009.log",
+    "AUDIT267_RECOVERY_BEFORE_20261009.log"
+  ],
+  "production_FV_HVP_guard_runs": 0,
+  "original_plan_raw_untouched": true,
+  "before_log_format": "Trailing whitespace trimmed from pytest formatting; assertion/result text unchanged; production raw/archive never changed"
+}

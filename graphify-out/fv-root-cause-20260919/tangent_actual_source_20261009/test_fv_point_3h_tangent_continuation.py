@@ -55,17 +55,17 @@ def test_26d_curved_face_hvps_match_autodiff_along_true_chart_tangent():
     torch.testing.assert_close(direction, -(z @ coords), atol=2e-15, rtol=2e-14)
     assert abs(float(torch.dot(normal, direction))) < 2e-15
 
-    shared_hessian = torch.diag(torch.linspace(0.5, 1.8, 26, dtype=dtype))
+    a = torch.diag(torch.linspace(0.5, 1.8, 26, dtype=dtype))
+    b = torch.diag(torch.linspace(1.9, 0.4, 26, dtype=dtype))
     def objective(x, matrix, linear, face_coefficient):
         q = torch.dot(weights, torch.tanh(x[20:25]))
         dx = x - point
         return 0.5 * dx @ matrix @ dx + torch.dot(linear, dx) + face_coefficient * q
 
     hvps: list[torch.Tensor] = []
-    coefficients = (-0.2, 0.8)
-    grad_fns = [torch.func.grad(lambda x, coeff=coeff: objective(
-        x, shared_hessian, tangent_gradient, coeff)) for coeff in coefficients]
-    for grad_fn, coeff in zip(grad_fns, coefficients):
+    for matrix, linear, coeff in ((a, tangent_gradient, -0.2),
+                                  (b, tangent_gradient, 0.8)):
+        grad_fn = torch.func.grad(lambda x: objective(x, matrix, linear, coeff))
         # Verify the endpoint gradient and the fresh HVP against independent AD.
         actual_gradient = grad_fn(point)
         torch.testing.assert_close(actual_gradient, gm if coeff < 0 else gp, atol=2e-14, rtol=2e-14)
@@ -77,30 +77,6 @@ def test_26d_curved_face_hvps_match_autodiff_along_true_chart_tangent():
     expected_num = torch.dot(unit, mix + (0.65 * hvps[0] + 0.35 * hvps[1]))
     expected_den = torch.dot(unit, gp - gm)
     assert model.delta_theta == pytest.approx(float(-expected_num / expected_den), rel=2e-14)
-
-    def chart_path(alpha: torch.Tensor) -> torch.Tensor:
-        coordinates = point.clone()
-        coordinates[retained] = point[retained] + alpha * direction[retained]
-        return geometry._chart(coordinates, weights, pivot, 0.0)
-
-    def residual_path(alpha: torch.Tensor) -> torch.Tensor:
-        candidate = chart_path(alpha)
-        theta = 0.35 + alpha * model.delta_theta
-        side_gradients = [grad_fn(candidate) for grad_fn in grad_fns]
-        mixed = (1 - theta) * side_gradients[0] + theta * side_gradients[1]
-        face_value = torch.dot(weights, torch.tanh(candidate[20:25]))
-        return torch.cat((mixed, (face_value / 0.84).reshape(1)))
-
-    zero = torch.zeros((), dtype=dtype)
-    actual_df = torch.func.jvp(residual_path, (zero,), (torch.ones_like(zero),))[1]
-    torch.testing.assert_close(actual_df, model.residual_direction, atol=3e-13, rtol=3e-13)
-    for alpha in (0.0, 0.2, 0.7, 1.0):
-        candidate = chart_path(torch.tensor(alpha, dtype=dtype))
-        torch.testing.assert_close(
-            objective(candidate, shared_hessian, tangent_gradient, coefficients[0]),
-            objective(candidate, shared_hessian, tangent_gradient, coefficients[1]),
-            atol=2e-14, rtol=2e-14)
-        assert abs(float(torch.dot(weights, torch.tanh(candidate[20:25])))) < 2e-15
 
 
 def test_jump_must_be_common_face_supported_and_normal_component_resolved():

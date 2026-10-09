@@ -1,0 +1,14 @@
+{
+  "scope": "Exact PR267 executed source/test before team-audit fixes; original plan/raw untouched",
+  "executed_plan_sha256": "cc9c3a9baa6fdcbf6216d8a5d1613ebfaf63e708c279c5341aaba77cc35e3c69",
+  "snapshots": {
+    "examples/weather_scenarios/fv_point_3h_tangent_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/tangent_actual_source_20261009/fv_point_3h_tangent_continuation.py",
+      "sha256": "b184d15f8179290d273d117fb4b145e18b366a9f9ad777b0b9495095c2f228ca"
+    },
+    "tests/test_fv_point_3h_tangent_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/tangent_actual_source_20261009/test_fv_point_3h_tangent_continuation.py",
+      "sha256": "8cfe139f8a1ef76c682ac60bf6f9ae5d34140e61623cb0e4f7ffecb291cb5551"
+    }
+  }
+}

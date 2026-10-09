@@ -1,0 +1,17 @@
+# PR267 final RED cross-review — 2026-10-09
+
+## Disposition
+
+The archived PR267 three-step result remains supported as the declared bounded tangent-gradient continuation. The session fixes address the stale partial checkpoint fields, the same-face mathematical test gap, malformed theta/count domains, and the merged-PR checklist. I found no math or execution-path contradiction in the archived accepted steps.
+
+One narrow P3 hardening gap remains if recovery is intended to reject arbitrary internally inconsistent checkpoint files: recovery validates the saved control digest/finiteness, theta domain, count type/range, and whether commit status agrees with a zero/nonzero count, but does not cross-check that count/control/theta against the saved accepted-iteration list. The supported atomic writer emits those fields together and in agreement, so this is not evidence of a normal-path or archived-result defect. Either add list/last-accepted cross-checks and a malformed-record regression, or state the defensive recovery contract narrowly as validation of checkpoint scalar domains and control integrity.
+
+## Cross-review evidence
+
+- The updated curved-face test now builds both side extensions from one shared face objective plus distinct coefficients of `Q`. It checks equality of the side objectives at four chart points and uses `torch.func.jvp` on the full 27-component `[g_mix, Q/0.84]` along the implicit chart and `theta + alpha * delta_theta` path. This closes the prior test-premise gap without invoking FV code.
+- The state patch updates `current_control`, its digest, theta, and accepted count in the same atomic progress write as `last_confirmed_*`. Recovery rejects nonfinite/wrong-shape controls, out-of-domain theta, booleans/non-integers/out-of-range counts, and impossible commit/count combinations. The added interrupted-child test enters the actual `_run_child_impl` progress callback and checks the durable snapshot; `SystemExit` simulates termination after that write, not an OS kill.
+- The modified runner and original tangent test snapshots in `tangent_actual_source_20261009/manifest.json` hash to `b184d15f…` and `8cfe139f…`, matching the corresponding frozen-plan source hashes. The original continuation plan SHA remains `cc9c3a9b…`; the decompressed raw child remains `77726dcdf533bb5b8949b97d7bebf39e28820c00240cdeb16401170a01f9ebd1`. The plan/raw were not rewritten. The saved original-source snapshot was independently hash-checked.
+- The recorded focused run is 49 passed with 18 existing warnings in 2.17 seconds; type checking reports 0 errors, warnings, or notes. Isolated AST Graphify hashes match the three live modified code/test files; no shared graph refresh occurred. `git diff --check` is clean. No new FV, production-gradient/HVP, guard, or weather computation was run.
+- The merged PR checklist now records PR #267, merge head `63610e9…`, and successful UI CI run `37897929978`, while explicitly saying Python CPU and Wheel jobs were not run. That scope is consistent with the evidence. The separate `AUDIT267_TASK_CHECKLIST_20261009.md` still leaves its completed test/type/isolated-Graphify/final-review row unchecked; update it in the final evidence pass so the audit checklist is not stale.
+
+The result claims remain limited to the three accepted corrections and saved J/F merit reductions. This work does not establish a smooth root, nonsmooth minimum, response, or forecast improvement. No production rerun was performed.
