@@ -1072,9 +1072,6 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
     if plan.get("experiment_kind") == "current_tangent_mixing_minimum":
         numerical_status = ("tangent_mixing_minimum_accepted" if committed
             else "tangent_mixing_minimum_refused")
-    elif plan.get("experiment_kind") == "current_tangent_mixing_minimum_resume":
-        numerical_status = _mixing_minimum_resume_status(
-            committed, int(active_policy["max_accepted_iterations"]))
     elif plan.get("experiment_kind") == "current_tangent_precondition_comparison":
         numerical_status = ("tangent_precondition_comparison_accepted" if committed
             else "tangent_precondition_comparison_refused")
@@ -1206,130 +1203,6 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path, *,
         return record
 
 
-def _mixing_minimum_resume_chain_closed(child: dict[str, Any], plan: dict[str, Any],
-        expected_base_sha: str, history: list[dict[str, Any]]) -> bool:
-    """Validate the resume's accepted control/theta/HVP chain without replay."""
-    iterations = child.get("iterations", [])
-    if (not isinstance(iterations, list) or not iterations
-            or len(iterations) > int(plan["policy"]["max_accepted_iterations"])):
-        return False
-    control_sha, theta = expected_base_sha, float(plan["initial_theta"])
-    accepted_count = 0
-    modeled_points: list[dict[str, Any]] = []
-    for index, item in enumerate(iterations):
-        if (not isinstance(item, dict) or item.get("index") != index
-                or item.get("base_control_sha256") != control_sha or item.get("theta") != theta):
-            return False
-        arms = item.get("model_comparisons", [])
-        if not arms:
-            if (item.get("accepted") is True or index != len(iterations) - 1
-                    or any(entry.get("base_control_sha256") == control_sha for entry in history)):
-                return False
-            continue
-        if len(arms) != 1:
-            return False
-        arm = arms[0]
-        working_theta = arm.get("working_theta")
-        direction_values = arm.get("direction", [])
-        direction = torch.as_tensor(direction_values, dtype=torch.float64)
-        if (arm.get("name") != "candidate_mixing_minimum"
-                or arm.get("candidate_mixing_minimum") is not True
-                or arm.get("accepted") is not any(
-                    trial.get("accepted") is True for trial in arm.get("trials", []))
-                or len(arm.get("trials", [])) > int(plan["policy"]["max_candidates_per_iteration"])
-                or not isinstance(working_theta, (int, float)) or isinstance(working_theta, bool)
-                or not math.isfinite(float(working_theta)) or not 0.0 < float(working_theta) < 1.0
-                or direction.shape != (26,) or not bool(torch.isfinite(direction).all())):
-            return False
-        direction_sha = _tensor_sha(direction)
-        point_hvps = [entry for entry in history
-            if entry.get("base_control_sha256") == control_sha]
-        if (len(point_hvps) != 2 or {entry.get("side") for entry in point_hvps} != {-1, 1}
-                or any(entry.get("direction_model") != "candidate_mixing_minimum"
-                    or entry.get("direction_sha256") != direction_sha
-                    or entry.get("theta") != theta
-                    or entry.get("working_theta") != working_theta
-                    or entry.get("operator") != "selected_face_extension"
-                    or entry.get("scope") != "one current chart tangent"
-                    or entry.get("status") != "completed" for entry in point_hvps)):
-            return False
-        residual_values = [float(x) for x in arm.get("residual", [])]
-        if not residual_values:
-            return False
-        point_f2 = sum(value * value for value in residual_values)
-        modeled_points.append({"index": len(modeled_points),
-            "base_control_sha256": control_sha, "reference_theta": theta,
-            "working_theta_star": float(working_theta), "F_squared": point_f2,
-            "Psi": 0.5 * point_f2, "optimizer_step": False})
-        accepted_trials = [trial for trial in arm.get("trials", [])
-            if trial.get("accepted") is True]
-        if item.get("accepted") is True:
-            repeat = item.get("final_repeat")
-            if (len(accepted_trials) != 1 or not isinstance(repeat, dict)
-                    or item.get("candidate_mixing_minimum") is not True
-                    or repeat.get("mixing_minimum_valid") is not True
-                    or repeat.get("minimum_theta_matches_proposal") is not True
-                    or not fresh_final_closure(accepted_trials[0], repeat)):
-                return False
-            control_values = item.get("committed_control", [])
-            control = torch.as_tensor(control_values, dtype=torch.float64)
-            next_sha = _tensor_sha(control) if control.shape == (26,) else ""
-            if (not next_sha or next_sha == control_sha
-                    or accepted_trials[0].get("control") != control_values
-                    or item.get("committed_theta") != repeat.get("theta")
-                    or item.get("committed_theta") != accepted_trials[0].get("theta")):
-                return False
-            control_sha, theta = next_sha, float(item["committed_theta"])
-            accepted_count += 1
-        else:
-            if index != len(iterations) - 1:
-                return False
-            if len(accepted_trials) > 1:
-                return False
-            if accepted_trials:
-                repeat = item.get("final_repeat")
-                if not isinstance(repeat, dict) or fresh_final_closure(accepted_trials[0], repeat):
-                    return False
-    expected_point_history = child.get("mixing_minimum_point_history", [])
-    if not isinstance(expected_point_history, list) or len(expected_point_history) != len(modeled_points):
-        return False
-    for expected_point, actual_point in zip(modeled_points, expected_point_history):
-        if (not isinstance(actual_point, dict)
-                or any(actual_point.get(key) != expected_point[key] for key in (
-                    "index", "base_control_sha256", "reference_theta", "working_theta_star",
-                    "optimizer_step"))):
-            return False
-        for key in ("F_squared", "Psi"):
-            actual_value, expected_value = actual_point.get(key), expected_point[key]
-            if not isinstance(actual_value, (int, float)) or isinstance(actual_value, bool):
-                return False
-            scale = max(abs(float(actual_value)), abs(float(expected_value)), torch.finfo(torch.float64).tiny)
-            if abs(float(actual_value) - float(expected_value)) \
-                    > EPS_MULTIPLIER * torch.finfo(torch.float64).eps * scale:
-                return False
-    terminal_control = child.get("current_control", [])
-    if (child.get("current_control_sha256") != control_sha
-            or child.get("current_theta") != theta
-            or _tensor_sha(torch.as_tensor(terminal_control, dtype=torch.float64)) != control_sha
-            or child.get("last_confirmed_control_sha256") != control_sha
-            or child.get("last_confirmed_theta") != theta
-            or child.get("last_confirmed_iterations") != accepted_count
-            or child.get("accepted_iterations") != accepted_count
-            or child.get("optimizer_steps_applied") != accepted_count
-            or child.get("candidate_committed") is not (accepted_count > 0)
-            or len(history) != 2 * len(modeled_points)):
-        return False
-    return True
-
-
-def _mixing_minimum_resume_status(committed: int, cap: int) -> str:
-    if committed >= cap:
-        return "tangent_mixing_minimum_resume_cap_reached"
-    if committed:
-        return "tangent_mixing_minimum_resume_stopped_after_commit"
-    return "tangent_mixing_minimum_resume_refused"
-
-
 def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
         log: Path, *,
         plan_loader: Callable[[Path, str], dict[str, Any]] | None = None,
@@ -1384,8 +1257,6 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
             and all(item.get("status") == "completed" for item in history))
         comparison = plan.get("experiment_kind") == "current_tangent_precondition_comparison"
         mixing_minimum = plan.get("experiment_kind") == "current_tangent_mixing_minimum"
-        mixing_minimum_resume = plan.get("experiment_kind") == "current_tangent_mixing_minimum_resume"
-        mixing_minimum_mode = mixing_minimum or mixing_minimum_resume
         for item in accepted:
             current_point_hvps = [entry for entry in history
                 if entry.get("base_control_sha256") == item.get("base_control_sha256")]
@@ -1414,9 +1285,9 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
             child.get("jacobian_rows_started") == child.get("jacobian_rows_completed") == 24
             and len(row_history) == 24
             and all(row.get("status") == "completed" for row in row_history))
-            or (mixing_minimum_mode and child.get("jacobian_rows_started")
+            or (mixing_minimum and child.get("jacobian_rows_started")
                 == child.get("jacobian_rows_completed") == 0 and len(row_history) == 0)
-            or (not comparison and not mixing_minimum_mode))
+            or (not comparison and not mixing_minimum))
         comparison_structure_ok = True
         if comparison:
             comparison_rows = child.get("iterations", [])
@@ -1489,9 +1360,6 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
                             and entry.get("operator") == "selected_face_extension"
                             and entry.get("scope") == "one current chart tangent"
                             for entry in mix_hvps))
-        elif mixing_minimum_resume:
-            mixing_minimum_structure_ok = _mixing_minimum_resume_chain_closed(
-                child, plan, expected_base_sha, history)
         closed = (child.get("phase") == "finished"
             and child.get("plan_sha256") == plan_sha
             and child.get("base_control_sha256") == expected_base_sha

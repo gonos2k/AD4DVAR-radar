@@ -1,0 +1,40 @@
+{
+  "scope": "Same interior mixture-minimized tangent policy at fresh accepted points, at most three commits",
+  "base_control_sha256": "e801cf4651233ec11b2ec98ac9569e411b8e62e68511440e39db1cb9c3872567",
+  "base_theta": 0.48316874590279574,
+  "base_J": 0.061240252230254005,
+  "base_minimum_F_squared": 0.004689202366398875,
+  "policy": {
+    "guarded_launches": 1,
+    "hvp_calls": 6,
+    "max_accepted_iterations": 3,
+    "max_candidates_per_iteration": 16,
+    "radius": 0.05,
+    "face_scale": 0.84,
+    "internal_seconds": 300.0,
+    "outer_seconds": 360.0,
+    "rss_bytes": 1073741824,
+    "jacobian_row_vjp_calls": 0,
+    "pcg_solves": 0,
+    "dense_solves": 0,
+    "optimizer_steps": 3,
+    "root_claim": false,
+    "minimum_claim": false,
+    "response_claim": false,
+    "score_claim": false
+  },
+  "invariants": [
+    "Original J priors observations boundary times unchanged",
+    "Same minimum theta/tangent/full theta-prime/envelope formulas as PR271",
+    "Fresh current g\u00b1 theta* HVP pair each step",
+    "Real native J/min merit/current branch pair/radius and individual gradient/min theta final closure",
+    "Representable control displacement required; preserve last confirmed control theta after refusal",
+    "No candidate/optimizer normalization counted; all model/actual perstep labels explicit"
+  ],
+  "remaining": [
+    "Qualified optimum/tangent curvature/normal minimum/active stability",
+    "Coupled adjoint/VJP/reanalysis",
+    "Independent synthetic forecast verification"
+  ],
+  "milestones": "phase1 historical100%,FVexternal70% unchanged"
+}

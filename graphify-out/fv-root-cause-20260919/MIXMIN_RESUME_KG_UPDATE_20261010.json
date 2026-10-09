@@ -1,0 +1,33 @@
+{
+  "scope": "같은 최소 혼합 정책의 새점 세 채택",
+  "plan_sha256": "a3f24f93e84ec107c36a8888fbe2e644f9a5be3a71bff855ec219bf9be7c0bba",
+  "source_pins": 135,
+  "archive_pins": 132,
+  "selected_control_sha256": "c8fba1f93ee0b6c83edc5b56792de158921c0a64bab41eef5403c2a514b1fc33",
+  "result": "MIXMIN_RESUME_RESULT_20261010.json",
+  "guarded_launches": 1,
+  "current_HVP": 6,
+  "row_reverse": 0,
+  "candidates": 3,
+  "commits": 3,
+  "actual_step_F_squared_decrease_percent": [
+    0.5598465374767492,
+    0.42210014248278416,
+    0.803227048710653
+  ],
+  "predicted_step_F_squared_decrease_percent": [
+    0.5598631486307126,
+    0.5370167414817439,
+    0.5182814842789818
+  ],
+  "phase1_historical": "8/8=100%",
+  "FV_external_weighted_milestones": "70/100 unchanged",
+  "GREEN": "MIXMIN_RESUME_GREEN_FINAL_20261010.md",
+  "RED": "MIXMIN_RESUME_RED_FINAL_20261010.md",
+  "remaining": [
+    "같은 최소 theta 정책에서 결합 곡률 비교(미수행)",
+    "적격 최적점·곡률·활성구조 감사",
+    "결합 수반/VJP·재분석",
+    "독립 합성 미래검증"
+  ]
+}
