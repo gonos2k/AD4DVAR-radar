@@ -1,0 +1,32 @@
+{
+  "child_read_error": null,
+  "child_sha256": "8581c6ae0d430c5c9c36c71209bfa03bd53a8627271f6cb900f60790a67d79aa",
+  "execution_status": "completed",
+  "numerical_status": "tangent_mixing_minimum_accepted",
+  "resource": {
+    "child_pid": 43761,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_mixing_minimum_probe.py",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/TANGENT_MIXING_MINIMUM_PLAN_20261010.json",
+      "--plan-sha256",
+      "9611b13d3392c198f0a92436c1e9536a6286363a2c64a70a48e5b43f6c480576",
+      "--output",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/tangent_mixing_minimum_20261010_attempt1/step.json"
+    ],
+    "elapsed_seconds": 32.10279629100114,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 120,
+    "sampled_peak_rss_bytes": 766574592,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300.0
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "scope": "Exact PR270 shared runner/test before candidate-minimum mixing policy; original plan/raw retained",
+  "snapshots": {
+    "examples/weather_scenarios/fv_point_3h_tangent_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/mixmin_source_20261010/fv_point_3h_tangent_continuation.py",
+      "sha256": "12b1e13e761bbad0fb7793c5a54166a6df4abf6e2896cc40cf390a8861b0da08"
+    },
+    "tests/test_fv_point_3h_tangent_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/mixmin_source_20261010/test_fv_point_3h_tangent_continuation.py",
+      "sha256": "6706e2db8ca4ad4f5663059d883aa54f394244f8635dc3596b35575908dbcf73"
+    }
+  }
+}
