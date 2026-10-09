@@ -1,0 +1,154 @@
+{
+  "scope": "Saved-array, receipt hash, and static face geometry arithmetic; no FV/HVP generation",
+  "plan_sha256": "cc9c3a9baa6fdcbf6216d8a5d1613ebfaf63e708c279c5341aaba77cc35e3c69",
+  "raw_sha256": "77726dcdf533bb5b8949b97d7bebf39e28820c00240cdeb16401170a01f9ebd1",
+  "points": [
+    {
+      "control_sha256": "6b29dacd01fc30ee4041e93dd3ad110c29699c4553d098694086eadeb580a743",
+      "objective": 0.06126370581028981,
+      "theta": 0.3504554198817298,
+      "F_squared": 0.006314384483614977,
+      "F_norm": 0.07946310139690609,
+      "mixed_gradient_inf": 0.034521734392372626,
+      "tangent_gradient_norm": 0.07946015441645293,
+      "normal_mixture": 0.0006843564337632333,
+      "normal_minus": -0.0998791204463552,
+      "normal_plus": 0.18707171887596477,
+      "static_face_value": 1.734723475976807e-18,
+      "block_gradient_norms": [
+        0.0672502575792442,
+        0.04221306221284152,
+        0.003137629320849905
+      ]
+    },
+    {
+      "control_sha256": "20ae0609804b46fa3ae8e642ee4d8eece3a26038d831d28e6e7a898fe2501a2c",
+      "objective": 0.06125555371957018,
+      "theta": 0.33591983873372505,
+      "F_squared": 0.005447892423358931,
+      "F_norm": 0.07380983961071133,
+      "mixed_gradient_inf": 0.03025145385184739,
+      "tangent_gradient_norm": 0.07380711412480453,
+      "normal_mixture": 0.0006342932500130825,
+      "normal_minus": -0.0956885191143049,
+      "normal_plus": 0.19105492755860978,
+      "static_face_value": 0.0,
+      "block_gradient_norms": [
+        0.060494084234417475,
+        0.041414756014301744,
+        0.00855430770278881
+      ]
+    },
+    {
+      "control_sha256": "747e5506c4e2ee966581431e052f75d8a0750844c6712aeca8aab9149f827157",
+      "objective": 0.06125366699491071,
+      "theta": 0.3288283299901934,
+      "F_squared": 0.005297318693850219,
+      "F_norm": 0.07278268127686846,
+      "mixed_gradient_inf": 0.029983542969217132,
+      "tangent_gradient_norm": 0.072779864718335,
+      "normal_mixture": 0.0006403010472230139,
+      "normal_minus": -0.0935747107318583,
+      "normal_plus": 0.19294260905591995,
+      "static_face_value": 0.0,
+      "block_gradient_norms": [
+        0.05925043726684076,
+        0.0422694035752244,
+        4.357675060916604e-05
+      ]
+    },
+    {
+      "control_sha256": "ed106d7bc277906141e9d4a52aea529c575c9ac17df334fcbfb8d9c5013d44f7",
+      "objective": 0.0612512070514904,
+      "theta": 0.332026125873074,
+      "F_squared": 0.005238386295728529,
+      "F_norm": 0.07237669718720612,
+      "mixed_gradient_inf": 0.029792523644067155,
+      "tangent_gradient_norm": 0.07237388241205849,
+      "normal_mixture": 0.0006383105310589993,
+      "normal_minus": -0.09429104901940608,
+      "normal_plus": 0.1916182579691482,
+      "static_face_value": 0.0,
+      "block_gradient_norms": [
+        0.05905682964044574,
+        0.041471604880439175,
+        0.005548257130724071
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "base_control_sha256": "6b29dacd01fc30ee4041e93dd3ad110c29699c4553d098694086eadeb580a743",
+      "control_sha256": "20ae0609804b46fa3ae8e642ee4d8eece3a26038d831d28e6e7a898fe2501a2c",
+      "alpha": 0.0013882599416785055,
+      "actual_path_norm": 0.00011031134882649645,
+      "evaluated_candidates": 1,
+      "candidate_slots": 1,
+      "F_directional_derivative": -0.6364752577179492,
+      "tangent_direction_face_derivative": 8.673617379884035e-19,
+      "model_F_squared": 0.005430791379455645,
+      "finite_F_linearization_relative_error": 0.014194220945917204,
+      "branch_pair_signature": "04e392ade4e26ce01397d37eb950468ddf12d2f7015be076b51a3fb57132a39a"
+    },
+    {
+      "base_control_sha256": "20ae0609804b46fa3ae8e642ee4d8eece3a26038d831d28e6e7a898fe2501a2c",
+      "control_sha256": "747e5506c4e2ee966581431e052f75d8a0750844c6712aeca8aab9149f827157",
+      "alpha": 0.0003512467370239021,
+      "actual_path_norm": 2.592450798764898e-05,
+      "evaluated_candidates": 1,
+      "candidate_slots": 1,
+      "F_directional_derivative": -0.4040759366983856,
+      "tangent_direction_face_derivative": -8.673617379884035e-19,
+      "model_F_squared": 0.0053059620690837465,
+      "finite_F_linearization_relative_error": 0.01034071876868516,
+      "branch_pair_signature": "67524657bd4168588075f4ee0285dd7bbf9f95f33d9bf33b9c0836497a652c69"
+    },
+    {
+      "base_control_sha256": "747e5506c4e2ee966581431e052f75d8a0750844c6712aeca8aab9149f827157",
+      "control_sha256": "ed106d7bc277906141e9d4a52aea529c575c9ac17df334fcbfb8d9c5013d44f7",
+      "alpha": 0.00046700898096693695,
+      "actual_path_norm": 3.398885040539998e-05,
+      "evaluated_candidates": 1,
+      "candidate_slots": 1,
+      "F_directional_derivative": -0.12618590394801418,
+      "tangent_direction_face_derivative": 8.673617379884035e-19,
+      "model_F_squared": 0.0052383887434350644,
+      "finite_F_linearization_relative_error": 2.3507096811738978e-05,
+      "branch_pair_signature": "67524657bd4168588075f4ee0285dd7bbf9f95f33d9bf33b9c0836497a652c69"
+    }
+  ],
+  "J_decrease_percent": 0.020401571589734324,
+  "F_squared_decrease_percent": 17.04042873345022,
+  "F_norm_decrease_percent": 8.917855061186774,
+  "resource": {
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/TANGENT_CONTINUATION_PLAN_20261009.json",
+      "--plan-sha256",
+      "cc9c3a9baa6fdcbf6216d8a5d1613ebfaf63e708c279c5341aaba77cc35e3c69",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/tangent_continuation_20261009_attempt1/step.json"
+    ],
+    "child_pid": 4301,
+    "exit_code": 0,
+    "resource_termination": null,
+    "monitor_error": null,
+    "elapsed_seconds": 76.51524229208007,
+    "sampled_peak_rss_bytes": 570179584,
+    "rss_samples": 287,
+    "wall_limit_seconds": 300.0,
+    "rss_limit_bytes": 1073741824,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "received_sigterm": false,
+    "child_process_group_cleanup_sent": false,
+    "child_process_group_cleanup_error": null
+  },
+  "accepted_iterations": 3,
+  "hvp_calls": 6,
+  "minimum_claim": false,
+  "response_claim": false,
+  "FV_completeness_external_estimate": 70
+}

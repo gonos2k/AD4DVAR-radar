@@ -1,0 +1,32 @@
+{
+  "child_read_error": null,
+  "child_sha256": "77726dcdf533bb5b8949b97d7bebf39e28820c00240cdeb16401170a01f9ebd1",
+  "execution_status": "completed",
+  "numerical_status": "tangent_continuation_cap_reached",
+  "resource": {
+    "child_pid": 4301,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/TANGENT_CONTINUATION_PLAN_20261009.json",
+      "--plan-sha256",
+      "cc9c3a9baa6fdcbf6216d8a5d1613ebfaf63e708c279c5341aaba77cc35e3c69",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/tangent_continuation_20261009_attempt1/step.json"
+    ],
+    "elapsed_seconds": 76.51524229208007,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 1073741824,
+    "rss_samples": 287,
+    "sampled_peak_rss_bytes": 570179584,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 300.0
+  }
+}

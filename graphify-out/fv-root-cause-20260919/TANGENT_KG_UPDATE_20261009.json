@@ -1,0 +1,22 @@
+{
+  "scope": "Fresh current-HVP tangent corrections from accepted PR266; original J unchanged",
+  "plan_sha256": "cc9c3a9baa6fdcbf6216d8a5d1613ebfaf63e708c279c5341aaba77cc35e3c69",
+  "source_pins": 126,
+  "archive_pins": 94,
+  "current_control_sha256": "ed106d7bc277906141e9d4a52aea529c575c9ac17df334fcbfb8d9c5013d44f7",
+  "committed_steps": 3,
+  "guarded_launches": 1,
+  "current_HVP": 6,
+  "dense_solves": 0,
+  "result": "TANGENT_RESULT_20261009.json",
+  "GREEN": "TANGENT_GREEN_FINAL_20261009.md",
+  "RED": "TANGENT_RED_FINAL_20261009.md",
+  "phase1_historical": "8/8",
+  "FV_external_weighted_milestones": "70/100 unchanged",
+  "remaining": [
+    "eligible original3h optimal point",
+    "current tangent curvature and active-structure qualification",
+    "27-variable coupled adjoint/VJP/reanalysis",
+    "independent synthetic future validation"
+  ]
+}

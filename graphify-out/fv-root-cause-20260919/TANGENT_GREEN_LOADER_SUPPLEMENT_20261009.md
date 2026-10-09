@@ -1,0 +1,9 @@
+# Tangent continuation loader supplement
+
+Read-only, stored-byte verification of the frozen continuation plan and accepted PR266 base. Executed only `tangent._load_plan()` and `tangent._load_current_base()` with `.venv/bin/python`; no seed/model preparation, objective evaluation, FV, HVP, weather computation, guard, or runner.
+
+The frozen plan SHA-256 is `559a840c4b46e2f6f15541f4a0d00b07a38235df26a3a8c71677a0bd7162ca17`, matching the supplied digest. `_load_plan` passes with 126 source pins and 94 archive pins. Their six overlapping paths have identical digests. `_load_current_base` passes using child SHA-256 `14a4b1c05363e316fddd3291946852e3334232388f975f1316030e85a4a0abfc`; its accepted control hash is `6b29dacd01fc30ee4041e93dd3ad110c29699c4553d098694086eadeb580a743`, theta is `0.3504554198817298`, and objective is `0.06126370581028981`.
+
+The loader now reads the producing plan JSON directly instead of invoking its changed live `_load_plan`. It checks old archive pins separately from current source pins and archived pre-edit source snapshots, compares the raw producer source receipt to the frozen maps, verifies the accepted control vector exactly against the top-level base control, and checks the saved final-repeat closure flags. The child preflight additionally recomputes base J, F², both side gradients, and both trace signatures and compares them to accepted evidence.
+
+Remaining timing guard gap: the initial `_observe` runs after `_prepare_fixed_seed` without an immediately preceding internal-deadline check, and `final_repeat` performs `_observe` before checking `deadline_ok`. If either prior operation consumes the remaining internal budget, another native/side evaluation may begin after the 240 s internal deadline. Add a deadline check immediately before each of those observations. The end-of-run state now reuses the last closed observation, so it no longer launches a fresh observation after a caught timeout.
