@@ -1,0 +1,14 @@
+{
+  "scope": "Byte-identical frozen producer/test used by plan83ea; live source is identical; read-only execution-version archive",
+  "plan_sha256": "83ea077a6d7ba615a84729a3588a92b156687dd02a8fc7320cf9b90ecf5ce299",
+  "snapshots": {
+    "examples/weather_scenarios/fv_point_3h_nonsmooth_coupled_probe.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/kink_actual_source_20261009/probe.py",
+      "sha256": "d05c2c745e88f38cd839c3816347ae636d1c9dc8e70c74df551671c9e22235a2"
+    },
+    "tests/test_fv_point_3h_nonsmooth_coupled_probe.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/kink_actual_source_20261009/tests.py",
+      "sha256": "c480f2b1194a7d5771256a0263a98846fe0587add156cf2219bec6d3b357218e"
+    }
+  }
+}

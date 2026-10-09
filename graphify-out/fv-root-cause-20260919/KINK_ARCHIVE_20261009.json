@@ -1,0 +1,19 @@
+{
+  "scope": "Lossless output and launcher archives; uncompressed originals retained locally",
+  "archives": {
+    "graphify-out/fv-root-cause-20260919/nonsmooth_coupled_20261009_attempt1/step.json": {
+      "gzip_path": "graphify-out/fv-root-cause-20260919/nonsmooth_coupled_20261009_attempt1/step.json.gz",
+      "raw_sha256": "8938215a1d553d25e86b7e4befb1c45a2b90bfef52c9a2b805648b4b89a80c69",
+      "gzip_sha256": "589011542550b4cde4dd4186010cc2e819337a770cf95a3ef57bf5650b1b0391",
+      "raw_bytes": 36569738,
+      "gzip_bytes": 263340
+    },
+    "graphify-out/fv-root-cause-20260919/KINK_LAUNCH_20261009.log": {
+      "gzip_path": "graphify-out/fv-root-cause-20260919/KINK_LAUNCH_20261009.log.gz",
+      "raw_sha256": "e65519a362a937e1843492b91db390a48161bff665ea5810af6b1917e7bd9cf4",
+      "gzip_sha256": "10fa6b81e60950b3234d4f2c5de4455d9a102c8daecf17dc2716f5192483062d",
+      "raw_bytes": 39868796,
+      "gzip_bytes": 285351
+    }
+  }
+}

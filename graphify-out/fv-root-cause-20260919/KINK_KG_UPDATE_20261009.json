@@ -1,0 +1,32 @@
+{
+  "scope": "Current-point same-face branch extension and one prerequisite-gated 27-variable correction attempt",
+  "plan_sha256": "83ea077a6d7ba615a84729a3588a92b156687dd02a8fc7320cf9b90ecf5ce299",
+  "source_pins": 122,
+  "archive_pins": 78,
+  "status": "coupled_step_refused",
+  "committed_steps": 0,
+  "base_control_sha256": "95a55578eea1d3b9600a210e7bdba37c21d7d7a1baf07244afc513a46df8c842",
+  "HVP_started_completed": [
+    56,
+    56
+  ],
+  "linear_solves": 1,
+  "scaled_linear_relative_residual": 3.146914098961318e-18,
+  "scaled_F_norm": 0.08096580117955689,
+  "candidate_count": 8,
+  "evaluated_candidates": 7,
+  "candidate_support": "current strict at all evaluated points; non-target limiter selectors changed versus pinned base",
+  "GREEN": "KINK_GREEN_FINAL_20261009.md",
+  "RED": "KINK_RED_FINAL_20261009.md",
+  "results": "KINK_RESULT_20261009.json",
+  "evidence_limit": "successful parity raw comparison values/errors absent; base side gradients reconstructed",
+  "shared_graph_sha256": "a2dde66d24983ad7a6d6e8dd7472bf4f6a1bfd483eb0f978c988748abcd42bef",
+  "phase1_historical": "8/8",
+  "FV_external_weighted_milestones": "70/100 unchanged",
+  "remaining": [
+    "qualified original3h smooth or nonsmooth point",
+    "endpoint minimum/curvature qualification",
+    "response/reanalysis",
+    "independent synthetic future verification"
+  ]
+}

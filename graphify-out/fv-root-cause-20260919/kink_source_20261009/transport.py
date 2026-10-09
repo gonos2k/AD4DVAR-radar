@@ -43,51 +43,6 @@ _minmod_stage_observer: ContextVar[_MinmodStageObserver | None] = ContextVar(
 )
 
 
-@dataclass(frozen=True)
-class _SelectedFace:
-    axis: str
-    row: int
-    column: int
-    side: int
-
-
-_selected_face: ContextVar[_SelectedFace | None] = ContextVar(
-    "advar_selected_face_extension", default=None,
-)
-
-
-@contextmanager
-def selected_face_extension(
-    axis: str,
-    row: int,
-    column: int,
-    side: int,
-) -> Iterator[None]:
-    """Extend one fixed signed-volume branch for local kink derivatives.
-
-    ``side`` selects the sign of volume flux on the chosen face: ``-1`` uses
-    the negative-volume branch and ``+1`` uses the positive-volume branch.
-    This defines a local smooth extension at the zero-flux kink; outside the
-    selected side it is a research chart, not a physical upwind rule.
-    """
-    if axis not in ("x", "y"):
-        raise ValueError("axis must be 'x' or 'y'")
-    if any(
-        isinstance(value, bool) or not isinstance(value, Integral)
-        for value in (row, column)
-    ):
-        raise TypeError("row and column must be nonnegative integers")
-    if row < 0 or column < 0:
-        raise ValueError("row and column must be nonnegative integers")
-    if isinstance(side, bool) or not isinstance(side, Integral) or side not in (-1, 1):
-        raise ValueError("side must be -1 or +1")
-    token = _selected_face.set(_SelectedFace(axis, int(row), int(column), int(side)))
-    try:
-        yield
-    finally:
-        _selected_face.reset(token)
-
-
 @contextmanager
 def observe_minmod_stages(observer: _MinmodStageObserver) -> Iterator[None]:
     """Observe this call context's minmod stages without replacing model code.
@@ -186,26 +141,11 @@ def _zero_edges(reference: Tensor, height: int, width: int) -> _Edges:
     )
 
 
-def _volume_parts(volume_flux: Tensor, axis: str | None = None) -> Tuple[Tensor, Tensor]:
+def _volume_parts(volume_flux: Tensor) -> Tuple[Tensor, Tensor]:
     # At a tie, maximum/minimum split the derivative equally. Direct selection
     # also preserves subnormal fluxes that would vanish when multiplied by 0.5.
     zero = torch.zeros_like(volume_flux)
-    plus, minus = torch.maximum(volume_flux, zero), torch.minimum(volume_flux, zero)
-    selected = _selected_face.get()
-    if selected is not None and axis == selected.axis:
-        if (
-            volume_flux.ndim != 2
-            or selected.row >= volume_flux.shape[0]
-            or selected.column >= volume_flux.shape[1]
-        ):
-            raise ValueError(f"selected {axis}-face index is outside the face-flux shape")
-        mask = torch.zeros_like(volume_flux, dtype=torch.bool)
-        mask[selected.row, selected.column] = True
-        if selected.side < 0:
-            plus, minus = torch.where(mask, zero, plus), torch.where(mask, volume_flux, minus)
-        else:
-            plus, minus = torch.where(mask, volume_flux, plus), torch.where(mask, zero, minus)
-    return plus, minus
+    return torch.maximum(volume_flux, zero), torch.minimum(volume_flux, zero)
 
 
 def _scale_by_growth(value: Tensor, log_growth: Tensor) -> Tensor:
@@ -226,8 +166,8 @@ def _euler_donorcell(
     """Positive-coefficient Euler update for one stage."""
 
     left, right, bottom, top = edges
-    qx_plus, qx_minus = _volume_parts(qx, axis="x")
-    qy_plus, qy_minus = _volume_parts(qy, axis="y")
+    qx_plus, qx_minus = _volume_parts(qx)
+    qy_plus, qy_minus = _volume_parts(qy)
     outgoing = (
         qx_plus[:, 1:]
         - qx_minus[:, :-1]
@@ -333,8 +273,8 @@ def _euler_minmod(
         _check_tensor(name, value, dtype=q.dtype)
 
     left, right, bottom, top = edges
-    qx_plus, qx_minus = _volume_parts(qx, axis="x")
-    qy_plus, qy_minus = _volume_parts(qy, axis="y")
+    qx_plus, qx_minus = _volume_parts(qx)
+    qy_plus, qy_minus = _volume_parts(qy)
     left_source = torch.cat((left[:, None], right_face[:, :-1]), dim=1)
     right_source = torch.cat((left_face[:, 1:], right[:, None]), dim=1)
     bottom_source = torch.cat((bottom[None, :], top_face[:-1, :]), dim=0)
@@ -365,15 +305,10 @@ def _check_minmod_support(
     tolerance = 16 * torch.finfo(support.dtype).eps
     if bool((support < 1 - tolerance).any()):
         raise ValueError("minmod reconstruction requires fully known initial support")
-    qx_plus, qx_minus = _volume_parts(qx, axis="x")
-    qy_plus, qy_minus = _volume_parts(qy, axis="y")
-    incoming = (
-        qx_plus[:, 0] > 0,
-        -qx_minus[:, -1] > 0,
-        qy_plus[0, :] > 0,
-        -qy_minus[-1, :] > 0,
+    incoming_masks = (
+        (qx[:, 0] > 0, qx[:, -1] < 0, qy[0, :] > 0, qy[-1, :] < 0),
+        (qx[:, 0] > 0, qx[:, -1] < 0, qy[0, :] > 0, qy[-1, :] < 0),
     )
-    incoming_masks = (incoming, incoming)
     edge_names = ("left", "right", "bottom", "top")
     for stage_index, (edges, masks) in enumerate(zip(support_edges, incoming_masks)):
         for edge_name, edge, incoming in zip(edge_names, edges, masks):
@@ -398,8 +333,8 @@ def _boundary_budget(
     """
 
     left, right, bottom, top = edges
-    qx_plus, qx_minus = _volume_parts(qx, axis="x")
-    qy_plus, qy_minus = _volume_parts(qy, axis="y")
+    qx_plus, qx_minus = _volume_parts(qx)
+    qy_plus, qy_minus = _volume_parts(qy)
     incoming = (
         (qx_plus[:, 0] * left).sum()
         + (-qx_minus[:, -1] * right).sum()
@@ -551,8 +486,8 @@ def finite_volume_step(
 
     # The volume flux is shared by both RK stages.  Its outward positive part
     # is the positivity/CFL weight, independent of the transported field.
-    qx_plus, qx_minus = _volume_parts(qx, axis="x")
-    qy_plus, qy_minus = _volume_parts(qy, axis="y")
+    qx_plus, qx_minus = _volume_parts(qx)
+    qy_plus, qy_minus = _volume_parts(qy)
     outgoing_rate = (
         qx_plus[:, 1:]
         - qx_minus[:, :-1]
@@ -1013,27 +948,6 @@ def finite_volume_trajectory(
             )
             echo, support = result.echo, result.support
         return torch.stack((echo, support))
-
-    # Recompute invokes this function later in an autograd context whose
-    # ContextVars may differ; freeze the branch setting, including the native
-    # (None) setting, with its tensor block.
-    captured_extension = _selected_face.get()
-    raw_interval_block = interval_block
-
-    def interval_block(
-        state: Tensor,
-        block_qx: Tensor,
-        block_qy: Tensor,
-        block_growth: Tensor,
-        *boundary_tensors: Tensor,
-    ) -> Tensor:
-        token = _selected_face.set(captured_extension)
-        try:
-            return raw_interval_block(
-                state, block_qx, block_qy, block_growth, *boundary_tensors,
-            )
-        finally:
-            _selected_face.reset(token)
 
     state = torch.stack((initial_echo, initial_support))
     echo_frames = [initial_echo]
