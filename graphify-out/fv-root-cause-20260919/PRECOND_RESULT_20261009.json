@@ -1,0 +1,587 @@
+{
+  "scope": "Saved-array/receipt/static flux arithmetic; no FV/HVP/AD generation; theta-min recombinations are unapplied diagnostics",
+  "plan_sha256": "be2886f2686cd04e71d3d244967da378bae9c22e39168c5f22bd85e7801169a4",
+  "raw_sha256": "c64480cfdc8b011b63b8bec4fd0e704187b28657d47e5e51b63f606406e0c4cf",
+  "base": {
+    "control_sha256": "33cb86ca73a404e6ff9260acbf63ee97f248ac0c1f529427eb1af1ec85a43586",
+    "objective": 0.06124426330405451,
+    "theta": 0.3295008210283633,
+    "F_squared": 0.005145254919599806,
+    "F_norm": 0.07173043231153571,
+    "mixed_gradient_inf": 0.02944709307629615,
+    "tangent_gradient_norm": 0.07172799072721413,
+    "normal_mixture": 0.0005918326085049535,
+    "normal_minus": -0.093509534238246,
+    "normal_plus": 0.19207812090951082,
+    "static_face_value": 0.0,
+    "block_gradient_norms": [
+      0.05844439100918846,
+      0.04156169839494285,
+      0.0014605840245264234
+    ]
+  },
+  "base_Q_y_3_2_static": 2.742675187239474e-07,
+  "arms": [
+    {
+      "name": "baseline_tangent",
+      "direction_norm": 0.07172799072721413,
+      "model_optimal_alpha": 0.0005097251778295729,
+      "model_max_F_squared_decrease_percent": 0.49863997721292735,
+      "model_angle_degrees": 85.95072036962993,
+      "constrained_tangent_HVP_action_norm": 9.937128521749324,
+      "full_GN_surrogate_action_relative_error": 0.00578683357638539,
+      "diagonal_surrogate_action_relative_error": 2.595802383264173,
+      "candidate_slots": 4,
+      "evaluated_candidates": 4,
+      "accepted": {
+        "control_sha256": "0da57dbc5a4c101c2f24204835a746514b110f4548fe64de40455f4478dfbed1",
+        "objective": 0.06124393564803218,
+        "theta": 0.3298981720696071,
+        "F_squared": 0.005132555144362135,
+        "F_norm": 0.07164185330072174,
+        "mixed_gradient_inf": 0.02943565614067692,
+        "tangent_gradient_norm": 0.07163919695919907,
+        "normal_mixture": 0.000616930630798357,
+        "normal_minus": -0.09358503894790843,
+        "normal_plus": 0.19196358651956033,
+        "static_face_value": 0.0,
+        "block_gradient_norms": [
+          0.05837080321357436,
+          0.04149079156964704,
+          0.0019795685106653305
+        ],
+        "status": "accepted",
+        "alpha": 6.37156472286966e-05,
+        "actual_path_norm": 4.570195352920832e-06,
+        "J_armijo_passed": true,
+        "F_squared_armijo_passed": true,
+        "branch_pair_passed": true,
+        "actual_F_squared_decrease_percent": 0.24682499577026729,
+        "predicted_F_squared": 0.00513924172476575,
+        "finite_F_linearization_relative_error": 0.0073494626734233875,
+        "Q_y_3_2_static": 1.0846547097986825e-07,
+        "branch_changes_from_base": {
+          "changed_limiter_stages": 1,
+          "changed_other_face_sign_stages": 0,
+          "active_choose_left_changes": [
+            [
+              88,
+              0,
+              1,
+              2
+            ]
+          ]
+        },
+        "unapplied_saved_gradient_theta_min": 0.3277376621747043,
+        "unapplied_saved_gradient_min_F_squared": 0.005132174540958916
+      },
+      "trials": [
+        {
+          "control_sha256": "e30349174e662979b02eac2c75e8afc58f64b0f7973c8d62bcba7118950576b1",
+          "objective": 0.06124174041405603,
+          "theta": 0.3326796293583136,
+          "F_squared": 0.006526005338974578,
+          "F_norm": 0.08078369475936699,
+          "mixed_gradient_inf": 0.0498009375897979,
+          "tangent_gradient_norm": 0.06855332863314847,
+          "normal_mixture": -0.04273694505097577,
+          "normal_minus": -0.13764159650906088,
+          "normal_plus": 0.1476318109464577,
+          "static_face_value": 0.0,
+          "block_gradient_norms": [
+            0.05826044681113539,
+            0.05569749221353888,
+            0.005432774380021488
+          ],
+          "status": "rejected",
+          "alpha": 0.0005097251778295728,
+          "actual_path_norm": 3.6561562785574746e-05,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_pair_passed": true,
+          "actual_F_squared_decrease_percent": -26.835413229285933,
+          "predicted_F_squared": 0.005119598621641167,
+          "finite_F_linearization_relative_error": 0.5416302627770379,
+          "Q_y_3_2_static": -1.0521488159331849e-06,
+          "branch_changes_from_base": {
+            "changed_limiter_stages": 2,
+            "changed_other_face_sign_stages": 360,
+            "active_choose_left_changes": [
+              [
+                87,
+                0,
+                1,
+                2
+              ],
+              [
+                88,
+                0,
+                1,
+                2
+              ]
+            ]
+          },
+          "unapplied_saved_gradient_theta_min": 0.48249010567352907,
+          "unapplied_saved_gradient_min_F_squared": 0.004699558866684456
+        },
+        {
+          "control_sha256": "3eb49fa64ef68586ce26679eb3c090d65ea3ef236ce7892d1d260831fd30065b",
+          "objective": 0.061242988333816153,
+          "theta": 0.33109022519333847,
+          "F_squared": 0.006540674894232258,
+          "F_norm": 0.08087443906595122,
+          "mixed_gradient_inf": 0.049940384870250994,
+          "tangent_gradient_norm": 0.06859096339612077,
+          "normal_mixture": -0.042848041199386004,
+          "normal_minus": -0.13735138650707268,
+          "normal_plus": 0.1480794058169892,
+          "static_face_value": 0.0,
+          "block_gradient_norms": [
+            0.058281879210771825,
+            0.05596297480836189,
+            0.00347028824334733
+          ],
+          "status": "rejected",
+          "alpha": 0.0002548625889147864,
+          "actual_path_norm": 1.8280781403595103e-05,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_pair_passed": true,
+          "actual_F_squared_decrease_percent": -27.120521654172713,
+          "predicted_F_squared": 0.005126012696130826,
+          "finite_F_linearization_relative_error": 0.5424048870596524,
+          "Q_y_3_2_static": -3.8894066213546186e-07,
+          "branch_changes_from_base": {
+            "changed_limiter_stages": 2,
+            "changed_other_face_sign_stages": 360,
+            "active_choose_left_changes": [
+              [
+                87,
+                0,
+                1,
+                2
+              ],
+              [
+                88,
+                0,
+                1,
+                2
+              ]
+            ]
+          },
+          "unapplied_saved_gradient_theta_min": 0.48120731960527846,
+          "unapplied_saved_gradient_min_F_squared": 0.004704720259607978
+        },
+        {
+          "control_sha256": "b8bdc3f1d253719d600f9437a3763312b7f1c157fd1c22672338d18303d3a880",
+          "objective": 0.061243613436251926,
+          "theta": 0.33029552311085086,
+          "F_squared": 0.006552316800811893,
+          "F_norm": 0.080946382258949,
+          "mixed_gradient_inf": 0.05001026122721496,
+          "tangent_gradient_norm": 0.06864098508961142,
+          "normal_mixture": -0.042903752361997845,
+          "normal_minus": -0.13720625536415787,
+          "normal_plus": 0.14830322449188926,
+          "static_face_value": -1.734723475976807e-18,
+          "block_gradient_norms": [
+            0.05830351543658624,
+            0.05609653612855422,
+            0.0024890807390389735
+          ],
+          "status": "rejected",
+          "alpha": 0.0001274312944573932,
+          "actual_path_norm": 9.140390704497035e-06,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_pair_passed": true,
+          "actual_F_squared_decrease_percent": -27.34678656740932,
+          "predicted_F_squared": 0.005134030289242902,
+          "finite_F_linearization_relative_error": 0.5426176318218772,
+          "Q_y_3_2_static": -5.7336575084998564e-08,
+          "branch_changes_from_base": {
+            "changed_limiter_stages": 2,
+            "changed_other_face_sign_stages": 360,
+            "active_choose_left_changes": [
+              [
+                87,
+                0,
+                1,
+                2
+              ],
+              [
+                88,
+                0,
+                1,
+                2
+              ]
+            ]
+          },
+          "unapplied_saved_gradient_theta_min": 0.48056637360460586,
+          "unapplied_saved_gradient_min_F_squared": 0.004711584834072257
+        },
+        {
+          "control_sha256": "0da57dbc5a4c101c2f24204835a746514b110f4548fe64de40455f4478dfbed1",
+          "objective": 0.06124393564803218,
+          "theta": 0.3298981720696071,
+          "F_squared": 0.005132555144362135,
+          "F_norm": 0.07164185330072174,
+          "mixed_gradient_inf": 0.02943565614067692,
+          "tangent_gradient_norm": 0.07163919695919907,
+          "normal_mixture": 0.000616930630798357,
+          "normal_minus": -0.09358503894790843,
+          "normal_plus": 0.19196358651956033,
+          "static_face_value": 0.0,
+          "block_gradient_norms": [
+            0.05837080321357436,
+            0.04149079156964704,
+            0.0019795685106653305
+          ],
+          "status": "accepted",
+          "alpha": 6.37156472286966e-05,
+          "actual_path_norm": 4.570195352920832e-06,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": true,
+          "branch_pair_passed": true,
+          "actual_F_squared_decrease_percent": 0.24682499577026729,
+          "predicted_F_squared": 0.00513924172476575,
+          "finite_F_linearization_relative_error": 0.0073494626734233875,
+          "Q_y_3_2_static": 1.0846547097986825e-07,
+          "branch_changes_from_base": {
+            "changed_limiter_stages": 1,
+            "changed_other_face_sign_stages": 0,
+            "active_choose_left_changes": [
+              [
+                88,
+                0,
+                1,
+                2
+              ]
+            ]
+          },
+          "unapplied_saved_gradient_theta_min": 0.3277376621747043,
+          "unapplied_saved_gradient_min_F_squared": 0.005132174540958916
+        }
+      ]
+    },
+    {
+      "name": "robust_gn_jacobi",
+      "direction_norm": 0.01929965609009901,
+      "model_optimal_alpha": 0.0053318752624437775,
+      "model_max_F_squared_decrease_percent": 0.38087503311890175,
+      "model_angle_degrees": 86.46173825244169,
+      "constrained_tangent_HVP_action_norm": 0.8302609412855999,
+      "full_GN_surrogate_action_relative_error": 0.00905159177709092,
+      "diagonal_surrogate_action_relative_error": 0.9919769512024262,
+      "candidate_slots": 5,
+      "evaluated_candidates": 5,
+      "accepted": {
+        "control_sha256": "04ce1a76403f44c28f6906a1ae0b66d1992a97a6e05310d2f1e25589fc6ec306",
+        "objective": 0.061244015817362565,
+        "theta": 0.32980709375397077,
+        "F_squared": 0.005142881847472686,
+        "F_norm": 0.07171388880455923,
+        "mixed_gradient_inf": 0.029433926500934744,
+        "tangent_gradient_norm": 0.07171144831463973,
+        "normal_mixture": 0.0005916317177438605,
+        "normal_minus": -0.09359287898229052,
+        "normal_plus": 0.19198166590695337,
+        "static_face_value": 0.0,
+        "block_gradient_norms": [
+          0.058445483957265426,
+          0.04152580351473541,
+          0.0016170636750926226
+        ],
+        "status": "accepted",
+        "alpha": 0.00033324220390273604,
+        "actual_path_norm": 6.431459934796355e-06,
+        "J_armijo_passed": true,
+        "F_squared_armijo_passed": true,
+        "branch_pair_passed": true,
+        "actual_F_squared_decrease_percent": 0.046121565679491106,
+        "predicted_F_squared": 0.005142881846424995,
+        "finite_F_linearization_relative_error": 8.259126594915461e-08,
+        "Q_y_3_2_static": 1.0973708506473168e-07,
+        "branch_changes_from_base": {
+          "changed_limiter_stages": 0,
+          "changed_other_face_sign_stages": 0,
+          "active_choose_left_changes": []
+        },
+        "unapplied_saved_gradient_theta_min": 0.3277353694762579,
+        "unapplied_saved_gradient_min_F_squared": 0.005142531819383246
+      },
+      "trials": [
+        {
+          "control_sha256": "fe9850d82d47add0fed036535ce8f2720212df313ad0da279084f4a29c039084",
+          "objective": 0.06124051643749473,
+          "theta": 0.33440118463808227,
+          "F_squared": 0.00655565171789884,
+          "F_norm": 0.0809669791822496,
+          "mixed_gradient_inf": 0.04989986755487944,
+          "tangent_gradient_norm": 0.0686894185957252,
+          "normal_mixture": -0.0428650847529791,
+          "normal_minus": -0.1382949122591062,
+          "normal_plus": 0.14708035520416385,
+          "static_face_value": 0.0,
+          "block_gradient_norms": [
+            0.058543518045712874,
+            0.05581672294705138,
+            0.0035779396560365606
+          ],
+          "status": "rejected",
+          "alpha": 0.005331875262443777,
+          "actual_path_norm": 0.00010290336010078124,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_pair_passed": true,
+          "actual_F_squared_decrease_percent": -27.411601958270595,
+          "predicted_F_squared": 0.005125657928220728,
+          "finite_F_linearization_relative_error": 0.5418070184460193,
+          "Q_y_3_2_static": -2.3582209754957617e-06,
+          "branch_changes_from_base": {
+            "changed_limiter_stages": 2,
+            "changed_other_face_sign_stages": 360,
+            "active_choose_left_changes": [
+              [
+                133,
+                1,
+                1,
+                0
+              ],
+              [
+                134,
+                1,
+                1,
+                0
+              ]
+            ]
+          },
+          "unapplied_saved_gradient_theta_min": 0.48460721031792203,
+          "unapplied_saved_gradient_min_F_squared": 0.004718236227018759
+        },
+        {
+          "control_sha256": "7b87e44abe1779569fc2d6bad3371416ab1ef7a3f3221c665840a7d9bc9354c9",
+          "objective": 0.06124237534571286,
+          "theta": 0.3319510028332228,
+          "F_squared": 0.006565471872565652,
+          "F_norm": 0.08102759944960515,
+          "mixed_gradient_inf": 0.050007377937760375,
+          "tangent_gradient_norm": 0.06872035380259543,
+          "normal_mixture": -0.042929999368876766,
+          "normal_minus": -0.13769590620040426,
+          "normal_plus": 0.1477857041056182,
+          "static_face_value": 0.0,
+          "block_gradient_norms": [
+            0.05847162607357396,
+            0.056036437445248284,
+            0.0025413569844817407
+          ],
+          "status": "rejected",
+          "alpha": 0.0026659376312218883,
+          "actual_path_norm": 5.1451679745360496e-05,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_pair_passed": true,
+          "actual_F_squared_decrease_percent": -27.602460425348752,
+          "predicted_F_squared": 0.005130557176065498,
+          "finite_F_linearization_relative_error": 0.5422103669815119,
+          "Q_y_3_2_static": -1.0419763135996463e-06,
+          "branch_changes_from_base": {
+            "changed_limiter_stages": 0,
+            "changed_other_face_sign_stages": 360,
+            "active_choose_left_changes": []
+          },
+          "unapplied_saved_gradient_theta_min": 0.48232846260325113,
+          "unapplied_saved_gradient_min_F_squared": 0.004722487026753893
+        },
+        {
+          "control_sha256": "f289f369e9853abcfa622f9a9ca12470a269b2697e0fda4e50829fd5c9eab1a7",
+          "objective": 0.061243306836478384,
+          "theta": 0.33072591193079304,
+          "F_squared": 0.00657316972514466,
+          "F_norm": 0.08107508695736725,
+          "mixed_gradient_inf": 0.05006106170853214,
+          "tangent_gradient_norm": 0.06875609505957084,
+          "normal_mixture": -0.042962415170750334,
+          "normal_minus": -0.13739616734956978,
+          "normal_plus": 0.14813861771613882,
+          "static_face_value": 1.734723475976807e-18,
+          "block_gradient_norms": [
+            0.058452409465883495,
+            0.05614615811771636,
+            0.002023482492572143
+          ],
+          "status": "rejected",
+          "alpha": 0.0013329688156109441,
+          "actual_path_norm": 2.5725839796402146e-05,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_pair_passed": true,
+          "actual_F_squared_decrease_percent": -27.752071138506686,
+          "predicted_F_squared": 0.00513668123587146,
+          "finite_F_linearization_relative_error": 0.5423046372702385,
+          "Q_y_3_2_static": -3.838542937117939e-07,
+          "branch_changes_from_base": {
+            "changed_limiter_stages": 0,
+            "changed_other_face_sign_stages": 360,
+            "active_choose_left_changes": []
+          },
+          "unapplied_saved_gradient_theta_min": 0.48118889373829377,
+          "unapplied_saved_gradient_min_F_squared": 0.004727400607840741
+        },
+        {
+          "control_sha256": "04b7e202bb54810a3d629b0d5f6daed38e249d1378e456231f16cd11a0e0896f",
+          "objective": 0.06124377312318155,
+          "theta": 0.3301133664795782,
+          "F_squared": 0.00657776498038372,
+          "F_norm": 0.08110342150848952,
+          "mixed_gradient_inf": 0.05008793569563358,
+          "tangent_gradient_norm": 0.06877935778228098,
+          "normal_mixture": -0.0429786566034899,
+          "normal_minus": -0.13724628292221402,
+          "normal_plus": 0.14831509050540764,
+          "static_face_value": 0.0,
+          "block_gradient_norms": [
+            0.058447256366994826,
+            0.05620115270851653,
+            0.0017645503077294664
+          ],
+          "status": "rejected",
+          "alpha": 0.0006664844078054721,
+          "actual_path_norm": 1.2862919879131075e-05,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_pair_passed": true,
+          "actual_F_squared_decrease_percent": -27.841381684065002,
+          "predicted_F_squared": 0.005140661874745335,
+          "finite_F_linearization_relative_error": 0.5423236103158957,
+          "Q_y_3_2_static": -5.4793361563276743e-08,
+          "branch_changes_from_base": {
+            "changed_limiter_stages": 0,
+            "changed_other_face_sign_stages": 360,
+            "active_choose_left_changes": []
+          },
+          "unapplied_saved_gradient_theta_min": 0.4806192142684889,
+          "unapplied_saved_gradient_min_F_squared": 0.004730600056943009
+        },
+        {
+          "control_sha256": "04ce1a76403f44c28f6906a1ae0b66d1992a97a6e05310d2f1e25589fc6ec306",
+          "objective": 0.061244015817362565,
+          "theta": 0.32980709375397077,
+          "F_squared": 0.005142881847472686,
+          "F_norm": 0.07171388880455923,
+          "mixed_gradient_inf": 0.029433926500934744,
+          "tangent_gradient_norm": 0.07171144831463973,
+          "normal_mixture": 0.0005916317177438605,
+          "normal_minus": -0.09359287898229052,
+          "normal_plus": 0.19198166590695337,
+          "static_face_value": 0.0,
+          "block_gradient_norms": [
+            0.058445483957265426,
+            0.04152580351473541,
+            0.0016170636750926226
+          ],
+          "status": "accepted",
+          "alpha": 0.00033324220390273604,
+          "actual_path_norm": 6.431459934796355e-06,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": true,
+          "branch_pair_passed": true,
+          "actual_F_squared_decrease_percent": 0.046121565679491106,
+          "predicted_F_squared": 0.005142881846424995,
+          "finite_F_linearization_relative_error": 8.259126594915461e-08,
+          "Q_y_3_2_static": 1.0973708506473168e-07,
+          "branch_changes_from_base": {
+            "changed_limiter_stages": 0,
+            "changed_other_face_sign_stages": 0,
+            "active_choose_left_changes": []
+          },
+          "unapplied_saved_gradient_theta_min": 0.3277353694762579,
+          "unapplied_saved_gradient_min_F_squared": 0.005142531819383246
+        }
+      ]
+    }
+  ],
+  "selected_direction_model": "baseline_tangent",
+  "selected_control_sha256": "0da57dbc5a4c101c2f24204835a746514b110f4548fe64de40455f4478dfbed1",
+  "selected": {
+    "control_sha256": "0da57dbc5a4c101c2f24204835a746514b110f4548fe64de40455f4478dfbed1",
+    "objective": 0.06124393564803218,
+    "theta": 0.3298981720696071,
+    "F_squared": 0.005132555144362135,
+    "F_norm": 0.07164185330072174,
+    "mixed_gradient_inf": 0.02943565614067692,
+    "tangent_gradient_norm": 0.07163919695919907,
+    "normal_mixture": 0.000616930630798357,
+    "normal_minus": -0.09358503894790843,
+    "normal_plus": 0.19196358651956033,
+    "static_face_value": 0.0,
+    "block_gradient_norms": [
+      0.05837080321357436,
+      0.04149079156964704,
+      0.0019795685106653305
+    ],
+    "status": "accepted",
+    "alpha": 6.37156472286966e-05,
+    "actual_path_norm": 4.570195352920832e-06,
+    "J_armijo_passed": true,
+    "F_squared_armijo_passed": true,
+    "branch_pair_passed": true,
+    "actual_F_squared_decrease_percent": 0.24682499577026729,
+    "predicted_F_squared": 0.00513924172476575,
+    "finite_F_linearization_relative_error": 0.0073494626734233875,
+    "Q_y_3_2_static": 1.0846547097986825e-07,
+    "branch_changes_from_base": {
+      "changed_limiter_stages": 1,
+      "changed_other_face_sign_stages": 0,
+      "active_choose_left_changes": [
+        [
+          88,
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    "unapplied_saved_gradient_theta_min": 0.3277376621747043,
+    "unapplied_saved_gradient_min_F_squared": 0.005132174540958916
+  },
+  "J_decrease_percent": 0.000534998716050783,
+  "F_squared_decrease_percent": 0.24682499577026729,
+  "diagonal_range": [
+    1.0,
+    2840.2344354784955
+  ],
+  "floored_components": 0,
+  "jacobian_row_reverse_products": 24,
+  "direction_HVPs": 4,
+  "resource": {
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_precondition_comparison.py",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/TANGENT_PRECONDITION_COMPARISON_PLAN_20261009.json",
+      "--plan-sha256",
+      "be2886f2686cd04e71d3d244967da378bae9c22e39168c5f22bd85e7801169a4",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/tangent_precondition_comparison_20261009_attempt1/step.json"
+    ],
+    "child_pid": 91565,
+    "exit_code": 0,
+    "resource_termination": null,
+    "monitor_error": null,
+    "elapsed_seconds": 91.36848312499933,
+    "sampled_peak_rss_bytes": 951271424,
+    "rss_samples": 342,
+    "wall_limit_seconds": 660.0,
+    "rss_limit_bytes": 1073741824,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "received_sigterm": false,
+    "child_process_group_cleanup_sent": false,
+    "child_process_group_cleanup_error": null
+  },
+  "minimum_claim": false,
+  "response_claim": false,
+  "FV_external_estimate": 70
+}

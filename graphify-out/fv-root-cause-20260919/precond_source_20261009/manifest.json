@@ -1,0 +1,25 @@
+{
+  "scope": "Exact PR269 current-source bytes before point-residual factoring and directional comparison; original plans/raw unchanged",
+  "snapshots": {
+    "src/advar/fv_point_research_problem.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/precond_source_20261009/fv_point_research_problem.py",
+      "sha256": "ffdb27fd40aa6943ab4c04860695303e4270291377a7b86535c06416704eec19"
+    },
+    "examples/weather_scenarios/fv_point_3h_tangent_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/precond_source_20261009/fv_point_3h_tangent_continuation.py",
+      "sha256": "f9255098fbdc49b888ff1f43ce132339994deab56cf4c219e869437efc5261fe"
+    },
+    "examples/weather_scenarios/fv_point_3h_tangent_resume.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/precond_source_20261009/fv_point_3h_tangent_resume.py",
+      "sha256": "31bf18924c1ce0a525c9be55d65fbc9cbe841850d068717f70eb0efe7a827213"
+    },
+    "tests/test_fv_point_3h_tangent_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/precond_source_20261009/test_fv_point_3h_tangent_continuation.py",
+      "sha256": "5ae92474279e5312a05c6f987ad93fdc7e320665c77c22fe149598dda3f282f0"
+    },
+    "tests/test_fv_point_3h_nonsmooth_coupled_probe.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/precond_source_20261009/test_fv_point_3h_nonsmooth_coupled_probe.py",
+      "sha256": "d1d81b1b35a2e7548236b90453a4141492ae1f3738b74b13ad7e52a6847c13fe"
+    }
+  }
+}

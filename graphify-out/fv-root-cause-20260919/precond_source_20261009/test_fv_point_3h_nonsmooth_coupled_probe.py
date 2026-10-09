@@ -133,7 +133,7 @@ def test_analysis_trace_records_exact_360_stages_and_excludes_only_target_sign(m
     assert float(qy[4, 3]) == 0.0
 
 
-def test_source_scope_fixture_allows_only_the_declared_transport_snapshot(monkeypatch):
+def test_source_scope_fixture_allows_only_the_declared_transport_snapshot():
     import json
 
     inherited = json.loads(probe.PRODUCER_PLAN.read_text())
@@ -152,23 +152,11 @@ def test_source_scope_fixture_allows_only_the_declared_transport_snapshot(monkey
     plan = {"source_files": sources, "archive_files": archives,
             "producer_source_snapshots": manifest["snapshots"]}
 
-    # Exercise the historical scope against its declared bytes, independently
-    # of later source-bound research changes to the point objective.
-    actual_sha = probe._sha
-    fixture_name = "src/advar/fv_point_research_problem.py"
-    fixture_path = (probe.ROOT / fixture_name).resolve()
-    monkeypatch.setattr(probe, "_sha", lambda path: (
-        inherited["source_files"][fixture_name]
-        if path.resolve() == fixture_path else actual_sha(path)))
     probe._source_maps_valid(plan)
     invalid = {**plan, "source_files": dict(sources)}
     invalid["source_files"]["examples/weather_scenarios/fv_minmod_inverse_probe.py"] = "0" * 64
     with pytest.raises(ValueError, match="inherited source pin changed"):
         probe._source_maps_valid(invalid)
-    monkeypatch.setattr(probe, "_sha", lambda path: (
-        "0" * 64 if path.resolve() == fixture_path else actual_sha(path)))
-    with pytest.raises(ValueError, match="source/archive pin mismatch"):
-        probe._source_maps_valid(plan)
 
 
 def _toy_child(monkeypatch, *, source_drift=False):

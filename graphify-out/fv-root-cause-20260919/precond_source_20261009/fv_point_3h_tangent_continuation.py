@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 import sys
 import time
-from typing import Any, Callable, Literal, cast
+from typing import Any, Callable, Literal
 
 import torch
 from torch import Tensor
@@ -88,27 +88,6 @@ def _finite(value: Tensor) -> bool:
     return bool(torch.isfinite(value).all())
 
 
-def _validate_direction_override(reference: Tensor, normal: Tensor, chart_jacobian: Tensor,
-                                 pivot: int, direction: Tensor) -> float:
-    if (direction.shape != reference.shape or direction.dtype != reference.dtype
-            or direction.device != reference.device or not _finite(direction)):
-        raise ValueError("override tangent direction has an invalid shape or value")
-    retained = [i for i in range(reference.numel()) if i != pivot]
-    normal_direction = torch.dot(normal, direction)
-    tangent_budget = _roundoff(reference.dtype,
-        float(torch.linalg.vector_norm(normal)) * float(torch.linalg.vector_norm(direction)))
-    reconstructed = chart_jacobian @ direction[retained]
-    chart_error = float(torch.linalg.vector_norm(reconstructed - direction))
-    chart_budget = _roundoff(reference.dtype,
-        float(torch.linalg.vector_norm(reconstructed)),
-        float(torch.linalg.vector_norm(direction)))
-    if abs(float(normal_direction)) > tangent_budget:
-        raise ValueError("override direction is not tangent to the selected face")
-    if not math.isfinite(chart_error) or chart_error > chart_budget:
-        raise ValueError("override direction does not match the current retained-coordinate chart")
-    return chart_error
-
-
 def _roundoff(dtype: torch.dtype, *scales: float) -> float:
     scale = max(*(abs(float(x)) for x in scales), torch.finfo(dtype).tiny)
     return EPS_MULTIPLIER * torch.finfo(dtype).eps * scale
@@ -152,8 +131,7 @@ def tangent_direction(gminus: Tensor, gplus: Tensor, normal: Tensor,
 def tangent_model(gminus: Tensor, gplus: Tensor, hminus: Tensor, hplus: Tensor,
                   normal: Tensor, chart_jacobian: Tensor, theta: float,
                   *, q: float = 0.0, face_scale: float = FACE_SCALE,
-                  pivot: int | None = None,
-                  direction_override: Tensor | None = None) -> TangentModel:
+                  pivot: int | None = None) -> TangentModel:
     """Build the correction from current side products only.
 
     ``chart_jacobian`` maps retained coordinates to the ambient chart tangent.
@@ -180,14 +158,8 @@ def tangent_model(gminus: Tensor, gplus: Tensor, hminus: Tensor, hplus: Tensor,
     if abs(float(normal_jump)) <= denominator_budget:
         raise ValueError("one-sided gradient jump has unresolved normal component")
 
-    selected_pivot = int(torch.argmax(normal.abs())) if pivot is None else pivot
     mixed, tangent_gradient, chart_direction, support = tangent_direction(
-        gminus, gplus, normal, chart_jacobian, theta, pivot=selected_pivot)
-    direction_chart_error = 0.0
-    if direction_override is not None:
-        direction_chart_error = _validate_direction_override(
-            gminus, normal, chart_jacobian, selected_pivot, direction_override)
-        chart_direction = direction_override
+        gminus, gplus, normal, chart_jacobian, theta, pivot=pivot)
     hmix = (1.0 - theta) * hminus + theta * hplus
     numerator = torch.dot(unit_normal, mixed + hmix)
     delta_theta = -numerator / normal_jump
@@ -206,7 +178,6 @@ def tangent_model(gminus: Tensor, gplus: Tensor, hminus: Tensor, hplus: Tensor,
         float(torch.linalg.vector_norm(residual)) * float(torch.linalg.vector_norm(residual_direction)))
     gates = {"finite": finite,
         **support,
-        "direction_override_chart_error": direction_chart_error,
         "normal_denominator": float(normal_jump),
         "normal_denominator_budget": denominator_budget,
         "both_side_gradients_descend": max(side_products) < -side_budget,
@@ -312,28 +283,6 @@ def fresh_final_closure(proposal: dict[str, Any], repeat: dict[str, Any]) -> boo
     return shared._gradient_pair_match(actual, expected)
 
 
-def _select_direction_candidate(proposals: list[dict[str, Any]],
-                                dtype: torch.dtype) -> dict[str, Any] | None:
-    if not proposals:
-        return None
-    winner = proposals[0]
-    for proposal in proposals[1:]:
-        value, best = float(proposal["F_squared"]), float(winner["F_squared"])
-        scale = max(abs(value), abs(best), torch.finfo(dtype).tiny)
-        tie = abs(value - best) <= 128 * torch.finfo(dtype).eps * scale
-        if value < best and not tie:
-            winner = proposal
-            continue
-        if tie:
-            objective, best_objective = float(proposal["objective"]), float(winner["objective"])
-            objective_scale = max(abs(objective), abs(best_objective), torch.finfo(dtype).tiny)
-            objective_tie = abs(objective - best_objective) <= 128 * torch.finfo(dtype).eps * objective_scale
-            if (objective < best_objective and not objective_tie
-                    or objective_tie and proposal.get("direction_model") == "baseline_tangent"):
-                winner = proposal
-    return winner
-
-
 def bounded_continuation(initial_control: Tensor, theta: float,
                          current_products: Callable[[Tensor, float], tuple[Tensor, Tensor, Tensor, Tensor, float]],
                          side_hvp: Callable[[Tensor, Tensor, int], Tensor],
@@ -341,14 +290,6 @@ def bounded_continuation(initial_control: Tensor, theta: float,
                          candidate_eval: Callable[[Tensor, float, float], dict[str, Any]],
                          final_repeat: Callable[[dict[str, Any]], dict[str, Any]], *,
                          chart_pivot: Callable[[Tensor], int] | None = None,
-                         direction_models: Callable[[Tensor, float, Tensor, Tensor, Tensor,
-                             Tensor, int], list[dict[str, Any]]] | None = None,
-                         model_side_hvp: Callable[[Tensor, Tensor, int, str], Tensor] | None = None,
-                         model_candidate_eval: Callable[[TangentModel, Tensor, float, float],
-                             dict[str, Any]] | None = None,
-                         radius: float = RADIUS,
-                         candidate_limit: int = MAX_CANDIDATES,
-                         direction_progress: Callable[[dict[str, Any]], None] | None = None,
                          committed_progress: Callable[[list[dict[str, Any]]], None] | None = None,
                          max_accepted: int = MAX_ACCEPTED) -> dict[str, Any]:
     """Run at most three accepted tangent corrections with transactional commit.
@@ -364,101 +305,35 @@ def bounded_continuation(initial_control: Tensor, theta: float,
     control, current_theta = initial_control.clone(), float(theta)
     records: list[dict[str, Any]] = []
     for index in range(max_accepted):
-        model_runs: list[dict[str, Any]] = []
         try:
             gminus, gplus, normal, z, q = current_products(control, current_theta)
             pivot = chart_pivot(control) if chart_pivot is not None else None
-            model_specs: list[dict[str, Any]]
-            if direction_models is None:
-                _, _, direction, _ = tangent_direction(gminus, gplus, normal, z, current_theta,
-                                                        pivot=pivot)
-                model_specs = [{"name": "baseline_tangent", "direction": direction,
-                    "direction_override": None, "diagnostics": {}}]
-            else:
-                if pivot is None:
-                    pivot = int(torch.argmax(normal.abs()))
-                model_specs = direction_models(control, current_theta, gminus, gplus,
-                    normal, z, pivot)
-                names = [spec.get("name") for spec in model_specs]
-                if (not 1 <= len(model_specs) <= 2 or len(set(names)) != len(names)
-                        or any(not isinstance(name, str) or not name for name in names)):
-                    raise ValueError("direction model callback must return one or two uniquely named arms")
-            proposals: list[dict[str, Any]] = []
-            selected_pivot = pivot if pivot is not None else int(torch.argmax(normal.abs()))
-            for spec in model_specs:
-                name = cast(str, spec["name"])
-                direction = cast(Tensor, spec["direction"])
-                direction_override = cast(Tensor | None, spec.get("direction_override"))
-                if direction_override is not None:
-                    _validate_direction_override(gminus, normal, z, selected_pivot, direction_override)
-                    if not torch.equal(direction, direction_override):
-                        raise ValueError(f"direction model {name!r} differs from its HVP direction override")
-                else:
-                    _, _, canonical_direction, _ = tangent_direction(
-                        gminus, gplus, normal, z, current_theta, pivot=selected_pivot)
-                    if not torch.equal(direction, canonical_direction):
-                        raise ValueError(f"direction model {name!r} differs from the baseline HVP direction")
-                calculate_hvp = (side_hvp if model_side_hvp is None else
-                    lambda point, vector, side: model_side_hvp(point, vector, side, name))
-                hminus = calculate_hvp(control, direction, -1)
-                hplus = calculate_hvp(control, direction, 1)
-                model = tangent_model(gminus, gplus, hminus, hplus, normal, z,
-                    current_theta, q=q, pivot=selected_pivot,
-                    direction_override=direction_override)
-                if model_candidate_eval is None:
-                    evaluator = candidate_eval
-                else:
-                    evaluator = lambda candidate, trial_theta, alpha, active=model: model_candidate_eval(
-                        active, candidate, trial_theta, alpha)
-                accepted, trials = search_candidates(model, control, evaluator,
-                    chart_candidate=chart_candidate, radius=radius, limit=candidate_limit)
-                for trial in trials:
-                    trial["direction_model"] = name
-                arm = {"name": name, "direction": model.direction.detach().tolist(),
-                    "hminus_direction": hminus.detach().tolist(),
-                    "hplus_direction": hplus.detach().tolist(),
-                    "delta_theta": model.delta_theta,
-                    "delta_theta_numerator": model.delta_theta_numerator,
-                    "delta_theta_denominator": model.delta_theta_denominator,
-                    "mixed_gradient": model.mixed_gradient.detach().tolist(),
-                    "tangent_gradient": model.tangent_gradient.detach().tolist(),
-                    "residual": model.residual.detach().tolist(),
-                    "residual_direction": model.residual_direction.detach().tolist(),
-                    "side_products": list(model.side_products), "merit_product": model.merit_product,
-                    "gates": model.gates, "diagnostics": spec.get("diagnostics", {}),
-                    "trials": trials, "accepted": accepted is not None}
-                model_runs.append(arm)
-                if direction_progress is not None:
-                    direction_progress({"index": index,
-                        "base_control_sha256": _tensor_sha(control),
-                        "theta": current_theta,
-                        "model_comparisons": model_runs.copy()})
-                if accepted is not None:
-                    accepted["direction_model"] = name
-                    proposals.append(accepted)
-            accepted = _select_direction_candidate(proposals, initial_control.dtype)
+            _, _, direction, _ = tangent_direction(gminus, gplus, normal, z, current_theta,
+                                                    pivot=pivot)
+            hminus = side_hvp(control, direction, -1)
+            hplus = side_hvp(control, direction, 1)
+            model = tangent_model(gminus, gplus, hminus, hplus, normal, z, current_theta,
+                                  q=q, pivot=pivot)
+            accepted, trials = search_candidates(model, control, candidate_eval,
+                chart_candidate=chart_candidate)
         except Exception as error:
             records.append({"index": index, "theta": current_theta, "accepted": False,
-                "base_control_sha256": _tensor_sha(control),
-                "model_comparisons": model_runs,
                 "refusal": f"current tangent evaluation raised {type(error).__name__}: {error}"})
             break
         item: dict[str, Any] = {"index": index, "base_control_sha256": _tensor_sha(control),
-            "theta": current_theta, "model_comparisons": model_runs, "accepted": False}
-        if model_runs:
-            winner_name = None if accepted is None else accepted["direction_model"]
-            winner = next((arm for arm in model_runs if arm["name"] == winner_name), model_runs[0])
-            item.update({key: winner[key] for key in (
-                "direction", "hminus_direction", "hplus_direction", "delta_theta",
-                "delta_theta_numerator", "delta_theta_denominator", "mixed_gradient",
-                "tangent_gradient", "residual", "residual_direction", "side_products",
-                "merit_product", "gates")})
-            item["selected_direction_model"] = winner_name
-            item["trials"] = [trial for arm in model_runs for trial in arm["trials"]]
-        else:
-            item["trials"] = []
+            "theta": current_theta,
+            "direction": model.direction.detach().tolist(), "hminus_direction": hminus.detach().tolist(),
+            "hplus_direction": hplus.detach().tolist(), "delta_theta": model.delta_theta,
+            "delta_theta_numerator": model.delta_theta_numerator,
+            "delta_theta_denominator": model.delta_theta_denominator,
+            "mixed_gradient": model.mixed_gradient.detach().tolist(),
+            "tangent_gradient": model.tangent_gradient.detach().tolist(),
+            "residual": model.residual.detach().tolist(),
+            "residual_direction": model.residual_direction.detach().tolist(),
+            "side_products": list(model.side_products), "merit_product": model.merit_product,
+            "gates": model.gates, "trials": trials, "accepted": False}
         if accepted is None:
-            item["refusal"] = "no direction model produced a candidate passing the tangent search gates"
+            item["refusal"] = "no candidate passed the current tangent search gates"
             records.append(item)
             break
         try:
@@ -656,10 +531,7 @@ def _observe(probe: Any, problem: Any, control: Tensor, parameters: Tensor,
 def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
                     plan_loader: Callable[[Path, str], dict[str, Any]] | None = None,
                     base_loader: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
-                    base_control_sha256: str | None = None,
-                    direction_model_factory: Callable[[dict[str, Any]], Callable[
-                        [Tensor, float, Tensor, Tensor, Tensor, Tensor, int],
-                        list[dict[str, Any]]]] | None = None) -> dict[str, Any]:
+                    base_control_sha256: str | None = None) -> dict[str, Any]:
     start = time.monotonic()
     plan = (plan_loader or _load_plan)(plan_path, plan_sha)
     base = (base_loader or _load_current_base)(plan)
@@ -667,19 +539,16 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
     if base_control_sha256 is not None and actual_base_sha != base_control_sha256:
         raise ValueError("loaded continuation control differs from its frozen base hash")
     expected_base_sha = base_control_sha256 or actual_base_sha
-    active_policy = plan.get("policy", POLICY)
-    deadline = start + float(active_policy["internal_seconds"])
+    deadline = start + POLICY["internal_seconds"]
     record: dict[str, Any] = {"phase": "running", "execution_status": "running",
         "numerical_status": "preflight", "plan_sha256": plan_sha,
-        "base_control_sha256": actual_base_sha, "policy": active_policy,
+        "base_control_sha256": actual_base_sha, "policy": POLICY,
         "current_control": base["control"].tolist(),
         "current_control_sha256": actual_base_sha, "current_theta": base["theta"],
         "last_confirmed_control": base["control"].tolist(),
         "last_confirmed_control_sha256": actual_base_sha,
         "last_confirmed_theta": base["theta"], "last_confirmed_iterations": 0,
         "hvp_calls_started": 0, "hvp_calls_completed": 0, "hvp_history": [],
-        "jacobian_rows_started": 0, "jacobian_rows_completed": 0,
-        "jacobian_row_history": [],
         "iterations": [], "candidate_committed": False, "active_candidate_committed": False,
         "optimizer_steps_applied": 0, "full_smooth_root": False,
         "minimum_claim": False, "response_claim": False}
@@ -707,13 +576,7 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
     weights = geometry._face_weights(problem, axis=FACE_AXIS, row=FACE_ROW, column=FACE_COLUMN)
     if abs(float(weights.abs().max()) - FACE_SCALE) > 128 * torch.finfo(weights.dtype).eps * FACE_SCALE:
         raise ValueError("selected-face scale differs from the frozen 0.84 policy")
-    model_state: dict[str, Any] = {}
-    direction_models = (None if direction_model_factory is None else
-        direction_model_factory({"problem": problem, "parameters": parameters,
-            "record": record, "output": output, "deadline": deadline,
-            "weights": weights, "plan": plan, "plan_path": plan_path,
-            "plan_sha": plan_sha, "model_state": model_state}))
-    shared._deadline(deadline, float(active_policy["internal_seconds"]))
+    shared._deadline(deadline, POLICY["internal_seconds"])
     initial = _observe(shared, problem, base["control"], parameters, weights)
     jtol = 128 * torch.finfo(base["control"].dtype).eps * max(
         abs(float(initial["native_j"])), abs(base["objective"]), torch.finfo(base["control"].dtype).tiny)
@@ -757,10 +620,11 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
     record["last_confirmed_control_sha256"] = actual_base_sha
     record["last_confirmed_theta"] = base["theta"]
     _write(output, record)
+    model_state: dict[str, Any] = {}
     model_state["current_observed"] = initial
 
     def current_products(control: Tensor, theta: float):
-        shared._deadline(deadline, float(active_policy["internal_seconds"]))
+        shared._deadline(deadline, POLICY["internal_seconds"])
         if (torch.equal(control, closure_state["control"]) and theta == closure_state["theta"]
                 and "observed" in closure_state):
             observed = closure_state["observed"]
@@ -784,30 +648,17 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
         model_state["current_observed"] = observed
         return gm, gp, normal, z, float(observed["q"])
 
-    def counted_side_hvp(control: Tensor, direction: Tensor, sign: int,
-                         model_name: str | None) -> Tensor:
+    def side_hvp(control: Tensor, direction: Tensor, sign: int) -> Tensor:
         gfn = torch.func.grad(problem.objective, argnums=0)
         def calculate():
             with shared.transport.selected_face_extension(
                     FACE_AXIS, FACE_ROW, FACE_COLUMN, sign):
                 return torch.func.jvp(lambda point: gfn(point, parameters),
                     (control,), (direction,))[1]
-        label = {"phase": "current_tangent", "side": sign,
+        return shared._counted_hvp(record, output, deadline,
+            {"phase": "current_tangent", "side": sign,
              "base_control_sha256": _tensor_sha(control), "theta": model_state["theta"],
-             "direction_sha256": _tensor_sha(direction),
-             "operator": "selected_face_extension", "scope": "one current chart tangent"}
-        if model_name is not None:
-            label["direction_model"] = model_name
-        return shared._counted_hvp(record, output, deadline, label, calculate)
-
-    def side_hvp(control: Tensor, direction: Tensor, sign: int) -> Tensor:
-        result = counted_side_hvp(control, direction, sign, None)
-        model_state["hminus" if sign < 0 else "hplus"] = result
-        return result
-
-    def side_hvp_for_model(control: Tensor, direction: Tensor, sign: int,
-                           model_name: str) -> Tensor:
-        return counted_side_hvp(control, direction, sign, model_name)
+             "operator": "selected_face_extension", "scope": "one current chart tangent"}, calculate)
 
     def chart_pivot(control: Tensor) -> int:
         return geometry._pivot(control, weights)
@@ -819,18 +670,21 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
         coordinates[retained] = coordinates[retained] + alpha * direction[retained]
         return geometry._chart(coordinates, weights, pivot, 0.0)
 
-    def candidate_eval_model(model: TangentModel, candidate: Tensor,
-                             theta: float, alpha: float) -> dict[str, Any]:
-        shared._deadline(deadline, float(active_policy["internal_seconds"]))
+    def candidate_eval(candidate: Tensor, theta: float, alpha: float) -> dict[str, Any]:
+        shared._deadline(deadline, POLICY["internal_seconds"])
         observed = _observe(shared, problem, candidate, parameters, weights)
+        gm0, gp0 = model_state["gm"], model_state["gp"]
+        model = tangent_model(gm0, gp0, model_state["hminus"], model_state["hplus"],
+            model_state["normal"], model_state["z"], model_state["theta"],
+            q=float(model_state["observed"]["q"]), pivot=model_state["pivot"])
         ftrial = torch.cat(((1 - theta) * observed["side"][-1][1]
                              + theta * observed["side"][1][1],
                              (observed["q"] / FACE_SCALE).reshape(1)))
         f2 = float(torch.dot(ftrial, ftrial))
         fbase2 = float(torch.dot(model.residual, model.residual))
         fbound = fbase2 + 2 * F_C1 * alpha * model.merit_product
-        jslope = max(float(torch.dot(model_state["gm"], model.direction)),
-                     float(torch.dot(model_state["gp"], model.direction)))
+        jslope = max(float(torch.dot(gm0, model.direction)),
+                     float(torch.dot(gp0, model.direction)))
         jbound = float(model_state["observed"]["native_j"]) + J_C1 * alpha * jslope
         return {"objective": float(observed["native_j"]), "theta": theta,
             "J_armijo_passed": bool(float(observed["native_j"]) <= jbound),
@@ -848,15 +702,8 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
             "side_gradients": {str(s): observed["side"][s][1].tolist() for s in (-1, 1)},
             "branch_trace": {str(s): observed["traces"][s] for s in (-1, 1)}}
 
-    def candidate_eval(candidate: Tensor, theta: float, alpha: float) -> dict[str, Any]:
-        gminus, gplus = model_state["gm"], model_state["gp"]
-        model = tangent_model(gminus, gplus, model_state["hminus"], model_state["hplus"],
-            model_state["normal"], model_state["z"], model_state["theta"],
-            q=float(model_state["observed"]["q"]), pivot=model_state["pivot"])
-        return candidate_eval_model(model, candidate, theta, alpha)
-
     def final_repeat(proposal: dict[str, Any]) -> dict[str, Any]:
-        shared._deadline(deadline, float(active_policy["internal_seconds"]))
+        shared._deadline(deadline, POLICY["internal_seconds"])
         candidate = torch.as_tensor(proposal["control"], dtype=base["control"].dtype)
         observed = _observe(shared, problem, candidate, parameters, weights)
         native_match = abs(float(observed["native_j"]) - float(proposal["objective"])) <= 128 * torch.finfo(candidate.dtype).eps * max(
@@ -905,6 +752,17 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
             record["last_confirmed_closure"] = repeat
         return repeat
 
+    def candidate_eval_with_model(candidate: Tensor, theta: float, alpha: float):
+        model_state["hminus"], model_state["hplus"] = (
+            model_state["latest_hminus"], model_state["latest_hplus"])
+        return candidate_eval(candidate, theta, alpha)
+
+    # Capture each fresh HVP for the current point; the model itself is built by the shared kernel.
+    def tracked_hvp(control: Tensor, direction: Tensor, sign: int) -> Tensor:
+        result = side_hvp(control, direction, sign)
+        model_state["latest_hminus" if sign < 0 else "latest_hplus"] = result
+        return result
+
     def committed_progress(iterations: list[dict[str, Any]]) -> None:
         confirmed = closure_state["control"]
         record["iterations"] = iterations
@@ -920,25 +778,9 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
         record["last_confirmed_iterations"] = closure_state["accepted_count"]
         _write(output, record)
 
-    def direction_progress(progress: dict[str, Any]) -> None:
-        record["phase"] = "running"
-        record["comparison_progress"] = progress
-        record["jacobian_rows_started"] = int(record.get("jacobian_rows_started", 0))
-        record["jacobian_rows_completed"] = int(record.get("jacobian_rows_completed", 0))
-        _write(output, record)
-
     result = bounded_continuation(base["control"], base["theta"], current_products,
-        side_hvp, chart_candidate, candidate_eval, closed_repeat,
-        chart_pivot=chart_pivot, direction_models=direction_models,
-        model_side_hvp=(side_hvp_for_model if direction_models is not None else None),
-        model_candidate_eval=(candidate_eval_model if direction_models is not None else None),
-        radius=float(active_policy["radius"]),
-        candidate_limit=int(active_policy["candidate_grid_per_direction"]
-            if "candidate_grid_per_direction" in active_policy
-            else active_policy["max_candidates_per_iteration"]),
-        direction_progress=(direction_progress if direction_models is not None else None),
-        committed_progress=committed_progress,
-        max_accepted=int(active_policy["max_accepted_iterations"]))
+        tracked_hvp, chart_candidate, candidate_eval_with_model, closed_repeat,
+        chart_pivot=chart_pivot, committed_progress=committed_progress)
     control, theta = result["control"], result["theta"]
     final_observed = (closure_state.get("observed") if torch.equal(control, closure_state["control"])
         else None) or model_state.get("current_observed", initial)
@@ -948,14 +790,10 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
     source_after = shared._source_hashes(plan, plan_path, plan_sha)
     source_ok, runtime_ok = source_after == source_before, runtime_after == runtime_before
     deadline_ok = time.monotonic() < deadline
-    row_budget = active_policy.get("jacobian_row_vjp_calls")
-    row_closure_ok = (record["jacobian_rows_started"] == record["jacobian_rows_completed"]
-        and (row_budget is None or record["jacobian_rows_completed"] == int(row_budget)))
     closure_ok = (final_observed["pair"]["passed"] and final_observed["face_ok"]
         and final_observed["side_objectives_match_native"] and final_observed["side_gradients_finite"]
         and fixed_ok and runtime_ok and source_ok and deadline_ok
-        and record["hvp_calls_started"] == record["hvp_calls_completed"]
-        and row_closure_ok)
+        and record["hvp_calls_started"] == record["hvp_calls_completed"])
     committed = result["accepted_iterations"]
     if committed == MAX_ACCEPTED:
         numerical_status = "tangent_continuation_cap_reached"
@@ -963,9 +801,6 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
         numerical_status = "tangent_continuation_stopped_after_commit"
     else:
         numerical_status = "tangent_continuation_refused"
-    if direction_models is not None:
-        numerical_status = ("tangent_precondition_comparison_accepted" if committed
-            else "tangent_precondition_comparison_refused")
     record.update(phase="finished", execution_status="completed" if closure_ok else "failed",
         numerical_status=numerical_status if closure_ok else "diagnostic_closure_failed",
         candidate_type=result["candidate_type"], iterations=result["iterations"],
@@ -997,9 +832,6 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path, *,
                plan_loader: Callable[[Path, str], dict[str, Any]] | None = None,
                base_loader: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
                base_control_sha256: str | None = None,
-               direction_model_factory: Callable[[dict[str, Any]], Callable[
-                   [Tensor, float, Tensor, Tensor, Tensor, Tensor, int],
-                   list[dict[str, Any]]]] | None = None,
                initial_theta: float | None = None) -> dict[str, Any]:
     expected_base_sha = base_control_sha256 or BASE_CONTROL_SHA
     fallback_theta = BASE_THETA if initial_theta is None else initial_theta
@@ -1019,8 +851,6 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path, *,
             injected["base_loader"] = base_loader
         if base_control_sha256 is not None:
             injected["base_control_sha256"] = base_control_sha256
-        if direction_model_factory is not None:
-            injected["direction_model_factory"] = direction_model_factory
         return _run_child_impl(plan_path, plan_sha, output, **injected)
     except Exception as error:
         try:
@@ -1146,66 +976,11 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
         history_ok = (isinstance(history, list)
             and len(history) == child.get("hvp_calls_completed")
             and all(item.get("status") == "completed" for item in history))
-        comparison = plan.get("experiment_kind") == "current_tangent_precondition_comparison"
         for item in accepted:
             current_point_hvps = [entry for entry in history
                 if entry.get("base_control_sha256") == item.get("base_control_sha256")]
-            if comparison:
-                arms = item.get("model_comparisons", [])
-                expected_names = {"baseline_tangent", "robust_gn_jacobi"}
-                history_ok = history_ok and len(arms) == 2 \
-                    and {arm.get("name") for arm in arms} == expected_names
-                for arm in arms:
-                    arm_hvps = [entry for entry in current_point_hvps
-                        if entry.get("direction_model") == arm.get("name")]
-                    direction_sha = _tensor_sha(torch.as_tensor(arm.get("direction", []),
-                        dtype=torch.float64))
-                    history_ok = history_ok and len(arm_hvps) == 2 \
-                        and {entry.get("side") for entry in arm_hvps} == {-1, 1} \
-                        and all(entry.get("direction_sha256") == direction_sha
-                            and entry.get("theta") == item.get("theta")
-                            and entry.get("operator") == "selected_face_extension"
-                            and entry.get("scope") == "one current chart tangent"
-                            for entry in arm_hvps)
-            else:
-                history_ok = history_ok and len(current_point_hvps) == 2 \
-                    and {entry.get("side") for entry in current_point_hvps} == {-1, 1}
-        row_history = child.get("jacobian_row_history", [])
-        row_accounting_ok = (not comparison or (
-            child.get("jacobian_rows_started") == child.get("jacobian_rows_completed") == 24
-            and len(row_history) == 24
-            and all(row.get("status") == "completed" for row in row_history)))
-        comparison_structure_ok = True
-        if comparison:
-            comparison_rows = child.get("iterations", [])
-            comparison_structure_ok = (isinstance(comparison_rows, list)
-                and len(comparison_rows) == 1
-                and len(comparison_rows[0].get("model_comparisons", [])) == 2
-                and {arm.get("name") for arm in comparison_rows[0]["model_comparisons"]}
-                    == {"baseline_tangent", "robust_gn_jacobi"}
-                and all(isinstance(arm.get("trials"), list)
-                    and len(arm.get("trials", [])) <= int(plan["policy"]["candidate_grid_per_direction"])
-                    for arm in comparison_rows[0]["model_comparisons"]))
-            if comparison_structure_ok:
-                for arm in comparison_rows[0]["model_comparisons"]:
-                    direction = torch.as_tensor(arm.get("direction", []), dtype=torch.float64)
-                    arm_hvps = [entry for entry in history
-                        if entry.get("base_control_sha256") == comparison_rows[0].get("base_control_sha256")
-                        and entry.get("direction_model") == arm.get("name")]
-                    direction_sha = _tensor_sha(direction) if direction.shape == (26,) else None
-                    comparison_structure_ok = (comparison_structure_ok and direction.shape == (26,)
-                        and bool(torch.isfinite(direction).all())
-                        and len(arm_hvps) == 2
-                        and {entry.get("side") for entry in arm_hvps} == {-1, 1}
-                        and all(entry.get("direction_sha256") == direction_sha
-                            and entry.get("theta") == comparison_rows[0].get("theta")
-                            and entry.get("operator") == "selected_face_extension"
-                            and entry.get("scope") == "one current chart tangent"
-                            for entry in arm_hvps)
-                        and isinstance(arm.get("hminus_direction"), list)
-                        and isinstance(arm.get("hplus_direction"), list)
-                        and arm.get("accepted") is any(
-                            trial.get("accepted") is True for trial in arm.get("trials", [])))
+            history_ok = history_ok and len(current_point_hvps) == 2 \
+                and {entry.get("side") for entry in current_point_hvps} == {-1, 1}
         closed = (child.get("phase") == "finished"
             and child.get("plan_sha256") == plan_sha
             and child.get("base_control_sha256") == expected_base_sha
@@ -1220,10 +995,7 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
             and child.get("optimizer_steps_applied") == len(accepted)
             and child.get("hvp_calls_started") == child.get("hvp_calls_completed")
             and child.get("hvp_calls_completed", 0) <= int(plan["policy"]["hvp_calls"])
-            and (not comparison or child.get("hvp_calls_completed") == int(plan["policy"]["hvp_calls"]))
             and history_ok
-            and row_accounting_ok
-            and comparison_structure_ok
             and len(accepted) <= int(plan["policy"]["max_accepted_iterations"])
             and final_commit_matches
             and child.get("current_control_sha256") == _tensor_sha(torch.as_tensor(
