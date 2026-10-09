@@ -1,0 +1,49 @@
+{
+  "scope": "Fresh team audit of merged PR267; fixes preserve original plan/raw/metrics; no production rerun",
+  "reviewed_PR": 267,
+  "reviewed_head": "391156a6853682077d836ed1dfecd0a35fa8f481",
+  "reviewed_main": "63610e9540809804d536814f59fcfed3769c2867",
+  "teams": [
+    "AUDIT267_MATH_RED_20261009.md",
+    "AUDIT267_STATE_RED_20261009.md",
+    "AUDIT267_EVIDENCE_GREEN_20261009.md"
+  ],
+  "original_source_snapshots": "tangent_actual_source_20261009/manifest.json",
+  "findings": [
+    {
+      "id": "P2-partial-current-state",
+      "status": "fixed with real child callback interruption regression",
+      "scope": "durable partial receipt top-level current fields stale under hard termination; lastconfirmed preserved; original completedrun unaffected"
+    },
+    {
+      "id": "P2-common-face-test",
+      "status": "implemented; analytic tests pass",
+      "scope": "side extensions share restricted objective; full ambient F chart-path derivative checked"
+    },
+    {
+      "id": "P3-stale-checklist",
+      "status": "fixed",
+      "scope": "PR267 integration recordedcomplete against savedreceipt/GitHub"
+    },
+    {
+      "id": "P3-recovery-domain",
+      "status": "fixed with three malformed-checkpoint regressions",
+      "scope": "outside normal writer path; invalid theta/count cannot be promoted"
+    }
+  ],
+  "production_runs": 0,
+  "original_accepted_control": "ed106d7bc277906141e9d4a52aea529c575c9ac17df334fcbfb8d9c5013d44f7",
+  "original_J_F_results_unchanged": true,
+  "phase1_historical": 100,
+  "FV_external_estimate": 70,
+  "tests": "49 passed;18 existing warnings;2.17s",
+  "types": "0 errors",
+  "old_plan_rerun": "Intentionally refuses changed live source pins; use archived executed source or a new reviewed source-bound plan",
+  "final_GREEN": "AUDIT267_GREEN_FINAL_20261009.md",
+  "final_RED": "AUDIT267_RED_FINAL_20261009.md",
+  "remaining_scope_limits": [
+    "No OS-level termination/FV rerun; mocked interruption proves file snapshot",
+    "Recovery does not certify arbitrary externally modified partial-receipt history",
+    "Qualified optimum/coupled response/reanalysis/independent future validation remain open"
+  ]
+}
