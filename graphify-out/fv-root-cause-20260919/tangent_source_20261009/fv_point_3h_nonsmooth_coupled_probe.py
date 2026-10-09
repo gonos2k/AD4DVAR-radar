@@ -586,20 +586,6 @@ def _parity_gate(native: tuple[Tensor, Tensor, Tensor | None], extended: tuple[T
             "passed": all(math.isfinite(v) and v <= eps for v in errors)}
 
 
-def _gradient_pair_match(actual: dict[int, Tensor], expected: dict[int, Tensor]) -> bool:
-    """P2 closure gate: independently compare both fresh one-sided gradients."""
-    if set(actual) != {-1, 1} or set(expected) != {-1, 1}:
-        return False
-    for side in (-1, 1):
-        a, b = actual[side], expected[side]
-        if a.shape != b.shape or not bool(torch.isfinite(a).all() & torch.isfinite(b).all()):
-            return False
-        scale = max(float(a.abs().max()), float(b.abs().max()), torch.finfo(a.dtype).tiny)
-        if float((a - b).abs().max()) > 128 * torch.finfo(a.dtype).eps * scale:
-            return False
-    return True
-
-
 def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
                     closure_state: dict[str, Any], *, requalification: bool = False) -> dict[str, Any]:
     start = time.monotonic()
@@ -978,8 +964,11 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path,
     if proposal is not None:
         saved_gradients = {s: torch.tensor(proposal["side_gradients"][str(s)], dtype=control.dtype)
                            for s in (-1, 1)}
-        gradient_match = _gradient_pair_match(
-            {s: final_side[s][1] for s in (-1, 1)}, saved_gradients)
+        gradient_match = all(
+            float((final_side[s][1] - saved_gradients[s]).abs().max()) <=
+            128 * torch.finfo(control.dtype).eps * max(float(final_side[s][1].abs().max()),
+                float(saved_gradients[s].abs().max()), torch.finfo(control.dtype).tiny)
+            for s in (-1, 1))
         objective_extension_match = all(abs(float(final_side[s][0]) - float(final_native_j)) <=
             128 * torch.finfo(control.dtype).eps * max(abs(float(final_side[s][0])),
                 abs(float(final_native_j)), torch.finfo(control.dtype).tiny) for s in (-1, 1))

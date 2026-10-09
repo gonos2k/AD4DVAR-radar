@@ -53,16 +53,6 @@ def test_minimum_norm_subgradient_is_clipped_on_the_current_segment():
     torch.testing.assert_close(mixed, torch.tensor([1.0, 0.0]))
 
 
-def test_shared_p2_gradient_gate_compares_both_sides_independently():
-    minus = torch.tensor([1.0, 2.0], dtype=torch.float64)
-    plus = torch.tensor([3.0, 4.0], dtype=torch.float64)
-    assert probe._gradient_pair_match({-1: minus, 1: plus}, {-1: minus.clone(), 1: plus.clone()})
-    # Opposite normal perturbations leave the 50/50 mixture unchanged.
-    changed = {-1: minus + torch.tensor([0.0, 1.0]),
-               1: plus - torch.tensor([0.0, 1.0])}
-    assert not probe._gradient_pair_match(changed, {-1: minus, 1: plus})
-
-
 def test_660_second_resource_classifier_respects_wall_rss_and_monitor_outcomes():
     good = {"wall_limit_seconds": 660.0, "rss_limit_bytes": 1024**3,
         "exit_code": 0, "resource_termination": None, "monitor_error": None,

@@ -1,0 +1,14 @@
+{
+  "scope": "One root-owned guarded launch; lossless raw archive, raw retained locally",
+  "raw_path": "graphify-out/fv-root-cause-20260919/tangent_continuation_20261009_attempt1/step.json",
+  "raw_sha256": "77726dcdf533bb5b8949b97d7bebf39e28820c00240cdeb16401170a01f9ebd1",
+  "gzip_path": "graphify-out/fv-root-cause-20260919/tangent_continuation_20261009_attempt1/step.json.gz",
+  "gzip_sha256": "62d92dd38a6f97db4871d464201183db9b4bbda31ea224bb8c390646b917958b",
+  "raw_bytes": 23638675,
+  "gzip_bytes": 184593,
+  "guarded_launch_count": 1,
+  "run_path": "graphify-out/fv-root-cause-20260919/tangent_continuation_20261009_attempt1/step.run.json",
+  "run_sha256": "7bd3dbbea7735413e6f3ea0fe34ebd4c46081694443b7d3f4eb8501d62d36854",
+  "resource_path": "graphify-out/fv-root-cause-20260919/tangent_continuation_20261009_attempt1/step.resource.json",
+  "resource_sha256": "0712e9ea77b8253502dc7ae290bd1968d84fd6b123ebea279dac8665f7ad609a"
+}

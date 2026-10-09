@@ -1,0 +1,12 @@
+{
+  "snapshots": {
+    "examples/weather_scenarios/fv_point_3h_nonsmooth_coupled_probe.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/tangent_source_20261009/fv_point_3h_nonsmooth_coupled_probe.py",
+      "sha256": "ec4fb3dc6c0dff256e00d988e6f404a60e78e2dc0ff3fcf7a43a52217cb1955e"
+    },
+    "tests/test_fv_point_3h_nonsmooth_coupled_probe.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/tangent_source_20261009/test_fv_point_3h_nonsmooth_coupled_probe.py",
+      "sha256": "cf7379c3ac57e6bac1bd24581eb7665bccdd70bc85dc81fd3f0031bdea3ba53f"
+    }
+  }
+}

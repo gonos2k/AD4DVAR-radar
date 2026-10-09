@@ -1,0 +1,39 @@
+{
+  "scope": "Fresh current-point HVP model-guided tangent-gradient corrections at accepted PR266 active-face point; no past-Hessian operator reuse",
+  "base_control_sha256": "6b29dacd01fc30ee4041e93dd3ad110c29699c4553d098694086eadeb580a743",
+  "base_theta": 0.3504554198817298,
+  "direction_definition": [
+    "gmix=(1-theta)gminus+theta gplus",
+    "d=-P_T gmix; actual chart tangent constructed from retained coordinates",
+    "hmix=(1-theta)Hminus*d+theta Hplus*d using two fresh current HVPs",
+    "delta_theta=-(nu\u00b7gmix+nu\u00b7hmix)/(nu\u00b7jump)",
+    "DFv=[hmix+jump delta_theta,n\u00b7d/qscale]",
+    "alpha_start=min(1,radius/||d||,-F\u00b7DFv/||DFv||\u00b2)"
+  ],
+  "guards": [
+    "strict current two-side pair and native J agreement",
+    "resolved normal jump and common tangent gradients",
+    "both side cost descent and F merit descent",
+    "actual curved displacement and theta bounds",
+    "actual J/F\u00b2 Armijo + fresh independent per-side gradient match",
+    "input/source/runtime/deadline closure before each commit"
+  ],
+  "policy_proposal": {
+    "maximum_iterations": 3,
+    "maximum_current_HVP": 6,
+    "candidates_per_iteration": 16,
+    "radius": 0.05,
+    "internal_seconds": 240,
+    "outer_seconds": 300,
+    "sampled_RSS_bytes": 1073741824,
+    "guarded_launches": 1,
+    "PCG": 0,
+    "dense_solves": 0
+  },
+  "limits": [
+    "ambient mixed-gradient first-order path model; no projector derivative required for ambient F",
+    "not Newton or a full27 linear-system solve",
+    "no full new Hessian/tangent-curvature/minimum/sensitivity claim",
+    "prior/observations/boundaries/time/original J and smooth-root threshold unchanged"
+  ]
+}
