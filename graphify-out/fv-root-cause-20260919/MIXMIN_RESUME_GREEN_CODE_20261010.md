@@ -1,0 +1,9 @@
+# GREEN code preflight: three-step mixing-minimum resume
+
+**Decision: GREEN clear for the planned single guarded run.** No actionable issue was found in the saved-chain adapter, checkpoint semantics, status classification, or current HVP-history validation.
+
+The frozen plan is a3f24f93e84ec107c36a8888fbe2e644f9a5be3a71bff855ec219bf9be7c0bba with 135 source and 132 archive pins; I checked each pinned file and found no mismatch. The resumed base is pinned to PR271's accepted endpoint e801cf46…, carried theta 0.48316874590279574, native J 0.061240252230254005, and carried F² 0.004689202366398875.
+
+The adapter loads and validates the predecessor's selected final-repeat receipt rather than trusting stale top-level metrics. It reuses the same mixing-minimum point builder, records each point's carried theta separately from its fresh working theta-star with optimizer_step=false, and passes a three-iteration/6-HVP/zero-row budget to the shared transactional continuation. The shared chain validator checks iteration index, predecessor control hash and theta, one named model arm, two completed side HVPs per modeled point with matching direction digest/current and working theta, strict candidate closure, nonzero changed-control commit, point-history values, and final control/theta/step counts. The status distinguishes zero-commit refusal, stopping after partial progress, and reaching the three-step cap. Its existing checkpoint flow preserves the last fully closed control/theta pair on later refusal.
+
+The focused synthetic test log reports 79 passed, 18 existing TorchScript deprecation warnings, in 18.97 seconds; the saved type-check log reports zero errors. Tests cover a three-step/six-HVP fake chain, rejection of a tampered theta link, and preservation of the first confirmed commit after a later-point refusal. I inspected those logs without rerunning tests. No FV, seed, production HVP, guard, or production run was performed.

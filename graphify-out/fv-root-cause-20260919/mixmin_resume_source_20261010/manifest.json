@@ -1,0 +1,12 @@
+{
+  "snapshots": {
+    "examples/weather_scenarios/fv_point_3h_tangent_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/mixmin_resume_source_20261010/fv_point_3h_tangent_continuation.py",
+      "sha256": "9231ac2e48ccb953eb9265cbbfc33cc2cb7952c56238ebe40baaa7f048c2f7fe"
+    },
+    "tests/test_fv_point_3h_tangent_mixing_minimum_probe.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/mixmin_resume_source_20261010/test_fv_point_3h_tangent_mixing_minimum_probe.py",
+      "sha256": "bf4ca71b8f72156b42e64cb0ca8ff47335d4ca7d4e006ee8ea850cedc984cc34"
+    }
+  }
+}

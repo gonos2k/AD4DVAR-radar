@@ -1,0 +1,14 @@
+{
+  "guarded_launch_count": 1,
+  "gzip_bytes": 313638,
+  "gzip_path": "graphify-out/fv-root-cause-20260919/tangent_mixing_minimum_resume_20261010_attempt1/step.json.gz",
+  "gzip_sha256": "4d6d2eb1b81562ab50dc98b0540e0480155ea40a5c9783bcf87d7f4ff4d8e844",
+  "lossless_roundtrip": true,
+  "raw_bytes": 38511526,
+  "raw_path": "graphify-out/fv-root-cause-20260919/tangent_mixing_minimum_resume_20261010_attempt1/step.json",
+  "raw_sha256": "2a36ae30ec9749af1b212ef3395c8125fd46a18ca77956807ddc73ca5e9cb0ff",
+  "resource_path": "graphify-out/fv-root-cause-20260919/tangent_mixing_minimum_resume_20261010_attempt1/step.resource.json",
+  "resource_sha256": "cbca6ceebda5ac70206429c1522e34ae396ba8ca3cf459806c9e5c48237f1972",
+  "run_path": "graphify-out/fv-root-cause-20260919/tangent_mixing_minimum_resume_20261010_attempt1/step.run.json",
+  "run_sha256": "6b99e9e93d60dab10b7377d9c27fa6ab18e9ca1a4e3a35bc8e6e609ca52dbfbf"
+}
