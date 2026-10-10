@@ -1,0 +1,18 @@
+{
+  "FV_extension_percent": 70,
+  "archive": "GN_RELEASED_ARCHIVE_20261010.json",
+  "base": "15516fbae36637547a151066dc4af5eaa0ce74af9dbc5e93fe24694ff96c4cc0",
+  "completed": [
+    "newcurrentGNrows/solve/HVP",
+    "GNonly6candidateP2onecommit",
+    "eventselectorchangedwithoutconstraint"
+  ],
+  "findings": "GN_RELEASED_FINDINGS_20261010.md",
+  "historical_theory_percent": 100,
+  "metrics": "GN_RELEASED_METRICS_20261010.json",
+  "new_confirmed": "29b52a1377caa7fb52431bdbea25124fa827ac548eeefb9b39ce0e5f240d97c4",
+  "remaining": [
+    "new29b52operators/limitedconvergence",
+    "eligibleoptimum/curvature/adjoint/reanalysis/futureverification"
+  ]
+}
