@@ -1,0 +1,2720 @@
+{
+  "consulted_graph": "GNRESUME_GRAPHIFY_20261010.json",
+  "edges": [
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L8",
+      "target": "argparse",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L9",
+      "target": "dataclasses",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L10",
+      "target": "gzip",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L11",
+      "target": "hashlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L12",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L13",
+      "target": "math",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L14",
+      "target": "os",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L15",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L16",
+      "target": "sys",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L17",
+      "target": "time",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L18",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L20",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L21",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L27",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L28",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L29",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L30",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L31",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L67",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L87",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_finite",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_finite",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L87",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L91",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_validate_direction_override",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_validate_direction_override",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L91",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_validate_direction_override",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L91",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_validate_direction_override",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L91",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_validate_direction_override",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L91",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L112",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_roundoff",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_roundoff",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L112",
+      "target": "dtype",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L117",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_minimum_mixture_weight",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_minimum_mixture_weight",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L117",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_minimum_mixture_weight",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L117",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "return_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_minimum_mixture_weight",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L117",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L140",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L140",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L140",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L140",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L140",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L140",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L140",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L140",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L140",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L175",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L175",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L175",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L175",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L175",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L175",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L175",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L175",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "return_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L175",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L246",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_candidate_alphas",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_candidate_alphas",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L246",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L267",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L267",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L267",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L267",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L267",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L267",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L267",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L267",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L267",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L267",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L337",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_fresh_final_closure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_fresh_final_closure",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L337",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_fresh_final_closure",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L337",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L369",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_select_direction_candidate",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_select_direction_candidate",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L369",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_select_direction_candidate",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L369",
+      "target": "dtype",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_select_direction_candidate",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L369",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L557",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_sha",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L557",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L561",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L561",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L565",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L565",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L565",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L572",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L572",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L572",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L633",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_load_current_base",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_current_base",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L633",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_current_base",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L633",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L702",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L702",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L702",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L702",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L702",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L702",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L702",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1225",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_mixing_minimum_resume_chain_closed",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_mixing_minimum_resume_chain_closed",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1225",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_mixing_minimum_resume_chain_closed",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1225",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_mixing_minimum_resume_chain_closed",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1225",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1409",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_mixing_minimum_resume_status",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1418",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1418",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1418",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1418",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1418",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1418",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1418",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1418",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1418",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1695",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_main",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_validate_direction_override",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L94",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_finite",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_validate_direction_override",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L98",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_roundoff",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_minimum_mixture_weight",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L119",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_finite",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L147",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_finite",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L157",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_roundoff",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L187",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_finite",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L207",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L211",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_validate_direction_override",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L225",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_roundoff",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L241",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L282",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_candidate_alphas",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L427",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L447",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_validate_direction_override",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L461",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L476",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L499",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L505",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_select_direction_candidate",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L538",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_fresh_final_closure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L573",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_current_base",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L640",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_load_current_base",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L679",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L733",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L767",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L784",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1036",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1085",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_mixing_minimum_resume_status",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1136",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1152",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1176",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_mixing_minimum_resume_chain_closed",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1293",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_mixing_minimum_resume_chain_closed",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1321",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_fresh_final_closure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1433",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1443",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1454",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1489",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1655",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_mixing_minimum_resume_chain_closed",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1708",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1710",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_1",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_68",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L68",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_118",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L118",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_minimum_mixture_weight",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_143",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L143",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_180",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L180",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_248",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L248",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_candidate_alphas",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_273",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L273",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_338",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L338",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_fresh_final_closure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_408",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L408",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_1228",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1228",
+      "target": "weather_scenarios_fv_point_3h_tangent_continuation_mixing_minimum_resume_chain_closed",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L3",
+      "target": "contextlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L4",
+      "target": "types",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L6",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L8",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L9",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L10",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L11",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L12",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L13",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L16",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_resume_fake_resume",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L134",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_fake_coupled_gn_resume_closes_three_steps_and_renews_point_receipts",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L154",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_later_coupled_gn_refusal_keeps_last_confirmed_step",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L170",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_row_parity_refusal_after_complete_batch_keeps_last_confirmed_step",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L192",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_final_input_closure_failure_preserves_confirmed_control",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L204",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_initial_row_refusal_uses_current_minimum_after_admitted_gradient_roundoff",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L226",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_completed_solve_without_model_receipt_fails_closure_and_preserves_commit",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_fake_coupled_gn_resume_closes_three_steps_and_renews_point_receipts",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L135",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_resume_fake_resume",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_later_coupled_gn_refusal_keeps_last_confirmed_step",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L155",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_resume_fake_resume",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_row_parity_refusal_after_complete_batch_keeps_last_confirmed_step",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L171",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_resume_fake_resume",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_final_input_closure_failure_preserves_confirmed_control",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L193",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_resume_fake_resume",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_initial_row_refusal_uses_current_minimum_after_admitted_gradient_roundoff",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L205",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_resume_fake_resume",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_completed_solve_without_model_receipt_fails_closure_and_preserves_commit",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L227",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_resume_fake_resume",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "llm_tokens": 0,
+  "nodes": [
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation",
+      "label": "fv_point_3h_tangent_continuation.py",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_tangentmodel",
+      "label": "TangentModel",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L67"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_finite",
+      "label": "_finite()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L87"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tensor",
+      "label": "Tensor",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L87"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_validate_direction_override",
+      "label": "_validate_direction_override()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L91"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_roundoff",
+      "label": "_roundoff()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L112"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "dtype",
+      "label": "dtype",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L112"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_minimum_mixture_weight",
+      "label": "minimum_mixture_weight()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L117"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_direction",
+      "label": "tangent_direction()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L140"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "any",
+      "label": "Any",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L140"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_tangent_model",
+      "label": "tangent_model()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L175"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_candidate_alphas",
+      "label": "candidate_alphas()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L246"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_search_candidates",
+      "label": "search_candidates()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L267"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_fresh_final_closure",
+      "label": "fresh_final_closure()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L337"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_select_direction_candidate",
+      "label": "_select_direction_candidate()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L369"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_bounded_continuation",
+      "label": "bounded_continuation()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L391"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_sha",
+      "label": "_sha()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L557"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "path",
+      "label": "Path",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L557"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_tensor_sha",
+      "label": "_tensor_sha()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L561"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_write",
+      "label": "_write()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L565"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_load_plan",
+      "label": "_load_plan()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L572"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_load_current_base",
+      "label": "_load_current_base()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L633"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_observe",
+      "label": "_observe()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L702"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_run_child_impl",
+      "label": "_run_child_impl()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L723"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_run_child",
+      "label": "_run_child()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1124"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_mixing_minimum_resume_chain_closed",
+      "label": "_mixing_minimum_resume_chain_closed()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1225"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_mixing_minimum_resume_status",
+      "label": "_mixing_minimum_resume_status()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1409"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_run",
+      "label": "run()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1418"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_main",
+      "label": "main()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1695"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_1",
+      "label": "Guarded fresh-HVP continuation along the selected-face tangent.  This is a model",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_68",
+      "label": "One current point's face-tangent model and its two fresh HVPs.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L68"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_118",
+      "label": "Return the differentiable strict-interior minimizer of the side-gradient norm.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L118"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_143",
+      "label": "Return current mixture, projected gradient, and exact chart tangent.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L143"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_180",
+      "label": "Build the correction from current side products only.      ``chart_jacobian`` ma",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L180"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_248",
+      "label": "Stable radius/merit cap followed by bounded halvings.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L248"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_273",
+      "label": "Search actual chart points; candidate_eval returns independent gate facts.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L273"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_338",
+      "label": "P2 closure: require both fresh side gradients to match the proposal.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L338"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_408",
+      "label": "Run at most three accepted tangent corrections with transactional commit.      `",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L408"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_tangent_continuation_rationale_1228",
+      "label": "Validate the resume's accepted control/theta/HVP chain without replay.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "source_location": "L1228"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_resume",
+      "label": "test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_resume_fake_resume",
+      "label": "_fake_resume()",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L16"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_fake_coupled_gn_resume_closes_three_steps_and_renews_point_receipts",
+      "label": "test_fake_coupled_gn_resume_closes_three_steps_and_renews_point_receipts()",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L134"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_later_coupled_gn_refusal_keeps_last_confirmed_step",
+      "label": "test_later_coupled_gn_refusal_keeps_last_confirmed_step()",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L154"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_row_parity_refusal_after_complete_batch_keeps_last_confirmed_step",
+      "label": "test_row_parity_refusal_after_complete_batch_keeps_last_confirmed_step()",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L170"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_final_input_closure_failure_preserves_confirmed_control",
+      "label": "test_final_input_closure_failure_preserves_confirmed_control()",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L192"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_initial_row_refusal_uses_current_minimum_after_admitted_gradient_roundoff",
+      "label": "test_initial_row_refusal_uses_current_minimum_after_admitted_gradient_roundoff()",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L204"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_resume_test_completed_solve_without_model_receipt_fails_closure_and_preserves_commit",
+      "label": "test_completed_solve_without_model_receipt_fails_closure_and_preserves_commit()",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "source_location": "L226"
+    }
+  ],
+  "output_tokens": 0,
+  "scope": "Isolated AST refresh of refusal classifier and meaningful regression; no full shared graph rebuild",
+  "sources": {
+    "examples/weather_scenarios/fv_point_3h_tangent_continuation.py": "e6d6aa78d5f88792fa981978cded6caa9984b2d94ea58ad6cfddea4c1b251c42",
+    "tests/test_fv_point_3h_tangent_coupled_gn_resume.py": "0e448bf11c1fa96b6e06cd7b24a9aabd1a0001048257af0e477f203657fcf35b"
+  }
+}

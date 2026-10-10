@@ -1,0 +1,18 @@
+{
+  "scope": "PR274 independent team audit; initial row-only refusal classifier P2 resolved without numerical replay",
+  "finding": "Current working theta instead of carried theta; absent pre-solve counters treated zero only with empty solve history",
+  "status": "fixed",
+  "numerical_reruns": 0,
+  "tests_passed": 89,
+  "types_errors": 0,
+  "actual_PR274_result_unchanged": true,
+  "actual_PR274_execution": "rss_limit with one confirmed step; no global terminal closure",
+  "past_pins_preserved_via_exact_snapshots": "139source/148archive",
+  "remaining": [
+    "Checkpoint transient memory proposal unimplemented",
+    "Three-step GN execution not completed",
+    "Qualified optimum/adjoint/reanalysis/independent future verification"
+  ],
+  "phase1_historical": "100%",
+  "FV_external_weighted_milestones": "70% unchanged"
+}

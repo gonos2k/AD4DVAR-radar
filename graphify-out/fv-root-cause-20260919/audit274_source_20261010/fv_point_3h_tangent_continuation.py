@@ -1264,13 +1264,9 @@ def _mixing_minimum_resume_chain_closed(child: dict[str, Any], plan: dict[str, A
                                 or not math.isfinite(float(row.get("residual_value")))
                                 for row in point_rows)):
                         return False
-                    # The admitted gradient may differ within its own FP64 budget;
-                    # rows use the freshly minimized theta, not the carried theta.
-                    minimum = child.get("base_mixing_minimum", {})
-                    if (not isinstance(minimum, dict)
-                            or minimum.get("reference_carried_theta") != theta
-                            or minimum.get("working_theta_star") != row_theta[0]
-                            or minimum.get("optimizer_step") is not False):
+                    theta_budget = 128.0 * torch.finfo(torch.float64).eps * max(
+                        abs(float(theta)), abs(float(row_theta[0])), torch.finfo(torch.float64).tiny)
+                    if abs(float(row_theta[0]) - float(theta)) > theta_budget:
                         return False
                     terminal_row_only_sha = control_sha
             continue
@@ -1378,8 +1374,8 @@ def _mixing_minimum_resume_chain_closed(child: dict[str, Any], plan: dict[str, A
                 or child.get("jacobian_rows_started") != len(rows)
                 or child.get("jacobian_rows_completed") != len(rows)
                 or not isinstance(solves, list) or len(solves) != len(modeled_points)
-                or child.get("dense_solves_started", 0) != len(solves)
-                or child.get("dense_solves_completed", 0) != len(solves)):
+                or child.get("dense_solves_started") != len(solves)
+                or child.get("dense_solves_completed") != len(solves)):
             return False
         for point in modeled_points:
             point_rows = [row for row in rows
