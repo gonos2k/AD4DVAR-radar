@@ -1,0 +1,36 @@
+{
+  "FV_external_weighted_percent": 70,
+  "J_decrease_percent": 2.204943110441911e-05,
+  "R_decrease_percent": 0.001326611576865865,
+  "actual_optimizer_steps": 1,
+  "confirmed_control_sha256": "311f27d095be4976ca6131b83b6c4f3d46bc404d4f58921800b5600e38ec0652",
+  "current_rss_limit_bytes": 2147483648,
+  "fixed_alpha": 5.574488376651601e-06,
+  "fresh_base_HVPs": 0,
+  "fresh_new_point": {
+    "HVPs": 2,
+    "candidates": 0,
+    "dense_12D_solves": 1,
+    "readiness_complete": true,
+    "row_VJPs": 24
+  },
+  "future_step_or_convergence_claim": false,
+  "historical_phase1_percent": 100,
+  "independent_P2_repeat": true,
+  "legacy_shared_hvp_writer": "stillfulljsondumpsinolderfrozenmodes; newmodeusesstreamingcounter",
+  "limiter_margin_reduction_from_original_base_percent": 81.6195677346596,
+  "minimum_gradient_l2": 0.06692107154151745,
+  "minimum_gradient_linf": 0.02858191814793737,
+  "original_problem_unchanged": true,
+  "remaining": [
+    "Prospectiveactualcontinuationfromnewpoint",
+    "Limitertransitiongeometryifmicroscopicstepspersist",
+    "Phase-specific memorycost and matched-workloadtaper",
+    "Qualifiedoptimum/curvature/activestability/coupledresponse/reanalysis/independentfutureverification"
+  ],
+  "report": "GN_LOCAL_COMMIT_FINDINGS_20261010.md",
+  "reused_base_directional_HVP_vectors": 2,
+  "scope": "One actual fixedlocalcommit withfreshnewpoint GNreadiness",
+  "shared_production_helpers_unchanged": true,
+  "source_input_runtime_deadline_closed": true
+}

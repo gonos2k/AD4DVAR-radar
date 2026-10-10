@@ -1,0 +1,19 @@
+{
+  "confirmed_steps": 1,
+  "execution_status": "completed",
+  "guarded_launch_count": 1,
+  "gzip_bytes": 105706,
+  "gzip_path": "graphify-out/fv-root-cause-20260919/gn_local_commit_20261010_attempt1/step.json.gz",
+  "gzip_sha256": "4e59a33c63b16f0b0c8d62c1bccdd9f46b554427bcf8ec524bb36c802d579a94",
+  "lossless_roundtrip": true,
+  "optimizer_steps_applied": 1,
+  "raw_bytes": 7694618,
+  "raw_path": "graphify-out/fv-root-cause-20260919/gn_local_commit_20261010_attempt1/step.json",
+  "raw_sha256": "0f2892badb2eeebb9ae8d11ff3f3898a7166d68e13e0279e3a3c9625c8c1ff00",
+  "readiness_complete": true,
+  "resource_path": "graphify-out/fv-root-cause-20260919/gn_local_commit_20261010_attempt1/step.resource.json",
+  "resource_sha256": "fbe1a645e18fbb609ceb35581f38f5ff76ae6e57e7ba771d97116f5005e59c66",
+  "run_path": "graphify-out/fv-root-cause-20260919/gn_local_commit_20261010_attempt1/step.run.json",
+  "run_sha256": "590e0d2835ff75098d2ebffc66bf422745526dcf748d48786fad8d3c62a9f35d",
+  "scope": "One fixedlocalcandidate independentlyclosed+freshcurrentGNreadiness only, nosecondstep"
+}

@@ -1,0 +1,18 @@
+{
+  "Gnorm_decrease_percent": 0.0006633079883244797,
+  "J": 0.06119247898831076,
+  "J_decrease_percent": 2.204943110441911e-05,
+  "R_decrease_percent": 0.001326611576865865,
+  "actual_control_displacement_l2": 2.5892284656917755e-07,
+  "minimum_R": 0.004478429816264897,
+  "minimum_gradient_l2": 0.06692107154151745,
+  "minimum_gradient_linf": 0.02858191814793737,
+  "new_point_DG_direction_norm_squared": 0.0072932357305267575,
+  "new_point_actual_next_candidates": 0,
+  "new_point_directional_R_half_slope": -0.005328881415385001,
+  "new_point_max_model_reduction_fraction": 0.8694129170257348,
+  "new_point_model_alpha": 0.7306607947800585,
+  "normalized_limiter_min_gap": 9.075476315907308e-09,
+  "scope": "Arithmeticofsavedclosedpointandfreshdirection,notFV/AD/HVP replay",
+  "theta_star": 0.483079578890406
+}

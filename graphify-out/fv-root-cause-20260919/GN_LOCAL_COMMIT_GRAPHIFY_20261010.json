@@ -1,0 +1,2066 @@
+{
+  "consulted_graph_sha256": "17e6e526fe90916daa384db31c28472acb172ad2cb25716c02aefc6b585f184d",
+  "edges": [
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L9",
+      "target": "argparse",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L10",
+      "target": "gzip",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L11",
+      "target": "hashlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L12",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L13",
+      "target": "math",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L14",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L15",
+      "target": "sys",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L16",
+      "target": "time",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L17",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L19",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L20",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L26",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L27",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L28",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L29",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L30",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L31",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L32",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L33",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L67",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_sha",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L67",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L71",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L71",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L71",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L105",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_verify_latest_local_archive",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_verify_latest_local_archive",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L105",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_verify_latest_local_archive",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L105",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L154",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_atomic_write",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_atomic_write",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L154",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_atomic_write",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L154",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L158",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_persist_closed_commit",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_persist_closed_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L158",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_persist_closed_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L158",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_persist_closed_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L158",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_persist_closed_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L158",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_persist_closed_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L158",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L177",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_persist_readiness_failure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_persist_readiness_failure",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L177",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_persist_readiness_failure",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L177",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_persist_readiness_failure",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L177",
+      "target": "exception",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_persist_readiness_failure",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L177",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L186",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_require_postcommit_counts",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_require_postcommit_counts",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L186",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_require_postcommit_counts",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L186",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_require_postcommit_counts",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L186",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L247",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_candidate_proposal",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_candidate_proposal",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L247",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_candidate_proposal",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L247",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_candidate_proposal",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L247",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L302",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L302",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L302",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L302",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L562",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_run",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L562",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L562",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L562",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L562",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L562",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L585",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_main",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L72",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_verify_latest_local_archive",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L109",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_persist_closed_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L173",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_atomic_write",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_persist_readiness_failure",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L182",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_atomic_write",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L305",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L309",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_verify_latest_local_archive",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L322",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_atomic_write",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L403",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_candidate_proposal",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L410",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L431",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_persist_closed_commit",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L436",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L440",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_persist_readiness_failure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L505",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_atomic_write",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L553",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_require_postcommit_counts",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L563",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L568",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L574",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L595",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L597",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_run",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_rationale_1",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L1",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_gn_local_commit_rationale_106",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L106",
+      "target": "weather_scenarios_fv_point_3h_gn_local_commit_verify_latest_local_archive",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L3",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L4",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L5",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L7",
+      "target": "pytest",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L8",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L10",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L11",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L12",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L15",
+      "target": "tests_test_fv_point_3h_gn_local_commit_closed_pair",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "tests_test_fv_point_3h_gn_local_commit_closed_pair",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L15",
+      "target": "tests_test_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "tests_test_fv_point_3h_gn_local_commit_closed_pair",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L15",
+      "target": "tests_test_fv_point_3h_gn_local_commit_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L34",
+      "target": "tests_test_fv_point_3h_gn_local_commit_test_latest_local_archive_and_closed_base_are_read_only_evidence",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L47",
+      "target": "tests_test_fv_point_3h_gn_local_commit_test_gradient_cancellation_does_not_close_the_fresh_side_pair",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L62",
+      "target": "tests_test_fv_point_3h_gn_local_commit_test_failed_independent_repeat_keeps_the_original_endpoint",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L79",
+      "target": "tests_test_fv_point_3h_gn_local_commit_test_commit_write_failure_preserves_the_previous_zero_count_record",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L101",
+      "target": "tests_test_fv_point_3h_gn_local_commit_test_closed_commit_is_atomic_and_postcommit_failure_preserves_it",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L127",
+      "target": "tests_test_fv_point_3h_gn_local_commit_test_postcommit_hvps_must_bind_to_the_new_control_and_direction",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_commit",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L159",
+      "target": "tests_test_fv_point_3h_gn_local_commit_test_postcommit_rows_and_dense_solve_must_close_at_the_committed_point",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_gn_local_commit_test_gradient_cancellation_does_not_close_the_fresh_side_pair",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L48",
+      "target": "tests_test_fv_point_3h_gn_local_commit_closed_pair",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_gn_local_commit_test_failed_independent_repeat_keeps_the_original_endpoint",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L63",
+      "target": "tests_test_fv_point_3h_gn_local_commit_closed_pair",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_gn_local_commit_test_commit_write_failure_preserves_the_previous_zero_count_record",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L80",
+      "target": "tests_test_fv_point_3h_gn_local_commit_closed_pair",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_gn_local_commit_test_closed_commit_is_atomic_and_postcommit_failure_preserves_it",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L102",
+      "target": "tests_test_fv_point_3h_gn_local_commit_closed_pair",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L8",
+      "target": "argparse",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L9",
+      "target": "gzip",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L10",
+      "target": "hashlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L11",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L12",
+      "target": "math",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L13",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L14",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L16",
+      "target": "numpy",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L37",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_read_json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_read_json",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L37",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_read_json",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L37",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L46",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_tensor",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L46",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "return_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_tensor",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L46",
+      "target": "ndarray",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L53",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_tensor_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_tensor_sha",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L53",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L58",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_near",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_near",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L58",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_near",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L58",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L69",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_p2",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_p2",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L69",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_p2",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L69",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L97",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_resource",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_resource",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L97",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_resource",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L97",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_resource",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L97",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L118",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_audit",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_audit",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L118",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_audit",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L118",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L267",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_main",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_p2",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L84",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_near",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_p2",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L90",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_resource",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L102",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_read_json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_audit",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L120",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_near",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_audit",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L141",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_p2",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_audit",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L143",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_audit",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L148",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_tensor_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_main",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L273",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_read_json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_main",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L274",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_audit",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_main",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L275",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_resource",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_rationale_1",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L1",
+      "target": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "weight": 1.0
+    }
+  ],
+  "llm_tokens": 0,
+  "nodes": [
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit",
+      "label": "fv_point_3h_gn_local_commit.py",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_sha",
+      "label": "_sha()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L67"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_path",
+      "label": "Path",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L67"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_load_plan",
+      "label": "_load_plan()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L71"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "examples_weather_scenarios_fv_point_3h_gn_local_commit_py_any",
+      "label": "Any",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L71"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_verify_latest_local_archive",
+      "label": "_verify_latest_local_archive()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L105"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_atomic_write",
+      "label": "_atomic_write()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L154"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_persist_closed_commit",
+      "label": "_persist_closed_commit()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L158"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_persist_readiness_failure",
+      "label": "_persist_readiness_failure()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L177"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "exception",
+      "label": "Exception",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L177"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_require_postcommit_counts",
+      "label": "_require_postcommit_counts()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L186"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tensor",
+      "label": "Tensor",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L186"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_candidate_proposal",
+      "label": "_candidate_proposal()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L247"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_final_repeat",
+      "label": "_final_repeat()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L262"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_run_child_impl",
+      "label": "_run_child_impl()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L302"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_build_current_gn_readiness",
+      "label": "_build_current_gn_readiness()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L444"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_run",
+      "label": "run()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L562"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_main",
+      "label": "main()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L585"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_rationale_1",
+      "label": "Commit one freshly requalified candidate from the frozen GN local window.  The a",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_gn_local_commit_rationale_106",
+      "label": "Check that the frozen local-window diagnostic is still its latest closed run.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+      "source_location": "L106"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_commit",
+      "label": "test_fv_point_3h_gn_local_commit.py",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_commit_closed_pair",
+      "label": "_closed_pair()",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L15"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_commit_py_any",
+      "label": "Any",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L15"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_commit_test_latest_local_archive_and_closed_base_are_read_only_evidence",
+      "label": "test_latest_local_archive_and_closed_base_are_read_only_evidence()",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L34"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_commit_test_gradient_cancellation_does_not_close_the_fresh_side_pair",
+      "label": "test_gradient_cancellation_does_not_close_the_fresh_side_pair()",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L47"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_commit_test_failed_independent_repeat_keeps_the_original_endpoint",
+      "label": "test_failed_independent_repeat_keeps_the_original_endpoint()",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L62"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_commit_test_commit_write_failure_preserves_the_previous_zero_count_record",
+      "label": "test_commit_write_failure_preserves_the_previous_zero_count_record()",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L79"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_commit_test_closed_commit_is_atomic_and_postcommit_failure_preserves_it",
+      "label": "test_closed_commit_is_atomic_and_postcommit_failure_preserves_it()",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L101"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_commit_test_postcommit_hvps_must_bind_to_the_new_control_and_direction",
+      "label": "test_postcommit_hvps_must_bind_to_the_new_control_and_direction()",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L127"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_commit_test_postcommit_rows_and_dense_solve_must_close_at_the_committed_point",
+      "label": "test_postcommit_rows_and_dense_solve_must_close_at_the_committed_point()",
+      "source_file": "tests/test_fv_point_3h_gn_local_commit.py",
+      "source_location": "L159"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010",
+      "label": "GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_read_json",
+      "label": "_read_json()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L37"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_path",
+      "label": "Path",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L37"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "graphify_out_fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_py_any",
+      "label": "Any",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L37"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_tensor",
+      "label": "_tensor()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L46"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "ndarray",
+      "label": "ndarray",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L46"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_tensor_sha",
+      "label": "_tensor_sha()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L53"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_near",
+      "label": "_near()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L58"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_p2",
+      "label": "_require_p2()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L69"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_require_resource",
+      "label": "_require_resource()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L97"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_audit",
+      "label": "audit()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L118"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_main",
+      "label": "main()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L267"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "fv_root_cause_20260919_gn_local_commit_saved_audit_20261010_rationale_1",
+      "label": "Saved-receipt audit for one GN local commit and its next-point readiness.  This",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py",
+      "source_location": "L1"
+    }
+  ],
+  "scope": "Isolated fixed-candidate approval/test/saved-array analyzer AST, cached localwindow graph consulted; all previous producer/helpers unchanged",
+  "source_files": {
+    "examples/weather_scenarios/fv_point_3h_gn_local_commit.py": "fb0e249dba0b2771536e3c44f830ede069020a0106ed26e671508ca5aeca0d9d",
+    "graphify-out/fv-root-cause-20260919/GN_LOCAL_COMMIT_SAVED_AUDIT_20261010.py": "ac21aa3c61561064a89a3026d5ad3505b120a2f15c79a28e62fa3fb0dc6f92bc",
+    "tests/test_fv_point_3h_gn_local_commit.py": "28b8be561e35db5c0b65f6ab4b750ca6d8db5e9ce0cb934351639ab75226d883"
+  }
+}
