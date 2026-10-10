@@ -1,0 +1,24 @@
+{
+  "FV_extension_percent": 70,
+  "base_point": "027e83cf77f7f9cf97c0c72da9f737b5627d312d6375b698bb5b7f7ae94c6769",
+  "completed": [
+    "negative minmod event identity",
+    "eventvalue anddirectional sensitivity",
+    "originalreplay/directtape exactvalue/frameparity",
+    "3chart sampletransitiondiagnosis"
+  ],
+  "failure_preserved": "LIMITER_EVENT_FAILED_ARCHIVE_20261010.json",
+  "findings": "LIMITER_EVENT_FINDINGS_20261010.md",
+  "historical_theory_percent": 100,
+  "remaining": [
+    "event-aware direction actualcomparison",
+    "qualifiedoptimum/adjoint/reanalysis/futureverification"
+  ],
+  "successful_plan": "LIMITER_EVENT_PLAN_ATTEMPT2_20261010.json",
+  "unchanged": [
+    "originalproblem",
+    "limiter",
+    "optimizerpoint",
+    "RSS2GiB"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "exact_failed_helper_test_source_bytes_preserved": false,
+  "gzip_sha256": "0b3393154ba9543135669da2b9323e532a4e98010ca2e911cc9ceab1d3e24ab6",
+  "lossless_roundtrip": true,
+  "plan_sha256": "75b2e14cd9fed536763b552accdff2912f161a6ab4f2dd67d7dfb4c8aca75de6",
+  "raw_sha256": "703d30df07e64703fcd1c9bbb48d7a112000755530755a63a729bf626e7bca08",
+  "reason": "late helper/test source change after frozen launch; finalsourceclosure correctly refused",
+  "receipts": {
+    "graphify-out/fv-root-cause-20260919/LIMITER_EVENT_FAILED_PLAN_20261010.json": "75b2e14cd9fed536763b552accdff2912f161a6ab4f2dd67d7dfb4c8aca75de6",
+    "graphify-out/fv-root-cause-20260919/limiter_event_20261010_attempt1/diagnostic.json.gz": "0b3393154ba9543135669da2b9323e532a4e98010ca2e911cc9ceab1d3e24ab6",
+    "graphify-out/fv-root-cause-20260919/limiter_event_20261010_attempt1/diagnostic.log": "5b52177008c81a83dbe9bfd434eb46ea09e03c24a4403813d0067b4b6f235ab2",
+    "graphify-out/fv-root-cause-20260919/limiter_event_20261010_attempt1/diagnostic.resource.json": "395fd001cfc05ccdccf855fe02ffba7b7390b4749dd0d99df4fea76acdf7a309",
+    "graphify-out/fv-root-cause-20260919/limiter_event_20261010_attempt1/diagnostic.run.json": "982621a91c51f3575d3bd290f9eedfb9a33df3d2ea4ea8a864ced488470377b0"
+  },
+  "success_claim": false,
+  "supported_scope": "failure receipts and declared hashes only; successfulattempt2 is separate fullypinned execution"
+}

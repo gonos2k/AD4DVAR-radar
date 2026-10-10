@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+    "--child",
+    "--plan-sha256",
+    "3579c2bbf9f3213cec5669948e9de21e47da258720572b291b083c5355e3f79d"
+  ],
+  "child_pid": 43768,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 26.032461374998093,
+  "sampled_peak_rss_bytes": 596967424,
+  "rss_samples": 99,
+  "wall_limit_seconds": 660.0,
+  "rss_limit_bytes": 2147483648,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}

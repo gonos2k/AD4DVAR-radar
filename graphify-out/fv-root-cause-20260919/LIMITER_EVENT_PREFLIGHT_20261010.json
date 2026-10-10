@@ -1,0 +1,8 @@
+{
+  "archive_count": 200,
+  "closed_base_passed": true,
+  "load_plan_passed": true,
+  "plan_sha256": "75b2e14cd9fed536763b552accdff2912f161a6ab4f2dd67d7dfb4c8aca75de6",
+  "production_executed": false,
+  "source_count": 154
+}

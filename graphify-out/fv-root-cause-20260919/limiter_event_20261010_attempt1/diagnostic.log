@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py", line 245, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py", line 234, in main
+    if args.child:_run_child(PLAN,args.plan_sha256,output);return
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py", line 223, in _run_child
+    if inp!=after or source_before!=source_after or runtime!=runtime_after:raise ValueError('original source/input/runtime changed')
+                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: original source/input/runtime changed

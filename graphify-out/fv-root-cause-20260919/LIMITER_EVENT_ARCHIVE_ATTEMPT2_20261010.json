@@ -1,0 +1,19 @@
+{
+  "attempt2_guarded_launch_count": 1,
+  "execution_status": "completed",
+  "gzip_bytes": 37083,
+  "gzip_path": "graphify-out/fv-root-cause-20260919/limiter_event_20261010_attempt2/diagnostic.json.gz",
+  "gzip_sha256": "4b0dbb02674f99e8f21d0fa0bf813b61509c4e05bfb82e03b0f853e0ac409b00",
+  "lossless_roundtrip": true,
+  "optimizer_steps_applied": 0,
+  "plan_sha256": "3579c2bbf9f3213cec5669948e9de21e47da258720572b291b083c5355e3f79d",
+  "prior_failed_guarded_launch_count": 1,
+  "raw_bytes": 119520,
+  "raw_path": "graphify-out/fv-root-cause-20260919/limiter_event_20261010_attempt2/diagnostic.json",
+  "raw_sha256": "47b6b78d824a6ee817d2d014ea74ce14f68076d68c8c75a38ae6a0a7657297ff",
+  "resource_path": "graphify-out/fv-root-cause-20260919/limiter_event_20261010_attempt2/diagnostic.resource.json",
+  "resource_sha256": "c0a29a3836265badc4bacdc8913db3ff3bde84cf2519d770ca3edb3b57230738",
+  "run_path": "graphify-out/fv-root-cause-20260919/limiter_event_20261010_attempt2/diagnostic.run.json",
+  "run_sha256": "ee4fc5f8c630cc9b73142c22eb36d6c7f7fa75be7556b949f39947e0845dbc35",
+  "scope": "eventgrad2/JVP2/3samples; nooptimizer/HVP/row/solve"
+}
