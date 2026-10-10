@@ -1,0 +1,55 @@
+{
+  "actual_policy_resource_result": {
+    "accepted_steps": 1,
+    "completed_without_resource_stop": true,
+    "elapsed_seconds": 287.313118416816,
+    "numerical_status": "stopped_after_commit_candidate_merit_refusal",
+    "planned_maximum_new_steps": 3,
+    "refused_candidates_after_commit": 16,
+    "rss_limit_bytes": 2147483648,
+    "sampled_peak_rss_bytes": 1061421056
+  },
+  "archive_pins": 173,
+  "basedpyright": {
+    "errors": 0,
+    "files": [
+      "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py"
+    ],
+    "notes": 0,
+    "warnings": 0
+  },
+  "diff_check": {
+    "disposition": "No semantic issue; frozen executed test bytes retained to preserve plan SHA",
+    "warnings": [
+      "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py:121 new blank line at EOF"
+    ]
+  },
+  "future_resource_strategy": {
+    "applied_now": false,
+    "condition": "After record/derivative memory cost is measured at comparable workload; keep immutable2GiBproducerand allphysics/approvalgates",
+    "next_reduction_candidate_bytes": 1610612736,
+    "requested": "Raise as needed to unblock, then reduce after diagnosing"
+  },
+  "new_commit_cap": 3,
+  "original_1GiB_run_remains_partial": true,
+  "plan_sha256": "7c93aa28219c73e7a437feaac7341887da8fc6fc0b9f0b8e4633ad4424224c67",
+  "policy_delta": {
+    "rss_bytes": [
+      1073741824,
+      2147483648
+    ]
+  },
+  "pytest": {
+    "elapsed_seconds": 30.42,
+    "modules": [
+      "test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "test_fv_point_3h_tangent_coupled_gn_partial_resume.py",
+      "test_fv_point_3h_tangent_coupled_gn_resume.py"
+    ],
+    "passed": 20,
+    "warnings": 18
+  },
+  "scope": "2GiBnewadapterrelatedsynthetic/evidence tests, no production rerun",
+  "source_pins": 144
+}

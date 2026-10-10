@@ -21,6 +21,14 @@
     "version": "1.39.9",
     "warnings": 0
   },
+  "diff_check": {
+    "reason_not_trimmed": "Preserve byte-pinned source/test that generated already archived attempts; no semantic issue",
+    "scope": "exact staged paths; frozen historical/current test bytes retained",
+    "warnings": [
+      "streamgn_preflight_source_20261010/test_fv_point_3h_tangent_coupled_gn_partial_resume.py:169 new blank line at EOF",
+      "tests/test_fv_point_3h_tangent_coupled_gn_partial_resume.py:173 new blank line at EOF"
+    ]
+  },
   "preflight_readonly_plan_sha256": "529110d25ca28ac85ab3ce3fa2fd23a8b2a8ba0122c2f184ab5e26a3c20b4f17",
   "production_source_edits_after_guard": false,
   "pytest": {

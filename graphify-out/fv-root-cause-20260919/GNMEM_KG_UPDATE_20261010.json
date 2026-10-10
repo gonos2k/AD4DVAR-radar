@@ -1,0 +1,43 @@
+{
+  "FV_weighted_milestones_percent": 70,
+  "actual": {
+    "HVPs": 4,
+    "J": 0.06119249248090723,
+    "accepted_steps": 1,
+    "candidate_slots": 30,
+    "control_sha256": "2ec34eeeef531b94e21b5b4372ced2e07257a5407541072d300f5a3f513e1fcf",
+    "dense_solves": 2,
+    "elapsed_seconds": 287.313118416816,
+    "execution_status": "completed",
+    "global_terminal_closed": true,
+    "minimum_F_squared": 0.00447848922842147,
+    "next_point_merit_rejections": 16,
+    "numerical_status": "stopped_after_commit",
+    "planned_new_commit_cap": 3,
+    "resource_termination": null,
+    "rows": 48,
+    "sampled_peak_rss_bytes": 1061421056
+  },
+  "authorization": "2026-10-10 11:50 double RSS;11:51 furtherraiseifneeded then reduceafterissue addressed",
+  "historical_phase1_percent": 100,
+  "policy_delta": {
+    "rss_bytes": [
+      1073741824,
+      2147483648
+    ]
+  },
+  "remaining": [
+    "Finite-step minimum-residual candidate refusal",
+    "memory-cost causeandmatchingworkloadtaper",
+    "Qualified optimumandcoupledresponse/reanalysis/independentfutureverification"
+  ],
+  "resource_and_convergence_distinct": true,
+  "scope": "UserrequestedRSSdoubleandfuturetaper; caponlysuccessor",
+  "taper_strategy": {
+    "implemented_or_tested": false,
+    "next_candidate_rss_bytes": 1610612736,
+    "prerequisite": "comparematchingworkloadandseparaterecord/derivative memory; nophysicsorgatesreduction"
+  },
+  "tests_passed": 20,
+  "type_errors": 0
+}

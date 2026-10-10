@@ -1,0 +1,1683 @@
+{
+  "consulted_graph_sha256": "505da4ff31094c3c7a0fb11327bbc1b9c5afd2ea00c68e50ae3a5a044881862a",
+  "edges": [
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L4",
+      "target": "argparse",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L5",
+      "target": "gzip",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L6",
+      "target": "hashlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L7",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L8",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L9",
+      "target": "sys",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L10",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L12",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L18",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L19",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L20",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L21",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L58",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_sha",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L58",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L62",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_closed_two_step_prefix",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_closed_two_step_prefix",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L62",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_closed_two_step_prefix",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L62",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_closed_two_step_prefix",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L62",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L108",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_validate_two_step_packet",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_validate_two_step_packet",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L108",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_validate_two_step_packet",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L108",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_validate_two_step_packet",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L108",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L169",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L169",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L169",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L214",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_current_base",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_current_base",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L214",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_current_base",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L214",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L277",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_resume_direction_model_factory",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_resume_direction_model_factory",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L277",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L281",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run_child_impl",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L281",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L281",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L281",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L288",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run_child",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L288",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L288",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L288",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L295",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L295",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L295",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L295",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L295",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L295",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L300",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_main",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_validate_two_step_packet",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L121",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_closed_two_step_prefix",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L170",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_current_base",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L216",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_current_base",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L217",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_current_base",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L264",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_validate_two_step_packet",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L297",
+      "target": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L311",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run_child_impl",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L313",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_rationale_1",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L1",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_rationale_215",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L215",
+      "target": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_current_base",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L3",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L4",
+      "target": "types",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L5",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L7",
+      "target": "pytest",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L8",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L10",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L11",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L12",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L13",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L16",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_raw_packet",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_raw_packet",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L16",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L22",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_test_saved_memory_predecessor_admits_exact_two_step_p2_prefix_and_anchors",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L44",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_test_two_step_prefix_requires_individual_gradient_p2_closure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L57",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_test_uncommitted_third_point_boundary_rejects_new_work",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L74",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_test_fresh_side_gradient_mismatch_refuses_before_gn_model_or_hvp",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_test_saved_memory_predecessor_admits_exact_two_step_p2_prefix_and_anchors",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L24",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_raw_packet",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_test_two_step_prefix_requires_individual_gradient_p2_closure",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L45",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_raw_packet",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_test_uncommitted_third_point_boundary_rejects_new_work",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L58",
+      "target": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_raw_packet",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L9",
+      "target": "argparse",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L10",
+      "target": "gzip",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L11",
+      "target": "hashlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L12",
+      "target": "inspect",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L13",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L14",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L15",
+      "target": "sys",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L16",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L18",
+      "target": "numpy",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L24",
+      "target": "gnresume_analyze_20261010",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L25",
+      "target": "streamgn_analyze_20261010",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L54",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_sha",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L54",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L58",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_read_json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_read_json",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L58",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_read_json",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L58",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L62",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_load_two_step_base",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_load_two_step_base",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L62",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_load_two_step_base",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L62",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L167",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_input_anchor_matches",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_input_anchor_matches",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L167",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_input_anchor_matches",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L167",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L188",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_input_pair_checks",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_input_pair_checks",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L188",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_input_pair_checks",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L188",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_input_pair_checks",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L188",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L209",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_brief_metrics",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_brief_metrics",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L209",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_brief_metrics",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L209",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L245",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_unaccepted_candidate_diagnostics",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_unaccepted_candidate_diagnostics",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L245",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_unaccepted_candidate_diagnostics",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L245",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L298",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect_with_analysis_none_guard",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect_with_analysis_none_guard",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L298",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect_with_analysis_none_guard",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L298",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect_with_analysis_none_guard",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L298",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect_with_analysis_none_guard",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L298",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect_with_analysis_none_guard",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L298",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect_with_analysis_none_guard",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L298",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect_with_analysis_none_guard",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L298",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L329",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L329",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L329",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L329",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L329",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L329",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L329",
+      "target": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L431",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_main",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_load_two_step_base",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L67",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_load_two_step_base",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L69",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_read_json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_load_two_step_base",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L107",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_input_pair_checks",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L199",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_input_anchor_matches",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect_with_analysis_none_guard",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L323",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L331",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L333",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_read_json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L334",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_load_two_step_base",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L335",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect_with_analysis_none_guard",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L348",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_input_pair_checks",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L388",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_unaccepted_candidate_diagnostics",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L389",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_brief_metrics",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_main",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L442",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_rationale_1",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L1",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_rationale_63",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L63",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_load_two_step_base",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_rationale_246",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L246",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_unaccepted_candidate_diagnostics",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_rationale_301",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L301",
+      "target": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect_with_analysis_none_guard",
+      "weight": 1.0
+    }
+  ],
+  "llm_tokens": 0,
+  "nodes": [
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "label": "fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_sha",
+      "label": "_sha()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L58"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_path",
+      "label": "Path",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L58"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_closed_two_step_prefix",
+      "label": "_closed_two_step_prefix()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L62"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "examples_weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "label": "Any",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L62"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tensor",
+      "label": "Tensor",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L62"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_validate_two_step_packet",
+      "label": "_validate_two_step_packet()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L108"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_plan",
+      "label": "_load_plan()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L169"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_load_current_base",
+      "label": "_load_current_base()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L214"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_resume_direction_model_factory",
+      "label": "_resume_direction_model_factory()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L277"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run_child_impl",
+      "label": "_run_child_impl()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L281"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run_child",
+      "label": "_run_child()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L288"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_run",
+      "label": "run()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L295"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_main",
+      "label": "main()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L300"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_rationale_1",
+      "label": "Resume the two-commit streamed GN prefix under a 2 GiB RSS cap.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_tangent_coupled_gn_memory_resume_rationale_215",
+      "label": "Admit the two P2 commits and the third-point pre-HVP/commit boundary.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L215"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume",
+      "label": "test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_raw_packet",
+      "label": "_raw_packet()",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L16"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_py_any",
+      "label": "Any",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L16"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_test_saved_memory_predecessor_admits_exact_two_step_p2_prefix_and_anchors",
+      "label": "test_saved_memory_predecessor_admits_exact_two_step_p2_prefix_and_anchors()",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L22"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_test_two_step_prefix_requires_individual_gradient_p2_closure",
+      "label": "test_two_step_prefix_requires_individual_gradient_p2_closure()",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L44"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_test_uncommitted_third_point_boundary_rejects_new_work",
+      "label": "test_uncommitted_third_point_boundary_rejects_new_work()",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L57"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_tangent_coupled_gn_memory_resume_test_fresh_side_gradient_mismatch_refuses_before_gn_model_or_hvp",
+      "label": "test_fresh_side_gradient_mismatch_refuses_before_gn_model_or_hvp()",
+      "source_file": "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "source_location": "L74"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010",
+      "label": "STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_sha",
+      "label": "_sha()",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L54"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_path",
+      "label": "Path",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L54"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_read_json",
+      "label": "_read_json()",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L58"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "graphify_out_fv_root_cause_20260919_streamgn_memory_analyze_20261010_py_any",
+      "label": "Any",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L58"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_load_two_step_base",
+      "label": "_load_two_step_base()",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L62"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_input_anchor_matches",
+      "label": "_input_anchor_matches()",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L167"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_input_pair_checks",
+      "label": "_input_pair_checks()",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L188"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_brief_metrics",
+      "label": "_brief_metrics()",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L209"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_unaccepted_candidate_diagnostics",
+      "label": "_unaccepted_candidate_diagnostics()",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L245"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect_with_analysis_none_guard",
+      "label": "_collect_with_analysis_none_guard()",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L298"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_collect",
+      "label": "collect()",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L329"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_main",
+      "label": "main()",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L431"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_rationale_1",
+      "label": "Audit the 2-GiB memory-resume attempt using saved arrays and receipts only.  The",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_rationale_63",
+      "label": "Validate the interrupted parent, then return only its two-step P2 endpoint.",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L63"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_rationale_246",
+      "label": "Summarize the newest uncommitted search without turning it into a step.",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L246"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "fv_root_cause_20260919_streamgn_memory_analyze_20261010_rationale_301",
+      "label": "Temporarily guard the saved analyzer's absent-accepted-alpha division.      An u",
+      "source_file": "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py",
+      "source_location": "L301"
+    }
+  ],
+  "scope": "isolated new memory-cap successor adapter/test and saved-only analyzer AST; cachedSTREAMGN graph consulted, numericalhelpers unchanged",
+  "source_files": {
+    "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py": "6c884d94a626529066dd7a514b1d5c228fdc2fe6cfe5dbfeb0e9b34ec74cf073",
+    "graphify-out/fv-root-cause-20260919/STREAMGN_MEMORY_ANALYZE_20261010.py": "1d5e43b008f7fcc2f707bbdbc0ada67509b5267a453c4d7566ed5bc224cf551f",
+    "tests/test_fv_point_3h_tangent_coupled_gn_memory_resume.py": "3271f050d3656c983834b905e270ef033b647f486db9a725f9bb99e6ec3682fe"
+  }
+}
