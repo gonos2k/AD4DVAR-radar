@@ -1,0 +1,21 @@
+{
+  "scope": "PR274 actual producer bytes preserved through exact snapshots; subsequent approval-only fix was not a production rerun",
+  "old_plan_sha256": "1f0eff706a21982407f79b51375687f41aca85ee34433229d8faa8e060a19ce0",
+  "source_refs": 139,
+  "archive_refs": 148,
+  "all_executed_pins_preserved": true,
+  "declared_changed_files": {
+    "examples/weather_scenarios/fv_point_3h_tangent_continuation.py": {
+      "executed_sha256": "eca3f2232cb08c3db42783b48aab09c09464b6b288d4d6a037f04c8f30f66256",
+      "snapshot_path": "graphify-out/fv-root-cause-20260919/audit274_source_20261010/fv_point_3h_tangent_continuation.py",
+      "current_fix_sha256": "e6d6aa78d5f88792fa981978cded6caa9984b2d94ea58ad6cfddea4c1b251c42"
+    },
+    "tests/test_fv_point_3h_tangent_coupled_gn_resume.py": {
+      "executed_sha256": "4550823578644cf50837e66018e8ddf2a8da9bb0c78d97a35c871230333715e5",
+      "snapshot_path": "graphify-out/fv-root-cause-20260919/audit274_source_20261010/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "current_fix_sha256": "0e448bf11c1fa96b6e06cd7b24a9aabd1a0001048257af0e477f203657fcf35b"
+    }
+  },
+  "snapshot_manifest_sha256": "c9415aafa484527f0b64ba3ace33384637d30bc1d779ebf1307eba5ba5d5a5bb",
+  "numerical_reruns": 0
+}

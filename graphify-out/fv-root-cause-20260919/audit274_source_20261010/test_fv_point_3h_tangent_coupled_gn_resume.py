@@ -14,8 +14,7 @@ from examples.weather_scenarios import fv_point_3h_tangent_mixing_minimum_probe 
 
 
 def _fake_resume(tmp_path, monkeypatch, *, refuse_after_first=False,
-        parity_refusal_after_first=False, solve_failure_after_first=False, reject_final=False,
-        initial_roundoff_refusal=False):
+        parity_refusal_after_first=False, solve_failure_after_first=False, reject_final=False):
     base = resume._load_current_base({})
     control = base["control"]
     accepted = base["accepted"]
@@ -24,14 +23,6 @@ def _fake_resume(tmp_path, monkeypatch, *, refuse_after_first=False,
     theta_star = float(tangent.minimum_mixture_weight(gm0, gp0))
     mixed0 = (1.0 - theta_star) * gm0 + theta_star * gp0
     jump0 = gp0 - gm0
-    # Shift the normal pairing within both side-gradient replay budgets, while
-    # canceling its first-order effect on the carried squared-gradient merit.
-    drift_direction = jump0.sign()
-    drift_direction[:20] = (-torch.dot(mixed0[20:], drift_direction[20:])
-        / mixed0[:20].abs().sum()) * mixed0[:20].sign()
-    replay_budget = 128 * torch.finfo(control.dtype).eps * min(
-        float(gm0.abs().max()), float(gp0.abs().max()))
-    replay_drift = 0.8 * replay_budget * drift_direction
     flow_derivative = 1.0 - torch.tanh(control[20:25]).square()
     weights = jump0[20:25] / flow_derivative
     weights = 0.84 * weights / weights.abs().max()
@@ -69,8 +60,6 @@ def _fake_resume(tmp_path, monkeypatch, *, refuse_after_first=False,
         mixture = mixture - normal * (torch.dot(normal, mixture) / torch.dot(normal, normal))
         gminus = mixture - theta_star * jump
         gplus = mixture + (1.0 - theta_star) * jump
-        if initial_roundoff_refusal:
-            gminus, gplus = gm0 + replay_drift, gp0 + replay_drift
         q = geometry._face_value(value, face_weights)
         return {"native_j": objective, "side": {-1: (objective, gminus), 1: (objective, gplus)},
             "traces": {-1: accepted["branch_trace"]["-1"], 1: accepted["branch_trace"]["1"]},
@@ -100,7 +89,7 @@ def _fake_resume(tmp_path, monkeypatch, *, refuse_after_first=False,
                         "theta": minimum["working_theta_star"], "side": side, "row": row,
                         "gradient": [0.0] * 26, "residual_value": 0.0, "status": "completed"})
             context["record"]["jacobian_rows_completed"] = len(row_history)
-            if initial_roundoff_refusal or (parity_refusal_after_first and calls == 2):
+            if parity_refusal_after_first and calls == 2:
                 raise ValueError("synthetic later-point row-parity refusal")
             audit = {"B": [[0.0] * 26 for _ in range(12)], "S": torch.eye(12).tolist(),
                 "dense_solves": 1, "dense_solve_dimension": 12, "S_dimension": 12,
@@ -199,28 +188,6 @@ def test_final_input_closure_failure_preserves_confirmed_control(tmp_path, monke
     assert child["last_confirmed_control_sha256"] == resume.BASE_CONTROL_SHA
     assert child["current_control_sha256"] == resume.BASE_CONTROL_SHA
     assert child["accepted_iterations"] == child["optimizer_steps_applied"] == 0
-
-
-def test_initial_row_refusal_uses_current_minimum_after_admitted_gradient_roundoff(tmp_path, monkeypatch):
-    child, plan = _fake_resume(tmp_path, monkeypatch, initial_roundoff_refusal=True)
-    assert child["initial_side_gradients_match"] is True
-    assert child["execution_status"] == "completed"
-    assert child["numerical_status"] == "tangent_coupled_gn_resume_refused"
-    assert child["accepted_iterations"] == child["optimizer_steps_applied"] == 0
-    assert child["current_control_sha256"] == resume.BASE_CONTROL_SHA
-    assert child["current_theta"] == resume.BASE_THETA
-    assert child["jacobian_rows_started"] == child["jacobian_rows_completed"] == 24
-    assert child["hvp_calls_started"] == child["hvp_calls_completed"] == 0
-    assert child.get("dense_solves_completed", 0) == 0
-    working = child["base_mixing_minimum"]["working_theta_star"]
-    carried_budget = 128 * torch.finfo(torch.float64).eps * max(abs(working), abs(resume.BASE_THETA))
-    assert abs(working - resume.BASE_THETA) > carried_budget
-    assert {row["theta"] for row in child["jacobian_row_history"]} == {working}
-    assert tangent._mixing_minimum_resume_chain_closed(child, plan,
-        resume.BASE_CONTROL_SHA, child["hvp_history"], expected_model_name="robust_gn_coupled")
-    child["base_mixing_minimum"]["working_theta_star"] = resume.BASE_THETA
-    assert not tangent._mixing_minimum_resume_chain_closed(child, plan,
-        resume.BASE_CONTROL_SHA, child["hvp_history"], expected_model_name="robust_gn_coupled")
 
 
 def test_completed_solve_without_model_receipt_fails_closure_and_preserves_commit(tmp_path, monkeypatch):

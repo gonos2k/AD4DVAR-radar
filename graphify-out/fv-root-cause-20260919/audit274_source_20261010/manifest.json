@@ -1,0 +1,16 @@
+{
+  "snapshots": [
+    {
+      "source_path": "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "archive_path": "graphify-out/fv-root-cause-20260919/audit274_source_20261010/fv_point_3h_tangent_continuation.py",
+      "sha256": "eca3f2232cb08c3db42783b48aab09c09464b6b288d4d6a037f04c8f30f66256",
+      "role": "Exact PR274 shared source before approval-only fix; previous numerical run not replayed"
+    },
+    {
+      "source_path": "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "archive_path": "graphify-out/fv-root-cause-20260919/audit274_source_20261010/test_fv_point_3h_tangent_coupled_gn_resume.py",
+      "sha256": "4550823578644cf50837e66018e8ddf2a8da9bb0c78d97a35c871230333715e5",
+      "role": "Exact PR274 test before audit regression"
+    }
+  ]
+}
