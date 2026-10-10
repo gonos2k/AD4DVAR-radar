@@ -1,0 +1,20 @@
+{
+  "diagnostic_samples": 8,
+  "earlier_preflight_guard_starts": 1,
+  "execution_status": "completed",
+  "guarded_launch_count": 1,
+  "gzip_bytes": 191188,
+  "gzip_path": "graphify-out/fv-root-cause-20260919/gn_local_window_20261010_attempt2/diagnostic.json.gz",
+  "gzip_sha256": "8318092f3e8d49b17af1dc8a4e345bd5a0c4d3d2a6ff498ab227246be0c0d5aa",
+  "lossless_roundtrip": true,
+  "optimizer_steps_applied": 0,
+  "raw_bytes": 22350054,
+  "raw_path": "graphify-out/fv-root-cause-20260919/gn_local_window_20261010_attempt2/diagnostic.json",
+  "raw_sha256": "1c2139639661a9fb3f1c1937522b97f558010cb7cbcbd765e9ffdcbb3d777f0b",
+  "resource_path": "graphify-out/fv-root-cause-20260919/gn_local_window_20261010_attempt2/diagnostic.resource.json",
+  "resource_sha256": "79d8988cd3b8cb13b974088559229ce915eec2814fd81d2155998963e1ab5ac7",
+  "run_path": "graphify-out/fv-root-cause-20260919/gn_local_window_20261010_attempt2/diagnostic.run.json",
+  "run_sha256": "6b3af5f1792727b4d00ab0434365ff3e2112230e89bb7edaa535a7c096034adc",
+  "scope": "Fixed8sample local-window diagnostic, nooptimizer/selection; failedfirstpreflightseparate",
+  "total_local_window_guard_starts": 2
+}

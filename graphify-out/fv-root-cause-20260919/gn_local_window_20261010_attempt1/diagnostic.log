@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py", line 556, in <module>
+    main()
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py", line 550, in main
+    _run_child_impl(args.plan, args.plan_sha256, args.output)
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py", line 360, in _run_child_impl
+    source_before = shared._source_hashes(plan, plan_path, plan_sha)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_nonsmooth_coupled_probe.py", line 522, in _source_hashes
+    names.add(plan_path.relative_to(ROOT).as_posix())
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 682, in relative_to
+    raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
+ValueError: 'graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_PLAN_20261010.json' is not in the subpath of '/Users/yhlee/ADVAR'

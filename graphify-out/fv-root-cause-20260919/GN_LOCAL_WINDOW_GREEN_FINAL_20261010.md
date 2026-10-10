@@ -1,0 +1,15 @@
+# GREEN final review: local GN direction window — 2026-10-10
+
+The findings, KG update, verification record, frozen plan, saved attempt, archive, and independent saved-array analysis agree. This is evidence for seven finite samples along one stored direction at the confirmed `2ec34eee…` base; it does not certify a continuous interval or add an optimizer step.
+
+The corrected plan SHA is `f0bce6629d3de1071276ce3cf93dcec70a2cba79f8d5661f847f7826670a92a9` with 146 source and 185 archive pins. The first guarded launch failed at relative-path source-manifest admission in 1.068 seconds, before child creation, seed setup, or numerical work. Its source, plan, test, run, resource, and log receipts remain separately preserved. The corrected launch completed once: exit 0, 45.361 seconds, sampled peak RSS 1,303,576,576 bytes under 2 GiB.
+
+At the same base and stored direction, two fresh same-point HVPs matched the saved products with zero reported componentwise error. No new row VJPs or dense solves were run. Eight smaller dyadic chart samples were evaluated without step selection or commit. At the largest new sample, J Armijo passed and residual-merit Armijo failed; one x `choose_left` selector changed at stage 124, row 1, column 2. The next sample was the largest tested point with both Armijo tests passing and selectors matching the base. Six still smaller samples also passed both tests and matched the base selectors. The largest dual-pass sample reduced (R=\|G\|^2) by 0.00132661% and native J by 0.00002205%; all optimizer commit counters remain zero, and the confirmed base control remains unchanged.
+
+The analyzer independently checks the predecessor's 16-candidate refusal, the attempt-1 preflight failure, both full baseline traces against the accepted closure, same-point HVP and residual receipts, the fixed-face pivot (control 24), retained-coordinate chart increments, the independent atanh reconstruction, static face Q, eight residual remainders, and actual J/R Armijo bounds. Its E/h and E/h² values do not show uniform second-order behavior across the samples. The results also do not separate a roundoff floor from other small-step effects.
+
+The guarded samples establish endpoint evidence only. They do not establish an accepted optimizer point, a continuous selector-stable segment, convergence, a root or minimum, response, adjoint, reanalysis, or forecast skill. The 2-GiB run reports aggregate sampled RSS without per-phase memory attribution.
+
+Root's verification records 13 focused tests passing with 18 existing warnings and zero basedpyright errors, warnings, or notes. This GREEN review performed saved-receipt and output cross-checks only; it ran no tests, producer, FV, or derivatives.
+
+The earlier shared Graphify update is documented separately in `GN_LOCAL_WINDOW_GRAPH_SCOPE_20261010.json`. It changed preexisting untracked `graphify-out/graph.json` and `GRAPH_REPORT.md`; no before bytes or backups were available, and neither file was restored or used as numerical evidence. The frozen numerical plan does not pin those files.
