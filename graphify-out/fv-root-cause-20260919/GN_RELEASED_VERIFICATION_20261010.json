@@ -1,0 +1,10 @@
+{
+  "plan_sha256": "8180ad76168653ec87de1865d87fab48f207a1fab76448abc9f7d655b66c1ded",
+  "producer_sha256": "be656574c5fc54a4490630d6d623cf02ea5410a149862ea6e782df18fe0b90c8",
+  "scope": "savedclosedparent+syntheticG/selectorcontract+previoussearch regression; actualROOTguardseparate",
+  "seconds": 1.82,
+  "test_sha256": "7728b09179a0fbaa881d228b7fc064ee185b00bdcf9230949b106d59fe889fe7",
+  "tests_passed": 13,
+  "type_errors": 0,
+  "type_warnings": 0
+}
