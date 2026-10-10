@@ -1,0 +1,31 @@
+{
+  "scope": "같은 결합 GN 재개; 한 확정 후 RSS 중단, 세 반복 미완료",
+  "plan_sha256": "1f0eff706a21982407f79b51375687f41aca85ee34433229d8faa8e060a19ce0",
+  "source_pins": 139,
+  "archive_pins": 148,
+  "execution_status": "rss_limit",
+  "terminal_closed": false,
+  "confirmed_prefix_steps": 1,
+  "confirmed_control_sha256": "7cec4c62bc2ebe3a96106086408adc0ecdbc959fe1b53beafa46902cd41fb7dd",
+  "row_started": 26,
+  "row_completed": 25,
+  "HVP_started": 2,
+  "HVP_completed": 2,
+  "dense_started": 1,
+  "dense_completed": 1,
+  "candidate_evaluations": 9,
+  "guarded_launches": 1,
+  "result": "GNRESUME_RESULT_20261010.json",
+  "memory_note": "GNRESUME_MEMORY_20261010.md",
+  "GREEN": "GNRESUME_GREEN_FINAL_20261010.md",
+  "RED": "GNRESUME_RED_FINAL_20261010.md",
+  "phase1_historical": "8/8=100%",
+  "FV_external_weighted_milestones": "70/100 unchanged",
+  "remaining": [
+    "새 계획에서 checkpoint 직렬화 transient 비용의 제한적 수정/검증(미적용)",
+    "새 확정점 현재 GN 연산으로 반복 재개",
+    "적격점/정확 곡률/법선최소/활성구조",
+    "원래 최적조건 수반/VJP/재분석",
+    "독립 합성 미래검증"
+  ]
+}

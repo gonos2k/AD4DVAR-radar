@@ -1057,15 +1057,6 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
     row_budget = active_policy.get("jacobian_row_vjp_calls")
     row_closure_ok = (record["jacobian_rows_started"] == record["jacobian_rows_completed"]
         and (row_budget is None or record["jacobian_rows_completed"] == int(row_budget)))
-    if plan.get("experiment_kind") == "current_tangent_coupled_gn_resume":
-        row_closure_ok = (row_budget is not None
-            and record["jacobian_rows_started"] == record["jacobian_rows_completed"]
-            and record["jacobian_rows_completed"] <= int(row_budget)
-            and record["jacobian_rows_completed"] % 24 == 0
-            and record.get("dense_solves_started", 0) == record.get("dense_solves_completed", 0)
-            and record.get("dense_solves_completed", 0)
-                == len(record.get("coupled_gn_solve_history", []))
-            and record.get("dense_solves_completed", 0) <= int(active_policy["dense_solves"]))
     closure_ok = (final_observed["pair"]["passed"] and final_observed["face_ok"]
         and final_observed["side_objectives_match_native"] and final_observed["side_gradients_finite"]
         and fixed_ok and runtime_ok and source_ok and deadline_ok
@@ -1084,10 +1075,6 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
     elif plan.get("experiment_kind") == "current_tangent_mixing_minimum_resume":
         numerical_status = _mixing_minimum_resume_status(
             committed, int(active_policy["max_accepted_iterations"]))
-    elif plan.get("experiment_kind") == "current_tangent_coupled_gn_resume":
-        numerical_status = _mixing_minimum_resume_status(committed,
-            int(active_policy["max_accepted_iterations"]),
-            "tangent_coupled_gn_resume")
     elif plan.get("experiment_kind") == "current_tangent_coupled_gn_comparison":
         numerical_status = ("tangent_coupled_gn_comparison_accepted" if committed
             else "tangent_coupled_gn_comparison_refused")
@@ -1223,8 +1210,7 @@ def _run_child(plan_path: Path, plan_sha: str, output: Path, *,
 
 
 def _mixing_minimum_resume_chain_closed(child: dict[str, Any], plan: dict[str, Any],
-        expected_base_sha: str, history: list[dict[str, Any]],
-        expected_model_name: str = "candidate_mixing_minimum") -> bool:
+        expected_base_sha: str, history: list[dict[str, Any]]) -> bool:
     """Validate the resume's accepted control/theta/HVP chain without replay."""
     iterations = child.get("iterations", [])
     if (not isinstance(iterations, list) or not iterations
@@ -1233,7 +1219,6 @@ def _mixing_minimum_resume_chain_closed(child: dict[str, Any], plan: dict[str, A
     control_sha, theta = expected_base_sha, float(plan["initial_theta"])
     accepted_count = 0
     modeled_points: list[dict[str, Any]] = []
-    terminal_row_only_sha: str | None = None
     for index, item in enumerate(iterations):
         if (not isinstance(item, dict) or item.get("index") != index
                 or item.get("base_control_sha256") != control_sha or item.get("theta") != theta):
@@ -1243,32 +1228,6 @@ def _mixing_minimum_resume_chain_closed(child: dict[str, Any], plan: dict[str, A
             if (item.get("accepted") is True or index != len(iterations) - 1
                     or any(entry.get("base_control_sha256") == control_sha for entry in history)):
                 return False
-            if expected_model_name == "robust_gn_coupled":
-                point_rows = [row for row in child.get("jacobian_row_history", [])
-                    if row.get("base_control_sha256") == control_sha]
-                if point_rows:
-                    if (len(point_rows) != 24
-                            or {(row.get("side"), row.get("row")) for row in point_rows}
-                                != {(side, row) for side in (-1, 1) for row in range(12)}
-                            or any(row.get("status") != "completed" for row in point_rows)):
-                        return False
-                    row_theta = [row.get("theta") for row in point_rows]
-                    if (not all(isinstance(value, (int, float)) and not isinstance(value, bool)
-                            and math.isfinite(float(value)) and 0.0 < float(value) < 1.0
-                            for value in row_theta)
-                            or len(set(row_theta)) != 1
-                            or any(torch.as_tensor(row.get("gradient", []), dtype=torch.float64).shape != (26,)
-                                or not bool(torch.isfinite(torch.as_tensor(
-                                    row.get("gradient", []), dtype=torch.float64)).all())
-                                or not isinstance(row.get("residual_value"), (int, float))
-                                or not math.isfinite(float(row.get("residual_value")))
-                                for row in point_rows)):
-                        return False
-                    theta_budget = 128.0 * torch.finfo(torch.float64).eps * max(
-                        abs(float(theta)), abs(float(row_theta[0])), torch.finfo(torch.float64).tiny)
-                    if abs(float(row_theta[0]) - float(theta)) > theta_budget:
-                        return False
-                    terminal_row_only_sha = control_sha
             continue
         if len(arms) != 1:
             return False
@@ -1276,12 +1235,11 @@ def _mixing_minimum_resume_chain_closed(child: dict[str, Any], plan: dict[str, A
         working_theta = arm.get("working_theta")
         direction_values = arm.get("direction", [])
         direction = torch.as_tensor(direction_values, dtype=torch.float64)
-        if (arm.get("name") != expected_model_name
+        if (arm.get("name") != "candidate_mixing_minimum"
                 or arm.get("candidate_mixing_minimum") is not True
                 or arm.get("accepted") is not any(
                     trial.get("accepted") is True for trial in arm.get("trials", []))
-                or len(arm.get("trials", [])) > int(plan["policy"].get(
-                    "max_candidates_per_iteration", plan["policy"].get("candidate_grid_per_direction", 0)))
+                or len(arm.get("trials", [])) > int(plan["policy"]["max_candidates_per_iteration"])
                 or not isinstance(working_theta, (int, float)) or isinstance(working_theta, bool)
                 or not math.isfinite(float(working_theta)) or not 0.0 < float(working_theta) < 1.0
                 or direction.shape != (26,) or not bool(torch.isfinite(direction).all())):
@@ -1290,7 +1248,7 @@ def _mixing_minimum_resume_chain_closed(child: dict[str, Any], plan: dict[str, A
         point_hvps = [entry for entry in history
             if entry.get("base_control_sha256") == control_sha]
         if (len(point_hvps) != 2 or {entry.get("side") for entry in point_hvps} != {-1, 1}
-            or any(entry.get("direction_model") != expected_model_name
+                or any(entry.get("direction_model") != "candidate_mixing_minimum"
                     or entry.get("direction_sha256") != direction_sha
                     or entry.get("theta") != theta
                     or entry.get("working_theta") != working_theta
@@ -1335,9 +1293,7 @@ def _mixing_minimum_resume_chain_closed(child: dict[str, Any], plan: dict[str, A
                 repeat = item.get("final_repeat")
                 if not isinstance(repeat, dict) or fresh_final_closure(accepted_trials[0], repeat):
                     return False
-    point_history_name = ("coupled_gn_point_history" if expected_model_name == "robust_gn_coupled"
-        else "mixing_minimum_point_history")
-    expected_point_history = child.get(point_history_name, [])
+    expected_point_history = child.get("mixing_minimum_point_history", [])
     if not isinstance(expected_point_history, list) or len(expected_point_history) != len(modeled_points):
         return False
     for expected_point, actual_point in zip(modeled_points, expected_point_history):
@@ -1366,49 +1322,15 @@ def _mixing_minimum_resume_chain_closed(child: dict[str, Any], plan: dict[str, A
             or child.get("candidate_committed") is not (accepted_count > 0)
             or len(history) != 2 * len(modeled_points)):
         return False
-    if expected_model_name == "robust_gn_coupled":
-        rows = child.get("jacobian_row_history", [])
-        solves = child.get("coupled_gn_solve_history", [])
-        expected_row_count = 24 * (len(modeled_points) + (terminal_row_only_sha is not None))
-        if (not isinstance(rows, list) or len(rows) != expected_row_count
-                or child.get("jacobian_rows_started") != len(rows)
-                or child.get("jacobian_rows_completed") != len(rows)
-                or not isinstance(solves, list) or len(solves) != len(modeled_points)
-                or child.get("dense_solves_started") != len(solves)
-                or child.get("dense_solves_completed") != len(solves)):
-            return False
-        for point in modeled_points:
-            point_rows = [row for row in rows
-                if row.get("base_control_sha256") == point["base_control_sha256"]]
-            if (len(point_rows) != 24
-                    or {(row.get("side"), row.get("row")) for row in point_rows}
-                        != {(side, row) for side in (-1, 1) for row in range(12)}
-                    or any(row.get("status") != "completed"
-                        or row.get("theta") != point["working_theta_star"] for row in point_rows)):
-                return False
-        if terminal_row_only_sha is not None and terminal_row_only_sha in {
-                point["base_control_sha256"] for point in modeled_points}:
-            return False
-        for receipt, point in zip(solves, modeled_points):
-            audit = receipt.get("audit") if isinstance(receipt, dict) else None
-            if (receipt.get("base_control_sha256") != point["base_control_sha256"]
-                    or not isinstance(audit, dict)
-                    or audit.get("dense_solves") != 1
-                    or audit.get("dense_solve_dimension") != 12
-                    or audit.get("S_dimension") != 12
-                    or audit.get("positive_definite_from_cholesky") is not True
-                    or len(audit.get("S", [])) != 12 or len(audit.get("B", [])) != 12):
-                return False
     return True
 
 
-def _mixing_minimum_resume_status(committed: int, cap: int,
-        prefix: str = "tangent_mixing_minimum_resume") -> str:
+def _mixing_minimum_resume_status(committed: int, cap: int) -> str:
     if committed >= cap:
-        return f"{prefix}_cap_reached"
+        return "tangent_mixing_minimum_resume_cap_reached"
     if committed:
-        return f"{prefix}_stopped_after_commit"
-    return f"{prefix}_refused"
+        return "tangent_mixing_minimum_resume_stopped_after_commit"
+    return "tangent_mixing_minimum_resume_refused"
 
 
 def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
@@ -1468,8 +1390,7 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
         two_arm_comparison = comparison or coupled_comparison
         mixing_minimum = plan.get("experiment_kind") == "current_tangent_mixing_minimum"
         mixing_minimum_resume = plan.get("experiment_kind") == "current_tangent_mixing_minimum_resume"
-        coupled_gn_resume = plan.get("experiment_kind") == "current_tangent_coupled_gn_resume"
-        mixing_minimum_mode = mixing_minimum or mixing_minimum_resume or coupled_gn_resume
+        mixing_minimum_mode = mixing_minimum or mixing_minimum_resume
         for item in accepted:
             current_point_hvps = [entry for entry in history
                 if entry.get("base_control_sha256") == item.get("base_control_sha256")]
@@ -1501,13 +1422,7 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
             child.get("jacobian_rows_started") == child.get("jacobian_rows_completed") == 24
             and len(row_history) == 24
             and all(row.get("status") == "completed" for row in row_history))
-            or (coupled_gn_resume and child.get("jacobian_rows_started")
-                == child.get("jacobian_rows_completed")
-                and child.get("jacobian_rows_completed", 0) <= int(plan["policy"]["jacobian_row_vjp_calls"])
-                and child.get("jacobian_rows_completed", 0) % 24 == 0
-                and len(row_history) == child.get("jacobian_rows_completed")
-                and all(row.get("status") == "completed" for row in row_history))
-            or ((mixing_minimum or mixing_minimum_resume) and child.get("jacobian_rows_started")
+            or (mixing_minimum_mode and child.get("jacobian_rows_started")
                 == child.get("jacobian_rows_completed") == 0 and len(row_history) == 0)
             or (not two_arm_comparison and not mixing_minimum_mode))
         comparison_structure_ok = True
@@ -1650,10 +1565,6 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
         elif mixing_minimum_resume:
             mixing_minimum_structure_ok = _mixing_minimum_resume_chain_closed(
                 child, plan, expected_base_sha, history)
-        elif coupled_gn_resume:
-            mixing_minimum_structure_ok = _mixing_minimum_resume_chain_closed(
-                child, plan, expected_base_sha, history,
-                expected_model_name="robust_gn_coupled")
         closed = (child.get("phase") == "finished"
             and child.get("plan_sha256") == plan_sha
             and child.get("base_control_sha256") == expected_base_sha
