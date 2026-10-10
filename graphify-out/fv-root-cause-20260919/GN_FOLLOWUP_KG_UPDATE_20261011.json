@@ -1,0 +1,19 @@
+{
+  "FV_extension_percent": 70,
+  "archive": "GN_FOLLOWUP_ARCHIVE_20261011.json",
+  "base": "29b52a1377caa7fb52431bdbea25124fa827ac548eeefb9b39ce0e5f240d97c4",
+  "completed": [
+    "P3displacementdoccorrectionrawmatched",
+    "newcurrentGNoperators",
+    "GNcandidate8oneP2commit"
+  ],
+  "correction": "PR283_REPORT_CORRECTION_20261011.json",
+  "findings": "GN_FOLLOWUP_FINDINGS_20261011.md",
+  "historical_theory_percent": 100,
+  "metrics": "GN_FOLLOWUP_METRICS_20261011.json",
+  "new_confirmed": "bef45912ae6253673c6bd743670b374bdde76a02ba6199c464d29f6a1c863e5c",
+  "remaining": [
+    "newbef459currentoperators/limitedconvergence",
+    "eligibleoptimum/curvature/adjoint/reanalysis/futureverification"
+  ]
+}

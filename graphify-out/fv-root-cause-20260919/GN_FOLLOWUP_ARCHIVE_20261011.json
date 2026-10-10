@@ -1,0 +1,17 @@
+{
+  "guarded_launch_count": 1,
+  "gzip_bytes": 259165,
+  "gzip_path": "graphify-out/fv-root-cause-20260919/gn_followup_20261011_attempt1/step.json.gz",
+  "gzip_sha256": "220d1c579bbdb3bb0fb3a4d9e0119410d241da000df9be28f48bfe997bf5ac2b",
+  "lossless_roundtrip": true,
+  "optimizer_steps_applied": 1,
+  "plan_sha256": "e9d8c9b356c9bb97ebc1b74bfd69ee3c2bbd6aea7cfb8020440b656cfb4a422d",
+  "raw_bytes": 29725017,
+  "raw_path": "graphify-out/fv-root-cause-20260919/gn_followup_20261011_attempt1/step.json",
+  "raw_sha256": "7b02ad8cff621f13cfeecd7a95e3990ea7e0a65e0e31c29c1e1e456604fcc33a",
+  "resource_path": "graphify-out/fv-root-cause-20260919/gn_followup_20261011_attempt1/step.resource.json",
+  "resource_sha256": "72a2fabb80c0d99480d6a049efdc8d14b65071bb09906fe35b18a98156a81e5e",
+  "run_path": "graphify-out/fv-root-cause-20260919/gn_followup_20261011_attempt1/step.run.json",
+  "run_sha256": "358e8335990a445037e903f85fe8117005a234a6c1f3eb14cbc84b2aaeff90b7",
+  "scope": "new29b52GN row24solve1HVP2/8candidates/oneP2commit; nofuturepointready"
+}

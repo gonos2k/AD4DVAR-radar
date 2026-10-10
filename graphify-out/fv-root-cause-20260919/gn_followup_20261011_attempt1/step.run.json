@@ -1,0 +1,32 @@
+{
+  "candidate_committed": true,
+  "child_sha256": "7b02ad8cff621f13cfeecd7a95e3990ea7e0a65e0e31c29c1e1e456604fcc33a",
+  "execution_status": "completed",
+  "numerical_status": "gn_followup_committed_one_candidate_no_readiness",
+  "resource": {
+    "child_pid": 98467,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_gn_followup.py",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/GN_FOLLOWUP_PLAN_20261011.json",
+      "--plan-sha256",
+      "e9d8c9b356c9bb97ebc1b74bfd69ee3c2bbd6aea7cfb8020440b656cfb4a422d",
+      "--output",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/gn_followup_20261011_attempt1/step.json"
+    ],
+    "elapsed_seconds": 62.808998292079195,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 2147483648,
+    "rss_samples": 239,
+    "sampled_peak_rss_bytes": 417497088,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 660.0
+  }
+}

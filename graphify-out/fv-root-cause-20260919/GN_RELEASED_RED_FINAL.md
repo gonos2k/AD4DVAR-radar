@@ -14,7 +14,7 @@ The stage-124 x-cell snapshot records left and right increments both negative, w
 
 ## Search, commit, and limits
 
-The fresh prepared-GN direction first passed the original actual-J and full-R Armijo checks at candidate 6/24: α=`0.026139762146698584`, actual displacement `0.00211619`, J=`0.06104894133302345`, and R=`0.0032814674811390797`. The six evaluated candidates stayed within the 24-slot plan cap and actual radius `0.05`.
+The fresh prepared-GN direction first passed the original actual-J and full-R Armijo checks at candidate 6/24: α=`0.026139762146698584`, actual displacement `0.001159532966076956`, J=`0.06104894133302345`, and R=`0.0032814674811390797`. The six evaluated candidates stayed within the 24-slot plan cap and actual radius `0.05`.
 
 The selected endpoint received the only independent P2 repeat. It matched objective, full R, θ, side gradients, and branch trace, and passed paired-branch, face, source, fixed-input, runtime, and deadline closure. The committed control is `29b52a1377caa7fb52431bdbea25124fa827ac548eeefb9b39ce0e5f240d97c4`, with θ=`0.6865600659804322`. Relative to 15516, J decreased by `4.5234e-5` (`0.0740%`) and R decreased by `0.00101655` (`23.65%`). The full mixed-residual L2 and L∞ norms both decreased, from `0.0655593`/`0.0322529` to `0.0572841`/`0.0268769`.
 

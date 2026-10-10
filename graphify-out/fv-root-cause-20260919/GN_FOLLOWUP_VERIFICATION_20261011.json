@@ -1,0 +1,14 @@
+{
+  "actual_movement_recomputed_from_saved_controls": 0.00029597070591344505,
+  "movement_abs_difference": 5.421010862427522e-20,
+  "movement_component_scaled_match": true,
+  "plan_sha256": "e9d8c9b356c9bb97ebc1b74bfd69ee3c2bbd6aea7cfb8020440b656cfb4a422d",
+  "producer_sha256": "9a4195ce21f6486d832d1b3e2fe0e95bf773332eef091d3e8be532f8971dac24",
+  "saved_candidate_movement": 0.0002959707059134451,
+  "scope": "savedparent/syntheticfullGtheta andselector contracts pluspriorsearch regression; actualROOTguardseparate",
+  "seconds": 2.13,
+  "test_sha256": "4098317b4dd32c395235b13ab1f317ab856efe1935b8dc282c5f7e7e3f967c4a",
+  "tests_passed": 13,
+  "type_errors": 0,
+  "type_warnings": 0
+}
