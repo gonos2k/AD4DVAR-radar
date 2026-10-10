@@ -1,0 +1,10 @@
+{
+  "plan_sha256": "14773f392f41eaf9cf0fdba2b59bbf3427f8d3fdf0d0e7cc92b266704928ea29",
+  "producer_sha256": "5e21a9fefb4fd272d3f29402b2a2996644efa82be72a9ca54466e4eaa69ac330",
+  "scope": "synthetic projection/selection/P2 and prior event/search regressions; actual root guard separate",
+  "seconds": 1.66,
+  "test_sha256": "0844caffd67e0c0108a4a27e6dff8de85d29f95e0d16b4c62104acf079f826f8",
+  "tests_passed": 18,
+  "type_errors": 0,
+  "warnings": 18
+}

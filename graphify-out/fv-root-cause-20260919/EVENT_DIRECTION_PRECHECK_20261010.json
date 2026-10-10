@@ -1,0 +1,9 @@
+{
+  "scope": "saved arrays only; no new derivative or candidate",
+  "correction_coefficient": 0.000046921072777215976,
+  "corrected_direction_norm": 0.04630473699747831,
+  "original_cost_slope": -0.002420392138288457,
+  "corrected_cost_slope": -0.00244503490336846,
+  "direction_squared_norm_retained": 0.9938636709587941,
+  "corrected_residual_slope_measured": false
+}

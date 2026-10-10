@@ -1,0 +1,19 @@
+{
+  "FV_extension_percent": 70,
+  "archive": "EVENT_DIRECTION_ARCHIVE_20261010.json",
+  "base": "027e83cf77f7f9cf97c0c72da9f737b5627d312d6375b698bb5b7f7ae94c6769",
+  "completed": [
+    "current event component direction removal",
+    "twoarm actualHVP/candidatecomparison",
+    "selectedonlyindependentP2onecommit"
+  ],
+  "findings": "EVENT_DIRECTION_FINDINGS_20261010.md",
+  "historical_theory_percent": 100,
+  "metrics": "EVENT_DIRECTION_METRICS_20261010.json",
+  "new_confirmed_point": "48b0f95c5aa485a6a17046d4497a2267a389b1cfb2eeedb75d79e7ba038d5729",
+  "remaining": [
+    "newpointoperators andboundedrepeatconvergence",
+    "currentlimiter eventvalidation",
+    "qualifiedoptimum/adjoint/reanalysis/futureverification"
+  ]
+}

@@ -1,0 +1,1321 @@
+{
+  "consulted_graph_sha256": "115fb3555f691b67749feac00dfb018783c8535910c53e047ff15ee0de21709d",
+  "edges": [
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L10",
+      "target": "argparse",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L11",
+      "target": "gzip",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L12",
+      "target": "hashlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L13",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L14",
+      "target": "math",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L15",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L16",
+      "target": "sys",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L17",
+      "target": "time",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L18",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L20",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L21",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L27",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L28",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L29",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L30",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L31",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L32",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L33",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L34",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L75",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_sha",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L75",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L84",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L84",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L84",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L122",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_load_event_receipt",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_load_event_receipt",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L122",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L166",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_scaled_error",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_scaled_error",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L166",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_scaled_error",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L166",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_scaled_error",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L166",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L170",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_project_away",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_project_away",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L170",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_project_away",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L170",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "return_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_project_away",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L170",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L186",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_common_event_tangent_gradient",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_common_event_tangent_gradient",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L186",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_common_event_tangent_gradient",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L186",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_common_event_tangent_gradient",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L186",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_common_event_tangent_gradient",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L186",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L219",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_armijo_bounds",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L225",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_select_arm_candidate",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_select_arm_candidate",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L225",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_select_arm_candidate",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L225",
+      "target": "dtype",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_select_arm_candidate",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L225",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L257",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_per_arm_first_pass_counts",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_per_arm_first_pass_counts",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L257",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L262",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_event_plain_values",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_event_plain_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L262",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_event_plain_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L262",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_event_plain_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L262",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "return_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_event_plain_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L262",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L267",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_persist_selected_commit",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_persist_selected_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L267",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_persist_selected_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L267",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_persist_selected_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L267",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_persist_selected_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L267",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_persist_selected_commit",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L267",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L287",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L287",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L287",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L287",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L653",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_run",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L653",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L653",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L653",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L653",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L653",
+      "target": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L676",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_main",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L85",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_load_event_receipt",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L126",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_common_event_tangent_gradient",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L204",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_scaled_error",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L292",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L299",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_load_event_receipt",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L358",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_event_plain_values",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L362",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_scaled_error",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L378",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_common_event_tangent_gradient",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L381",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_project_away",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L576",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_select_arm_candidate",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L625",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_per_arm_first_pass_counts",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L629",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_persist_selected_commit",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L654",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L659",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L665",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L686",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L688",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_run",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_rationale_1",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L1",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_rationale_171",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L171",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_project_away",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_rationale_187",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L187",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_common_event_tangent_gradient",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_event_direction_comparison_rationale_227",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L227",
+      "target": "weather_scenarios_fv_point_3h_event_direction_comparison_select_arm_candidate",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L3",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L4",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L5",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L7",
+      "target": "pytest",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L8",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L9",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L11",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L12",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L15",
+      "target": "tests_test_fv_point_3h_event_direction_comparison_test_euclidean_projection_removes_event_component_without_rescaling",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L35",
+      "target": "tests_test_fv_point_3h_event_direction_comparison_test_common_event_normal_reprojects_both_saved_sides_and_checks_component_scales",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L56",
+      "target": "tests_test_fv_point_3h_event_direction_comparison_test_original_j_and_residual_merit_bounds_use_the_active_arm_direction",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L68",
+      "target": "tests_test_fv_point_3h_event_direction_comparison_test_arm_selection_orders_actual_merit_then_cost_then_baseline_arm",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L104",
+      "target": "tests_test_fv_point_3h_event_direction_comparison_closed_proposal_repeat",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "tests_test_fv_point_3h_event_direction_comparison_closed_proposal_repeat",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L104",
+      "target": "tests_test_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "tests_test_fv_point_3h_event_direction_comparison_closed_proposal_repeat",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L104",
+      "target": "tests_test_fv_point_3h_event_direction_comparison_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L123",
+      "target": "tests_test_fv_point_3h_event_direction_comparison_test_selected_candidate_p2_failure_preserves_base_and_commit_records_one_step",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_event_direction_comparison",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L144",
+      "target": "tests_test_fv_point_3h_event_direction_comparison_test_atomic_commit_write_failure_leaves_original_027_record",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_event_direction_comparison_test_selected_candidate_p2_failure_preserves_base_and_commit_records_one_step",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L124",
+      "target": "tests_test_fv_point_3h_event_direction_comparison_closed_proposal_repeat",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_event_direction_comparison_test_atomic_commit_write_failure_leaves_original_027_record",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L145",
+      "target": "tests_test_fv_point_3h_event_direction_comparison_closed_proposal_repeat",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "nodes": [
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison",
+      "label": "fv_point_3h_event_direction_comparison.py",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_sha",
+      "label": "_sha()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L75"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "path",
+      "label": "Path",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L75"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_load_plan",
+      "label": "_load_plan()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L84"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "examples_weather_scenarios_fv_point_3h_event_direction_comparison_py_any",
+      "label": "Any",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L84"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_load_event_receipt",
+      "label": "_load_event_receipt()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L122"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_scaled_error",
+      "label": "_scaled_error()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L166"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tensor",
+      "label": "Tensor",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L166"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_project_away",
+      "label": "_project_away()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L170"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_common_event_tangent_gradient",
+      "label": "_common_event_tangent_gradient()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L186"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_armijo_bounds",
+      "label": "_armijo_bounds()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L219"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_select_arm_candidate",
+      "label": "_select_arm_candidate()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L225"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "dtype",
+      "label": "dtype",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L225"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_per_arm_first_pass_counts",
+      "label": "_per_arm_first_pass_counts()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L257"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_event_plain_values",
+      "label": "_event_plain_values()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L262"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_persist_selected_commit",
+      "label": "_persist_selected_commit()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L267"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_run_child",
+      "label": "_run_child()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L287"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_run",
+      "label": "run()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L653"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_main",
+      "label": "main()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L676"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_rationale_1",
+      "label": "Compare one prepared GN direction with its limiter-event-orthogonal form.  This",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_rationale_171",
+      "label": "Euclidean projection that removes only the event-normal component.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L171"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_rationale_187",
+      "label": "Reproject both saved side gradients and average only after component checks.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L187"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_event_direction_comparison_rationale_227",
+      "label": "Choose lowest actual R, then J within roundoff ties, then arm order.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+      "source_location": "L227"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_event_direction_comparison",
+      "label": "test_fv_point_3h_event_direction_comparison.py",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_event_direction_comparison_test_euclidean_projection_removes_event_component_without_rescaling",
+      "label": "test_euclidean_projection_removes_event_component_without_rescaling()",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L15"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_event_direction_comparison_test_common_event_normal_reprojects_both_saved_sides_and_checks_component_scales",
+      "label": "test_common_event_normal_reprojects_both_saved_sides_and_checks_component_scales()",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L35"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_event_direction_comparison_test_original_j_and_residual_merit_bounds_use_the_active_arm_direction",
+      "label": "test_original_j_and_residual_merit_bounds_use_the_active_arm_direction()",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L56"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_event_direction_comparison_test_arm_selection_orders_actual_merit_then_cost_then_baseline_arm",
+      "label": "test_arm_selection_orders_actual_merit_then_cost_then_baseline_arm()",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L68"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_event_direction_comparison_closed_proposal_repeat",
+      "label": "_closed_proposal_repeat()",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L104"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_event_direction_comparison_py_any",
+      "label": "Any",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L104"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_event_direction_comparison_test_selected_candidate_p2_failure_preserves_base_and_commit_records_one_step",
+      "label": "test_selected_candidate_p2_failure_preserves_base_and_commit_records_one_step()",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L123"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_event_direction_comparison_test_atomic_commit_write_failure_leaves_original_027_record",
+      "label": "test_atomic_commit_write_failure_leaves_original_027_record()",
+      "source_file": "tests/test_fv_point_3h_event_direction_comparison.py",
+      "source_location": "L144"
+    }
+  ],
+  "output_tokens": 0,
+  "scope": "isolated two-owned-file AST; shared graph untouched"
+}
