@@ -1,0 +1,23 @@
+{
+  "FV_extension_percent": 70,
+  "base_point": "311f27d095be4976ca6131b83b6c4f3d46bc404d4f58921800b5600e38ec0652",
+  "completed": [
+    "same-point prepared operator qualification",
+    "24-slot prospective search; first pass21",
+    "one independent P2 durable commit",
+    "fresh newpoint24rows/one12Dsolve/twoHVP readiness"
+  ],
+  "evidence_class": "actual root production guard plus saved-data arithmetic and synthetic tests",
+  "findings": "GN_PREPARED_SEARCH_FINDINGS_20261010.md",
+  "graph": "GN_PREPARED_SEARCH_GRAPHIFY_20261010.json",
+  "historical_theory_percent": 100,
+  "metrics": "GN_PREPARED_SEARCH_METRICS_20261010.json",
+  "new_point": "027e83cf77f7f9cf97c0c72da9f737b5627d312d6375b698bb5b7f7ae94c6769",
+  "plan": "GN_PREPARED_SEARCH_PLAN_20261010.json",
+  "remaining": [
+    "meaningful repeated convergence",
+    "limiter event value/directional sensitivity",
+    "qualified optimum/current exact curvature/active structure",
+    "adjoint/reanalysis/independent future verification"
+  ]
+}

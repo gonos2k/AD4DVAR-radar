@@ -1,0 +1,17 @@
+{
+  "affected_tests": {
+    "log": "GN_PREPARED_SEARCH_TESTS_20261010.log",
+    "passed": 14,
+    "seconds": 1.9
+  },
+  "plan_sha256": "1392032f3f0b859f74f03551a98fa5465216cb7fd981250984b603a495526a1a",
+  "preflight": "GN_PREPARED_SEARCH_PREFLIGHT_20261010.json",
+  "producer_sha256": "efe7959e4b0d8f54657033674180b662eabecad6ffbcad758498374e76d967ea",
+  "scope": "tests use saved archive and synthetic states; no independent production derivative certification",
+  "test_sha256": "3de684d981e4af5c4a36db132c437043485c48c5d44c987be40dc73602897eca",
+  "typecheck": {
+    "errors": 0,
+    "log": "GN_PREPARED_SEARCH_TYPES_20261010.log",
+    "warnings": 0
+  }
+}
