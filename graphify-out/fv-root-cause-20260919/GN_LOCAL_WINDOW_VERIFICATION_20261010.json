@@ -1,0 +1,40 @@
+{
+  "actual": {
+    "HVPs": 2,
+    "dense_solves": 0,
+    "elapsed_seconds": 45.36113954195753,
+    "optimizer_steps": 0,
+    "row_VJPs": 0,
+    "rss_limit_bytes": 2147483648,
+    "sampled_peak_rss_bytes": 1303576576,
+    "samples": 8
+  },
+  "archive_pins": 185,
+  "basedpyright": {
+    "errors": 0,
+    "notes": 0,
+    "version": "1.39.9",
+    "warnings": 0
+  },
+  "limitations": [
+    "Seven sampled dual-Armijo passes are not accepted optimizer points or continuous interval certification",
+    "Small-alpha remainder ratios do not uniformly show O(h\u00b2)",
+    "Memory peak has no per-phase decomposition"
+  ],
+  "local_window_guard_starts": {
+    "completed_corrected_plan": 1,
+    "failed_before_seed": 1
+  },
+  "plan_sha256": "f0bce6629d3de1071276ce3cf93dcec70a2cba79f8d5661f847f7826670a92a9",
+  "pytest": {
+    "elapsed_seconds": 5.17,
+    "modules": [
+      "test_fv_point_3h_gn_local_window_probe.py",
+      "test_fv_point_3h_tangent_mixing_minimum_probe.py"
+    ],
+    "passed": 13,
+    "warnings": 18
+  },
+  "scope": "Corrected frozen local-window diagnostic; tests do not run production FV",
+  "source_pins": 146
+}

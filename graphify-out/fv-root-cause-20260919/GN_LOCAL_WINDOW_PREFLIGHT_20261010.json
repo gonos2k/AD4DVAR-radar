@@ -1,0 +1,39 @@
+{
+  "diagnostic_child_present": false,
+  "elapsed_seconds": 1.0682127920445055,
+  "execution_status": "failed",
+  "failed_plan_sha256": "32618a3bba6d70a6cf12e4624abfc2bfa2f30a6b5c7ba94d94fb3df4de32895c",
+  "failure": "relative plan passed to source_manifest.relative_to(absoluteROOT) before archived-base or seed setup",
+  "guarded_launches": 1,
+  "numerical_status": "not_reached",
+  "receipts": {
+    "diagnostic.log": {
+      "path": "graphify-out/fv-root-cause-20260919/gn_local_window_20261010_attempt1/diagnostic.log",
+      "sha256": "c24332ef61399b3a1d57317fbf4c6f159e8d2434e831536eaf05e8a4e330f6f4"
+    },
+    "diagnostic.resource.json": {
+      "path": "graphify-out/fv-root-cause-20260919/gn_local_window_20261010_attempt1/diagnostic.resource.json",
+      "sha256": "10b23306d38bdfd1d6c7db03534793c180693dc5baeafc1371c80820680d7115"
+    },
+    "diagnostic.run.json": {
+      "path": "graphify-out/fv-root-cause-20260919/gn_local_window_20261010_attempt1/diagnostic.run.json",
+      "sha256": "d33047b1cdac06f697d6a8dc149fb2cd1da502134c6e01e714c366761e5c5db3"
+    }
+  },
+  "sampled_peak_rss_bytes": 223166464,
+  "scope": "Exact failed local-window producer/test/plan and resource receipts before relative-plan normalization fix",
+  "snapshots": {
+    "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/gn_local_window_preflight_source_20261010/fv_point_3h_gn_local_window_probe.py",
+      "sha256": "6ba4b1021d18f3de61ca1173fa7e3b4a29eca1be527c56029dc5117ad930a016"
+    },
+    "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_PLAN_20261010.json": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/gn_local_window_preflight_source_20261010/GN_LOCAL_WINDOW_PLAN_20261010.json",
+      "sha256": "32618a3bba6d70a6cf12e4624abfc2bfa2f30a6b5c7ba94d94fb3df4de32895c"
+    },
+    "tests/test_fv_point_3h_gn_local_window_probe.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/gn_local_window_preflight_source_20261010/test_fv_point_3h_gn_local_window_probe.py",
+      "sha256": "ee39606ab27fcf43f770bd5397bd23efc998bb162b95d53432d5d3a6807371bc"
+    }
+  }
+}

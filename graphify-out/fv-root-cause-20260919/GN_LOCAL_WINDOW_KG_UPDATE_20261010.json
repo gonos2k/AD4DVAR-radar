@@ -1,0 +1,33 @@
+{
+  "FV_external_weighted_percent": 70,
+  "confirmed_control_preserved": "2ec34eeeef531b94e21b5b4372ced2e07257a5407541072d300f5a3f513e1fcf",
+  "fresh_vs_stored_HVP_and_G_r_linf": 0,
+  "largest_tested_branch_preserving_dual_pass_alpha": 5.574488376651601e-06,
+  "minimum_gradient_squared_norm_decrease_at_uncommitted_sample_percent": 0.001326611576865865,
+  "observed_dual_Armijo_passes": 7,
+  "observed_first_switch": {
+    "axis": "x",
+    "changed_selector_count_per_side": 1,
+    "column": 2,
+    "other_face_signs_changed": false,
+    "row": 1,
+    "sample": 1,
+    "selector": "choose_left",
+    "trace_index": 124
+  },
+  "optimizer_commits": 0,
+  "original_problem_unchanged": true,
+  "phase1_historical_percent": 100,
+  "remaining": [
+    "Prospective policy/independentfinalclosure before any optimizerstep",
+    "Resolved limiter boundary geometry and finite residual jump",
+    "Phase-specific memorycost and matched-workloadtaper",
+    "Qualified optimum/coupledresponse/reanalysis/independentfutureverification"
+  ],
+  "report": "GN_LOCAL_WINDOW_FINDINGS_20261010.md",
+  "resource_limit_bytes": 2147483648,
+  "same_point_fresh_HVPs": 2,
+  "samples": 8,
+  "scope": "Local validity of original minimum-mixture GN merit at2ec point",
+  "uniform_second_order_error_claim": false
+}

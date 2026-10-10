@@ -1,0 +1,2132 @@
+{
+  "consulted_graph_sha256": "df7dfc5b1accd1f5ab88e1cbeb53a49824d341203c739fa212558139603abfab",
+  "edges": [
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L8",
+      "target": "argparse",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L9",
+      "target": "gzip",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L10",
+      "target": "hashlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L11",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L12",
+      "target": "math",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L13",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L14",
+      "target": "sys",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L15",
+      "target": "time",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L16",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L18",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L19",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L25",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L26",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L27",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L28",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L29",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L30",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L31",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L62",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_sha",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L62",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L66",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_archive_identity",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_archive_identity",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L66",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L189",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L189",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L189",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L240",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_scaled_error",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_scaled_error",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L240",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_scaled_error",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L240",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_scaled_error",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L240",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L256",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_require_model_matches",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_require_model_matches",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L256",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_require_model_matches",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L256",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L261",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_require_endpoint_closure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_require_endpoint_closure",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L261",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_require_endpoint_closure",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L261",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L274",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_finite_curve_metrics",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_finite_curve_metrics",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L274",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_finite_curve_metrics",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L274",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_finite_curve_metrics",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L274",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_finite_curve_metrics",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L274",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_finite_curve_metrics",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L274",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L308",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_trace_delta",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_trace_delta",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L308",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_trace_delta",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L308",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_trace_delta",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L308",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L359",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_chart_candidate",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_chart_candidate",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L359",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_chart_candidate",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L359",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_chart_candidate",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L359",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "return_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_chart_candidate",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L359",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L367",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_run_child_impl",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L367",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L367",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L367",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L530",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_run",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L530",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L530",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L530",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L530",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L530",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L552",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_main",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_archive_identity",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L83",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_archive_identity",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L115",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_archive_identity",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L134",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_require_endpoint_closure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L190",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L370",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L372",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_archive_identity",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L416",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_scaled_error",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L433",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_require_model_matches",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L440",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_chart_candidate",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L450",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_finite_curve_metrics",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run_child_impl",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L454",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_trace_delta",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L532",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L536",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L543",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L562",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_run_child_impl",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L564",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_run",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_rationale_1",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L1",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_rationale_67",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L67",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_archive_identity",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_gn_local_window_probe_rationale_278",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L278",
+      "target": "weather_scenarios_fv_point_3h_gn_local_window_probe_finite_curve_metrics",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_gn_local_window_probe",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L3",
+      "target": "pytest",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_gn_local_window_probe",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L4",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_gn_local_window_probe",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L6",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_window_probe",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L9",
+      "target": "tests_test_fv_point_3h_gn_local_window_probe_test_frozen_plan_pins_the_completed_memory_attempt",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_window_probe",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L16",
+      "target": "tests_test_fv_point_3h_gn_local_window_probe_test_relative_plan_is_normalized_before_source_manifest",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_window_probe",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L28",
+      "target": "tests_test_fv_point_3h_gn_local_window_probe_test_curve_summary_reports_linear_residual_error_and_does_not_select_a_step",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_window_probe",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L47",
+      "target": "tests_test_fv_point_3h_gn_local_window_probe_test_endpoint_closure_rejects_missing_evidence_without_model_setup",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_window_probe",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L66",
+      "target": "tests_test_fv_point_3h_gn_local_window_probe_test_completed_memory_archive_reduces_to_the_correct_2ec_endpoint_without_fv_setup",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_window_probe",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L81",
+      "target": "tests_test_fv_point_3h_gn_local_window_probe_test_scaled_component_comparison_handles_zero_components_and_rejects_mismatch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_local_window_probe",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L95",
+      "target": "tests_test_fv_point_3h_gn_local_window_probe_test_trace_delta_keeps_selector_sign_and_margin_evidence",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L4",
+      "target": "argparse",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L5",
+      "target": "hashlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L6",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L7",
+      "target": "math",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L8",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L9",
+      "target": "struct",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L10",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L31",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L35",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_file_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_file_sha",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L35",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L43",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_inside",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_inside",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L43",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "return_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_inside",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L43",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L50",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_json",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L50",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "return_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_json",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L50",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L54",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_close",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L59",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_norm",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L63",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_chart_pivot",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L70",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_verify_chart_point",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L98",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_first_difference",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_first_difference",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L98",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_first_difference",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L98",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_first_difference",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L98",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_first_difference",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L98",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L118",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_choice_location",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_choice_location",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L118",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_choice_location",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L118",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L129",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_sign_location",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_sign_location",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L129",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_sign_location",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L129",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L138",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_trace_summary",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_trace_summary",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L138",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_trace_summary",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L138",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_trace_summary",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L138",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L151",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_canonical_signature",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_canonical_signature",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L151",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L157",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_trace",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_trace",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L157",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L165",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_plan",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L165",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_plan",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L165",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L228",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_predecessor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_predecessor",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L228",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_predecessor",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L228",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_predecessor",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L228",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_predecessor",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L228",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L254",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_candidate_trace_pair",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_candidate_trace_pair",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L254",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_candidate_trace_pair",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L254",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_candidate_trace_pair",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L254",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_candidate_trace_pair",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L254",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L276",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L276",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L276",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L276",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L276",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L276",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L490",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_main",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_json",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L51",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_inside",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_trace_summary",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L139",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_first_difference",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_trace_summary",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L144",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_choice_location",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_trace_summary",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L145",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_sign_location",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_canonical_signature",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L153",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_trace",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L161",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_canonical_signature",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_plan",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L166",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_file_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_plan",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L166",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_inside",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_plan",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L168",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_predecessor",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L231",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_predecessor",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L232",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_file_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_predecessor",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L232",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_inside",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_candidate_trace_pair",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L258",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_trace",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_candidate_trace_pair",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L259",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_trace_summary",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L278",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L279",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L286",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_file_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L312",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_predecessor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L319",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_close",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L328",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_trace",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L381",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_chart_pivot",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L391",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_verify_chart_point",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L420",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_candidate_trace_pair",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L439",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_norm",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L461",
+      "target": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_main",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L498",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "fv_root_cause_20260919_gn_local_window_analyze_20261010_rationale_1",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L1",
+      "target": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "weight": 1.0
+    }
+  ],
+  "llm_tokens": 0,
+  "nodes": [
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "label": "fv_point_3h_gn_local_window_probe.py",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_sha",
+      "label": "_sha()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L62"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_path",
+      "label": "Path",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L62"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_archive_identity",
+      "label": "_archive_identity()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L66"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe_py_any",
+      "label": "Any",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L66"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_load_plan",
+      "label": "_load_plan()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L189"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_scaled_error",
+      "label": "_scaled_error()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L240"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tensor",
+      "label": "Tensor",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L240"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_require_model_matches",
+      "label": "_require_model_matches()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L256"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_require_endpoint_closure",
+      "label": "_require_endpoint_closure()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L261"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_finite_curve_metrics",
+      "label": "_finite_curve_metrics()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L274"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_trace_delta",
+      "label": "_trace_delta()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L308"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_chart_candidate",
+      "label": "_chart_candidate()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L359"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_run_child_impl",
+      "label": "_run_child_impl()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L367"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_run",
+      "label": "run()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L530"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_main",
+      "label": "main()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L552"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_rationale_1",
+      "label": "Read-only local-window diagnostic around the last confirmed GN endpoint.  The sa",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_rationale_67",
+      "label": "Close the completed memory receipt and return only the active endpoint.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L67"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_gn_local_window_probe_rationale_278",
+      "label": "Summarize the finite-step residual expansion without an acceptance gate.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L278"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_window_probe",
+      "label": "test_fv_point_3h_gn_local_window_probe.py",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_window_probe_test_frozen_plan_pins_the_completed_memory_attempt",
+      "label": "test_frozen_plan_pins_the_completed_memory_attempt()",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L9"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_window_probe_test_relative_plan_is_normalized_before_source_manifest",
+      "label": "test_relative_plan_is_normalized_before_source_manifest()",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L16"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_window_probe_test_curve_summary_reports_linear_residual_error_and_does_not_select_a_step",
+      "label": "test_curve_summary_reports_linear_residual_error_and_does_not_select_a_step()",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L28"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_window_probe_test_endpoint_closure_rejects_missing_evidence_without_model_setup",
+      "label": "test_endpoint_closure_rejects_missing_evidence_without_model_setup()",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L47"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_window_probe_test_completed_memory_archive_reduces_to_the_correct_2ec_endpoint_without_fv_setup",
+      "label": "test_completed_memory_archive_reduces_to_the_correct_2ec_endpoint_without_fv_setup()",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L66"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_window_probe_test_scaled_component_comparison_handles_zero_components_and_rejects_mismatch",
+      "label": "test_scaled_component_comparison_handles_zero_components_and_rejects_mismatch()",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L81"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_local_window_probe_test_trace_delta_keeps_selector_sign_and_margin_evidence",
+      "label": "test_trace_delta_keeps_selector_sign_and_margin_evidence()",
+      "source_file": "tests/test_fv_point_3h_gn_local_window_probe.py",
+      "source_location": "L95"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010",
+      "label": "GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_sha",
+      "label": "_sha()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L31"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_file_sha",
+      "label": "_file_sha()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L35"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_path",
+      "label": "Path",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L35"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_inside",
+      "label": "_inside()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L43"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_json",
+      "label": "_load_json()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L50"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "graphify_out_fv_root_cause_20260919_gn_local_window_analyze_20261010_py_any",
+      "label": "Any",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L50"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_close",
+      "label": "_close()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L54"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_norm",
+      "label": "_norm()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L59"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_chart_pivot",
+      "label": "_chart_pivot()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L63"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_verify_chart_point",
+      "label": "_verify_chart_point()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L70"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_first_difference",
+      "label": "_first_difference()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L98"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_choice_location",
+      "label": "_choice_location()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L118"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_sign_location",
+      "label": "_sign_location()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L129"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_trace_summary",
+      "label": "_trace_summary()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L138"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_canonical_signature",
+      "label": "_canonical_signature()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L151"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_trace",
+      "label": "_validate_trace()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L157"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_plan",
+      "label": "_validate_plan()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L165"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_load_predecessor",
+      "label": "_load_predecessor()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L228"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_validate_candidate_trace_pair",
+      "label": "_validate_candidate_trace_pair()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L254"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_analyze",
+      "label": "_analyze()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L276"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_main",
+      "label": "main()",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L490"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "fv_root_cause_20260919_gn_local_window_analyze_20261010_rationale_1",
+      "label": "Reanalyze saved local-window arrays without running the FV model.",
+      "source_file": "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py",
+      "source_location": "L1"
+    }
+  ],
+  "scope": "Isolated diagnostic/test/saved-array analyzer AST, cached GN memory structural graph consulted; all prior productionhelpers unchanged",
+  "source_files": {
+    "examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py": "29d3bdb70130ec711b2afcfcc49585e1bc09792426e2e4000f944ef796cce72e",
+    "graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_ANALYZE_20261010.py": "2fe57255af51c0a7a98a6ea924f4c2c09a9b448dda5b4760dad04fb5befe0595",
+    "tests/test_fv_point_3h_gn_local_window_probe.py": "37c921e6b36d0a73a8e596c3811f3f4f9e409a3adc0ceee55c432f98d826513d"
+  }
+}

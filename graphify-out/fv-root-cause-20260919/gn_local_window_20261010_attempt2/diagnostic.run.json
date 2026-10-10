@@ -1,0 +1,31 @@
+{
+  "child_sha256": "1c2139639661a9fb3f1c1937522b97f558010cb7cbcbd765e9ffdcbb3d777f0b",
+  "execution_status": "completed",
+  "numerical_status": "local_window_diagnostic_completed_no_acceptance_or_step_selection",
+  "resource": {
+    "child_pid": 7022,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_gn_local_window_probe.py",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/GN_LOCAL_WINDOW_PLAN_20261010.json",
+      "--plan-sha256",
+      "f0bce6629d3de1071276ce3cf93dcec70a2cba79f8d5661f847f7826670a92a9",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/gn_local_window_20261010_attempt2/diagnostic.json"
+    ],
+    "elapsed_seconds": 45.36113954195753,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 2147483648,
+    "rss_samples": 170,
+    "sampled_peak_rss_bytes": 1303576576,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 660.0
+  }
+}

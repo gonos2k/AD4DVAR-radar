@@ -1,0 +1,25 @@
+{
+  "actor": "local_window_green",
+  "before_hashes_or_backups_available": false,
+  "command": "graphify update /Users/yhlee/ADVAR",
+  "disposition": "Preserve refreshed generated outputs; avoid unsafe rollback without before bytes. Not used as numerical evidence or staged. Root new-code AST refresh remains isolated.",
+  "generated_outputs_preexisting_untracked": true,
+  "observed_cache_updated": "graphify-out/cache/stat-index.json",
+  "post_refresh_graph": {
+    "communities": 424,
+    "edges": 76745,
+    "nodes": 10683
+  },
+  "post_sha256": {
+    "graphify-out/GRAPH_REPORT.md": "795a4fcf0a3d0c2c2ca0faab247cbfe8d95fbceb1c12d66603a7bc7c1570a92a",
+    "graphify-out/graph.json": "9363db00cf9f45db58fc09107c3ed776694b284a99ad738403c2fb4008d6bbe8"
+  },
+  "reported_changed_paths": [
+    "graphify-out/graph.json",
+    "graphify-out/GRAPH_REPORT.md"
+  ],
+  "restored": false,
+  "scope": "Structural-cache side effect outside root intended isolated AST scope; not numerical producer data",
+  "source_archive_maps_pin_these_outputs": false,
+  "warnings_reported": 234
+}
