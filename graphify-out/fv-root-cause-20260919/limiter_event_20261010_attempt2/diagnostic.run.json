@@ -1,0 +1,26 @@
+{
+  "child_sha256": "47b6b78d824a6ee817d2d014ea74ce14f68076d68c8c75a38ae6a0a7657297ff",
+  "execution_status": "completed",
+  "resource": {
+    "child_pid": 43768,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "--child",
+      "--plan-sha256",
+      "3579c2bbf9f3213cec5669948e9de21e47da258720572b291b083c5355e3f79d"
+    ],
+    "elapsed_seconds": 26.032461374998093,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 2147483648,
+    "rss_samples": 99,
+    "sampled_peak_rss_bytes": 596967424,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 660.0
+  }
+}

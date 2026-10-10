@@ -1,0 +1,1271 @@
+{
+  "consulted_graph_sha256": "afb0c2d2ee427036ec5842e2a3bd745cd7f6ab0d60e3a369e9243f3f5a7cdc3e",
+  "edges": [
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L4",
+      "target": "argparse",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L5",
+      "target": "dataclasses",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L6",
+      "target": "gzip",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L7",
+      "target": "hashlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L8",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L9",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L10",
+      "target": "sys",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L11",
+      "target": "time",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L12",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L14",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L19",
+      "target": "advar",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L20",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L21",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L22",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L43",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_sha",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L43",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L47",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L47",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L47",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L70",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_load_base",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_load_base",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L70",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L98",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_plain_values",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_plain_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L98",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_plain_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L98",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_diagnostic_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_plain_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L98",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_diagnostic_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "return_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_plain_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L98",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_diagnostic_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L114",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_run_child",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L114",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L114",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L235",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_main",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L48",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_load_base",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L80",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L116",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L117",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_load_base",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L163",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_plain_values",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L238",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_run_child",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L239",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L242",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L245",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_rationale_1",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L1",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L9",
+      "target": "contextlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L10",
+      "target": "dataclasses",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L11",
+      "target": "numbers",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L12",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L14",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L15",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L17",
+      "target": "advar",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L27",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_limiterevent",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L43",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_capture_connected_stage_observer",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_capture_connected_stage_observer",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L43",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_capture_connected_stage_observer",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L43",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_capture_connected_stage_observer",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L43",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L60",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_validate_event",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_validate_event",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L60",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_limiterevent",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L67",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_event_values",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L67",
+      "target": "trajectory",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L67",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L67",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_limiterevent",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "return_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L67",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L112",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_raw_zeta",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_raw_zeta",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L112",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "return_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_raw_zeta",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L112",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L119",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_same_sign_orientation",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_same_sign_orientation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L119",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L140",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_event_derivatives",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_derivatives",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L140",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_derivatives",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L140",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_derivatives",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L140",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_derivatives",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L140",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_derivatives",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L140",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_derivatives",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L140",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_derivatives",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L140",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_derivatives",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L140",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L77",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_validate_event",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_values",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L105",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_capture_connected_stage_observer",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_event_derivatives",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L147",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_raw_zeta",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_1",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L1",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_28",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L28",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_limiterevent",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_46",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L46",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_capture_connected_stage_observer",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_70",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L70",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_event_values",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_113",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L113",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_raw_zeta",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_120",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L120",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_same_sign_orientation",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_142",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L142",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_probe_event_derivatives",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_limiter_event_probe",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L3",
+      "target": "pytest",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_limiter_event_probe",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L4",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_limiter_event_probe",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L5",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_limiter_event_probe",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L7",
+      "target": "advar",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_limiter_event_probe",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L8",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_limiter_event_probe",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L11",
+      "target": "tests_test_fv_point_3h_limiter_event_probe_trajectory",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "tests_test_fv_point_3h_limiter_event_probe_trajectory",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L11",
+      "target": "tests_test_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "return_type",
+      "relation": "references",
+      "source": "tests_test_fv_point_3h_limiter_event_probe_trajectory",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L11",
+      "target": "tests_test_fv_point_3h_limiter_event_probe_py_tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_limiter_event_probe",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L34",
+      "target": "tests_test_fv_point_3h_limiter_event_probe_test_event_extracts_exact_trace_coordinate_with_connected_derivatives",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_limiter_event_probe",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L59",
+      "target": "tests_test_fv_point_3h_limiter_event_probe_test_event_capture_resets_both_contexts_after_trajectory_failure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_limiter_event_probe",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L67",
+      "target": "tests_test_fv_point_3h_limiter_event_probe_test_event_capture_requires_one_target_and_exact_stage_count",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_limiter_event_probe",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L80",
+      "target": "tests_test_fv_point_3h_limiter_event_probe_test_public_detached_observer_nesting_is_rejected_and_restored",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_limiter_event_probe",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L90",
+      "target": "tests_test_fv_point_3h_limiter_event_probe_test_same_sign_qualification_is_outside_event_derivative",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_limiter_event_probe_test_event_extracts_exact_trace_coordinate_with_connected_derivatives",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L40",
+      "target": "tests_test_fv_point_3h_limiter_event_probe_trajectory",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_limiter_event_probe_test_event_capture_resets_both_contexts_after_trajectory_failure",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L62",
+      "target": "tests_test_fv_point_3h_limiter_event_probe_trajectory",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_limiter_event_probe_test_event_capture_requires_one_target_and_exact_stage_count",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L70",
+      "target": "tests_test_fv_point_3h_limiter_event_probe_trajectory",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_limiter_event_probe_test_public_detached_observer_nesting_is_rejected_and_restored",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L85",
+      "target": "tests_test_fv_point_3h_limiter_event_probe_trajectory",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "nodes": [
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_diagnostic",
+      "label": "fv_point_3h_limiter_event_diagnostic.py",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_sha",
+      "label": "_sha()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L43"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "path",
+      "label": "Path",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L43"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_load_plan",
+      "label": "_load_plan()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L47"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "any",
+      "label": "Any",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L47"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_load_base",
+      "label": "_load_base()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L70"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_plain_values",
+      "label": "_plain_values()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L98"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "examples_weather_scenarios_fv_point_3h_limiter_event_diagnostic_py_tensor",
+      "label": "Tensor",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L98"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_run_child",
+      "label": "_run_child()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L114"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_main",
+      "label": "main()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L235"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_diagnostic_rationale_1",
+      "label": "Diagnose one observed minmod event at the closed PR279 point; never commit.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_diagnostic.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe",
+      "label": "fv_point_3h_limiter_event_probe.py",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_limiterevent",
+      "label": "LimiterEvent",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L27"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_capture_connected_stage_observer",
+      "label": "_capture_connected_stage_observer()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L43"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "examples_weather_scenarios_fv_point_3h_limiter_event_probe_py_tensor",
+      "label": "Tensor",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L43"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_validate_event",
+      "label": "_validate_event()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L60"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_event_values",
+      "label": "event_values()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L67"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "trajectory",
+      "label": "Trajectory",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L67"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_raw_zeta",
+      "label": "raw_zeta()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L112"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_same_sign_orientation",
+      "label": "same_sign_orientation()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L119"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_event_derivatives",
+      "label": "event_derivatives()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L140"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_1",
+      "label": "Differentiable capture helpers for one frozen FV limiter event.  This is a resea",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_28",
+      "label": "The event at trace 124, x-direction interior cell (1, 2).",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L28"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_46",
+      "label": "Capture graph-connected stages without the public observer's copies.      The tr",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L46"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_70",
+      "label": "Return graph-connected ``[left, right, max(abs(q))]`` at the event.      ``traje",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L70"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_113",
+      "label": "Return the un-oriented event function ``left - right``.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L113"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_120",
+      "label": "Qualify a same-sign limiter event outside AD and return its orientation.      Th",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L120"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_limiter_event_probe_rationale_142",
+      "label": "Return values, vector JVP, raw-zeta JVP, and full raw-zeta gradient.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_probe.py",
+      "source_location": "L142"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_limiter_event_probe",
+      "label": "test_fv_point_3h_limiter_event_probe.py",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_limiter_event_probe_trajectory",
+      "label": "_trajectory()",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L11"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_limiter_event_probe_py_tensor",
+      "label": "Tensor",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L11"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_limiter_event_probe_test_event_extracts_exact_trace_coordinate_with_connected_derivatives",
+      "label": "test_event_extracts_exact_trace_coordinate_with_connected_derivatives()",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L34"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_limiter_event_probe_test_event_capture_resets_both_contexts_after_trajectory_failure",
+      "label": "test_event_capture_resets_both_contexts_after_trajectory_failure()",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L59"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_limiter_event_probe_test_event_capture_requires_one_target_and_exact_stage_count",
+      "label": "test_event_capture_requires_one_target_and_exact_stage_count()",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L67"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_limiter_event_probe_test_public_detached_observer_nesting_is_rejected_and_restored",
+      "label": "test_public_detached_observer_nesting_is_rejected_and_restored()",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L80"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_limiter_event_probe_test_same_sign_qualification_is_outside_event_derivative",
+      "label": "test_same_sign_qualification_is_outside_event_derivative()",
+      "source_file": "tests/test_fv_point_3h_limiter_event_probe.py",
+      "source_location": "L90"
+    }
+  ],
+  "output_tokens": 0,
+  "scope": "isolated three owned files; finalattempt2"
+}

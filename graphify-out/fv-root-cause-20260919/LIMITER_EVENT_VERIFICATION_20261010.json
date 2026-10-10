@@ -1,0 +1,9 @@
+{
+  "tests_passed": 12,
+  "warnings": 18,
+  "seconds": 1.42,
+  "type_errors": 0,
+  "successful_plan_sha256": "3579c2bbf9f3213cec5669948e9de21e47da258720572b291b083c5355e3f79d",
+  "scope": "synthetic event/AD/context and saved search regression; ROOT actual production diagnostic separately archived",
+  "failed_attempt1_exact_source_bytes_preserved": false
+}

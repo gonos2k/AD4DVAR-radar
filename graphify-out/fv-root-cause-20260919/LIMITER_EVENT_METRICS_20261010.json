@@ -1,0 +1,140 @@
+{
+  "FV_completion_percent": 70,
+  "base_control_sha256": "027e83cf77f7f9cf97c0c72da9f737b5627d312d6375b698bb5b7f7ae94c6769",
+  "direction_event_cosine": 0.07833472436414096,
+  "elapsed_seconds": 26.032461374998093,
+  "event": {
+    "expected_stage_count": 360,
+    "interior_column": 2,
+    "interior_row": 1,
+    "orientation": "x",
+    "stage_index": 124
+  },
+  "event_JVP_calls": 2,
+  "event_gap_over_qscale": 4.0379611279147925e-09,
+  "event_gradient_calls": 2,
+  "event_gradient_squared_fraction_c12_c13_c14": 0.9996237518108205,
+  "fresh_HVP_calls": 0,
+  "linear_event_alpha": 5.585492816865093e-07,
+  "optimizer_steps_applied": 0,
+  "projected_event_gradient_norm": 77.5440358363095,
+  "sampled_peak_rss_bytes": 596967424,
+  "samples": [
+    {
+      "J": 0.061192476880111604,
+      "R": 0.004478420533101891,
+      "actual_move": 8.091292741417448e-09,
+      "alpha": 1.742031084966799e-07,
+      "branch_pair_passed": true,
+      "control_sha256": "d5e1e9fd1f1d8baf27e4c725198e3202d63bfde76f1636c756dde1bb99d636dd",
+      "events": {
+        "-1": {
+          "choose_left": false,
+          "linear_zeta": -1.0843944725306134e-07,
+          "same_negative_sign": true,
+          "value_parity_exact": true,
+          "values": [
+            -0.3318220506598166,
+            -0.3318219422203441,
+            39.026903797003364
+          ],
+          "zeta": -1.0843947251260033e-07
+        },
+        "1": {
+          "choose_left": false,
+          "linear_zeta": -1.0843944725306134e-07,
+          "same_negative_sign": true,
+          "value_parity_exact": true,
+          "values": [
+            -0.3318220506598166,
+            -0.3318219422203441,
+            39.026903797003364
+          ],
+          "zeta": -1.0843947251260033e-07
+        }
+      },
+      "face_passed": true,
+      "side_objectives_match_native": true,
+      "theta": 0.4830797241701245,
+      "trace_matches_base": true
+    },
+    {
+      "J": 0.061192475615450645,
+      "R": 0.004485870697560415,
+      "actual_move": 3.2365170971576695e-08,
+      "alpha": 6.968124339867196e-07,
+      "branch_pair_passed": true,
+      "control_sha256": "97b1a42d27d5b098cb806ea4f14d87943318641302c4e52c1a4863471fac4ebb",
+      "events": {
+        "-1": {
+          "choose_left": true,
+          "linear_zeta": 3.9009572246984444e-08,
+          "same_negative_sign": true,
+          "value_parity_exact": true,
+          "values": [
+            -0.3318218705169187,
+            -0.3318219095266528,
+            39.02690383818284
+          ],
+          "zeta": 3.9009734109640704e-08
+        },
+        "1": {
+          "choose_left": true,
+          "linear_zeta": 3.9009572246984444e-08,
+          "same_negative_sign": true,
+          "value_parity_exact": true,
+          "values": [
+            -0.3318218705169187,
+            -0.3318219095266528,
+            39.02690383818284
+          ],
+          "zeta": 3.9009734109640704e-08
+        }
+      },
+      "face_passed": true,
+      "side_objectives_match_native": true,
+      "theta": 0.48298306112385553,
+      "trace_matches_base": false
+    },
+    {
+      "J": 0.06119247393023507,
+      "R": 0.004485863289941565,
+      "actual_move": 6.473034193466842e-08,
+      "alpha": 1.3936248679734393e-06,
+      "branch_pair_passed": true,
+      "control_sha256": "5b28d2b338013bf9f93368794d7703394976de73a25883ab455723989d888a2d",
+      "events": {
+        "-1": {
+          "choose_left": true,
+          "linear_zeta": 2.3560826491371215e-07,
+          "same_negative_sign": true,
+          "value_parity_exact": true,
+          "values": [
+            -0.33182163032655865,
+            -0.33182186593494833,
+            39.02690389308895
+          ],
+          "zeta": 2.3560838968705866e-07
+        },
+        "1": {
+          "choose_left": true,
+          "linear_zeta": 2.3560826491371215e-07,
+          "same_negative_sign": true,
+          "value_parity_exact": true,
+          "values": [
+            -0.33182163032655865,
+            -0.33182186593494833,
+            39.02690389308895
+          ],
+          "zeta": 2.3560838968705866e-07
+        }
+      },
+      "face_passed": true,
+      "side_objectives_match_native": true,
+      "theta": 0.48298317637948024,
+      "trace_matches_base": false
+    }
+  ],
+  "zeta": -1.5758912041974327e-07,
+  "zeta_directional_derivative": 0.2821400467008237
+}
