@@ -1,0 +1,10 @@
+{
+  "archive_count": 195,
+  "archive_identity_passed": true,
+  "base_control_sha256": "311f27d095be4976ca6131b83b6c4f3d46bc404d4f58921800b5600e38ec0652",
+  "direction_sha256": "f8862290dfcd7ec73e924182e5bb5376c1a66bd8a890de3e55b84e73b5501595",
+  "load_plan_passed": true,
+  "plan_sha256": "1392032f3f0b859f74f03551a98fa5465216cb7fd981250984b603a495526a1a",
+  "production_executed": false,
+  "source_count": 151
+}

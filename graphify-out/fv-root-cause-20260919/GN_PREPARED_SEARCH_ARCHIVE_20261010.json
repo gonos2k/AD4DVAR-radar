@@ -1,0 +1,17 @@
+{
+  "execution_status": "completed",
+  "guarded_launch_count": 1,
+  "gzip_bytes": 500760,
+  "gzip_path": "graphify-out/fv-root-cause-20260919/gn_prepared_search_20261010_attempt1/step.json.gz",
+  "gzip_sha256": "322606baa43778ea093f2fa4ac8bb656ab5803cce35850c072fb77eaf8a9d782",
+  "lossless_roundtrip": true,
+  "optimizer_steps_applied": 1,
+  "raw_bytes": 65441821,
+  "raw_path": "graphify-out/fv-root-cause-20260919/gn_prepared_search_20261010_attempt1/step.json",
+  "raw_sha256": "a2fca18bb519de98536f9e902860f7df035a58a1b60d9b67cd89d4628ab3bef1",
+  "readiness_complete": true,
+  "resource_path": "graphify-out/fv-root-cause-20260919/gn_prepared_search_20261010_attempt1/step.resource.json",
+  "resource_sha256": "6c8ffc4fedf71e702a00a8d86078b98714eb80fa622e51b25581d392ecf4a07f",
+  "run_path": "graphify-out/fv-root-cause-20260919/gn_prepared_search_20261010_attempt1/step.run.json",
+  "run_sha256": "fab6158709bffb6820c4c39b7fce2ada8c49dd485f14d3c6b90715c99eb5c1cc"
+}
