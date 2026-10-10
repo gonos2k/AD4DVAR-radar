@@ -1,0 +1,19 @@
+{
+  "comparison_complete": false,
+  "guarded_launch_count": 1,
+  "gzip_bytes": 244474,
+  "gzip_path": "graphify-out/fv-root-cause-20260919/event_direction_resume_20261010_attempt1/step.json.gz",
+  "gzip_sha256": "53e90977b628a2e9e5f785779899df688bcbc46a92a498a8dd1c1c9f57b1c2b0",
+  "lossless_roundtrip": true,
+  "optimizer_steps_applied": 1,
+  "plan_sha256": "2ba1d88c83e6abdc054647af4d5d5a074a4b2569eee3e8ffc7eafcbe5e20591c",
+  "raw_bytes": 26986993,
+  "raw_path": "graphify-out/fv-root-cause-20260919/event_direction_resume_20261010_attempt1/step.json",
+  "raw_sha256": "7d568ad20318e0c86bb5814e8d51a444ca4bf9bbfe420994a8f14da8f5ffabf5",
+  "resource_path": "graphify-out/fv-root-cause-20260919/event_direction_resume_20261010_attempt1/step.resource.json",
+  "resource_sha256": "a132a3a292ee142d5ac3efa87b64ac15f7565faedff08a19b4add2174b7c1746",
+  "run_path": "graphify-out/fv-root-cause-20260919/event_direction_resume_20261010_attempt1/step.run.json",
+  "run_sha256": "e448b854d174f8342c87f6e29d7f1c6a4dbe14c183a962ab86fa2d297b9616aa",
+  "scope": "freshcurrentoperators plusoneGNfallbackP2commit; correctedarmresidualdescentrefused; nofuturepointreadiness",
+  "selected_arm": "prepared_gn"
+}

@@ -1,0 +1,18 @@
+{
+  "archive_count": 213,
+  "exact_source_snapshots": {
+    "examples/weather_scenarios/fv_point_3h_event_direction_resume.py": {
+      "path": "graphify-out/fv-root-cause-20260919/event_resume_source_20261010/producer.py",
+      "sha256": "4d819f1c7a3ce0109514b2b5c89221eea2380c84b8337a5fbe234327d4bf83c5"
+    },
+    "tests/test_fv_point_3h_event_direction_resume.py": {
+      "path": "graphify-out/fv-root-cause-20260919/event_resume_source_20261010/tests.py",
+      "sha256": "c57f4b24abf57c941dcf22bc3882de5956c6fe02f0b3dcb5763622689a2c55bd"
+    }
+  },
+  "load_plan_passed": true,
+  "parent_closed_passed": true,
+  "plan_sha256": "2ba1d88c83e6abdc054647af4d5d5a074a4b2569eee3e8ffc7eafcbe5e20591c",
+  "production_executed": false,
+  "source_count": 158
+}

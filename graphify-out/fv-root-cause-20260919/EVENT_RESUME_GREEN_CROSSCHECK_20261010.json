@@ -1,0 +1,15 @@
+{
+  "GN_fallback_P2_one_commit": true,
+  "all_claims_scoped": true,
+  "base_mixture_equals_residual_first26_exact": true,
+  "corrected_cost_slopes": [
+    -0.00240434087694,
+    -0.00240434087694
+  ],
+  "corrected_merit_slope_recomputed": 2.041795306712349e-05,
+  "corrected_recorded_slope": 2.041795306712002e-05,
+  "gradient_max_increase_percent": 12.8176,
+  "newpoint_readiness_performed": false,
+  "scope": "independent saved arrays only; no production calls",
+  "two_arm_comparison_complete": false
+}
