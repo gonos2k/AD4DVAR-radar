@@ -1,0 +1,29 @@
+{
+  "P2_closed": true,
+  "candidate_alpha": 5.574488376651601e-06,
+  "claims": {
+    "minimum_claim": false,
+    "response_claim": false,
+    "root_claim": false,
+    "score_claim": false
+  },
+  "commit_closed": true,
+  "control_sha256": "311f27d095be4976ca6131b83b6c4f3d46bc404d4f58921800b5600e38ec0652",
+  "execution_resource_closed": true,
+  "numerical_status": "candidate_committed_current_gn_model_ready_no_second_candidate",
+  "optimizer_steps_applied": 1,
+  "postcommit_new_point": {
+    "additional_candidate_count": 0,
+    "dense_solves_completed": 1,
+    "paired_hvps_completed": 2,
+    "rows_completed": 24
+  },
+  "postcommit_readiness_complete": true,
+  "raw_sha256": "0f2892badb2eeebb9ae8d11ff3f3898a7166d68e13e0279e3a3c9625c8c1ff00",
+  "resource": {
+    "elapsed_seconds": 56.535638915840536,
+    "rss_limit_bytes": 2147483648,
+    "sampled_peak_rss_bytes": 1328414720,
+    "wall_limit_seconds": 660.0
+  }
+}

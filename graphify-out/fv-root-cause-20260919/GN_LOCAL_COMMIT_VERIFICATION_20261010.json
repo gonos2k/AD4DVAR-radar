@@ -1,0 +1,51 @@
+{
+  "actual": {
+    "candidate_evaluations": 1,
+    "committed_control_sha256": "311f27d095be4976ca6131b83b6c4f3d46bc404d4f58921800b5600e38ec0652",
+    "elapsed_seconds": 56.535638915840536,
+    "execution_status": "completed",
+    "guard_starts": 1,
+    "independent_final_repeats": 1,
+    "new_point_HVPs": 2,
+    "new_point_candidates": 0,
+    "new_point_dense_12D_solves": 1,
+    "new_point_row_VJPs": 24,
+    "numerical_status": "candidate_committed_current_gn_model_ready_no_second_candidate",
+    "optimizer_commits": 1,
+    "readiness_complete": true,
+    "resource_limit_bytes": 2147483648,
+    "sampled_peak_rss_bytes": 1328414720
+  },
+  "archive_pins": 190,
+  "basedpyright": {
+    "errors": 0,
+    "level": "error",
+    "notes": 0,
+    "version": "1.39.9",
+    "warnings": 0
+  },
+  "commit_cap": 1,
+  "fresh_base_HVPs": 0,
+  "frozen_plan_sha256": "11e4eff337084ba9a9602b477854349969af8306926911fa49c4ab1e8e869b6e",
+  "postcommit_operator_budget": {
+    "dense_12D_solves": 1,
+    "fresh_HVPs": 2,
+    "next_candidates": 0,
+    "row_VJPs": 24
+  },
+  "prospective_fixed_alpha": 5.574488376651601e-06,
+  "root_claim": false,
+  "same_base_directional_HVP_vectors_reused": 2,
+  "scope": "Fixedlocalapproval andnewpoint GNreadiness; affected tests do not replayproduction FV",
+  "source_pins": 148,
+  "tests": {
+    "elapsed_seconds": 13.72,
+    "modules": [
+      "test_fv_point_3h_gn_local_commit.py",
+      "test_fv_point_3h_gn_local_window_probe.py",
+      "test_fv_point_3h_tangent_coupled_gn_comparison.py"
+    ],
+    "passed": 18,
+    "warnings": 18
+  }
+}
