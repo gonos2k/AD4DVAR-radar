@@ -1,0 +1,32 @@
+{
+  "child_read_error": null,
+  "child_sha256": "72224458e690cd6675f14479f0787bf7bf4aae878ef0fa7362ed3b0113553552",
+  "execution_status": "completed",
+  "numerical_status": "tangent_coupled_gn_partial_resume_stopped_after_commit",
+  "resource": {
+    "child_pid": 25730,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_memory_resume.py",
+      "--child",
+      "--plan",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/TANGENT_COUPLED_GN_MEMORY_RESUME_PLAN_20261010.json",
+      "--plan-sha256",
+      "7c93aa28219c73e7a437feaac7341887da8fc6fc0b9f0b8e4633ad4424224c67",
+      "--output",
+      "graphify-out/fv-root-cause-20260919/tangent_coupled_gn_memory_resume_20261010_attempt1/step.json"
+    ],
+    "elapsed_seconds": 287.313118416816,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 2147483648,
+    "rss_samples": 1083,
+    "sampled_peak_rss_bytes": 1061421056,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 660.0
+  }
+}

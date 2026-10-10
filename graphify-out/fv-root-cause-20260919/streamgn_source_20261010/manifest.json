@@ -1,0 +1,8 @@
+{
+  "snapshots": {
+    "examples/weather_scenarios/fv_point_3h_tangent_continuation.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/streamgn_source_20261010/fv_point_3h_tangent_continuation.py",
+      "sha256": "e6d6aa78d5f88792fa981978cded6caa9984b2d94ea58ad6cfddea4c1b251c42"
+    }
+  }
+}

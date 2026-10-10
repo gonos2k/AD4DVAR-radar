@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_partial_resume.py",
+    "--child",
+    "--plan",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/TANGENT_COUPLED_GN_PARTIAL_RESUME_PLAN_20261010.json",
+    "--plan-sha256",
+    "5756508c5adb97ffb54bbdfb59ab35054f773dc032761fdc654ae3fb050b434a",
+    "--output",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/tangent_coupled_gn_partial_resume_20261010_attempt1/step.json"
+  ],
+  "child_pid": 92167,
+  "exit_code": 1,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 4.807782625081018,
+  "sampled_peak_rss_bytes": 806699008,
+  "rss_samples": 18,
+  "wall_limit_seconds": 660.0,
+  "rss_limit_bytes": 1073741824,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}

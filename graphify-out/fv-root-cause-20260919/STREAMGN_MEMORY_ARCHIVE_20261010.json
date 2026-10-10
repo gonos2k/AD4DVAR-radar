@@ -1,0 +1,23 @@
+{
+  "confirmed_prefix_steps": 1,
+  "execution_status": "completed",
+  "guarded_launch_count": 1,
+  "gzip_bytes": 1952992,
+  "gzip_path": "graphify-out/fv-root-cause-20260919/tangent_coupled_gn_memory_resume_20261010_attempt1/step.json.gz",
+  "gzip_sha256": "f573accecc4eaf1b02ce50b4fbedcf15d2333e0907397bd51c9bd7fb777136c1",
+  "lossless_roundtrip": true,
+  "prior_starts": {
+    "1GiBpartial": 1,
+    "failed_preflight": 1
+  },
+  "raw_bytes": 274919601,
+  "raw_path": "graphify-out/fv-root-cause-20260919/tangent_coupled_gn_memory_resume_20261010_attempt1/step.json",
+  "raw_sha256": "72224458e690cd6675f14479f0787bf7bf4aae878ef0fa7362ed3b0113553552",
+  "resource_path": "graphify-out/fv-root-cause-20260919/tangent_coupled_gn_memory_resume_20261010_attempt1/step.resource.json",
+  "resource_sha256": "a971baf7e5e9ec245211fb5c362172f685f84dabf34fa12e69be1b7ca64b3d5a",
+  "run_path": "graphify-out/fv-root-cause-20260919/tangent_coupled_gn_memory_resume_20261010_attempt1/step.run.json",
+  "run_sha256": "524badff95c820ccd6194f244afda0da0194e48abc086ca709696eabf3ecfb52",
+  "scope": "Userauthorized2GiBsameGNpolicy successor, resourceclosed, onecommit then16candidate refusal",
+  "terminal_execution_closed": true,
+  "total_session_guard_starts": 3
+}

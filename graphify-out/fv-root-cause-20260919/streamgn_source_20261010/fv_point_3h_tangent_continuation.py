@@ -565,22 +565,8 @@ def _tensor_sha(value: Tensor) -> str:
 def _write(path: Path, value: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_name(path.name + f".{os.getpid()}.tmp")
-    owns_temp = False
-    try:
-        with temp.open("x", encoding="utf-8") as stream:
-            owns_temp = True
-            encoder = json.JSONEncoder(sort_keys=True, indent=2, allow_nan=False)
-            for chunk in encoder.iterencode(value):
-                stream.write(chunk)
-            stream.write("\n")
-        os.replace(temp, path)
-        owns_temp = False
-    finally:
-        if owns_temp:
-            try:
-                temp.unlink()
-            except OSError:
-                pass
+    temp.write_text(json.dumps(value, sort_keys=True, indent=2, allow_nan=False) + "\n")
+    os.replace(temp, path)
 
 
 def _load_plan(path: Path, digest: str) -> dict[str, Any]:
@@ -778,8 +764,6 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
             "preceding_step_efficiency_source_theta":
                 base.get("resume_efficiency_source_theta"),
             "preceding_step_efficiency": base["resume_efficiency"]}
-    if base.get("anchor_provenance") is not None:
-        record["base_anchor_provenance"] = base["anchor_provenance"]
     _write(output, record)
     problem, original, _, parameters, truth, _ = seed._prepare_fixed_seed()
     input_before = shared._input_identity(problem, original, base["control"], parameters, truth)
@@ -1040,10 +1024,7 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
         record["last_confirmed_control_sha256"] = _tensor_sha(confirmed)
         record["last_confirmed_theta"] = closure_state["theta"]
         record["last_confirmed_iterations"] = closure_state["accepted_count"]
-        committed_record = {key: value for key, value in record.items()
-            if key != "comparison_progress"}
-        _write(output, committed_record)
-        record.pop("comparison_progress", None)
+        _write(output, record)
 
     def direction_progress(progress: dict[str, Any]) -> None:
         record["phase"] = "running"
@@ -1076,9 +1057,7 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
     row_budget = active_policy.get("jacobian_row_vjp_calls")
     row_closure_ok = (record["jacobian_rows_started"] == record["jacobian_rows_completed"]
         and (row_budget is None or record["jacobian_rows_completed"] == int(row_budget)))
-    if plan.get("experiment_kind") in {
-            "current_tangent_coupled_gn_resume",
-            "current_tangent_coupled_gn_partial_resume"}:
+    if plan.get("experiment_kind") == "current_tangent_coupled_gn_resume":
         row_closure_ok = (row_budget is not None
             and record["jacobian_rows_started"] == record["jacobian_rows_completed"]
             and record["jacobian_rows_completed"] <= int(row_budget)
@@ -1109,10 +1088,6 @@ def _run_child_impl(plan_path: Path, plan_sha: str, output: Path, *,
         numerical_status = _mixing_minimum_resume_status(committed,
             int(active_policy["max_accepted_iterations"]),
             "tangent_coupled_gn_resume")
-    elif plan.get("experiment_kind") == "current_tangent_coupled_gn_partial_resume":
-        numerical_status = _mixing_minimum_resume_status(committed,
-            int(active_policy["max_accepted_iterations"]),
-            "tangent_coupled_gn_partial_resume")
     elif plan.get("experiment_kind") == "current_tangent_coupled_gn_comparison":
         numerical_status = ("tangent_coupled_gn_comparison_accepted" if committed
             else "tangent_coupled_gn_comparison_refused")
@@ -1498,9 +1473,7 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
         mixing_minimum = plan.get("experiment_kind") == "current_tangent_mixing_minimum"
         mixing_minimum_resume = plan.get("experiment_kind") == "current_tangent_mixing_minimum_resume"
         coupled_gn_resume = plan.get("experiment_kind") == "current_tangent_coupled_gn_resume"
-        coupled_gn_partial_resume = plan.get("experiment_kind") == "current_tangent_coupled_gn_partial_resume"
-        mixing_minimum_mode = (mixing_minimum or mixing_minimum_resume or coupled_gn_resume
-            or coupled_gn_partial_resume)
+        mixing_minimum_mode = mixing_minimum or mixing_minimum_resume or coupled_gn_resume
         for item in accepted:
             current_point_hvps = [entry for entry in history
                 if entry.get("base_control_sha256") == item.get("base_control_sha256")]
@@ -1532,8 +1505,7 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
             child.get("jacobian_rows_started") == child.get("jacobian_rows_completed") == 24
             and len(row_history) == 24
             and all(row.get("status") == "completed" for row in row_history))
-            or ((coupled_gn_resume or coupled_gn_partial_resume)
-                and child.get("jacobian_rows_started")
+            or (coupled_gn_resume and child.get("jacobian_rows_started")
                 == child.get("jacobian_rows_completed")
                 and child.get("jacobian_rows_completed", 0) <= int(plan["policy"]["jacobian_row_vjp_calls"])
                 and child.get("jacobian_rows_completed", 0) % 24 == 0
@@ -1682,7 +1654,7 @@ def run(plan_path: Path, plan_sha: str, output: Path, resource: Path,
         elif mixing_minimum_resume:
             mixing_minimum_structure_ok = _mixing_minimum_resume_chain_closed(
                 child, plan, expected_base_sha, history)
-        elif coupled_gn_resume or coupled_gn_partial_resume:
+        elif coupled_gn_resume:
             mixing_minimum_structure_ok = _mixing_minimum_resume_chain_closed(
                 child, plan, expected_base_sha, history,
                 expected_model_name="robust_gn_coupled")

@@ -1,0 +1,17 @@
+{
+  "scope": "Failed preflight exact source/test/plan before correcting control-dependent diagnostics",
+  "snapshots": {
+    "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_partial_resume.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/streamgn_preflight_source_20261010/fv_point_3h_tangent_coupled_gn_partial_resume.py",
+      "sha256": "222b8529a0b0546f4c3c2823e08caa3fec6a94e0a9b19e18c98246eda5524ce8"
+    },
+    "graphify-out/fv-root-cause-20260919/TANGENT_COUPLED_GN_PARTIAL_RESUME_PLAN_20261010.json": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/streamgn_preflight_source_20261010/TANGENT_COUPLED_GN_PARTIAL_RESUME_PLAN_20261010.json",
+      "sha256": "5756508c5adb97ffb54bbdfb59ab35054f773dc032761fdc654ae3fb050b434a"
+    },
+    "tests/test_fv_point_3h_tangent_coupled_gn_partial_resume.py": {
+      "archive_path": "graphify-out/fv-root-cause-20260919/streamgn_preflight_source_20261010/test_fv_point_3h_tangent_coupled_gn_partial_resume.py",
+      "sha256": "f9b002b039e29196cf6678ceb95d4ac399b56358014bb527d0f609f473734711"
+    }
+  }
+}

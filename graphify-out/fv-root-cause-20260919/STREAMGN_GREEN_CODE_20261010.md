@@ -1,0 +1,22 @@
+> 역사적 설계/첫 preflight 검토 기록. 제어 의존 유동 진단을 누락한 anchor는 실제 첫 시도에서 거부됐고 후속 계획에서 수정됐다. 최신 판정과 근거는 STREAMGN_FINDINGS_20261010.md 및 GREEN/RED 최종 검토를 따른다. 아래 원문을 수정 후 인증으로 해석하지 않는다.
+
+# GREEN code preflight: streaming checkpoints and partial GN resume — 2026-10-10
+
+## Disposition
+
+The reviewed source and plan pins are internally consistent and the changes satisfy the scoped design. I found no correctness issue in the writer or resume admission path. The saved-artifact loader accepts only the one closed PR274 commit and explicitly rejects the unfinished second-point tail as reusable work. Final review status: clear for root's next bounded step; no producer blocker remains. This review does not authorize or claim any FV, seed, production AD, HVP, optimizer, or guard execution.
+
+## Checks
+
+- Recomputed the final frozen partial-resume plan digest: `5756508c5adb97ffb54bbdfb59ab35054f773dc032761fdc654ae3fb050b434a`. All 142 source pins and 159 archive pins resolve within the repository and match their hashes. The live continuation source, partial-resume source, partial-resume test, and stream-writer test match `fd207dba…`, `222b8529…`, `f9b002b0…`, and `3a15a141…` respectively.
+- The partial-resume plan keeps the requested 600/660-second limits, 1-GiB RSS cap, three-commit cap, 72 row VJPs, six HVPs, three dense solves, and 16 candidate slots per point. Its initial state is the recorded `7cec4c…` endpoint and its explicit anchor provenance matches the implementation.
+- The loader checks the archived PR274 receipt hashes, completed run/resource receipt, RSS termination, and exactly one committed step. It matches the accepted trial to the stored final repeat, checks endpoint control/theta/J/F² and closure flags, confirms the prior point's complete 24-row/HVP/solve receipt, and validates the interrupted tail boundary (one completed plus one started row at the new base; no new HVP, solve, or candidate). It returns only the committed closure and control; the interrupted row gradient is not used.
+- The new input anchor is derived by copying PR273's completed `input_after` and changing only `control_sha256` to the verified PR274 endpoint hash. The runtime anchor comes from PR273's completed receipt. Both transformations have plan provenance labels. The common child path freshly prepares the seed and compares its input identity and runtime to those anchors before observing the base or constructing a model. The interrupted PR274 record remains explicitly unclosed and receives no fabricated input/runtime/source-after flags.
+- The writer uses a sorted, two-space `JSONEncoder.iterencode` stream with `allow_nan=False`, UTF-8, and the existing final newline. It writes a sibling temporary file and replaces the destination only after the stream closes; write and replace exceptions clean the temporary file and leave the prior checkpoint path untouched. The commit callback serializes the closed iteration without `comparison_progress`, then removes that field from in-memory state only after the write succeeds. Uncommitted progress remains available.
+- The recorded type check now reports zero errors, warnings, or notes after correcting the two test annotations; production code is unchanged by those edits. The 103-test impact run passed with 18 TorchScript deprecation warnings before those type-only test edits. The focused 14-test rerun was still pending at this final review, but the edit changes only annotations/mock typing, so no behavioral blocker remains; root can close the rerun in its final verification record without repeating the broader 103-test set.
+
+## Limits
+
+Streaming removes the full serialized string from each checkpoint write, and dropping the committed progress duplicate removes a measured repeated payload. The evidence does not attribute the prior RSS crossing solely to serialization or guarantee a particular memory reduction. The follow-up remains bounded by the same sampled 1-GiB guard. A successful trajectory supports only its recorded local path and receipts; it would not establish convergence, a minimum/root, exact curvature, response, adjoint, reanalysis, or forecast skill.
+
+Evidence reviewed: `STREAMGN_TESTS_20261010.log`, `STREAMGN_TYPES_20261010.log`, `STREAMGN_TASK_CHECKLIST_20261010.md`, the frozen partial-resume plan and its source/archive pins, `fv_point_3h_tangent_coupled_gn_partial_resume.py`, `fv_point_3h_tangent_continuation.py`, and the two focused regression files.

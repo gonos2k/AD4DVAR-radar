@@ -1,0 +1,41 @@
+{
+  "scope": "streaming writer + partial GN continuation",
+  "implemented": [
+    "atomic chunked checkpoint",
+    "retire duplicate progress at successful commit",
+    "closed-prefix restart with two control-dependent input diagnostics"
+  ],
+  "fixed_self_detected_preflight_defect": "expected shifted_flow_fractions from saved control instead of PR273 point",
+  "verification": {
+    "tests": 45,
+    "warnings": 18,
+    "type_errors": 0,
+    "unchanged_math_helpers": 6
+  },
+  "actual": {
+    "status": "rss_limit",
+    "confirmed_steps": 2,
+    "planned_max_steps": 3,
+    "elapsed_seconds": 437.16104224999435,
+    "sampled_peak_rss_bytes": 1091633152,
+    "last_control_sha256": "f2ca572936a8bf646c920c542b3780ff65a0f94c0d715aa61ba00a5cec57313d",
+    "J_decrease_percent": 0.004243252853179149,
+    "minimum_residual_squared_decrease_percent": 0.166257845688797,
+    "row_completed": 72,
+    "hvp_completed": 4,
+    "dense_completed_counter": 3,
+    "historical_solve_receipts": 2,
+    "tail_current_solve_audit_present": true,
+    "global_terminal_closed": false,
+    "total_guard_starts_including_preflight": 2
+  },
+  "remaining": [
+    "Three-step same-resource completion",
+    "Peak allocation cause separation",
+    "Finite-step GN convergence",
+    "Qualified optimum/adjoint/reanalysis/independent future verification"
+  ],
+  "historical_phase1_percent": 100,
+  "FV_weighted_milestones_percent": 70,
+  "report": "STREAMGN_FINDINGS_20261010.md"
+}

@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_partial_resume.py", line 349, in <module>
+    main()
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_partial_resume.py", line 341, in main
+    _run_child_impl(args.plan, args.plan_sha256, output)
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_partial_resume.py", line 312, in _run_child_impl
+    return tangent._run_child_impl(plan_path, plan_sha, output,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_continuation.py", line 789, in _run_child_impl
+    raise ValueError("reconstructed fixed input/runtime differs from predecessor endpoint receipt")
+ValueError: reconstructed fixed input/runtime differs from predecessor endpoint receipt

@@ -1,0 +1,20 @@
+{
+  "confirmed_prefix_steps": 2,
+  "execution_status": "rss_limit",
+  "guarded_launch_count": 1,
+  "gzip_bytes": 1244993,
+  "gzip_path": "graphify-out/fv-root-cause-20260919/tangent_coupled_gn_partial_resume_20261010_attempt2/step.json.gz",
+  "gzip_sha256": "24c84eab4b4d4f108e65581e02b2bd44baed261dacc2113c2bdb670f0d2ca3e7",
+  "lossless_roundtrip": true,
+  "raw_bytes": 172541692,
+  "raw_path": "graphify-out/fv-root-cause-20260919/tangent_coupled_gn_partial_resume_20261010_attempt2/step.json",
+  "raw_sha256": "a17272f51451e99b20e03d06122b3cfc79d7415e50c67ea16cb6c205e8f43497",
+  "resource_path": "graphify-out/fv-root-cause-20260919/tangent_coupled_gn_partial_resume_20261010_attempt2/step.resource.json",
+  "resource_sha256": "b4d6faf9d2bdaf00f5d8fc29a9c9564fb95a2f287e5a7cd30bed2d1bef1c1d4a",
+  "run_path": "graphify-out/fv-root-cause-20260919/tangent_coupled_gn_partial_resume_20261010_attempt2/step.run.json",
+  "run_sha256": "03b25b9105ba0133e9ac11350e732b47e4c61149db52d0cac506b2b3cb85676a",
+  "scope": "Corrected streamed GN partial resume, frozen plan529110; separate failed-preflight attempt1 preserved",
+  "superseded_preflight_guard_starts": 1,
+  "terminal_execution_closed": false,
+  "total_session_guard_starts": 2
+}
