@@ -1,0 +1,19 @@
+{
+  "FV_extension_percent": 70,
+  "archive": "GN_CONTINUATION_ARCHIVE_20261011.json",
+  "completed": [
+    "threefreshcurrentGNpoints",
+    "threeP2atomiccommits",
+    "sourceinputruntimeclosure"
+  ],
+  "final_confirmed": "454396e77e2f10492e80e0fd625b55e1a08c2be53fe9721b59a4a27d60be3b7a",
+  "findings": "GN_CONTINUATION_FINDINGS_20261011.md",
+  "historical_theory_percent": 100,
+  "metrics": "GN_CONTINUATION_METRICS_20261011.json",
+  "observed": "step decrease/movement shrinking; 9/10/11candidatefirstpass",
+  "remaining": [
+    "newfinalpointoperators/localfinitebarrier",
+    "eligibleoptimum/curvature/adjoint/reanalysis/futureverification"
+  ],
+  "start": "bef45912ae6253673c6bd743670b374bdde76a02ba6199c464d29f6a1c863e5c"
+}

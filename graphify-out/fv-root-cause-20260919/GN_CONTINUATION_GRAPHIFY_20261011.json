@@ -1,0 +1,975 @@
+{
+  "consulted_graph_sha256": "60841f6743f57bff9446755d550f6e396ff02a9ce5d8e85bcdd3f7959e8628f2",
+  "edges": [
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L4",
+      "target": "argparse",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L5",
+      "target": "gzip",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L6",
+      "target": "hashlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L7",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L8",
+      "target": "math",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L9",
+      "target": "pathlib",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L10",
+      "target": "sys",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L11",
+      "target": "time",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L12",
+      "target": "typing",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L14",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L15",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L16",
+      "target": "advar",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L22",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L23",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L24",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L25",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L26",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L27",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L28",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L29",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L30",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L31",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L63",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_sha",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L63",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L72",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L72",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L72",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L102",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_load_parent",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_load_parent",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L102",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L142",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_event_selector_snapshot",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_event_selector_snapshot",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L142",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_event_selector_snapshot",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L142",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L152",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_base_model_closure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_base_model_closure",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L152",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_base_model_closure",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L152",
+      "target": "tensor",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_base_model_closure",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L152",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L162",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_commit_closed_point",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_commit_closed_point",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L162",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_commit_closed_point",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L162",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_commit_closed_point",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L162",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_commit_closed_point",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L162",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_commit_closed_point",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L162",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_commit_closed_point",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L162",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L185",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_run_child",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L185",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L185",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L185",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L432",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_run",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L432",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L432",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L432",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "parameter_type",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L432",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "generic_arg",
+      "relation": "references",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L432",
+      "target": "any",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L454",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_main",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_load_plan",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L73",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_load_parent",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L105",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_load_parent",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L112",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L188",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L190",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_load_parent",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L268",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_event_selector_snapshot",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L332",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_base_model_closure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run_child",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L420",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_commit_closed_point",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L433",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_load_plan",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L438",
+      "target": "path",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_run",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L444",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_sha",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L464",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_run_child",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_main",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L466",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation_run",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "rationale_for",
+      "source": "weather_scenarios_fv_point_3h_gn_continuation_rationale_1",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L1",
+      "target": "weather_scenarios_fv_point_3h_gn_continuation",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_gn_continuation",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L3",
+      "target": "json",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_gn_continuation",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L4",
+      "target": "types",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_gn_continuation",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L6",
+      "target": "pytest",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports",
+      "source": "tests_test_fv_point_3h_gn_continuation",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L7",
+      "target": "torch",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_gn_continuation",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L9",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "import",
+      "relation": "imports_from",
+      "source": "tests_test_fv_point_3h_gn_continuation",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L10",
+      "target": "examples_weather_scenarios",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_continuation",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L13",
+      "target": "tests_test_fv_point_3h_gn_continuation_test_closed_parent_is_bef459_and_whole_model_stays_current",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_continuation",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L24",
+      "target": "tests_test_fv_point_3h_gn_continuation_closure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_continuation",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L37",
+      "target": "tests_test_fv_point_3h_gn_continuation_test_two_commits_update_current_last_count_and_history_atomically",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_continuation",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L52",
+      "target": "tests_test_fv_point_3h_gn_continuation_test_failed_p2_or_write_keeps_previous_confirmed_prefix",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "relation": "contains",
+      "source": "tests_test_fv_point_3h_gn_continuation",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L65",
+      "target": "tests_test_fv_point_3h_gn_continuation_test_commit_cap_refuses_fourth_point_without_replacing_file",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_gn_continuation_test_two_commits_update_current_last_count_and_history_atomically",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L40",
+      "target": "tests_test_fv_point_3h_gn_continuation_closure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_gn_continuation_test_failed_p2_or_write_keeps_previous_confirmed_prefix",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L53",
+      "target": "tests_test_fv_point_3h_gn_continuation_closure",
+      "weight": 1.0
+    },
+    {
+      "confidence": "EXTRACTED",
+      "context": "call",
+      "relation": "calls",
+      "source": "tests_test_fv_point_3h_gn_continuation_test_commit_cap_refuses_fourth_point_without_replacing_file",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L68",
+      "target": "tests_test_fv_point_3h_gn_continuation_closure",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "nodes": [
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_continuation",
+      "label": "fv_point_3h_gn_continuation.py",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_continuation_sha",
+      "label": "_sha()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L63"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "path",
+      "label": "Path",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L63"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_continuation_load_plan",
+      "label": "_load_plan()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L72"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "any",
+      "label": "Any",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L72"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_continuation_load_parent",
+      "label": "_load_parent()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L102"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_continuation_event_selector_snapshot",
+      "label": "_event_selector_snapshot()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L142"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_continuation_base_model_closure",
+      "label": "_base_model_closure()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L152"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tensor",
+      "label": "Tensor",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L152"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_continuation_commit_closed_point",
+      "label": "_commit_closed_point()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L162"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_continuation_run_child",
+      "label": "_run_child()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L185"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_continuation_run",
+      "label": "run()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L432"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "weather_scenarios_fv_point_3h_gn_continuation_main",
+      "label": "main()",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L454"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "rationale",
+      "id": "weather_scenarios_fv_point_3h_gn_continuation_rationale_1",
+      "label": "Run at most three current-point GN corrections from the closed bef459 point.",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_continuation",
+      "label": "test_fv_point_3h_gn_continuation.py",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L1"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_continuation_test_closed_parent_is_bef459_and_whole_model_stays_current",
+      "label": "test_closed_parent_is_bef459_and_whole_model_stays_current()",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L13"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_continuation_closure",
+      "label": "_closure()",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L24"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_continuation_test_two_commits_update_current_last_count_and_history_atomically",
+      "label": "test_two_commits_update_current_last_count_and_history_atomically()",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L37"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_continuation_test_failed_p2_or_write_keeps_previous_confirmed_prefix",
+      "label": "test_failed_p2_or_write_keeps_previous_confirmed_prefix()",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L52"
+    },
+    {
+      "_origin": "ast",
+      "file_type": "code",
+      "id": "tests_test_fv_point_3h_gn_continuation_test_commit_cap_refuses_fourth_point_without_replacing_file",
+      "label": "test_commit_cap_refuses_fourth_point_without_replacing_file()",
+      "source_file": "tests/test_fv_point_3h_gn_continuation.py",
+      "source_location": "L65"
+    }
+  ],
+  "output_tokens": 0,
+  "scope": "isolated2ownedfilesAST"
+}

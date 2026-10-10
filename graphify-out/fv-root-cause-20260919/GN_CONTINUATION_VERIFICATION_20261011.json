@@ -1,0 +1,8 @@
+{
+  "plan_sha256": "319bb7798348643c0198fd09ae9bbe19ddfb88ae7bcfc94c50a80745b29c2d65",
+  "scope": "savedparent/fullG+multi atomiccommit prefix/P2failure/writefailure/cap regressions; ROOTproductionseparate",
+  "seconds": 1.96,
+  "tests_passed": 14,
+  "type_errors": 0,
+  "type_warnings": 0
+}
