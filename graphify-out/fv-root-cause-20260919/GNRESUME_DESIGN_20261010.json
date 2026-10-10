@@ -1,0 +1,39 @@
+{
+  "scope": "At most three fresh-current-point coupled robust-GN commits under same candidate-minimum theta policy",
+  "base_control_sha256": "4035904e46c11c67a6f937039fe3c88b0516330b05f3ba9d57c4cfa619423ab7",
+  "base_theta": 0.4829044955080727,
+  "base_objective": 0.061202333947534084,
+  "base_carried_F_squared": 0.004490021941881948,
+  "policy": {
+    "guarded_launches": 1,
+    "internal_seconds": 600.0,
+    "outer_seconds": 660.0,
+    "rss_bytes": 1073741824,
+    "max_accepted_iterations": 3,
+    "optimizer_steps": 3,
+    "max_candidates_per_iteration": 16,
+    "radius": 0.05,
+    "face_scale": 0.84,
+    "jacobian_row_vjp_calls": 72,
+    "hvp_calls": 6,
+    "dense_solves": 3,
+    "pcg_solves": 0,
+    "root_claim": false,
+    "minimum_claim": false,
+    "response_claim": false,
+    "score_claim": false
+  },
+  "method": "same frozen coupled GN factory, choose robust_gn_coupled spec only; fresh rows/D/12solve+HVP pair/current minimum theta every point",
+  "invariants": [
+    "Original native J/prior/residual/profile unchanged",
+    "Actual currentbranchJ/minmerit/radius and independent P2/finaltheta closure",
+    "Last confirmed control+theta preserved on refusal/interrupt",
+    "Perpoint resource row/HVP/dense accounting and diagnostic history, no old matrix inheritance"
+  ],
+  "remaining": [
+    "Qualified optimum/curvature/normal minima/active stability",
+    "Coupled adjoint/VJP/reanalysis",
+    "Independent synthetic forecasts"
+  ],
+  "milestones": "historicalphase1 100%,FVexternal70% unchanged"
+}

@@ -1,0 +1,51 @@
+{
+  "accounting": {
+    "HVP_budget": 6,
+    "HVP_completed": 2,
+    "HVP_receipts": 2,
+    "HVP_started": 2,
+    "accepted_confirmed_prefix": 1,
+    "candidate_slots_total": 9,
+    "configured_step_cap": 3,
+    "dense_budget": 3,
+    "dense_completed": 1,
+    "dense_receipts": 1,
+    "dense_started": 1,
+    "elapsed_seconds": 84.95053575001657,
+    "modeled_points": 1,
+    "optimizer_steps_saved": 1,
+    "resource_closed": false,
+    "row_budget": 72,
+    "row_completed": 25,
+    "row_receipts": 26,
+    "row_started": 26,
+    "sampled_peak_rss_bytes": 1074937856,
+    "unmodeled_tail_hvps": 0,
+    "unmodeled_tail_row_status_counts": {
+      "completed": 1,
+      "started": 1
+    },
+    "unmodeled_tail_rows": 2,
+    "unmodeled_tail_solves": 0
+  },
+  "confirmed_prefix": {
+    "accepted_steps": 1,
+    "terminal_control_sha256": "7cec4c62bc2ebe3a96106086408adc0ecdbc959fe1b53beafa46902cd41fb7dd",
+    "terminal_native_J": 0.061195305062512445,
+    "terminal_theta": 0.4829895933920232
+  },
+  "execution_status": "rss_limit",
+  "numerical_status": "fresh_current_base_closed",
+  "parent_checks": {
+    "confirmed_prefix_matches_child_checkpoint": true,
+    "raw_digest_matches_parent": true,
+    "resource_matches_parent": true
+  },
+  "source_checks": {
+    "all_current_plan_pins_match": true,
+    "pin_mismatches": [],
+    "source_after_matches": null,
+    "source_after_present": false,
+    "source_before_matches": true
+  }
+}

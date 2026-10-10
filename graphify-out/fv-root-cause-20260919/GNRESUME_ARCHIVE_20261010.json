@@ -1,0 +1,17 @@
+{
+  "confirmed_prefix_steps": 1,
+  "execution_status": "rss_limit",
+  "guarded_launch_count": 1,
+  "gzip_bytes": 750296,
+  "gzip_path": "graphify-out/fv-root-cause-20260919/tangent_coupled_gn_resume_20261010_attempt1/step.json.gz",
+  "gzip_sha256": "07b5a611a3e0d035841c4136d294ce7cf45a0ba86276eff7d509f4e23f0bf18c",
+  "lossless_roundtrip": true,
+  "raw_bytes": 102804154,
+  "raw_path": "graphify-out/fv-root-cause-20260919/tangent_coupled_gn_resume_20261010_attempt1/step.json",
+  "raw_sha256": "33adef17be48e9fbc42d28fd4c2f794c1c5c19ff1612adec6d0ef203ddc5ee05",
+  "resource_path": "graphify-out/fv-root-cause-20260919/tangent_coupled_gn_resume_20261010_attempt1/step.resource.json",
+  "resource_sha256": "de3c552efd3ac93e961eab38c4561982666041abdd71bd38e56670eb76d97ba1",
+  "run_path": "graphify-out/fv-root-cause-20260919/tangent_coupled_gn_resume_20261010_attempt1/step.run.json",
+  "run_sha256": "da8420ceeca46c486506d9c9e150213759e7b31e5a79614fc342dbeb195ab611",
+  "terminal_execution_closed": false
+}
