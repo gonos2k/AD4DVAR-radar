@@ -1,0 +1,18 @@
+{
+  "scope": "Synthetic JSON; functions and input prepared before trace starts; write interval Python allocations only, not FV/Tensor/process RSS or general performance",
+  "same_bytes": true,
+  "measurements": {
+    "legacy": {
+      "bytes": 4908996,
+      "sha256": "bd579a4afd2dd34d3c145e3900f36d77bafc74e00cbb46aab1f76fe96f9f07cc",
+      "write_seconds": 0.8564561251550913,
+      "python_traced_peak_bytes": 31667559
+    },
+    "stream": {
+      "bytes": 4908996,
+      "sha256": "bd579a4afd2dd34d3c145e3900f36d77bafc74e00cbb46aab1f76fe96f9f07cc",
+      "write_seconds": 0.8582562918309122,
+      "python_traced_peak_bytes": 64827
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "execution_status": "failed",
+  "failed_plan_sha256": "5756508c5adb97ffb54bbdfb59ab35054f773dc032761fdc654ae3fb050b434a",
+  "failed_plan_snapshot": "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/streamgn_preflight_source_20261010/TANGENT_COUPLED_GN_PARTIAL_RESUME_PLAN_20261010.json",
+  "guarded_launch_count": 1,
+  "gzip_bytes": 26262,
+  "gzip_path": "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/tangent_coupled_gn_partial_resume_20261010_attempt1/step.json.gz",
+  "gzip_sha256": "e892cbd29ed508b6547bae37f4fabd210371652ad99d1738b72621ca4f040cc9",
+  "log_path": "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/tangent_coupled_gn_partial_resume_20261010_attempt1/step.log",
+  "log_sha256": "feb4e8eb43d98de7d7f04ebb5a78e665d9aaa7dcff724642a2272b98ea733d8c",
+  "lossless_roundtrip": true,
+  "raw_bytes": 93339,
+  "raw_path": "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/tangent_coupled_gn_partial_resume_20261010_attempt1/step.json",
+  "raw_sha256": "68bf050b9b45c093801987484818bb0a3ed4f99db146584c8f7be893aec12f0b",
+  "resource_path": "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/tangent_coupled_gn_partial_resume_20261010_attempt1/step.resource.json",
+  "resource_sha256": "d0d2778cb4a110aeb2c56b95a5f0a542bbfa3a90981b2f50c17244150a1b3d6c",
+  "run_path": "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/tangent_coupled_gn_partial_resume_20261010_attempt1/step.run.json",
+  "run_sha256": "c0d774a4fbe09a86dda140ab592e58f4149d692e5c61940981d1579c4bb8c9eb",
+  "scope": "Actual guarded attempt1 preflight failed before current gradients/rows/HVP/candidates; not numerical optimization"
+}

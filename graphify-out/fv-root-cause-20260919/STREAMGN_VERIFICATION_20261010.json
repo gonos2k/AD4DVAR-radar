@@ -1,0 +1,38 @@
+{
+  "affected_test_modules": [
+    "tests/test_fv_point_3h_tangent_stream_checkpoint.py",
+    "tests/test_fv_point_3h_tangent_coupled_gn_partial_resume.py",
+    "tests/test_fv_point_3h_tangent_coupled_gn_resume.py",
+    "tests/test_fv_point_3h_tangent_coupled_gn_comparison.py",
+    "tests/test_fv_point_3h_tangent_mixing_minimum_probe.py",
+    "tests/test_fv_point_3h_tangent_mixing_minimum_resume.py",
+    "tests/test_fv_point_3h_tangent_continuation.py"
+  ],
+  "archives": 168,
+  "basedpyright": {
+    "errors": 0,
+    "files": [
+      "examples/weather_scenarios/fv_point_3h_tangent_continuation.py",
+      "examples/weather_scenarios/fv_point_3h_tangent_coupled_gn_partial_resume.py",
+      "tests/test_fv_point_3h_tangent_stream_checkpoint.py",
+      "tests/test_fv_point_3h_tangent_coupled_gn_partial_resume.py"
+    ],
+    "notes": 0,
+    "version": "1.39.9",
+    "warnings": 0
+  },
+  "preflight_readonly_plan_sha256": "529110d25ca28ac85ab3ce3fa2fd23a8b2a8ba0122c2f184ab5e26a3c20b4f17",
+  "production_source_edits_after_guard": false,
+  "pytest": {
+    "elapsed_seconds": 46.66,
+    "log": "STREAMGN_TESTS_20261010.log",
+    "passed": 45,
+    "warnings": 18
+  },
+  "scope": "Corrected frozen partial GN source verification, no production replay during tests",
+  "separate_guard_starts": {
+    "corrected_numerical_attempt": 1,
+    "failed_preflight": 1
+  },
+  "sources": 142
+}
