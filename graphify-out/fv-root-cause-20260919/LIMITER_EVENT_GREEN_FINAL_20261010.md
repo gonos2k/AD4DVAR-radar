@@ -10,7 +10,8 @@ At analysis Euler stage 124, x-interior cell [1,2], the direct-tape capture and 
 The saved first-order event alpha is `5.58549281687e-07`. Side JVPs are 0.282140046701 and 0.282140046701; the JVP/gradient-dot checks and projected-gradient-dot checks pass on both sides.
 Projected gradient norm is 77.5440358363; direction norm is 0.046447464754; cosine(projected gradient, GN direction) is 0.0783347243641.
 The c[12:15] squared-gradient fraction is 99.96237518% after projection.
-The side-gradient difference has projected tangent norm 3.33066907388e-16; its dot with direction matches the pure-normal prediction.
+The GN direction's saved face-normal component is 8.67361737988e-19. The projected-gradient difference between sides is 3.33066907388e-16 L2.
+For the side-gradient jump, Δg·d is 1.20260759911e-18; the pure-normal estimate is 1.21568492435e-20. Their difference 1.19045074987e-18 is below the componentwise roundoff/projection bound 3.31703854336e-14; the tangent residue norm is 2.96667195618e-16.
 
 ## Local chart samples
 
@@ -34,6 +35,7 @@ Attempt 2 used 26.032461374998093 s and sampled 596967424 bytes RSS; it complete
 - `attempt2_guard_completed_zero_exit`: **True**
 - `source_input_runtime_closed`: **True**
 - `event_side_parity_and_jvp_gradient_checks`: **True**
+- `trace_124_x_cell_and_normalized_gap_match_saved_event`: **True**
 - `side_gradient_difference_is_pure_normal`: **True**
 - `all_three_samples_match_linear_zeta_and_event_values`: **True**
 - `no_optimizer_hvp_row_or_solve`: **True**

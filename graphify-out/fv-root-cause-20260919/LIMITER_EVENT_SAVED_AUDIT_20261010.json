@@ -30,7 +30,8 @@
     "frozen_plan_and_preflight_pins": true,
     "no_optimizer_hvp_row_or_solve": true,
     "side_gradient_difference_is_pure_normal": true,
-    "source_input_runtime_closed": true
+    "source_input_runtime_closed": true,
+    "trace_124_x_cell_and_normalized_gap_match_saved_event": true
   },
   "event": {
     "definition": {
@@ -48,8 +49,12 @@
       "projected_gradients_match_across_sides": true,
       "side_dot_difference": 1.2026075991121416e-18,
       "side_dot_difference_equals_pure_normal_term": true,
+      "side_dot_difference_forms_agree_to_roundoff": true,
+      "side_dot_difference_from_separate_dots": 0.0,
       "side_dot_difference_pure_normal_error": 1.1904507498685999e-18,
-      "side_dot_difference_pure_normal_roundoff_bound": 8.778987656501185e-17,
+      "side_dot_difference_pure_normal_roundoff_bound": 3.3170385433601163e-14,
+      "side_dot_subtraction_error": 1.2026075991121416e-18,
+      "side_dot_subtraction_roundoff_bound": 4.1173817746171026e-14,
       "side_gradient_difference_l2": 0.014015892921142782,
       "side_gradient_difference_normal_component": 0.014015892921142782,
       "side_gradient_difference_tangent_residual_l2": 2.9666719561769915e-16,

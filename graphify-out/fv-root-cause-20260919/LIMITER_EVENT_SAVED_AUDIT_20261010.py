@@ -193,7 +193,8 @@ def main() -> None:
     delta_normal = vdot(gradient_delta, unit)
     delta_tangent_residual = minus(gradient_delta, [delta_normal * x for x in unit])
     dot_plus, dot_minus = vdot(gradients["1"], direction), vdot(gradients["-1"], direction)
-    dot_difference = dot_plus - dot_minus
+    dot_difference = vdot(gradient_delta, direction)
+    separate_dot_difference = dot_plus - dot_minus
     normal_dot_prediction = delta_normal * vdot(unit, direction)
     pure_normal_dot_error = abs(dot_difference - normal_dot_prediction)
     componentwise_dot_scale = math.fsum(abs(x * y) for x, y in zip(gradient_delta, direction))
@@ -201,16 +202,23 @@ def main() -> None:
         abs(x * y) for x, y in zip(gradients["-1"], direction))
     pure_normal_roundoff_bound = (norm(projected_delta) * norm(direction)
         + 64.0 * EPS * (componentwise_dot_scale + underlying_dot_scale + abs(normal_dot_prediction)))
+    subtraction_roundoff_bound = 64.0 * EPS * (
+        componentwise_dot_scale + underlying_dot_scale + abs(dot_plus) + abs(dot_minus))
     projection_checks = {
         "side_projected_gradient_difference_l2": norm(projected_delta),
         "side_gradient_difference_l2": norm(gradient_delta),
         "side_gradient_difference_tangent_residual_l2": norm(delta_tangent_residual),
         "side_gradient_difference_normal_component": delta_normal,
         "side_dot_difference": dot_difference,
+        "side_dot_difference_from_separate_dots": separate_dot_difference,
+        "side_dot_subtraction_error": abs(dot_difference - separate_dot_difference),
+        "side_dot_subtraction_roundoff_bound": subtraction_roundoff_bound,
         "normal_only_dot_prediction": normal_dot_prediction,
         "side_dot_difference_pure_normal_error": pure_normal_dot_error,
         "side_dot_difference_pure_normal_roundoff_bound": pure_normal_roundoff_bound,
         "side_dot_difference_equals_pure_normal_term": pure_normal_dot_error <= pure_normal_roundoff_bound,
+        "side_dot_difference_forms_agree_to_roundoff": abs(dot_difference - separate_dot_difference)
+            <= subtraction_roundoff_bound,
         "projected_gradients_match_across_sides": norm(projected_delta) <= 1e-12,
         "side_gradient_jump_is_pure_normal": norm(delta_tangent_residual) <= 1e-11,
         "normal_vectors_match_across_sides": norm(minus(units["1"], units["-1"])) <= 1e-12,
@@ -305,7 +313,8 @@ def main() -> None:
         "trace_124_x_cell_and_normalized_gap_match_saved_event": event_trace_closed and event_gap_closed,
         "side_gradient_difference_is_pure_normal": all(projection_checks[key] for key in (
             "side_dot_difference_equals_pure_normal_term", "projected_gradients_match_across_sides",
-            "side_gradient_jump_is_pure_normal", "normal_vectors_match_across_sides")),
+            "side_gradient_jump_is_pure_normal", "normal_vectors_match_across_sides",
+            "side_dot_difference_forms_agree_to_roundoff")),
         "all_three_samples_match_linear_zeta_and_event_values": len(samples) == 3 and all(sample_checks),
         "no_optimizer_hvp_row_or_solve": raw.get("optimizer_steps_applied") == 0
             and raw.get("fresh_hvp_calls") == 0 and raw.get("archived_hvp_vectors_used") == 0
@@ -358,7 +367,8 @@ def main() -> None:
         f"Projected gradient norm is {norm(projected_gradients['-1']):.12g}; direction norm is {norm(direction):.12g}; "
         f"cosine(projected gradient, GN direction) is {vdot(projected_gradients['-1'], direction)/(norm(projected_gradients['-1'])*norm(direction)):.12g}.",
         f"The c[12:15] squared-gradient fraction is {fraction(projected_gradients['-1'][12:15], projected_gradients['-1']):.8%} after projection.",
-        f"The side-gradient difference has projected tangent norm {projection_checks['side_projected_gradient_difference_l2']:.12g}; its dot with direction matches the pure-normal prediction.",
+        f"The GN direction's saved face-normal component is {side_data['-1']['unit_normal_dot_direction']:.12g}. The projected-gradient difference between sides is {projection_checks['side_projected_gradient_difference_l2']:.12g} L2.",
+        f"For the side-gradient jump, Δg·d is {projection_checks['side_dot_difference']:.12g}; the pure-normal estimate is {projection_checks['normal_only_dot_prediction']:.12g}. Their difference {projection_checks['side_dot_difference_pure_normal_error']:.12g} is below the componentwise roundoff/projection bound {projection_checks['side_dot_difference_pure_normal_roundoff_bound']:.12g}; the tangent residue norm is {projection_checks['side_gradient_difference_tangent_residual_l2']:.12g}.",
         "",
         "## Local chart samples",
         "",
