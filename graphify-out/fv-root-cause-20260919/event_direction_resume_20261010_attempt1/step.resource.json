@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_event_direction_resume.py",
+    "--child",
+    "--plan",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/EVENT_DIRECTION_RESUME_PLAN_20261010.json",
+    "--plan-sha256",
+    "2ba1d88c83e6abdc054647af4d5d5a074a4b2569eee3e8ffc7eafcbe5e20591c",
+    "--output",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/event_direction_resume_20261010_attempt1/step.json"
+  ],
+  "child_pid": 15512,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 79.57370762480423,
+  "sampled_peak_rss_bytes": 612417536,
+  "rss_samples": 298,
+  "wall_limit_seconds": 660.0,
+  "rss_limit_bytes": 2147483648,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}

@@ -1,0 +1,10 @@
+{
+  "affected_tests_passed": 14,
+  "plan_sha256": "2ba1d88c83e6abdc054647af4d5d5a074a4b2569eee3e8ffc7eafcbe5e20591c",
+  "producer_sha256": "4d819f1c7a3ce0109514b2b5c89221eea2380c84b8337a5fbe234327d4bf83c5",
+  "scope": "saved parent and synthetic base model residual/current event support, prior comparison and capture regressions; ROOT production separatelyguarded",
+  "seconds": 1.73,
+  "test_sha256": "c57f4b24abf57c941dcf22bc3882de5956c6fe02f0b3dcb5763622689a2c55bd",
+  "type_errors": 0,
+  "warnings": 18
+}

@@ -1,0 +1,20 @@
+{
+  "FV_extension_percent": 70,
+  "archive": "EVENT_RESUME_ARCHIVE_20261010.json",
+  "base": "48b0f95c5aa485a6a17046d4497a2267a389b1cfb2eeedb75d79e7ba038d5729",
+  "completed": [
+    "newpointGNrows/solve/currenteventderivatives",
+    "freshbotharmHVP4",
+    "correctedmerituphillrefusal",
+    "GNfallbackP2onecommit"
+  ],
+  "findings": "EVENT_RESUME_FINDINGS_20261010.md",
+  "historical_theory_percent": 100,
+  "metrics": "EVENT_RESUME_METRICS_20261010.json",
+  "newpoint": "15516fbae36637547a151066dc4af5eaa0ce74af9dbc5e93fe24694ff96c4cc0",
+  "remaining": [
+    "new15516currentactiveevent/normaloperators",
+    "eligibleoptimum/curvature/adjoint/reanalysis/futureverification"
+  ],
+  "selection_scope": "single supportedarm; no comparativewinner"
+}
