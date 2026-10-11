@@ -1,0 +1,3 @@
+# Prelaunch revision 1
+
+No production FV launch occurred under first plan b402883e71cf874baab88f440ef598d622addabdde1ce84c67a30a03bc9befa7. GREEN found a policy/stop mismatch: the policy said small progress or regression, but the caller required both relative decreases <=0.3%; maxmixed regression with stronger R improvement would continue. The final caller stops for three-step stagnation OR any three-step metric regression, separately labeled. A counterexample regression test was added. Prior plan/source/preflight are preserved in preflight_v1.tar.gz. Source version and approval conditions are unchanged.

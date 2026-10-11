@@ -1,0 +1,68 @@
+{
+  "files": {
+    "attempt1/point_00/candidate_01.json": {
+      "sha256": "0a7a5fcb24f5d67de288e741b50f96470307358e1fed45a91b4afb90881bf9a3",
+      "bytes": 2235946
+    },
+    "attempt1/point_01/candidate_02.json": {
+      "sha256": "fbad4c5b36e0a8070b4b49317ee3e1a4723da66d1c9d0174896012ef98ffb73e",
+      "bytes": 2235928
+    },
+    "attempt1/point_02/candidate_03.json": {
+      "sha256": "d0a5ba42c2019812ba816b935eca3ad3e596b0e36911d5a3c0a3fddc479f6bd0",
+      "bytes": 2248174
+    },
+    "attempt1/point_03/candidate_04.json": {
+      "sha256": "590ea95016d1635a5ffece47bde43774b32879d6ed0213a8102275c250a8f536",
+      "bytes": 2235935
+    },
+    "attempt1/point_04/candidate_05.json": {
+      "sha256": "26e089c1911eb08d1280c80bd68f0fd499dd7f32c0f99bf04c96113dbcf660cc",
+      "bytes": 2235918
+    },
+    "attempt1/point_05/candidate_06.json": {
+      "sha256": "cee59c26731c95e945d0fe12c9fb0c6474d28dc5f8b2de0ff4cd35379645d3f6",
+      "bytes": 2248188
+    },
+    "attempt1/point_06/candidate_07.json": {
+      "sha256": "7c7719200b4a23261af8871ccfd5ee5c046ce48b6367cf3106294b5821dc35fc",
+      "bytes": 2248881
+    },
+    "attempt1/point_07/candidate_08.json": {
+      "sha256": "a052536a78f99b757693d34f4c1c48618298318a97285f2d28008e4e13b351f7",
+      "bytes": 2248167
+    },
+    "attempt1/point_08/candidate_09.json": {
+      "sha256": "fb92bd2298ace55a341cba37b5e257138e86794e1174bd2a778320af1c8ec0e7",
+      "bytes": 2249616
+    },
+    "attempt1/point_09/candidate_10.json": {
+      "sha256": "ee3cb5ed9aa66ee040746f9297abc3b86f11fcb2f936e987b66f1cd877bf006a",
+      "bytes": 2235915
+    },
+    "attempt1/point_10/candidate_11.json": {
+      "sha256": "7d7429d9c5a1d13b546312a060a6e93e0a9baa3fc078579e63570a26a01af6cf",
+      "bytes": 2249624
+    },
+    "attempt1/step.json": {
+      "sha256": "a014b58164c3b623cecdec8560be57724e260cb0e04399766a801540193d84ab",
+      "bytes": 135262212
+    },
+    "attempt1/step.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "attempt1/step.resource.json": {
+      "sha256": "1743cbd58004d62e0f74d03b6fec94e2011cae8fb12ddfc3f01811bba6e6f8b9",
+      "bytes": 744
+    },
+    "attempt1/step.run.json": {
+      "sha256": "a33590c1f96868d47186fa6b30ab866202e959152c004183646e7644305ae2e0",
+      "bytes": 925
+    }
+  },
+  "bundle_sha256": "508463f4a40a270a43e63ecbacb006e060db172abb973913c15e8277417cf0db",
+  "extraction": "Extract receipts.tar.gz into this directory to restore original attempt1 raw bytes. No raw receipt is rewritten or reclassified.",
+  "raw_sha256": "a014b58164c3b623cecdec8560be57724e260cb0e04399766a801540193d84ab",
+  "source_bundle_sha256": "99c353119ecf9a91c797f9ee7bf7f98098207516d52e78ef5cfec45ed30ea0e4"
+}

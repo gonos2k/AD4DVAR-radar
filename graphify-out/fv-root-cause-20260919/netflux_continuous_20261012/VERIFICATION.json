@@ -1,0 +1,71 @@
+{
+  "plan_sha256": "5fd879837c2e5898b16b01007aabae34d0eeea7da8b6d094d6d03b9dad366e07",
+  "raw_sha256": "a014b58164c3b623cecdec8560be57724e260cb0e04399766a801540193d84ab",
+  "source_bundle_sha256": "99c353119ecf9a91c797f9ee7bf7f98098207516d52e78ef5cfec45ed30ea0e4",
+  "source_archive_pins": {
+    "source": 205,
+    "archive": 279,
+    "all_verified": true
+  },
+  "preflight": {
+    "GREEN_preflight": "passed",
+    "Graphify": {
+      "communities": 17,
+      "edges": 221,
+      "nodes": 124,
+      "scope": "4newfiles + 6prior AST cachedfiles",
+      "semantic_tokens": 0
+    },
+    "RED_preflight": "passed",
+    "affected_tests_deselected": 1,
+    "affected_tests_passed": 55,
+    "all_pins_verified": true,
+    "archive_files": 279,
+    "existing_deprecation_warnings": 18,
+    "initial_expanded_test_result": {
+      "classification": "historical source-version domain incompatible with current evaluator, not a new-path qualification",
+      "failed": 1,
+      "failure": "test_archived_98ee_endpoint_load_is_receipt_only requires the old transport hash through its historical live-source producer plan; inherited code unchanged from PR298",
+      "passed": 55
+    },
+    "input": "old-kernel fixed case from PR298 asset, same new transport; no seed generation",
+    "numerical_version": "minmod_net_flux_fp64_v1",
+    "plan_sha256": "5fd879837c2e5898b16b01007aabae34d0eeea7da8b6d094d6d03b9dad366e07",
+    "source_bundle_sha256": "99c353119ecf9a91c797f9ee7bf7f98098207516d52e78ef5cfec45ed30ea0e4",
+    "source_files": 205,
+    "tests_not_double_counted": true,
+    "type_check": {
+      "errors": 0,
+      "files": 4,
+      "mode": "basic",
+      "project": "temporary config: repository/.venv plus repo andsrc extraPaths",
+      "warnings": 0
+    },
+    "affected_test_seconds": 9.34,
+    "new_tests": 14,
+    "type_check_policy": "temporary basic mode, all four new modules/tests, no suppressed diagnostics in source"
+  },
+  "metrics": "METRICS.json",
+  "receipt_manifest": "RECEIPT_MANIFEST.json",
+  "independent_stored_prefix_verification": {
+    "script": "verify_result.py",
+    "closed_steps": 11,
+    "all_prior_P2_and_full_G_and_Armijo_closed": true,
+    "additional_FV_run": false
+  },
+  "final_audits": {
+    "GREEN": "GREEN_FINAL.md:11prefixes verified, four branch changes and higher model errors retained as limits",
+    "RED": "RED_FINAL.md:11prefixes verified, last incomplete pair + internal budget and guard distinction retained"
+  },
+  "limits": {
+    "numerical_convergence": false,
+    "eligible_minimum": false,
+    "postcommit_complete_operator_readiness": false,
+    "exact_adjoint": false,
+    "signed_actual_reoptimization": false,
+    "new_version_future_score": false,
+    "independent_forecast": false,
+    "legacy_full_suite": false
+  },
+  "test_counts_not_summed": true
+}
