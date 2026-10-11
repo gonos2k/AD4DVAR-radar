@@ -1,0 +1,50 @@
+{
+  "scope": "saved PR285 closed_steps[2]: base vs adjacent rejected candidate 10 and accepted candidate 11",
+  "plan_sha256": "319bb7798348643c0198fd09ae9bbe19ddfb88ae7bcfc94c50a80745b29c2d65",
+  "raw_sha256": "f3cd137e9f3e348d9ca679a7b701bad9294ed5c4d2b7693c0c6f150dbb716242",
+  "base_control_sha256": "1825954e7c93858bd9a9adfa6aa7f32a9387d743dab8958af866454708f85877",
+  "candidates": {
+    "10": {
+      "alpha": 0.0015410398692810362,
+      "actual_R": 0.003135800529928406,
+      "R_armijo_bound": 0.0031277546326086017,
+      "R_armijo_passed": false,
+      "R_excess_over_bound": 8.045897319804331e-06,
+      "J_armijo_passed": true,
+      "branch_pair_passed": true,
+      "face_audit_passed": true,
+      "finite_G_and_model_prediction": true,
+      "largest_G_model_error_components_zero_based": [
+        {"component": 13, "error": 0.0024219762890138417},
+        {"component": 12, "error": -0.0013805065697293593},
+        {"component": 14, "error": -0.0009362398475022578}
+      ]
+    },
+    "11": {
+      "alpha": 0.0007705199346405181,
+      "actual_R": 0.003127039112866745,
+      "R_armijo_bound": 0.003127755178315469,
+      "R_armijo_passed": true,
+      "J_armijo_passed": true,
+      "accepted": true,
+      "P2_closed": true,
+      "largest_G_model_error_components_zero_based": [
+        {"component": 13, "error": 0.0007778488343268093},
+        {"component": 12, "error": -0.0004304544955582249},
+        {"component": 14, "error": -0.0003189148763859135}
+      ]
+    }
+  },
+  "branch_selector_changes": {
+    "axis": "x",
+    "cell_zero_based": [1, 2],
+    "base_to_candidate_10_stages": [109, 110, 111, 112, 178, 179, 180, 181],
+    "base_to_candidate_11_stages": [109, 110, 181],
+    "candidate_10_vs_11_stages": [111, 112, 178, 179, 180],
+    "changed_field": "choose_left",
+    "left_right_slope_sign_changes": 0,
+    "face_sign_differences": 0,
+    "target_stage_124_choose_left": false
+  },
+  "no_FV_or_derivative_replay": true
+}

@@ -1,0 +1,11 @@
+# 454 current-point local diagnostic — RED final
+
+Read-only saved-run audit; no FV run launched by this review. Evidence is `gn_local_diagnostic_20261011_attempt1/step.json`, `.run.json`, `.resource.json`, `.gz`, and `GN_LOCAL_DIAGNOSTIC_ARCHIVE_20261011.json`.
+
+- Plan `c98b16be54351c1f5711abc86e93bdc067a59578914e18f14f12d187181781f8` pins 167 sources and 233 archive records; all pins verified. The child’s source/input/runtime before-and-after records match.
+- Runner completed in 64.988 s, exit 0, peak RSS 700,907,520 bytes; no monitor error, termination, or SIGTERM. Archive SHA records match raw/gzip/run/resource files, and gzip round-trip is byte-identical.
+- Starting/current/last-confirmed control is `454396e77e2f10492e80e0fd625b55e1a08c2be53fe9721b59a4a27d60be3b7a`. Fresh operators completed exactly 24 Jacobian rows, 1 solve, 2 HVPs; event-gradient/JVP counts are zero.
+- The fixed 8-sample window completed 8/8 slots and evaluations. Each has `accepted=false`; optimizer steps and commits are zero, readiness is false. J Armijo passes all 8, R Armijo only sample 8. That final sample remains diagnostic data; it did not pass through P2 or a selection/commit path.
+- Selector comparison against the saved 454 parent trace shows the first choice difference in one-based `choices` slice 112 for the largest sample, then recurring slices 172–181; as alpha halves the changed interval contracts, ending at slice 181 (zero-based trace index 180) for sample 8. Both sides change the same x-orientation `choose_left[1][2]` entry from false to true. At the producer’s exact event snapshot index `choices[124]`, all eight samples retain `(-1,-1,-1,false)` for `(left_sign,right_sign,slope_sign,choose_left)` on both sides. Thus the old event-124 orientation is not a demonstrated cause; other trajectory selectors do move. All eight report no nonfinite/tie flag, with positive active-limiter gaps (minimum observed `3.73e-8`).
+
+Supported conclusion: this is a fresh bounded current-point GN/window diagnostic with closed source/input/runtime receipts and zero commits. It does not execute the PR286 three-commit continuation producer, establish a root/minimum, or support forecast-score claims.

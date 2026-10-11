@@ -1,0 +1,19 @@
+{
+  "FV_extension_percent": 70,
+  "archive": "GN_LOCAL_DIAGNOSTIC_ARCHIVE_20261011.json",
+  "completed": [
+    "savednearreject/acceptselectoranalysis",
+    "newcurrentGNoperators",
+    "8samepointdiagnostic samples"
+  ],
+  "findings": "GN_LOCAL_DIAGNOSTIC_FINDINGS_20261011.md",
+  "historical_theory_percent": 100,
+  "metrics": "GN_LOCAL_DIAGNOSTIC_METRICS_20261011.json",
+  "observed": "sample8JRpassesbutstage180choose_leftdiff; all8outsidebaseselector; errorsconcentratedc12:15",
+  "point_unchanged": "454396e77e2f10492e80e0fd625b55e1a08c2be53fe9721b59a4a27d60be3b7a",
+  "remaining": [
+    "currentstage180event/closerlocalvalidwindow",
+    "PR286revisedproduceractualFViteration",
+    "eligibleoptimum/adjoint/reanalysis/futureverification"
+  ]
+}

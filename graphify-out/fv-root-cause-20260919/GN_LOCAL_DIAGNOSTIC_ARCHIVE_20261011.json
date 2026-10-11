@@ -1,0 +1,17 @@
+{
+  "guarded_launch_count": 1,
+  "gzip_bytes": 205942,
+  "gzip_path": "graphify-out/fv-root-cause-20260919/gn_local_diagnostic_20261011_attempt1/step.json.gz",
+  "gzip_sha256": "8cb7729886d3fd56514b20276169a59ac3eaa0ea80983395caab1ed6cc1bcfaf",
+  "lossless_roundtrip": true,
+  "optimizer_steps_applied": 0,
+  "plan_sha256": "c98b16be54351c1f5711abc86e93bdc067a59578914e18f14f12d187181781f8",
+  "raw_bytes": 22206111,
+  "raw_path": "graphify-out/fv-root-cause-20260919/gn_local_diagnostic_20261011_attempt1/step.json",
+  "raw_sha256": "6090792b7876a4798bf42c2aab57de39c64b08c24744cb456593f4bcb0c5f2f8",
+  "resource_path": "graphify-out/fv-root-cause-20260919/gn_local_diagnostic_20261011_attempt1/step.resource.json",
+  "resource_sha256": "4227bb6b91bfe283317c33bcd0475456e2b6e8d86827c7039b4c0f30c9eb22f7",
+  "run_path": "graphify-out/fv-root-cause-20260919/gn_local_diagnostic_20261011_attempt1/step.run.json",
+  "run_sha256": "a6d1d79594ea5caa5516db17b8deb6a68789714e18d837afbc7f250d371e750b",
+  "scope": "fresh454GNoperators+8samepointdiagnostic samples noP2commit"
+}
