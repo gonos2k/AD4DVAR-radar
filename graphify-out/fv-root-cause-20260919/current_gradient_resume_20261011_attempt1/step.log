@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_current_gradient_resume.py", line 314, in <module>
+    main()
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_current_gradient_resume.py", line 296, in main
+    _run_child(PLAN, args.plan_sha256, ATTEMPT / "step.json")
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_current_gradient_resume.py", line 192, in _run_child
+    _, _, direction, direction_audit = tangent.tangent_direction(
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_tangent_continuation.py", line 160, in tangent_direction
+    raise ValueError("one-sided gradient jump is not supported by the common face")
+ValueError: one-sided gradient jump is not supported by the common face

@@ -1,0 +1,36 @@
+{
+  "manifest": {
+    "graphify-out/fv-root-cause-20260919/GRADIENT_RESUME_PLAN_20261011.json": {
+      "bytes": 71344,
+      "sha256": "a5f83fde4576e65c948f8e896544015f64f9c279b6640417f6523b33670214d2"
+    },
+    "graphify-out/fv-root-cause-20260919/GRADIENT_RESUME_SOURCE_20261012.tar.gz": {
+      "bytes": 1163935,
+      "sha256": "3517bb094cf8adf327893dfe96d6913431cad2bcd6837031fb6ffe57e4cdce43"
+    },
+    "graphify-out/fv-root-cause-20260919/current_gradient_resume_20261011_attempt1/step.json": {
+      "bytes": 77330,
+      "sha256": "f0e951e3e8d77fe365cb6124821d8d0391b73037e7a2bbd4aa119c7408ee5df6"
+    },
+    "graphify-out/fv-root-cause-20260919/current_gradient_resume_20261011_attempt1/step.log": {
+      "bytes": 868,
+      "sha256": "c64b7c89473f4ce7e6fec297e0d317af1c04add1b1c84c727d176f7cf7655688"
+    },
+    "graphify-out/fv-root-cause-20260919/current_gradient_resume_20261011_attempt1/step.resource.json": {
+      "bytes": 746,
+      "sha256": "50604ce4e5d9cebe15b173a8176c2cb774a1bd43a32d5ed784e0f5890a7af4e0"
+    },
+    "graphify-out/fv-root-cause-20260919/current_gradient_resume_20261011_attempt1/step.run.json": {
+      "bytes": 924,
+      "sha256": "818bfdaab3e86285d0e7940739ae28dd73da21f624560c90bbfb1625d5ae0c15"
+    }
+  },
+  "members_match": true,
+  "plan_sha256": "a5f83fde4576e65c948f8e896544015f64f9c279b6640417f6523b33670214d2",
+  "raw_scope": "failed attempted continuation; zero HVP/candidates/commits; previous556 preserved",
+  "source_bundle": "graphify-out/fv-root-cause-20260919/GRADIENT_RESUME_SOURCE_20261012.tar.gz",
+  "source_members": 196,
+  "source_snapshot": "graphify-out/fv-root-cause-20260919/GRADIENT_RESUME_SOURCE_20261012.tar.gz",
+  "source_snapshot_origin_directory": "graphify-out/fv-root-cause-20260919/gradient_resume_source_20261011",
+  "source_snapshot_scope": "canonical committed tar; origin_directory records the local capture path"
+}

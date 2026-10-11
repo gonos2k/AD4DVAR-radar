@@ -1,0 +1,39 @@
+{
+  "control_sha256": "556a25d910cad707b108cc8c6770af9ebf6b34f5a84196736e9fee82ed298a8b",
+  "formula_q": 0.0,
+  "production_q": 6.938893903907228e-18,
+  "face_audit": [
+    5.265468033312829e-16,
+    true
+  ],
+  "production_formula_normal_linf": 0.0,
+  "production_normal": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.07999181875426593,
+    -0.27974606916493067,
+    -0.13948948736071046,
+    -0.839999177923064,
+    0.0
+  ],
+  "operator_scope": "production flux decoding and its normal only; no objective/side-gradient/HVP/candidate/forecast-score evaluation"
+}

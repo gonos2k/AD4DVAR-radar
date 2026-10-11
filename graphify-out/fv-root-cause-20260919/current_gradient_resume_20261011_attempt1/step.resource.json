@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_current_gradient_resume.py",
+    "--child",
+    "--plan-sha256",
+    "a5f83fde4576e65c948f8e896544015f64f9c279b6640417f6523b33670214d2"
+  ],
+  "child_pid": 23301,
+  "exit_code": 1,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 8.970798749942333,
+  "sampled_peak_rss_bytes": 512917504,
+  "rss_samples": 34,
+  "wall_limit_seconds": 660.0,
+  "rss_limit_bytes": 2147483648,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}
