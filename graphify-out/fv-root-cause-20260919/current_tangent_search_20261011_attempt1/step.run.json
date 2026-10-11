@@ -1,0 +1,26 @@
+{
+  "child_sha256": "1bffd3c6cf79edef1d393434585d3aebfcc631a2d3896175647f40d7d3a671a0",
+  "execution_status": "completed",
+  "resource": {
+    "child_pid": 61682,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_current_tangent_search.py",
+      "--child",
+      "--plan-sha256",
+      "82ba9f107658f4fd75016c434692073f31690c7fa94816a380e45146a7d9227b"
+    ],
+    "elapsed_seconds": 57.184685291023925,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 2147483648,
+    "rss_samples": 217,
+    "sampled_peak_rss_bytes": 787644416,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 660.0
+  }
+}

@@ -1,0 +1,226 @@
+{
+  "scope": "one current-point conditional Q0 step; not minimum/response or general direction-quality certification",
+  "plan_sha256": "82ba9f107658f4fd75016c434692073f31690c7fa94816a380e45146a7d9227b",
+  "raw_sha256": "1bffd3c6cf79edef1d393434585d3aebfcc631a2d3896175647f40d7d3a671a0",
+  "base_control_sha256": "68a6e8219e79e8367b7fdd049bc25f4c431db9abdda1ba2af7ed0b52411f9ed8",
+  "current_control_sha256": "98ee63abf614756ddbdbba5cc480d66a3235a17b4def8c50b084c4f20dcdd957",
+  "base_J": 0.061024868372529385,
+  "base_R": 0.0031261974660462934,
+  "base_norm": 0.05591240887357916,
+  "base_max_mixed_component": 0.026588122159547832,
+  "base_vartheta": 0.686096939740689,
+  "selected": {
+    "name": "face_tangent_gradient",
+    "actual_candidate_count": 1,
+    "alpha": 0.00028805764462621713,
+    "movement": 1.610599680428259e-05,
+    "J": 0.06102400263642211,
+    "R": 0.002884190660581822,
+    "norm": 0.05370466144183223,
+    "max_mixed_component": 0.026580213983851377,
+    "vartheta": 0.6943329783494913,
+    "J_reduction_percent": 0.0014186611628441703,
+    "R_reduction_percent": 7.741251411432359,
+    "norm_reduction_percent": 3.94858221318769,
+    "max_component_reduction_percent": 0.02974326524076698,
+    "predicted_R": 0.002884323578231425,
+    "model_error_norm": 0.00014799981160442446,
+    "actual_G_change_norm": 0.015530232267564266,
+    "error_over_actual_change": 0.009529787388533146,
+    "trace_changes": {
+      "-1": {
+        "changed_choices": [
+          {
+            "stage": 180,
+            "axis": 0,
+            "field": "choose_left",
+            "row": 1,
+            "column": 2
+          }
+        ],
+        "unexpected_choice_changes": [
+          {
+            "stage": 180,
+            "axis": 0,
+            "field": "choose_left",
+            "row": 1,
+            "column": 2
+          }
+        ],
+        "other_face_signs_match": true,
+        "only_declared_event_changed": false
+      },
+      "1": {
+        "changed_choices": [
+          {
+            "stage": 180,
+            "axis": 0,
+            "field": "choose_left",
+            "row": 1,
+            "column": 2
+          }
+        ],
+        "unexpected_choice_changes": [
+          {
+            "stage": 180,
+            "axis": 0,
+            "field": "choose_left",
+            "row": 1,
+            "column": 2
+          }
+        ],
+        "other_face_signs_match": true,
+        "only_declared_event_changed": false
+      }
+    },
+    "model_support": true,
+    "J_armijo_passed": true,
+    "R_armijo_passed": true
+  },
+  "arms": [
+    {
+      "name": "face_tangent_gradient",
+      "actual_candidate_count": 1,
+      "alpha": 0.00028805764462621713,
+      "movement": 1.610599680428259e-05,
+      "J": 0.06102400263642211,
+      "R": 0.002884190660581822,
+      "norm": 0.05370466144183223,
+      "max_mixed_component": 0.026580213983851377,
+      "vartheta": 0.6943329783494913,
+      "J_reduction_percent": 0.0014186611628441703,
+      "R_reduction_percent": 7.741251411432359,
+      "norm_reduction_percent": 3.94858221318769,
+      "max_component_reduction_percent": 0.02974326524076698,
+      "predicted_R": 0.002884323578231425,
+      "model_error_norm": 0.00014799981160442446,
+      "actual_G_change_norm": 0.015530232267564266,
+      "error_over_actual_change": 0.009529787388533146,
+      "trace_changes": {
+        "-1": {
+          "changed_choices": [
+            {
+              "stage": 180,
+              "axis": 0,
+              "field": "choose_left",
+              "row": 1,
+              "column": 2
+            }
+          ],
+          "unexpected_choice_changes": [
+            {
+              "stage": 180,
+              "axis": 0,
+              "field": "choose_left",
+              "row": 1,
+              "column": 2
+            }
+          ],
+          "other_face_signs_match": true,
+          "only_declared_event_changed": false
+        },
+        "1": {
+          "changed_choices": [
+            {
+              "stage": 180,
+              "axis": 0,
+              "field": "choose_left",
+              "row": 1,
+              "column": 2
+            }
+          ],
+          "unexpected_choice_changes": [
+            {
+              "stage": 180,
+              "axis": 0,
+              "field": "choose_left",
+              "row": 1,
+              "column": 2
+            }
+          ],
+          "other_face_signs_match": true,
+          "only_declared_event_changed": false
+        }
+      },
+      "model_support": true,
+      "J_armijo_passed": true,
+      "R_armijo_passed": true
+    },
+    {
+      "name": "event_tangent_gradient",
+      "actual_candidate_count": 1,
+      "alpha": 0.0002856076494601777,
+      "movement": 1.5960310817480853e-05,
+      "J": 0.061024009547734695,
+      "R": 0.0028907406065787934,
+      "norm": 0.05376560802761179,
+      "max_mixed_component": 0.026575946601760696,
+      "vartheta": 0.6942519883570619,
+      "J_reduction_percent": 0.0014073357593291647,
+      "R_reduction_percent": 7.531733424545395,
+      "norm_reduction_percent": 3.8395785286614914,
+      "max_component_reduction_percent": 0.045793221928469574,
+      "predicted_R": 0.002890738051237306,
+      "model_error_norm": 1.2365089564897308e-07,
+      "actual_G_change_norm": 0.015344652359536927,
+      "error_over_actual_change": 8.058240274966036e-06,
+      "trace_changes": {
+        "-1": {
+          "changed_choices": [],
+          "unexpected_choice_changes": [],
+          "other_face_signs_match": true,
+          "only_declared_event_changed": true
+        },
+        "1": {
+          "changed_choices": [],
+          "unexpected_choice_changes": [],
+          "other_face_signs_match": true,
+          "only_declared_event_changed": true
+        }
+      },
+      "model_support": true,
+      "J_armijo_passed": true,
+      "R_armijo_passed": true
+    }
+  ],
+  "selection_basis": "two_eligible_candidate_comparison",
+  "comparison_complete": true,
+  "face_decision": "retain_for_bounded_test",
+  "outward_native_cost_slopes": [
+    0.1922511518630804,
+    0.08795874374692178
+  ],
+  "event_gradient_calls": 2,
+  "HVP_calls": 4,
+  "actual_candidate_evaluations": 2,
+  "optimizer_commits": 1,
+  "new_GN_solves": 0,
+  "new_observation_row_VJPs": 0,
+  "postcommit_readiness": false,
+  "full_G_component_match": {
+    "budget_linf": 1.892504807533465e-15,
+    "linf": 0.0,
+    "passed": true,
+    "scaled_linf": 0.0
+  },
+  "full_G_merit_match": true,
+  "future_score": {
+    "units": "dBZ squared",
+    "lead_minutes_after_last_observation": 180,
+    "scope": "matched-twin native forward observation only",
+    "base": 7.389566482742109,
+    "selected": 7.389658368267996,
+    "change": 9.188552588756949e-05,
+    "change_percent": 0.0012434494784274719,
+    "used_for_selection": false,
+    "independent_forecast_skill_certified": false
+  },
+  "guard_seconds": 57.184685291023925,
+  "sampled_peak_rss_bytes": 787644416,
+  "exit_code": 0,
+  "resource_termination": null,
+  "source_input_runtime_unchanged": true,
+  "eligible_original_minimum": false,
+  "exact_FV_response_completed": false,
+  "historical_FV_milestone_percent": 70
+}

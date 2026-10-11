@@ -1,0 +1,9 @@
+{
+  "plan_sha256": "82ba9f107658f4fd75016c434692073f31690c7fa94816a380e45146a7d9227b",
+  "source_pins": 190,
+  "archive_pins": 261,
+  "preflight_passed": true,
+  "production_launches": 0,
+  "fallback_scope_explicit": true,
+  "candidate_branch_scope": "any_current_strict_native_pair; selector changes allowed and recorded"
+}
