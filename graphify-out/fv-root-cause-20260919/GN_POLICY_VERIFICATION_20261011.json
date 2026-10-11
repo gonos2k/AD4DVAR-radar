@@ -1,0 +1,20 @@
+{
+  "all_pins_match": true,
+  "source_count": 182,
+  "archive_count": 254,
+  "snapshots_match": true,
+  "all_61_JSON_receipts_roundtrip_hash_verified": true,
+  "affected_tests": 24,
+  "test_seconds": 6.64,
+  "type_errors": 0,
+  "type_warnings": 0,
+  "production_guards": 1,
+  "canonical_promotions": 1,
+  "provisional_P2_points": 5,
+  "actual_fresh_evaluations": 44,
+  "logical_evaluations": 45,
+  "cache_hits": 1,
+  "bounded_path_recovery": false,
+  "qualified_point_claim": false,
+  "forecast_or_response_claim": false
+}

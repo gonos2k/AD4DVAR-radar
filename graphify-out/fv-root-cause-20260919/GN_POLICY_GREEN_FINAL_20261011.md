@@ -1,0 +1,14 @@
+# GREEN saved-evidence review: GN search policy experiment
+
+Read-only review; no FV/HVP/seed execution by GREEN. The production guard ran once under the root run and exited 0.
+
+- Frozen plan `8ab812c1…2fa44ed` pins 182 source/254 archive files. I verified all 61 bundled JSON hashes and byte counts; the tar.gz hash and members match the manifest.
+- The canonical winner is `seeded_JR`. It reduced search slots from 22 to 6 on the same initial point/direction, a 72.73% reduction. Its endpoint had slightly lower actual R than the dyadic endpoint, while J was microscopically higher; choosing by actual R then J is consistent with the declared rule.
+- The bounded nonmonotone arm used a fixed cap `R ≤ 1.01 R₀` for three P2-closed points. Its final R remained 0.82091% above the original R, so it is correctly noncanonical despite lower J. The report does not claim this policy always fails.
+- Saved canonical proposal/repeat/current/last-confirmed controls hash to `68a6e821…f9ed8`. Both side-gradient arrays match on final P2 (`L∞=0`); canonical full-G norm reproduces repeated R exactly. Source, fixed input, runtime, and terminal deadline checks pass.
+- Fresh operator counts are 72 row VJPs, 3 solves, and 6 HVPs across 3 point builds. The initial point model is shared across policy arms; one same-point/direction/alpha candidate fact was reused, giving 45 logical evaluations and 44 fresh evaluations. Candidate receipts and all five provisional P2 receipts pass their archived hashes. Timing labels separate inclusive row/solve time, pure HVP, candidate observation, writer, identity, and receipt-hash costs; findings correctly avoid standalone speed claims because arm order/cache affect elapsed time.
+- The independent characteristic and 27-variable adjoint/reanalysis tests are synthetic oracles, not evidence for the current radar forecast score. The final report keeps future score, response, root, and minimum claims false.
+
+Minor wording correction for the report: the producer rehashes and policy-checks the winning arm’s complete P2 path after ranking; it does not rehash every arm’s closed receipt before ranking. Each arm’s P2/policy gates are checked when its point closes, and my saved audit independently verified all five receipts afterward. This is a provenance wording issue, not a numerical or canonical-endpoint mismatch.
+
+Final cross-read confirms the findings now describe that scope precisely; metrics, KG, task, verification, archive, and run/resource receipts agree. The 22→6 reduction refers to actual candidate evaluations under the shared initial operator build, not elapsed-time speedup. Bounded-R recovery failed at the final point and was not promoted; the seeded endpoint alone is canonical. All 61 archived receipt hashes match, and the separate synthetic oracle tests do not support a current-future-score or convergence claim.

@@ -1,0 +1,2894 @@
+{
+  "nodes": [
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "label": "fv_point_3h_gn_policy_experiment.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment_sha",
+      "label": "_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L51",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L51",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment_load_plan",
+      "label": "_load_plan()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L57",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L57",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment_endpoint_recovered",
+      "label": "endpoint_recovered()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L87",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment_promotable_arm",
+      "label": "promotable_arm()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L97",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment_choose_endpoint",
+      "label": "choose_endpoint()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L101",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment_read_bound_endpoint",
+      "label": "read_bound_endpoint()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L106",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment_persist_canonical",
+      "label": "persist_canonical()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L134",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment_run_child",
+      "label": "_run_child()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L161",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L396",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L413",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment_rationale_1",
+      "label": "One plan-driven comparison of search cost and bounded residual recovery.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment_rationale_89",
+      "label": "Recovery is a finite endpoint test, never a root/minimum certificate.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L89",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_policy_experiment_rationale_107",
+      "label": "Bind every provisional P2 receipt to its recorded path before promotion.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L107",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_backend",
+      "label": "fv_point_3h_policy_backend.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "label": "FVBackend",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L28",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L43",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_policy_backend_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L43",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_policy_backend_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L43",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_check",
+      "label": "._check()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L74",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_policy_backend_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L74",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_write_operator",
+      "label": "._write_operator()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L93",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_full_g_match",
+      "label": "._full_g_match()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L99",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_build",
+      "label": ".build()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L102",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_chart",
+      "label": ".chart()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L259",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_evaluate",
+      "label": ".evaluate()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L264",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_repeat",
+      "label": ".repeat()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L317",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_backend_rationale_1",
+      "label": "Reusable fixed-seed FV backend for bounded point-policy comparisons.  This modul",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_backend_rationale_29",
+      "label": "Evaluate point-local robust-GN models and candidate policy facts.      ``build``",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L29",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_search",
+      "label": "fv_point_3h_policy_search.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_search_search",
+      "label": "search()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_policy_search_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_policy_search_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_search_rationale_1",
+      "label": "Provisional, bounded candidate policies for the point FV experiment.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_policy_search_rationale_36",
+      "label": "Return a provisional eligible trial; this helper never commits state.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_gn_policy_experiment",
+      "label": "test_fv_point_3h_gn_policy_experiment.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_gn_policy_experiment_closure",
+      "label": "_closure()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L13",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_gn_policy_experiment_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L13",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_gn_policy_experiment_record_and_arm",
+      "label": "_record_and_arm()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L30",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_gn_policy_experiment_test_unrecovered_nonmonotone_path_is_never_promotable",
+      "label": "test_unrecovered_nonmonotone_path_is_never_promotable()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L39",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_gn_policy_experiment_test_recovered_endpoint_keeps_truthful_r_armijo_flag",
+      "label": "test_recovered_endpoint_keeps_truthful_R_armijo_flag()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L48",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_gn_policy_experiment_test_atomic_failure_does_not_mutate_canonical_prefix",
+      "label": "test_atomic_failure_does_not_mutate_canonical_prefix()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L59",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_gn_policy_experiment_test_endpoint_selection_uses_actual_original_r_then_j",
+      "label": "test_endpoint_selection_uses_actual_original_R_then_J()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L71",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_gn_policy_experiment_test_recorded_endpoint_receipt_is_hash_bound_before_promotion",
+      "label": "test_recorded_endpoint_receipt_is_hash_bound_before_promotion()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L79",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_gn_policy_experiment_test_invalid_full_g_cannot_be_promoted",
+      "label": "test_invalid_full_G_cannot_be_promoted()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L102",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_gn_policy_experiment_test_runner_terminal_status_preserves_canonical_prefix",
+      "label": "test_runner_terminal_status_preserves_canonical_prefix()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L114",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search",
+      "label": "test_fv_point_3h_policy_search.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_model",
+      "label": "_model()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_facts",
+      "label": "_facts()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L27",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_run",
+      "label": "_run()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L32",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_test_bad_chart_receipts_are_json_safe_and_search_continues",
+      "label": "test_bad_chart_receipts_are_json_safe_and_search_continues()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L42",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_test_seeded_step_reduces_candidate_cost_and_keeps_true_r_semantics",
+      "label": "test_seeded_step_reduces_candidate_cost_and_keeps_true_R_semantics()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L57",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_test_seed_expansion_stops_at_first_refusal_and_never_exceeds_model_alpha",
+      "label": "test_seed_expansion_stops_at_first_refusal_and_never_exceeds_model_alpha()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L77",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_test_bounded_cap_is_fixed_and_does_not_claim_f_squared_armijo",
+      "label": "test_bounded_cap_is_fixed_and_does_not_claim_F_squared_armijo()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L93",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_test_r_cap_refuses_candidate_outside_same_reference_horizon",
+      "label": "test_R_cap_refuses_candidate_outside_same_reference_horizon()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L106",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_test_r_cap_is_required_even_when_r_armijo_passes",
+      "label": "test_R_cap_is_required_even_when_R_armijo_passes()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L116",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_test_bounded_policy_uses_gamma_seed_and_expands_to_fallback_proposal_cap",
+      "label": "test_bounded_policy_uses_gamma_seed_and_expands_to_fallback_proposal_cap()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L127",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_test_zero_search_budget_returns_without_starting_a_slot",
+      "label": "test_zero_search_budget_returns_without_starting_a_slot()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L141",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_test_failed_gate_is_never_returned_as_eligible",
+      "label": "test_failed_gate_is_never_returned_as_eligible()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L151",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_test_timeout_receipt_preserves_started_completed_counts_and_reraises",
+      "label": "test_timeout_receipt_preserves_started_completed_counts_and_reraises()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L159",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_policy_search_test_dyadic_baseline_stops_at_first_pass",
+      "label": "test_dyadic_baseline_stops_at_first_pass()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L174",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_completion_oracles",
+      "label": "test_fv_independent_completion_oracles.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_completion_oracles_characteristic_cell_means",
+      "label": "_characteristic_cell_means()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L21",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_completion_oracles_characteristic_face_means",
+      "label": "_characteristic_face_means()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L33",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_completion_oracles_advance_characteristics",
+      "label": "_advance_characteristics()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L47",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_completion_oracles_test_transport_characteristic_oracle_covers_multiple_future_leads_and_refinement",
+      "label": "test_transport_characteristic_oracle_covers_multiple_future_leads_and_refinement()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L78",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_completion_oracles_manufactured_adjoint",
+      "label": "_manufactured_adjoint()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L108",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_completion_oracles_test_adjoint_synthetic_future_score_matches_direct_and_reanalysis_derivatives",
+      "label": "test_adjoint_synthetic_future_score_matches_direct_and_reanalysis_derivatives()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L145",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_completion_oracles_rationale_1",
+      "label": "Independent multi-lead and adjoint completion oracles.  These are synthetic nume",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_completion_oracles_rationale_22",
+      "label": "Exact means for an affine initial field on [0,1]^2.",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L22",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_completion_oracles_rationale_34",
+      "label": "Exact whole-face means of the same affine characteristic field.",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L34",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "copy",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_sha",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_load_plan",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_load_plan",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_load_plan",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_endpoint_recovered",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_endpoint_recovered",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_endpoint_recovered",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_promotable_arm",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L97",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_promotable_arm",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L97",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_choose_endpoint",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_choose_endpoint",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_choose_endpoint",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_read_bound_endpoint",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_read_bound_endpoint",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_read_bound_endpoint",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_persist_canonical",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L134",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_persist_canonical",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L134",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_persist_canonical",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L134",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_persist_canonical",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L134",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_persist_canonical",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L134",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_persist_canonical",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L134",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_persist_canonical",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L134",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_run_child",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L161",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L161",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L161",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L161",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L396",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L396",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L396",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L396",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L413",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_load_plan",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_choose_endpoint",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_promotable_arm",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_read_bound_endpoint",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L111",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_persist_canonical",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_promotable_arm",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L136",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_persist_canonical",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_endpoint_recovered",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L136",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run_child",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_load_plan",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L164",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run_child",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_endpoint_recovered",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L359",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run_child",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_choose_endpoint",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L368",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run_child",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_read_bound_endpoint",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L371",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run_child",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_persist_canonical",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L386",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_load_plan",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L397",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L402",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L408",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_main",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_run_child",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L421",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_main",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L423",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_rationale_89",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_endpoint_recovered",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L89",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_rationale_107",
+      "target": "weather_scenarios_fv_point_3h_gn_policy_experiment_read_bound_endpoint",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L107",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "re",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_init",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_init",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_init",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_check",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_check",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_write_operator",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_write_operator",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_write_operator",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_full_g_match",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_full_g_match",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_full_g_match",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_full_g_match",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_build",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_build",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_build",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_build",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_build",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_chart",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L259",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_chart",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L259",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_chart",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L259",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_chart",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L259",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_chart",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L259",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_evaluate",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L264",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_evaluate",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L264",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_evaluate",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L264",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_evaluate",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L264",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_repeat",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L317",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_repeat",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L317",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_repeat",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L317",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_repeat",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L317",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_repeat",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L317",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_init",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_backend_py_path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_init",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_check",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_build",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_check",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L111",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_build",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_full_g_match",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L122",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_build",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_write_operator",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L200",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_evaluate",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_check",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L267",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_repeat",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_check",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L319",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_policy_backend",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_backend_rationale_29",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_backend.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search",
+      "target": "copy",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search",
+      "target": "weather_scenarios_fv_point_3h_policy_search_search",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_search",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_search_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_search",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_search_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_search",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_search_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_search",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_search_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_search",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_search_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_search",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_search_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_search",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_search_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_search",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_search_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_search",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_search_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_search",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_search_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_search",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_search_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_search",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_search_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_search",
+      "target": "examples_weather_scenarios_fv_point_3h_policy_search_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_policy_search",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_policy_search_rationale_36",
+      "target": "weather_scenarios_fv_point_3h_policy_search_search",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_policy_search.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "copy",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_closure",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_closure",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_closure",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_record_and_arm",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_record_and_arm",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_record_and_arm",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_test_unrecovered_nonmonotone_path_is_never_promotable",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_test_recovered_endpoint_keeps_truthful_r_armijo_flag",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_test_atomic_failure_does_not_mutate_canonical_prefix",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_test_endpoint_selection_uses_actual_original_r_then_j",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L71",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_test_recorded_endpoint_receipt_is_hash_bound_before_promotion",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_test_invalid_full_g_cannot_be_promoted",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_test_runner_terminal_status_preserves_canonical_prefix",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_test_unrecovered_nonmonotone_path_is_never_promotable",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_record_and_arm",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_test_unrecovered_nonmonotone_path_is_never_promotable",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_closure",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_test_recovered_endpoint_keeps_truthful_r_armijo_flag",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_record_and_arm",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_test_recovered_endpoint_keeps_truthful_r_armijo_flag",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_closure",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_test_atomic_failure_does_not_mutate_canonical_prefix",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_record_and_arm",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_test_atomic_failure_does_not_mutate_canonical_prefix",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_closure",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_test_endpoint_selection_uses_actual_original_r_then_j",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_record_and_arm",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_test_recorded_endpoint_receipt_is_hash_bound_before_promotion",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_closure",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_test_recorded_endpoint_receipt_is_hash_bound_before_promotion",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_record_and_arm",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_test_invalid_full_g_cannot_be_promoted",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_record_and_arm",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_gn_policy_experiment_test_invalid_full_g_cannot_be_promoted",
+      "target": "tests_test_fv_point_3h_gn_policy_experiment_closure",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "types",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_model",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_facts",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_test_bad_chart_receipts_are_json_safe_and_search_continues",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_test_seeded_step_reduces_candidate_cost_and_keeps_true_r_semantics",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_test_seed_expansion_stops_at_first_refusal_and_never_exceeds_model_alpha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L77",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_test_bounded_cap_is_fixed_and_does_not_claim_f_squared_armijo",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_test_r_cap_refuses_candidate_outside_same_reference_horizon",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_test_r_cap_is_required_even_when_r_armijo_passes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L116",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_test_bounded_policy_uses_gamma_seed_and_expands_to_fallback_proposal_cap",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_test_zero_search_budget_returns_without_starting_a_slot",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L141",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_test_failed_gate_is_never_returned_as_eligible",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L151",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_test_timeout_receipt_preserves_started_completed_counts_and_reraises",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search",
+      "target": "tests_test_fv_point_3h_policy_search_test_dyadic_baseline_stops_at_first_pass",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L174",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_run",
+      "target": "tests_test_fv_point_3h_policy_search_model",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_bad_chart_receipts_are_json_safe_and_search_continues",
+      "target": "tests_test_fv_point_3h_policy_search_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_bad_chart_receipts_are_json_safe_and_search_continues",
+      "target": "tests_test_fv_point_3h_policy_search_facts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_seeded_step_reduces_candidate_cost_and_keeps_true_r_semantics",
+      "target": "tests_test_fv_point_3h_policy_search_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_seed_expansion_stops_at_first_refusal_and_never_exceeds_model_alpha",
+      "target": "tests_test_fv_point_3h_policy_search_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L82",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_bounded_cap_is_fixed_and_does_not_claim_f_squared_armijo",
+      "target": "tests_test_fv_point_3h_policy_search_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_r_cap_refuses_candidate_outside_same_reference_horizon",
+      "target": "tests_test_fv_point_3h_policy_search_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L107",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_r_cap_refuses_candidate_outside_same_reference_horizon",
+      "target": "tests_test_fv_point_3h_policy_search_facts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_r_cap_is_required_even_when_r_armijo_passes",
+      "target": "tests_test_fv_point_3h_policy_search_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L117",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_r_cap_is_required_even_when_r_armijo_passes",
+      "target": "tests_test_fv_point_3h_policy_search_facts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L119",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_bounded_policy_uses_gamma_seed_and_expands_to_fallback_proposal_cap",
+      "target": "tests_test_fv_point_3h_policy_search_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L129",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_bounded_policy_uses_gamma_seed_and_expands_to_fallback_proposal_cap",
+      "target": "tests_test_fv_point_3h_policy_search_facts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_zero_search_budget_returns_without_starting_a_slot",
+      "target": "tests_test_fv_point_3h_policy_search_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L143",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_zero_search_budget_returns_without_starting_a_slot",
+      "target": "tests_test_fv_point_3h_policy_search_facts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L144",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_failed_gate_is_never_returned_as_eligible",
+      "target": "tests_test_fv_point_3h_policy_search_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_failed_gate_is_never_returned_as_eligible",
+      "target": "tests_test_fv_point_3h_policy_search_facts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L153",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_timeout_receipt_preserves_started_completed_counts_and_reraises",
+      "target": "tests_test_fv_point_3h_policy_search_model",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L164",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_dyadic_baseline_stops_at_first_pass",
+      "target": "tests_test_fv_point_3h_policy_search_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L176",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_dyadic_baseline_stops_at_first_pass",
+      "target": "tests_test_fv_point_3h_policy_search_facts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L177",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles",
+      "target": "torch_func",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles",
+      "target": "advar_transport",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles",
+      "target": "tests_test_fv_independent_completion_oracles_characteristic_cell_means",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles",
+      "target": "tests_test_fv_independent_completion_oracles_characteristic_face_means",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles",
+      "target": "tests_test_fv_independent_completion_oracles_advance_characteristics",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles",
+      "target": "tests_test_fv_independent_completion_oracles_test_transport_characteristic_oracle_covers_multiple_future_leads_and_refinement",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L78",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles",
+      "target": "tests_test_fv_independent_completion_oracles_manufactured_adjoint",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L108",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles",
+      "target": "tests_test_fv_independent_completion_oracles_test_adjoint_synthetic_future_score_matches_direct_and_reanalysis_derivatives",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L145",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles_advance_characteristics",
+      "target": "tests_test_fv_independent_completion_oracles_characteristic_cell_means",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles_advance_characteristics",
+      "target": "tests_test_fv_independent_completion_oracles_characteristic_face_means",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles_test_transport_characteristic_oracle_covers_multiple_future_leads_and_refinement",
+      "target": "tests_test_fv_independent_completion_oracles_advance_characteristics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L84",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles_test_transport_characteristic_oracle_covers_multiple_future_leads_and_refinement",
+      "target": "tests_test_fv_independent_completion_oracles_characteristic_cell_means",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L85",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles_test_adjoint_synthetic_future_score_matches_direct_and_reanalysis_derivatives",
+      "target": "tests_test_fv_independent_completion_oracles_manufactured_adjoint",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L146",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles_rationale_1",
+      "target": "tests_test_fv_independent_completion_oracles",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles_rationale_22",
+      "target": "tests_test_fv_independent_completion_oracles_characteristic_cell_means",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_completion_oracles_rationale_34",
+      "target": "tests_test_fv_independent_completion_oracles_characteristic_face_means",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_completion_oracles.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_policy_experiment_run_child",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_path",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L22",
+      "weight": 0.8
+    },
+    {
+      "source": "examples_weather_scenarios_fv_point_3h_gn_policy_experiment_py_any",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend",
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_policy_experiment.py",
+      "source_location": "L22",
+      "weight": 0.8
+    },
+    {
+      "source": "tests_test_fv_point_3h_policy_search_test_seeded_step_reduces_candidate_cost_and_keeps_true_r_semantics",
+      "target": "weather_scenarios_fv_point_3h_policy_backend_fvbackend_evaluate",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "tests/test_fv_point_3h_policy_search.py",
+      "source_location": "L65",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "scope": "isolated AST of six owned files; no shared graph replacement",
+  "consulted_graph_sha256": "9e64df74ae84f9a167675a74e89da5c8daee195781f18ea66f059647d4a2f86a"
+}

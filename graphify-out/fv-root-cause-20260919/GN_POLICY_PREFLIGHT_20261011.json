@@ -1,0 +1,17 @@
+{
+  "plan_sha256": "8ab812c1bbff2d6546178c74010738515cbac10cd12582fe76f4753b42fa44ed",
+  "source_count": 182,
+  "archive_count": 254,
+  "all_pins_verified": true,
+  "source_snapshots_match": true,
+  "base_control_sha256": "fec9f3062339a0a24d1934fe9ad35fbe9c9cbea4951ca2a5967bde933d6a841c",
+  "previous_actual_movement": 1.208684503455053e-07,
+  "Rcap_fraction": 0.01,
+  "recovery_horizon": 3,
+  "affected_tests": 24,
+  "test_seconds": 6.64,
+  "type_errors": 0,
+  "type_warnings": 0,
+  "production_experiment_launched": false,
+  "independent_synthetic_oracles_passed": true
+}
