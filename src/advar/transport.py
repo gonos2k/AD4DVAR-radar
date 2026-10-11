@@ -351,7 +351,7 @@ def _euler_minmod(
         + qy_plus[1:, :] * top_face
         - qy_minus[:-1, :] * bottom_face
     )
-    return q - dt * (outgoing / area) + dt * (incoming / area)
+    return q + dt * ((incoming - outgoing) / area)
 
 
 def _check_minmod_support(

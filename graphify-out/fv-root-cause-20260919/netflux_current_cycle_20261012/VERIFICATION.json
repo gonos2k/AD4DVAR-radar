@@ -1,0 +1,138 @@
+{
+  "plan_sha256": "7f26c76bad511e1345c2d3c27b2073908c574587fc3aefd433fb44b98a932441",
+  "preflight": {
+    "plan_sha256": "7f26c76bad511e1345c2d3c27b2073908c574587fc3aefd433fb44b98a932441",
+    "numerical_version": "minmod_net_flux_fp64_v1",
+    "source_files": 201,
+    "archive_files": 275,
+    "all_pins_verified": true,
+    "source_bundle_sha256": "e84e0e2612dc372139a9e67ed377c71f0fa54c59db1cfd1f8e7a26d1bdb0e251",
+    "old_transport_snapshot_sha256": "93bacc2ec0aef671df488025b280d46d79ed6613acf78b33072efbd8e701738c",
+    "fixed_case_sha256": "1e810c23c73b93d89b2a10b46d9ddea44a8217b07dcd3ebfebb462858e3fa9b7",
+    "fixed_old_input_roundtrip_verified": true,
+    "type_errors": 0,
+    "type_warnings": 0,
+    "physics_tests": 69,
+    "new_runner_and_qualification_tests": 19,
+    "same_problem_new_evaluator": true,
+    "affected_tests_passed": 91,
+    "affected_test_seconds": 7.34,
+    "existing_deprecation_warnings": 18,
+    "tests_overlap_not_double_counted": true,
+    "green_extended_tests_passed": 115,
+    "graphify": {
+      "nodes": 87,
+      "edges": 164,
+      "scope": "6changed source files, AST-only nofullsemantic rebuild"
+    },
+    "GREEN_preflight": "passed",
+    "RED_preflight": "passed"
+  },
+  "execution": {
+    "child_sha256": "620ba8f831eb249175dea6b2dbe26657927a1006f4070d861df04476c564e7ed",
+    "execution_status": "completed",
+    "resource": {
+      "child_pid": 59317,
+      "child_process_group_cleanup_error": null,
+      "child_process_group_cleanup_sent": false,
+      "command": [
+        "/Users/yhlee/ADVAR/.venv/bin/python",
+        "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_netflux_current_cycle.py",
+        "--child",
+        "--plan-sha256",
+        "7f26c76bad511e1345c2d3c27b2073908c574587fc3aefd433fb44b98a932441"
+      ],
+      "elapsed_seconds": 36.77413216698915,
+      "exit_code": 0,
+      "monitor_error": null,
+      "received_sigterm": false,
+      "resource_termination": null,
+      "rss_limit_bytes": 2147483648,
+      "rss_samples": 138,
+      "sampled_peak_rss_bytes": 536395776,
+      "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+      "wall_limit_seconds": 660.0
+    }
+  },
+  "new_result": {
+    "base_numerical_version": "minmod_net_flux_fp64_v1",
+    "base_control_sha256": "556a25d910cad707b108cc8c6770af9ebf6b34f5a84196736e9fee82ed298a8b",
+    "current_control_sha256": "0aafdf8069fcb8d5adc4ec813646707a3d1e083804631b17facb24664098655b",
+    "new_base": {
+      "J": 0.06101963540295345,
+      "R": 0.0027594786201677354,
+      "G_norm": 0.0525307397641394,
+      "mixed_gradient_max": 0.02625619077029916,
+      "theta": 0.692653454552331
+    },
+    "new_final": {
+      "J": 0.06101864864417508,
+      "R": 0.002743440727443838,
+      "G_norm": 0.05237786486144542,
+      "mixed_gradient_max": 0.026212827660186504,
+      "theta": 0.6946108014741863
+    },
+    "decrease_percent": {
+      "J": 0.0016171168048640895,
+      "R": 0.5811928603716646,
+      "G_norm": 0.2910198930766645,
+      "mixed_gradient_max": 0.16515385073187505
+    },
+    "displacement_l2": 1.883912762404316e-05,
+    "alpha": 0.00035863054108483696,
+    "vector_model_error_norm": 3.614774023867944e-05,
+    "vector_actual_delta_norm": 0.004027658748585236,
+    "J_drop_over_linear_prediction": 0.9970953561648895,
+    "final_stored_gradient_only_diagnostic": {
+      "tangent_jump_norm": 5.805495157760157e-17,
+      "support_budget": 7.969525994671808e-15,
+      "scope": "archived final P2 side-gradient vectors + analytical geometry only; no new FV direction/HVP/model/readiness"
+    },
+    "branch_signature_change": {
+      "-1": {
+        "base_signature": "4f20f24fbe0012a83414cc22d5d7a9559f60b13068f73516bd98a535ffc7d3b7",
+        "final_signature": "5724200570d3db80ee1cc59e874656b21938419f1711f2beca3c17fa16851635",
+        "changed": true
+      },
+      "1": {
+        "base_signature": "4f20f24fbe0012a83414cc22d5d7a9559f60b13068f73516bd98a535ffc7d3b7",
+        "final_signature": "5724200570d3db80ee1cc59e874656b21938419f1711f2beca3c17fa16851635",
+        "changed": true
+      }
+    },
+    "new_HVP_calls": 2,
+    "candidates": 1,
+    "commits": 1,
+    "termination": "commit_cap_reached",
+    "postcommit_readiness": false,
+    "future_E_evaluations": 0,
+    "guard_seconds": 36.77413216698915,
+    "peak_sampled_RSS_bytes": 536395776,
+    "evaluator_change_is_not_optimizer_improvement": {
+      "full_G_l2": 3.5489636058793566e-12,
+      "objective": -1.2101430968414206e-14,
+      "side_gradient_linf": {
+        "-1": 2.166211654497374e-12,
+        "1": 2.3007984406575588e-12
+      },
+      "theta": 2.632560835991171e-12
+    }
+  },
+  "final_audits": {
+    "GREEN": "GREEN_FINAL.md: no blocker; independent pin/arithmetic/provenance audit, not another FV run",
+    "RED": "RED_FINAL.md: no blocker; branch change and postcommit limits retained"
+  },
+  "receipt_manifest": "RECEIPT_MANIFEST.json",
+  "claims": {
+    "same_fixed_problem": true,
+    "old_P2_inherited": false,
+    "fresh_base_requalification": true,
+    "new_optimizer_commits": 1,
+    "minimum": false,
+    "exact_adjoint": false,
+    "future_score_recomputed": false,
+    "independent_forecast": false,
+    "postcommit_direction_HVP_ready": false
+  },
+  "test_counts": "91 root and 115 GREEN extended totals overlap and are not summed. Earlier 69/19 checks are also subsets; historical diagnosis/user checks remain separate."
+}

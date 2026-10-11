@@ -1,0 +1,64 @@
+{
+  "base_numerical_version": "minmod_net_flux_fp64_v1",
+  "base_control_sha256": "556a25d910cad707b108cc8c6770af9ebf6b34f5a84196736e9fee82ed298a8b",
+  "current_control_sha256": "0aafdf8069fcb8d5adc4ec813646707a3d1e083804631b17facb24664098655b",
+  "new_base": {
+    "J": 0.06101963540295345,
+    "R": 0.0027594786201677354,
+    "G_norm": 0.0525307397641394,
+    "mixed_gradient_max": 0.02625619077029916,
+    "theta": 0.692653454552331
+  },
+  "new_final": {
+    "J": 0.06101864864417508,
+    "R": 0.002743440727443838,
+    "G_norm": 0.05237786486144542,
+    "mixed_gradient_max": 0.026212827660186504,
+    "theta": 0.6946108014741863
+  },
+  "decrease_percent": {
+    "J": 0.0016171168048640895,
+    "R": 0.5811928603716646,
+    "G_norm": 0.2910198930766645,
+    "mixed_gradient_max": 0.16515385073187505
+  },
+  "displacement_l2": 1.883912762404316e-05,
+  "alpha": 0.00035863054108483696,
+  "vector_model_error_norm": 3.614774023867944e-05,
+  "vector_actual_delta_norm": 0.004027658748585236,
+  "J_drop_over_linear_prediction": 0.9970953561648895,
+  "final_stored_gradient_only_diagnostic": {
+    "tangent_jump_norm": 5.805495157760157e-17,
+    "support_budget": 7.969525994671808e-15,
+    "scope": "archived final P2 side-gradient vectors + analytical geometry only; no new FV direction/HVP/model/readiness"
+  },
+  "branch_signature_change": {
+    "-1": {
+      "base_signature": "4f20f24fbe0012a83414cc22d5d7a9559f60b13068f73516bd98a535ffc7d3b7",
+      "final_signature": "5724200570d3db80ee1cc59e874656b21938419f1711f2beca3c17fa16851635",
+      "changed": true
+    },
+    "1": {
+      "base_signature": "4f20f24fbe0012a83414cc22d5d7a9559f60b13068f73516bd98a535ffc7d3b7",
+      "final_signature": "5724200570d3db80ee1cc59e874656b21938419f1711f2beca3c17fa16851635",
+      "changed": true
+    }
+  },
+  "new_HVP_calls": 2,
+  "candidates": 1,
+  "commits": 1,
+  "termination": "commit_cap_reached",
+  "postcommit_readiness": false,
+  "future_E_evaluations": 0,
+  "guard_seconds": 36.77413216698915,
+  "peak_sampled_RSS_bytes": 536395776,
+  "evaluator_change_is_not_optimizer_improvement": {
+    "full_G_l2": 3.5489636058793566e-12,
+    "objective": -1.2101430968414206e-14,
+    "side_gradient_linf": {
+      "-1": 2.166211654497374e-12,
+      "1": 2.3007984406575588e-12
+    },
+    "theta": 2.632560835991171e-12
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "case_asset": "graphify-out/fv-root-cause-20260919/netflux_current_cycle_20261012/fixed_case.pt",
+  "case_asset_sha256": "1e810c23c73b93d89b2a10b46d9ddea44a8217b07dcd3ebfebb462858e3fa9b7",
+  "legacy_transport_sha256": "93bacc2ec0aef671df488025b280d46d79ed6613acf78b33072efbd8e701738c",
+  "old_input_identity": {
+    "archived_input": {
+      "control_sha256": "adc5bfd01e98e32b09ccc963f096a6f6a3c7307d600a0ba20f8ddc8dcad3721e",
+      "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+      "problem": {
+        "fixed_problem_sha256": "16fa95b534c3b61cf5d1506770cbfc77edb527c40d1f4c536f5130cba24e1fc3",
+        "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+      },
+      "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+    },
+    "changed_control_index": 21,
+    "changed_control_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25
+    ],
+    "control_sha256": "556a25d910cad707b108cc8c6770af9ebf6b34f5a84196736e9fee82ed298a8b",
+    "original_flow_fractions": [
+      0.7,
+      -0.6,
+      0.5,
+      0.4,
+      -0.30000000000000004
+    ],
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "shifted_flow_fractions": [
+      -0.05224755777086079,
+      0.010112644148581982,
+      -0.0301147113473373,
+      0.06038641281007066,
+      -0.000989273985764293
+    ],
+    "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+  },
+  "runtime_identity": {
+    "device": "CPU FP64",
+    "python": "3.12.13",
+    "torch": "2.13.0"
+  },
+  "roundtrip_input_unchanged": true,
+  "scope": "immutable old-kernel synthetic observations/prior/boundaries/time/truth; new evaluator must load before any new optimization"
+}
