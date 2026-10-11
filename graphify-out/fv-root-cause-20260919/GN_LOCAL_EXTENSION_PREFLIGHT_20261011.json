@@ -1,0 +1,18 @@
+{
+  "archive_count": 238,
+  "load_plan_passed": true,
+  "parent_closed_passed": true,
+  "plan_sha256": "01704c452ad8f4c831296d7e94417d253250cba457b7eb2336d90b5996b66166",
+  "production_executed": false,
+  "snapshots": {
+    "examples/weather_scenarios/fv_point_3h_gn_local_extension.py": {
+      "path": "graphify-out/fv-root-cause-20260919/gn_local_extension_source_20261011/producer.py",
+      "sha256": "8cbb0333686f5a35268ea4a3a255cc8fc11f85d2fdd09312f1d4af1f419bae2a"
+    },
+    "tests/test_fv_point_3h_gn_local_extension.py": {
+      "path": "graphify-out/fv-root-cause-20260919/gn_local_extension_source_20261011/tests.py",
+      "sha256": "cea43fc874fa99e0b93b23dac291bb95d0e02060aed8506adcad351292bb6484"
+    }
+  },
+  "source_count": 169
+}

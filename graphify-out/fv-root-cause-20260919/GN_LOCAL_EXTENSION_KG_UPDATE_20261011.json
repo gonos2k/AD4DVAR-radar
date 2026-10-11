@@ -1,0 +1,18 @@
+{
+  "FV_extension_percent": 70,
+  "archive": "GN_LOCAL_EXTENSION_ARCHIVE_20261011.json",
+  "completed": [
+    "qualifiedsamepointdirectionreuse",
+    "freshHVP2storedrreproduction",
+    "8smaller same-selectorJRdescentdiagnostics"
+  ],
+  "findings": "GN_LOCAL_EXTENSION_FINDINGS_20261011.md",
+  "historical_theory_percent": 100,
+  "metrics": "GN_LOCAL_EXTENSION_METRICS_20261011.json",
+  "point_unchanged": "454396e77e2f10492e80e0fd625b55e1a08c2be53fe9721b59a4a27d60be3b7a",
+  "remaining": [
+    "prospectivecandidateP2commit",
+    "localevent180/value sensitivity ifneeded",
+    "qualifiedoptimum/adjoint/reanalysis/futureverification"
+  ]
+}

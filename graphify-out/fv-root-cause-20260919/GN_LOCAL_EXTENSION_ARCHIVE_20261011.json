@@ -1,0 +1,17 @@
+{
+  "guarded_launch_count": 1,
+  "gzip_bytes": 201141,
+  "gzip_path": "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/gn_local_extension_20261011_attempt1/step.json.gz",
+  "gzip_sha256": "dd730c9161e47ea4402bc31ec40fc2f427804828b7b7337503d541efff0a0b62",
+  "lossless_roundtrip": true,
+  "optimizer_steps_applied": 0,
+  "plan_sha256": "01704c452ad8f4c831296d7e94417d253250cba457b7eb2336d90b5996b66166",
+  "raw_bytes": 22168036,
+  "raw_path": "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/gn_local_extension_20261011_attempt1/step.json",
+  "raw_sha256": "098e688bfaa405d9c88f80da2ff09295993695b78215713608509ce1602448fe",
+  "resource_path": "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/gn_local_extension_20261011_attempt1/step.resource.json",
+  "resource_sha256": "0ada16cbf573f561f498d42b506d70b974e4dc44b6ee031d49b6e4d0081ad3c2",
+  "run_path": "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/gn_local_extension_20261011_attempt1/step.run.json",
+  "run_sha256": "aa0265579445f349584bd20fdbf380345e14fa7b0d23d60841e12a3d6d4302b3",
+  "scope": "qualifiedsamepointdirectionreuse/freshHVP2/8smallerdiagnostic0commit"
+}

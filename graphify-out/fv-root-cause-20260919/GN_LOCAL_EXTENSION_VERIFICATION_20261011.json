@@ -1,0 +1,8 @@
+{
+  "plan_sha256": "01704c452ad8f4c831296d7e94417d253250cba457b7eb2336d90b5996b66166",
+  "scope": "savedoperatorqualified+syntheticnoaccept/interruption andpriorwindowregression;ROOTproductionseparate",
+  "seconds": 2.38,
+  "tests_passed": 6,
+  "type_errors": 0,
+  "type_warnings": 0
+}

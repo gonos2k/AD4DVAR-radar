@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_gn_local_extension.py",
+    "--child",
+    "--plan",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/GN_LOCAL_EXTENSION_PLAN_20261011.json",
+    "--plan-sha256",
+    "01704c452ad8f4c831296d7e94417d253250cba457b7eb2336d90b5996b66166",
+    "--output",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/gn_local_extension_20261011_attempt1/step.json"
+  ],
+  "child_pid": 78225,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 61.43499483400956,
+  "sampled_peak_rss_bytes": 752648192,
+  "rss_samples": 218,
+  "wall_limit_seconds": 660.0,
+  "rss_limit_bytes": 2147483648,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}
