@@ -1,0 +1,19 @@
+{
+  "plan_sha256": "a5f83fde4576e65c948f8e896544015f64f9c279b6640417f6523b33670214d2",
+  "source_pins": 196,
+  "archive_pins": 271,
+  "base_control_sha256": "556a25d910cad707b108cc8c6770af9ebf6b34f5a84196736e9fee82ed298a8b",
+  "all_pins_verified": true,
+  "source_snapshot": "graphify-out/fv-root-cause-20260919/GRADIENT_RESUME_SOURCE_20261012.tar.gz",
+  "tests_passed": 65,
+  "test_seconds": 6.0,
+  "type_errors": 0,
+  "type_warnings": 0,
+  "test_warning_scope": "18 existing torch.jit.script deprecation warnings",
+  "external_review_tests": "17 user-provided checks, not rerun or combined",
+  "verification_scope": "synthetic actual child-loop regression; receipt-only 556 admission; affected local tests; production pending",
+  "source_snapshot_archive": "graphify-out/fv-root-cause-20260919/GRADIENT_RESUME_SOURCE_20261012.tar.gz",
+  "source_snapshot_archive_sha256": "3517bb094cf8adf327893dfe96d6913431cad2bcd6837031fb6ffe57e4cdce43",
+  "source_snapshot_scope": "canonical committed tar; origin_directory records the local capture path",
+  "source_snapshot_origin_directory": "graphify-out/fv-root-cause-20260919/gradient_resume_source_20261011"
+}
