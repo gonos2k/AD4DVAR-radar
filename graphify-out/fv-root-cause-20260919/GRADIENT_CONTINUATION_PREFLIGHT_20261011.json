@@ -1,0 +1,8 @@
+{
+  "plan_sha256": "a3e5b0cfb9d639a236efc0d126bfec91c2fee891108f14340cdfe28a3bf14b92",
+  "source_pins": 192,
+  "archive_pins": 266,
+  "base": "98ee63abf614756ddbdbba5cc480d66a3235a17b4def8c50b084c4f20dcdd957",
+  "loader_passed": true,
+  "production_launches": 0
+}

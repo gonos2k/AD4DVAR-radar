@@ -1,0 +1,64 @@
+{
+  "production_guards": 1,
+  "same_plan_commits": 3,
+  "HVP": 6,
+  "candidates": 3,
+  "GN_solves": 0,
+  "row_VJPs": 0,
+  "event_gradients": 0,
+  "source_pins": 192,
+  "archive_pins": 266,
+  "tests_passed": 36,
+  "test_seconds": 2.02,
+  "type_errors": 0,
+  "type_warnings": 0,
+  "graphify": {
+    "nodes": 30,
+    "edges": 111,
+    "AST_model_tokens": 0
+  },
+  "termination": "commit_cap_reached",
+  "root_or_minimum_certified": false,
+  "exact_response_completed": false,
+  "future_score": "cached initial plus one new terminal matched-twin observation, no selection/independent skill",
+  "current": "556a25d910cad707b108cc8c6770af9ebf6b34f5a84196736e9fee82ed298a8b",
+  "archive": {
+    "plan_sha256": "a3e5b0cfb9d639a236efc0d126bfec91c2fee891108f14340cdfe28a3bf14b92",
+    "raw_sha256": "c64cde977e9a28dc28addd81d6d116aa7de6b1e005a6e1643622c9a7b28e5e37",
+    "gzip_sha256": "907c7582eb4b9b324c017fb5f98ddd0b303e11ac0e248b507bb26adb5758eba8",
+    "raw_bytes": 42780139,
+    "gzip_bytes": 347820,
+    "bundle": "graphify-out/fv-root-cause-20260919/GRADIENT_CONTINUATION_EXECUTION_20261011.tar.gz",
+    "bundle_sha256": "c2287bef28ec615ab873e93d71e87848efc9b204b2dcd44d6f7556d6515111aa",
+    "bundle_bytes": 394648,
+    "members_match": true,
+    "manifest": {
+      "graphify-out/fv-root-cause-20260919/current_gradient_continuation_20261011_attempt1/point_00/candidate_01.json": {
+        "sha256": "d6010d9ef765c93f3f959da24d2bf0462c529f94c507315ab17a74942ecd7869",
+        "bytes": 2235933
+      },
+      "graphify-out/fv-root-cause-20260919/current_gradient_continuation_20261011_attempt1/point_01/candidate_02.json": {
+        "sha256": "30aa09c8e0276f7b7be0a5e3872e49cb624dcd47f71eb67e5a8330da86c635f2",
+        "bytes": 2248894
+      },
+      "graphify-out/fv-root-cause-20260919/current_gradient_continuation_20261011_attempt1/point_02/candidate_03.json": {
+        "sha256": "22a64963e73e46179eec103b657690aad318088901628e39072d9d7bd3aa7442",
+        "bytes": 2248162
+      },
+      "graphify-out/fv-root-cause-20260919/current_gradient_continuation_20261011_attempt1/step.json": {
+        "sha256": "c64cde977e9a28dc28addd81d6d116aa7de6b1e005a6e1643622c9a7b28e5e37",
+        "bytes": 42780139
+      },
+      "graphify-out/fv-root-cause-20260919/current_gradient_continuation_20261011_attempt1/step.resource.json": {
+        "sha256": "ee5fd9b5c6b36d2301696a0fc5d3f8e9a7bf8ecf661a3f2d8f2a71103309f710",
+        "bytes": 754
+      },
+      "graphify-out/fv-root-cause-20260919/current_gradient_continuation_20261011_attempt1/step.run.json": {
+        "sha256": "dff8233cf395d129080f36db2bc61bc4fa5fc6696f47a72dba37e8eb32a8dfa7",
+        "bytes": 935
+      }
+    }
+  },
+  "known_label_limit": "legacy selected_arm prepared_gn; actual selected_direction baseline current face-gradient and operators0GN",
+  "historical_milestone": 70
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "same-plan baseline current-gradient continuation",
+  "base": "98ee\u2026957",
+  "current": "556a25d910cad707b108cc8c6770af9ebf6b34f5a84196736e9fee82ed298a8b",
+  "status": "three commits cap reached not minimum",
+  "evidence": [
+    "GRADIENT_CONTINUATION_METRICS_20261011.json",
+    "GRADIENT_CONTINUATION_VERIFICATION_20261011.json",
+    "GRADIENT_CONTINUATION_FINDINGS_20261011.md"
+  ],
+  "remaining": [
+    "current GN and direction cost comparison at current556",
+    "qualified original local minimum",
+    "exact FV response and perturbed reanalysis",
+    "independent future validation"
+  ],
+  "historical_milestone": 70
+}
