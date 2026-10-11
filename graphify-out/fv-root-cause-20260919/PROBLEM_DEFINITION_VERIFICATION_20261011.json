@@ -1,0 +1,37 @@
+{
+  "kind": "problem-definition clarification, no numerical algorithm change",
+  "base_main": "4111af6f57661ae03e63dd754f76bde03551c734",
+  "source_pins_preserved": 186,
+  "archive_pins_preserved": 259,
+  "original_J_runtime_unchanged": true,
+  "frozen_past_records_unchanged": true,
+  "new_FV_or_AD_or_optimization_runs": 0,
+  "static_check_result": "PROBLEM_DEFINITION_STATIC_CHECKS_20261011.json",
+  "source_links_resolved": 16,
+  "static_checker_type_errors": 0,
+  "static_checker_type_warnings": 0,
+  "claims": [
+    "primary objective original-J eligible local minimum",
+    "Q0 is conditional active-face hypothesis",
+    "beta differs from gradient-mixture vartheta",
+    "J20min differs from terminal E+180min",
+    "strict AD/P2/relative recovery are not minimum certification"
+  ],
+  "remaining": [
+    "automatic active-face release or unconstrained continuation is not implemented by this documentation",
+    "general multi-event/degenerate minimum qualification is unresolved",
+    "actual qualified optimum, exact FV response/reanalysis and current-target future validation remain incomplete"
+  ],
+  "current_canonical_control_sha256": "68a6e8219e79e8367b7fdd049bc25f4c431db9abdda1ba2af7ed0b52411f9ed8",
+  "historical_FV_milestone_percent": 70,
+  "percentage_is_fraction_of_original_problem_solved": false,
+  "graphify": {
+    "scope": "new static checker AST plus reviewed document concepts; shared structural graph unchanged",
+    "nodes": 13,
+    "edges": 22,
+    "AST_model_tokens": 0,
+    "semantic_review_tokens": null
+  },
+  "normative_document_sha256": "42ebd914f2b8ab123297cbdaf2ac8de505db55b6936b2c2e110adad291881873",
+  "README_sha256": "0512ecdb5fdef421bd42a3d16f9f8913098197c6e7eedab41a87c3d16c2f14d5"
+}

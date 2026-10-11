@@ -1,0 +1,79 @@
+{
+  "scope": "bounded extracted concept graph for docs/FV_INVERSE_PROBLEM.md and README.md lines 83-93",
+  "nodes": [
+    {
+      "id": "original_20min_inverse_problem_J",
+      "label": "Original 20-minute inverse problem J",
+      "file_type": "concept",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L7-L14",
+      "summary": "Find an eligible local minimum of the original robust regularized analysis cost over the physically and numerically valid domain; no global or domain-membership certification is claimed."
+    },
+    {
+      "id": "controls_and_outer_parameters",
+      "label": "26 normalized controls and 13 fixed outer parameters",
+      "file_type": "concept",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L28-L49",
+      "summary": "Controls are 20 field, five streamfunction, and one growth component. Parameters are 12 observation values and external background beta; beta differs from gradient-mixture vartheta."
+    },
+    {
+      "id": "point_observation_likelihood",
+      "label": "Whitened point-dBZ observation likelihood",
+      "file_type": "concept",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L51-L65",
+      "summary": "The objective samples dBZ at fixed bilinear point locations, standardizes and same-time whitens residuals, then sums pseudo-Huber costs with the identity control prior."
+    },
+    {
+      "id": "terminal_forecast_score_E",
+      "label": "Terminal +180-minute forecast score E",
+      "file_type": "concept",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L67-L74",
+      "summary": "E is the 4x5 terminal-grid dBZ MSE at 12,000 seconds absolute, 10,800 seconds after the last observation; it is separate from J."
+    },
+    {
+      "id": "single_face_Q0_hypothesis",
+      "label": "Single Q=0 active-face search hypothesis",
+      "file_type": "concept",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L76-L99",
+      "summary": "Qy[4,3]=0 guides one bounded search; it is not a permanent physical constraint or a truth-generation condition. The current endpoint remains unqualified."
+    }
+  ],
+  "edges": [
+    {
+      "source": "controls_and_outer_parameters",
+      "target": "original_20min_inverse_problem_J",
+      "relation": "parameterizes",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L30-L47"
+    },
+    {
+      "source": "point_observation_likelihood",
+      "target": "original_20min_inverse_problem_J",
+      "relation": "defines_data_cost_term_of",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L53-L65"
+    },
+    {
+      "source": "terminal_forecast_score_E",
+      "target": "original_20min_inverse_problem_J",
+      "relation": "is_separate_from",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L67-L74"
+    },
+    {
+      "source": "single_face_Q0_hypothesis",
+      "target": "original_20min_inverse_problem_J",
+      "relation": "is_conditional_search_not_physical_constraint_of",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L76-L97"
+    }
+  ]
+}

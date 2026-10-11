@@ -1,0 +1,23 @@
+{
+  "kind": "problem definition clarification superseding broad equivalence readings",
+  "canonical_document": "docs/FV_INVERSE_PROBLEM.md",
+  "objective": "eligible local minimum of original strong-constraint-like 20min robust normalized echo inverse problem",
+  "conditional_search": "Qy[4,3]=0 active-face hypothesis, not physical constraint",
+  "variables": {
+    "controls": 26,
+    "outer_parameters": 13,
+    "background_parameter": "beta = p[12], legacy theta_index name",
+    "side_gradient_mixture": "vartheta, auxiliary not outer parameter"
+  },
+  "score": "terminal +180min grid dBZ MSE, separate from objective",
+  "evidence": [
+    "PROBLEM_DEFINITION_STATIC_CHECKS_20261011.json",
+    "PROBLEM_DEFINITION_GREEN_FINAL_20261011.md",
+    "PROBLEM_DEFINITION_RED_FINAL_20261011.md"
+  ],
+  "status": "definition fixed; production solver/response/forecast completion unresolved",
+  "new_production_runs": 0,
+  "frozen_original_sources_and_results_preserved": true,
+  "historical_milestone": 70,
+  "milestone_is_solution_fraction": false
+}

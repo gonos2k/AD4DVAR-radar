@@ -81,7 +81,12 @@ FFT는 phase-correlation 이동량 추정에만 사용하며, 분석·예측 전
 예측 방정식의 물리 확산항과 다르다.
 
 별도 연구용 FV 경로는 공간적으로 변하는 면유량과 비음수 유한체적 수송을
-분석·예측에 사용한다. [합성 데모 재현](examples/weather_scenarios/README.md)과
+분석·예측에 사용한다. 현재 점 관측 실증의 주 목표는 **20분 분석창의 원래
+강건 정규화 비용의 적격 국소최소점**이며, 마지막 관측 이후 3시간 예측과
+민감도를 따로 검증한다. `Q_y[4,3]=0`은 영구 물리 제약이 아닌 활성면 탐색
+가설이다. 비용식 유지·면 위 후보 승인·실행 완주를 원래 문제의 완료로
+해석하지 않는다. [문제 정의와 완료 조건](docs/FV_INVERSE_PROBLEM.md)을 기준으로
+읽는다. [합성 데모 재현](examples/weather_scenarios/README.md)과
 [국소 정상성·학습 검증 범위](graphify-out/fv-root-cause-20260919/LOCAL_VERIFICATION_RESULTS.md)를
 참조한다. 최근 공통 연구 사례의 지원 범위와 남은 검증은
 [PR #175·#176 후속 체크리스트](graphify-out/fv-root-cause-20260919/PR175_176_REVIEW_RESOLUTION.md)에

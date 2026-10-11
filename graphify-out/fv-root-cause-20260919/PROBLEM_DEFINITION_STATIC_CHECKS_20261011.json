@@ -1,0 +1,61 @@
+{
+  "scope": "AST-extracted constants and independent polynomial/interval arithmetic; no FV, seed, AD, optimization, or response execution",
+  "source_sha256": {
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py": "38c0590b0a8028ae01c203782976e08ed29df0f9c54bf784bd964f5abd6fbd6f",
+    "examples/weather_scenarios/fv_long_horizon_case.py": "22feb5c49495b26c78caa826e73f34a9abb21a4dbf71cfa5e34fbaae884cbc85",
+    "src/advar/fv_point_research_problem.py": "d2a1394654244de31e3252cebad4c6cf8be6f1cd1b5c270132d521a02378742f",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "src/advar/transport.py": "93bacc2ec0aef671df488025b280d46d79ed6613acf78b33072efbd8e701738c",
+    "examples/weather_scenarios/fv_point_3h_forward_case.py": "a23bab3d10bde9ca08661979df9e2c94a0de7bde6c7c732b5ed2b9ec769f61ec",
+    "examples/weather_scenarios/fv_point_3h_seed_linear_probe.py": "65e73c10ec1be38e620888625ee4340e8b330050cb940eba15e34830e20c2731",
+    "examples/weather_scenarios/fv_point_response_preflight.py": "6929668a5d2c95a64499ab598a0f045d66e47a80cf7a997513f448fff8ba3ccf"
+  },
+  "control_parameter_counts": {
+    "controls": 26,
+    "parameters": 13,
+    "analysis_euler_stages": 360,
+    "complete_euler_stages": 3600
+  },
+  "observation_times_seconds": [
+    0,
+    600,
+    1200
+  ],
+  "forecast_leads": 18,
+  "terminal_absolute_seconds": 12000,
+  "forecast_after_last_observation_seconds": 10800,
+  "generator_limits": [
+    0.11,
+    0.08,
+    0.07,
+    0.04,
+    0.03
+  ],
+  "generator_fractions": [
+    0.7,
+    -0.6,
+    0.5,
+    0.4,
+    -0.3
+  ],
+  "generator_coefficients": [
+    0.077,
+    -0.048,
+    0.035,
+    0.016,
+    -0.009
+  ],
+  "target_face_weights_on_fractions": [
+    0.0,
+    -0.08,
+    -0.28,
+    -0.14,
+    -0.84
+  ],
+  "generator_Qy_4_3_by_polynomial_difference": 0.10399999999999998,
+  "generator_Qy_4_3_by_dot_product": 0.10399999999999998,
+  "Q0_is_not_a_given_truth_constraint": true,
+  "root_or_minimum_location_proved": false,
+  "runtime_code_modified": false,
+  "new_numerical_candidates": 0
+}
