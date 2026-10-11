@@ -55,5 +55,13 @@
     "current target independent future score"
   ],
   "FV_milestone_percent": 70,
-  "milestone_definition": "historical 60 foundation points + 10/20 partial original-root search; exact response0/15 and independent final future0/5"
+  "milestone_definition": "historical 60 foundation points + 10/20 partial original-root search; exact response0/15 and independent final future0/5",
+  "fresh_checkout_parent_fixture": {
+    "path": "graphify-out/fv-root-cause-20260919/gn_policy_experiment_20261011_attempt1/seeded_JR/point_0/closed_provisional.json",
+    "sha256": "8658f5614fb294bc33427a3b3a490b85cfd1f3f8c559ac8a6d5c02cd5071df3f",
+    "bytes": 4980451,
+    "archive_bytes_match": true,
+    "reason": "read-only canonical parent test can run without unpacking prior run tar",
+    "new_numerical_execution": false
+  }
 }
