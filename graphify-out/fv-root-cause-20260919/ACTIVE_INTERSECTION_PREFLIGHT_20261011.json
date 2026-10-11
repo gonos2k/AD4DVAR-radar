@@ -1,0 +1,10 @@
+{
+  "plan_sha256": "eb3d2a9bc5b458de864d28cdae23c0240189dcd9dae53766624e736792bf814a",
+  "sources": 186,
+  "archives": 259,
+  "base_control_sha256": "68a6e8219e79e8367b7fdd049bc25f4c431db9abdda1ba2af7ed0b52411f9ed8",
+  "preflight_passed": true,
+  "production_launches": 0,
+  "root_evaluation_cap": 33,
+  "count_basis": "chart zero + 8 bracket attempts + 24 bisections = 33"
+}

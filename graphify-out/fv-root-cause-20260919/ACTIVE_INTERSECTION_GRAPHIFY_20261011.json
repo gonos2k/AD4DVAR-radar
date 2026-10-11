@@ -1,0 +1,1902 @@
+{
+  "nodes": [
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "label": "fv_point_3h_active_intersection_diagnostic.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_sha",
+      "label": "_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L51",
+      "_origin": "ast"
+    },
+    {
+      "id": "path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L51",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_load_plan",
+      "label": "load_plan()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_load_base",
+      "label": "load_base()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L77",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_minimum_sampled_hull",
+      "label": "minimum_sampled_hull()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L103",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L103",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_sector_directions",
+      "label": "sector_directions()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L135",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_branch_changes",
+      "label": "branch_changes()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L152",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_original_event_values",
+      "label": "original_event_values()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L173",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_run_child",
+      "label": "_run_child()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L188",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L413",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_rationale_1",
+      "label": "Diagnose one limiter/flux intersection; never promote an optimizer point.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_rationale_104",
+      "label": "Closest point of a finite sampled hull, not a stationarity certificate.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L104",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_rationale_136",
+      "label": "Resolve signed first-order Q/zeta sectors from independent normals.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L136",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_rationale_153",
+      "label": "Separate the declared limiter change from other active-region changes.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L153",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_rationale_174",
+      "label": "Read the original replay contract through its detached public observer.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L174",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_limiter_probe",
+      "label": "fv_point_3h_active_limiter_probe.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_limiter_probe_limiterevent",
+      "label": "LimiterEvent",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L27",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_limiter_probe_validate_event",
+      "label": "_validate_event()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L42",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_limiter_probe_event_values",
+      "label": "event_values()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "trajectory",
+      "label": "Trajectory",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_active_limiter_probe_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_limiter_probe_rationale_1",
+      "label": "Graph-connected capture for the declared trace-179 limiter event.  This research",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_limiter_probe_rationale_28",
+      "label": "The fixed trace-179 x-direction event at interior cell (1, 2).",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L28",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_active_limiter_probe_rationale_57",
+      "label": "Return connected ``[left, right, max(abs(q))]`` at trace 179.      ``trajectory`",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L57",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_limiter_probe",
+      "label": "test_fv_point_3h_active_limiter_probe.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_limiter_probe_trajectory",
+      "label": "_trajectory()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_limiter_probe_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_limiter_probe_test_trace179_uses_ghost_offset_and_keeps_values_connected_for_ad",
+      "label": "test_trace179_uses_ghost_offset_and_keeps_values_connected_for_ad()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_limiter_probe_test_fixed_qy_face_side_is_bound_and_capture_requires_exactly_360_stages",
+      "label": "test_fixed_qy_face_side_is_bound_and_capture_requires_exactly_360_stages()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L70",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_limiter_probe_test_orientation_qualification_rejects_crossing_tie_and_nonfinite_values",
+      "label": "test_orientation_qualification_rejects_crossing_tie_and_nonfinite_values()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L85",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_limiter_probe_test_capture_restores_context_after_trajectory_exception",
+      "label": "test_capture_restores_context_after_trajectory_exception()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L93",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_limiter_probe_test_capture_rejects_nesting_and_restores_outer_observer",
+      "label": "test_capture_rejects_nesting_and_restores_outer_observer()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L102",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_limiter_probe_test_only_declared_trace_and_contract_are_supported",
+      "label": "test_only_declared_trace_and_contract_are_supported()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L113",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_limiter_probe_test_event_algebra_and_derivatives_are_reused_from_original_probe",
+      "label": "test_event_algebra_and_derivatives_are_reused_from_original_probe()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L140",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "label": "test_fv_point_3h_active_intersection_diagnostic.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_intersection_diagnostic_test_sampled_hull_finds_vertex_and_interior_projection",
+      "label": "test_sampled_hull_finds_vertex_and_interior_projection()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L18",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_intersection_diagnostic_test_sampled_hull_handles_duplicate_vertices_and_rejects_invalid_inputs",
+      "label": "test_sampled_hull_handles_duplicate_vertices_and_rejects_invalid_inputs()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L33",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_intersection_diagnostic_test_sector_directions_cover_all_signed_quadrants_in_their_span",
+      "label": "test_sector_directions_cover_all_signed_quadrants_in_their_span()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L52",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_intersection_diagnostic_test_sector_directions_reject_dependent_or_unresolved_normals",
+      "label": "test_sector_directions_reject_dependent_or_unresolved_normals()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L73",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_intersection_diagnostic_test_closed_parent_loader_verifies_receipts_without_mutating_them",
+      "label": "test_closed_parent_loader_verifies_receipts_without_mutating_them()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L79",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_intersection_diagnostic_test_q0_root_roundoff_bound_uses_event_state_scale_and_state_units",
+      "label": "test_q0_root_roundoff_bound_uses_event_state_scale_and_state_units()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L95",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_intersection_diagnostic_trace_fixture",
+      "label": "_trace_fixture()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L106",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_intersection_diagnostic_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L106",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_intersection_diagnostic_test_branch_scope_allows_only_declared_trace179_limiter_switch",
+      "label": "test_branch_scope_allows_only_declared_trace179_limiter_switch()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L119",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_intersection_diagnostic_test_branch_scope_rejects_other_stage_cell_sign_axis_or_face_change",
+      "label": "test_branch_scope_rejects_other_stage_cell_sign_axis_or_face_change()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L139",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_active_intersection_diagnostic_test_policy_is_read_only_diagnostic_with_no_optimizer_or_operator_budget",
+      "label": "test_policy_is_read_only_diagnostic_with_no_optimizer_or_operator_budget()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L158",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_nonlinear_oracles",
+      "label": "test_fv_independent_nonlinear_oracles.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_nonlinear_oracles_smooth_cell_means",
+      "label": "_smooth_cell_means()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_nonlinear_oracles_smooth_face_means",
+      "label": "_smooth_face_means()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L30",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_nonlinear_oracles_rectangle_cell_means",
+      "label": "_rectangle_cell_means()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L47",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_nonlinear_oracles_rectangle_face_means",
+      "label": "_rectangle_face_means()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L59",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_nonlinear_oracles_run_characteristics",
+      "label": "_run_characteristics()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L76",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_nonlinear_oracles_test_smooth_positive_sine_cosine_characteristics_have_exact_cell_average_truth",
+      "label": "test_smooth_positive_sine_cosine_characteristics_have_exact_cell_average_truth()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L109",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_nonlinear_oracles_test_rectangle_characteristics_include_exact_inflow_and_cell_overlap_truth",
+      "label": "test_rectangle_characteristics_include_exact_inflow_and_cell_overlap_truth()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L123",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_nonlinear_oracles_test_rectangle_characteristic_error_improves_under_joint_grid_and_time_refinement",
+      "label": "test_rectangle_characteristic_error_improves_under_joint_grid_and_time_refinement()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L142",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_independent_nonlinear_oracles_rationale_1",
+      "label": "Independent FV checks against exact nonlinear characteristic cell means.  The sm",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "dataclasses",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "itertools",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L26",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_local_window_probe",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_sha",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_load_plan",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_load_plan",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_load_plan",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_load_base",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L77",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_load_base",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L77",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_minimum_sampled_hull",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_minimum_sampled_hull",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_minimum_sampled_hull",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_sector_directions",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L135",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_sector_directions",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L135",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_sector_directions",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L135",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_sector_directions",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L135",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_sector_directions",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L135",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_branch_changes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_branch_changes",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_branch_changes",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_branch_changes",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_original_event_values",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L173",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_original_event_values",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L173",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_original_event_values",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L173",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_original_event_values",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L173",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_original_event_values",
+      "target": "examples_weather_scenarios_fv_point_3h_active_intersection_diagnostic_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L173",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_run_child",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L188",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_run_child",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L188",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_run_child",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L188",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L413",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_load_plan",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L56",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_run_child",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_load_plan",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L190",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_run_child",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_load_base",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L190",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_run_child",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_original_event_values",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L262",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_run_child",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_sector_directions",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L342",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_run_child",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_branch_changes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L370",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_run_child",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_minimum_sampled_hull",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L383",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_main",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_run_child",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L417",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_main",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_load_plan",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L418",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_main",
+      "target": "path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L422",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_main",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L425",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_rationale_104",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_minimum_sampled_hull",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_rationale_136",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_sector_directions",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L136",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_rationale_153",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_branch_changes",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L153",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_rationale_174",
+      "target": "weather_scenarios_fv_point_3h_active_intersection_diagnostic_original_event_values",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L174",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe",
+      "target": "dataclasses",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe",
+      "target": "numbers",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe",
+      "target": "weather_scenarios_fv_point_3h_active_limiter_probe_limiterevent",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe",
+      "target": "weather_scenarios_fv_point_3h_active_limiter_probe_validate_event",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe_validate_event",
+      "target": "weather_scenarios_fv_point_3h_active_limiter_probe_limiterevent",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe",
+      "target": "weather_scenarios_fv_point_3h_active_limiter_probe_event_values",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe_event_values",
+      "target": "trajectory",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe_event_values",
+      "target": "examples_weather_scenarios_fv_point_3h_active_limiter_probe_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe_event_values",
+      "target": "weather_scenarios_fv_point_3h_active_limiter_probe_limiterevent",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe_event_values",
+      "target": "examples_weather_scenarios_fv_point_3h_active_limiter_probe_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe_event_values",
+      "target": "weather_scenarios_fv_point_3h_active_limiter_probe_validate_event",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_active_limiter_probe",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe_rationale_28",
+      "target": "weather_scenarios_fv_point_3h_active_limiter_probe_limiterevent",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_active_limiter_probe_rationale_57",
+      "target": "weather_scenarios_fv_point_3h_active_limiter_probe_event_values",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_trajectory",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe_trajectory",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe_trajectory",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_test_trace179_uses_ghost_offset_and_keeps_values_connected_for_ad",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_test_fixed_qy_face_side_is_bound_and_capture_requires_exactly_360_stages",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_test_orientation_qualification_rejects_crossing_tie_and_nonfinite_values",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L85",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_test_capture_restores_context_after_trajectory_exception",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L93",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_test_capture_rejects_nesting_and_restores_outer_observer",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_test_only_declared_trace_and_contract_are_supported",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_test_event_algebra_and_derivatives_are_reused_from_original_probe",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L140",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe_test_trace179_uses_ghost_offset_and_keeps_values_connected_for_ad",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_trajectory",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe_test_fixed_qy_face_side_is_bound_and_capture_requires_exactly_360_stages",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_trajectory",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe_test_capture_restores_context_after_trajectory_exception",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_trajectory",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe_test_capture_rejects_nesting_and_restores_outer_observer",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_trajectory",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L107",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_limiter_probe_test_only_declared_trace_and_contract_are_supported",
+      "target": "tests_test_fv_point_3h_active_limiter_probe_trajectory",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_limiter_probe.py",
+      "source_location": "L125",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "copy",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "itertools",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "tests_test_fv_point_3h_active_intersection_diagnostic_test_sampled_hull_finds_vertex_and_interior_projection",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "tests_test_fv_point_3h_active_intersection_diagnostic_test_sampled_hull_handles_duplicate_vertices_and_rejects_invalid_inputs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "tests_test_fv_point_3h_active_intersection_diagnostic_test_sector_directions_cover_all_signed_quadrants_in_their_span",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "tests_test_fv_point_3h_active_intersection_diagnostic_test_sector_directions_reject_dependent_or_unresolved_normals",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L73",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "tests_test_fv_point_3h_active_intersection_diagnostic_test_closed_parent_loader_verifies_receipts_without_mutating_them",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "tests_test_fv_point_3h_active_intersection_diagnostic_test_q0_root_roundoff_bound_uses_event_state_scale_and_state_units",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "tests_test_fv_point_3h_active_intersection_diagnostic_trace_fixture",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic_trace_fixture",
+      "target": "tests_test_fv_point_3h_active_intersection_diagnostic_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "tests_test_fv_point_3h_active_intersection_diagnostic_test_branch_scope_allows_only_declared_trace179_limiter_switch",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L119",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "tests_test_fv_point_3h_active_intersection_diagnostic_test_branch_scope_rejects_other_stage_cell_sign_axis_or_face_change",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L139",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic",
+      "target": "tests_test_fv_point_3h_active_intersection_diagnostic_test_policy_is_read_only_diagnostic_with_no_optimizer_or_operator_budget",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L158",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic_test_branch_scope_allows_only_declared_trace179_limiter_switch",
+      "target": "tests_test_fv_point_3h_active_intersection_diagnostic_trace_fixture",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_active_intersection_diagnostic_test_branch_scope_rejects_other_stage_cell_sign_axis_or_face_change",
+      "target": "tests_test_fv_point_3h_active_intersection_diagnostic_trace_fixture",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_active_intersection_diagnostic.py",
+      "source_location": "L141",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles",
+      "target": "advar_transport",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles",
+      "target": "tests_test_fv_independent_nonlinear_oracles_smooth_cell_means",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles",
+      "target": "tests_test_fv_independent_nonlinear_oracles_smooth_face_means",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles",
+      "target": "tests_test_fv_independent_nonlinear_oracles_rectangle_cell_means",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles",
+      "target": "tests_test_fv_independent_nonlinear_oracles_rectangle_face_means",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles",
+      "target": "tests_test_fv_independent_nonlinear_oracles_run_characteristics",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L76",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles",
+      "target": "tests_test_fv_independent_nonlinear_oracles_test_smooth_positive_sine_cosine_characteristics_have_exact_cell_average_truth",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L109",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles",
+      "target": "tests_test_fv_independent_nonlinear_oracles_test_rectangle_characteristics_include_exact_inflow_and_cell_overlap_truth",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles",
+      "target": "tests_test_fv_independent_nonlinear_oracles_test_rectangle_characteristic_error_improves_under_joint_grid_and_time_refinement",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L142",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles_test_smooth_positive_sine_cosine_characteristics_have_exact_cell_average_truth",
+      "target": "tests_test_fv_independent_nonlinear_oracles_run_characteristics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L111",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles_test_smooth_positive_sine_cosine_characteristics_have_exact_cell_average_truth",
+      "target": "tests_test_fv_independent_nonlinear_oracles_smooth_cell_means",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles_test_rectangle_characteristics_include_exact_inflow_and_cell_overlap_truth",
+      "target": "tests_test_fv_independent_nonlinear_oracles_run_characteristics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L125",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles_test_rectangle_characteristics_include_exact_inflow_and_cell_overlap_truth",
+      "target": "tests_test_fv_independent_nonlinear_oracles_rectangle_cell_means",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L128",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles_test_rectangle_characteristics_include_exact_inflow_and_cell_overlap_truth",
+      "target": "tests_test_fv_independent_nonlinear_oracles_rectangle_face_means",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L138",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles_test_rectangle_characteristic_error_improves_under_joint_grid_and_time_refinement",
+      "target": "tests_test_fv_independent_nonlinear_oracles_run_characteristics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L146",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles_test_rectangle_characteristic_error_improves_under_joint_grid_and_time_refinement",
+      "target": "tests_test_fv_independent_nonlinear_oracles_rectangle_cell_means",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L149",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_independent_nonlinear_oracles_rationale_1",
+      "target": "tests_test_fv_independent_nonlinear_oracles",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "source_location": "L1",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "scope": "isolated final AST: active intersection diagnostic and nonlinear FV unit oracle",
+  "consulted_graph_sha256": "3ff088fe46ed690f4f88eb72a4b8e272dab2b9ff1a4dab8dcc2fd6c0e44ad2c8",
+  "source_sha256": {
+    "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py": "2a77cb9fcdf246e9f310bf7bf64925ee293f32f9b2d9d8f4fa49802d899485c2",
+    "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py": "8b5a0bf88d17f44c2dda77932485cbbbca182f1c0c9c8b790370e39a248aee6a",
+    "tests/test_fv_point_3h_active_limiter_probe.py": "65350a6be52f9f1fc5faabd788ed1b6020217baa90a3817f07c5fcaa4a85f904",
+    "tests/test_fv_point_3h_active_intersection_diagnostic.py": "4575425b04d69f3224c45f8a1695046f84238705c6ee2b0a6f96e6e981454ce4",
+    "tests/test_fv_independent_nonlinear_oracles.py": "29360f658cec1a0440fb69825209945211ff0b0f118722cde0bc52d06d0e7657"
+  }
+}

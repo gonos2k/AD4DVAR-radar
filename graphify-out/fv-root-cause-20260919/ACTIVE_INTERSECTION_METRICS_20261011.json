@@ -1,0 +1,179 @@
+{
+  "scope": "saved production arrays re-arithmetic; finite-radius gradients, not exact limiting or minimum certification",
+  "raw_sha256": "25f8f8dc77720047fde4a476ecfc114c0bf53e1c6fbecfbea41711c61340081f",
+  "base_control_sha256": "68a6e8219e79e8367b7fdd049bc25f4c431db9abdda1ba2af7ed0b52411f9ed8",
+  "canonical_control_unchanged": true,
+  "optimizer_commits": 0,
+  "production_guards": 1,
+  "base_J": 0.061024868372529385,
+  "base_R": 0.0031261974660462934,
+  "base_zeta": -1.548381263205556e-07,
+  "first_order_event_distance": 2.1811724044130195e-09,
+  "intersection_Q": 0.0,
+  "intersection_zeta": 1.2789769243681803e-13,
+  "root_event_roundoff_bound": 2.2519162337364314e-12,
+  "intersection_native_J": 0.061024868376558995,
+  "intersection_J_minus_canonical": 4.029609979028237e-12,
+  "normal_singular_values": [
+    1.0400461833211587,
+    0.9582817626142589
+  ],
+  "event_gradient_calls": 4,
+  "native_sector_gradient_calls": 12,
+  "root_value_evaluations": 3,
+  "native_sector_samples": 12,
+  "tangent_cost_samples": [
+    {
+      "accepted": false,
+      "actual_movement": 9.999999999967276e-08,
+      "control_sha256": "a1c1bcd2c2879cf5796a3e9055609556da7143d8c4a4a527a60e31414378332d",
+      "face_passed": true,
+      "face_roundoff_bound": 5.263656396359428e-16,
+      "native_J": 0.06102486278963405,
+      "native_J_minus_intersection": -5.586924943512539e-09,
+      "native_directional_quotient": -0.05586924943512539,
+      "production_Q": -0.0,
+      "radius": 1e-07,
+      "zeta": -1.1368683772161603e-13
+    },
+    {
+      "accepted": false,
+      "actual_movement": 4.999999999861807e-08,
+      "control_sha256": "6dd638950e7c08b91530487880c2ef2101962e3896e12a52d424a99f36d2e649",
+      "face_passed": true,
+      "face_roundoff_bound": 5.263655384413357e-16,
+      "native_J": 0.06102486558276994,
+      "native_J_minus_intersection": -2.793789054267304e-09,
+      "native_directional_quotient": -0.05587578108534608,
+      "production_Q": -6.938893903907228e-18,
+      "radius": 5e-08,
+      "zeta": 7.815970093361102e-14
+    }
+  ],
+  "summaries": [
+    {
+      "radius": 1e-09,
+      "sampled_hull_norm": 0.05591265975262104,
+      "sampled_hull_weights": [
+        0.3139034974386965,
+        0.0,
+        0.6860965025613035,
+        0.0
+      ],
+      "common_tangent_gradient_norm": 0.05588223474608529,
+      "common_tangent_projection_spread": 6.615512001843338e-07,
+      "sampled_common_direction_cost_slopes": [
+        -0.055882040664882414,
+        -0.0558822356128416,
+        -0.055882233722498925,
+        -0.05588242898411819
+      ],
+      "successive_sector_gradient_max_change": null,
+      "limiter_jumps": [
+        {
+          "projected_norm": 0.0005212053911327234,
+          "w_perpendicular_relative_norm": 0.0018409208003691334
+        },
+        {
+          "projected_norm": 0.0005212002976610474,
+          "w_perpendicular_relative_norm": 0.0018235386323059144
+        }
+      ],
+      "external_jumps": [
+        {
+          "norm": 0.2802100920412909,
+          "n_perpendicular_relative_norm": 3.040669396055744e-06
+        },
+        {
+          "norm": 0.28021002964359965,
+          "n_perpendicular_relative_norm": 3.0591554492121863e-06
+        }
+      ]
+    },
+    {
+      "radius": 5e-10,
+      "sampled_hull_norm": 0.05591269557266651,
+      "sampled_hull_weights": [
+        0.31390339318612415,
+        0.0,
+        0.6860966068138759,
+        0.0
+      ],
+      "common_tangent_gradient_norm": 0.055882233780386766,
+      "common_tangent_projection_spread": 3.307760950523719e-07,
+      "sampled_common_direction_cost_slopes": [
+        -0.05588213673937181,
+        -0.055882234213900366,
+        -0.05588223326824915,
+        -0.05588233090002578
+      ],
+      "successive_sector_gradient_max_change": 4.1315897146031127e-07,
+      "limiter_jumps": [
+        {
+          "projected_norm": 0.0005208646998183016,
+          "w_perpendicular_relative_norm": 0.0009210614013972323
+        },
+        {
+          "projected_norm": 0.0005208621593035822,
+          "w_perpendicular_relative_norm": 0.0009123675452404069
+        }
+      ],
+      "external_jumps": [
+        {
+          "norm": 0.28020989553438486,
+          "n_perpendicular_relative_norm": 1.5203382879544926e-06
+        },
+        {
+          "norm": 0.2802098980974868,
+          "n_perpendicular_relative_norm": 1.5295844664742808e-06
+        }
+      ]
+    },
+    {
+      "radius": 2.5e-10,
+      "sampled_hull_norm": 0.05591271348341666,
+      "sampled_hull_weights": [
+        0.31390334105773854,
+        0.0,
+        0.6860966589422615,
+        0.0
+      ],
+      "common_tangent_gradient_norm": 0.05588223329794645,
+      "common_tangent_projection_spread": 1.6538621664370498e-07,
+      "sampled_common_direction_cost_slopes": [
+        -0.05588218477849759,
+        -0.05588223351415576,
+        -0.05588223304042639,
+        -0.05588228185870603
+      ],
+      "successive_sector_gradient_max_change": 2.0658079144969297e-07,
+      "limiter_jumps": [
+        {
+          "projected_norm": 0.0005206945188749627,
+          "w_perpendicular_relative_norm": 0.0004606807341036462
+        },
+        {
+          "projected_norm": 0.0005206932507920833,
+          "w_perpendicular_relative_norm": 0.0004563317518180711
+        }
+      ],
+      "external_jumps": [
+        {
+          "norm": 0.28020979728059636,
+          "n_perpendicular_relative_norm": 7.601342456071537e-07
+        },
+        {
+          "norm": 0.28020983232616886,
+          "n_perpendicular_relative_norm": 7.648091318526641e-07
+        }
+      ]
+    }
+  ],
+  "guard_seconds": 37.66503308410756,
+  "sampled_peak_rss_bytes": 760446976,
+  "resource_termination": null,
+  "exit_code": 0,
+  "completion_percent": 70,
+  "actual_FV_adjoint_completed": false,
+  "current_FV_forecast_score_completed": false
+}
