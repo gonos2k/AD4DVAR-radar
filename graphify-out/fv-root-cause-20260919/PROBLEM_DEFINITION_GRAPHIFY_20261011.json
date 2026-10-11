@@ -1,0 +1,328 @@
+{
+  "nodes": [
+    {
+      "id": "fv_root_cause_20260919_problem_definition_static_checks_20261011",
+      "label": "problem_definition_static_checks_20261011.py",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_root_cause_20260919_problem_definition_static_checks_20261011_function",
+      "label": "function()",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "functiondef",
+      "label": "FunctionDef",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_root_cause_20260919_problem_definition_static_checks_20261011_tensor_literal",
+      "label": "tensor_literal()",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_root_cause_20260919_problem_definition_static_checks_20261011_module_constant",
+      "label": "module_constant()",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L28",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_root_cause_20260919_problem_definition_static_checks_20261011_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L35",
+      "_origin": "ast"
+    },
+    {
+      "id": "fv_root_cause_20260919_problem_definition_static_checks_20261011_rationale_1",
+      "label": "Source-bound static arithmetic for the FV problem definition; no model run.",
+      "file_type": "rationale",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "original_20min_inverse_problem_J",
+      "label": "Original 20-minute inverse problem J",
+      "file_type": "concept",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L7-L14",
+      "summary": "Find an eligible local minimum of the original robust regularized analysis cost over the physically and numerically valid domain; no global or domain-membership certification is claimed."
+    },
+    {
+      "id": "controls_and_outer_parameters",
+      "label": "26 normalized controls and 13 fixed outer parameters",
+      "file_type": "concept",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L28-L49",
+      "summary": "Controls are 20 field, five streamfunction, and one growth component. Parameters are 12 observation values and external background beta; beta differs from gradient-mixture vartheta."
+    },
+    {
+      "id": "point_observation_likelihood",
+      "label": "Whitened point-dBZ observation likelihood",
+      "file_type": "concept",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L51-L65",
+      "summary": "The objective samples dBZ at fixed bilinear point locations, standardizes and same-time whitens residuals, then sums pseudo-Huber costs with the identity control prior."
+    },
+    {
+      "id": "terminal_forecast_score_E",
+      "label": "Terminal +180-minute forecast score E",
+      "file_type": "concept",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L67-L74",
+      "summary": "E is the 4x5 terminal-grid dBZ MSE at 12,000 seconds absolute, 10,800 seconds after the last observation; it is separate from J."
+    },
+    {
+      "id": "single_face_Q0_hypothesis",
+      "label": "Single Q=0 active-face search hypothesis",
+      "file_type": "concept",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L76-L99",
+      "summary": "Qy[4,3]=0 guides one bounded search; it is not a permanent physical constraint or a truth-generation condition. The current endpoint remains unqualified."
+    }
+  ],
+  "edges": [
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011",
+      "target": "ast",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011",
+      "target": "fv_root_cause_20260919_problem_definition_static_checks_20261011_function",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011_function",
+      "target": "functiondef",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011",
+      "target": "fv_root_cause_20260919_problem_definition_static_checks_20261011_tensor_literal",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011_tensor_literal",
+      "target": "any",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011",
+      "target": "fv_root_cause_20260919_problem_definition_static_checks_20261011_module_constant",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011_module_constant",
+      "target": "any",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011",
+      "target": "fv_root_cause_20260919_problem_definition_static_checks_20261011_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011_tensor_literal",
+      "target": "fv_root_cause_20260919_problem_definition_static_checks_20261011_function",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011_main",
+      "target": "fv_root_cause_20260919_problem_definition_static_checks_20261011_function",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011_main",
+      "target": "fv_root_cause_20260919_problem_definition_static_checks_20261011_tensor_literal",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011_main",
+      "target": "fv_root_cause_20260919_problem_definition_static_checks_20261011_module_constant",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "fv_root_cause_20260919_problem_definition_static_checks_20261011_rationale_1",
+      "target": "fv_root_cause_20260919_problem_definition_static_checks_20261011",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "controls_and_outer_parameters",
+      "target": "original_20min_inverse_problem_J",
+      "relation": "parameterizes",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L30-L47"
+    },
+    {
+      "source": "point_observation_likelihood",
+      "target": "original_20min_inverse_problem_J",
+      "relation": "defines_data_cost_term_of",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L53-L65"
+    },
+    {
+      "source": "terminal_forecast_score_E",
+      "target": "original_20min_inverse_problem_J",
+      "relation": "is_separate_from",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L67-L74"
+    },
+    {
+      "source": "single_face_Q0_hypothesis",
+      "target": "original_20min_inverse_problem_J",
+      "relation": "is_conditional_search_not_physical_constraint_of",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/FV_INVERSE_PROBLEM.md",
+      "source_location": "L76-L97"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "scope": "incremental scoped AST plus reviewed problem-definition concepts; shared graph untouched",
+  "consulted_graph_sha256": "9363db00cf9f45db58fc09107c3ed776694b284a99ad738403c2fb4008d6bbe8",
+  "source_sha256": {
+    "graphify-out/fv-root-cause-20260919/problem_definition_static_checks_20261011.py": "2feefc3ec9fe86c8d21cd3a7b8a37cc3bb76a5a1bbd044db45d031b86f3fc119",
+    "docs/FV_INVERSE_PROBLEM.md": "42ebd914f2b8ab123297cbdaf2ac8de505db55b6936b2c2e110adad291881873",
+    "README.md": "0512ecdb5fdef421bd42a3d16f9f8913098197c6e7eedab41a87c3d16c2f14d5"
+  },
+  "token_accounting_scope": "AST only; bounded GREEN semantic-review tokens not measured",
+  "semantic_review_tokens": null
+}
