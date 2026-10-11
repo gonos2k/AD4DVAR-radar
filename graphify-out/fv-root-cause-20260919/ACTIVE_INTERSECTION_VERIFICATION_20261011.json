@@ -1,0 +1,73 @@
+{
+  "root_guard_runs": 1,
+  "no_optimizer_commit": true,
+  "source_pins": 186,
+  "archive_pins": 259,
+  "source_input_runtime_unchanged": true,
+  "root_tests": {
+    "passed": 38,
+    "seconds": 1.89,
+    "dependency_warnings": 18
+  },
+  "core_tests": {
+    "passed": 28,
+    "seconds": 1.71
+  },
+  "type_errors": 0,
+  "type_warnings": 0,
+  "graphify": {
+    "nodes": 59,
+    "edges": 146,
+    "model_tokens": 0,
+    "isolated": true
+  },
+  "production_scope": "original 3h radar active event diagnostic only; no optimization promotion, exact adjoint, or forecast score",
+  "unit_scope": "small independent cell-average characteristic FV oracles; not current 3h skill",
+  "archive": {
+    "additional_independent_test": {
+      "file": "tests/test_fv_independent_nonlinear_oracles.py",
+      "scope": "separate unit-domain FV oracle; not imported by production diagnosis",
+      "sha256": "29360f658cec1a0440fb69825209945211ff0b0f118722cde0bc52d06d0e7657"
+    },
+    "current_canonical_control_sha256": "68a6e8219e79e8367b7fdd049bc25f4c431db9abdda1ba2af7ed0b52411f9ed8",
+    "gzip_bytes": 157794,
+    "gzip_sha256": "1d2fe5d8cc6d668b4926c7d13b35a2cda22205043476e1e83ee618d48ae603ae",
+    "new_canonical_commits": 0,
+    "plan_sha256": "eb3d2a9bc5b458de864d28cdae23c0240189dcd9dae53766624e736792bf814a",
+    "raw_bytes": 15181329,
+    "raw_sha256": "25f8f8dc77720047fde4a476ecfc114c0bf53e1c6fbecfbea41711c61340081f",
+    "resource_sha256": "4af6a59ddb437d4afac480138f9cc2d8b595116dd1f303da475c59c05b97fa7b",
+    "run_sha256": "d4c6c03d47e10b1a9705ca6460a7be04a80369aec81e010c935c3db78123138d",
+    "source_files": {
+      "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py": "2a77cb9fcdf246e9f310bf7bf64925ee293f32f9b2d9d8f4fa49802d899485c2",
+      "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py": "8b5a0bf88d17f44c2dda77932485cbbbca182f1c0c9c8b790370e39a248aee6a",
+      "tests/test_fv_point_3h_active_intersection_diagnostic.py": "4575425b04d69f3224c45f8a1695046f84238705c6ee2b0a6f96e6e981454ce4",
+      "tests/test_fv_point_3h_active_limiter_probe.py": "65350a6be52f9f1fc5faabd788ed1b6020217baa90a3817f07c5fcaa4a85f904"
+    }
+  },
+  "review_team": [
+    "GREEN evidence/state",
+    "RED math/claims"
+  ],
+  "remaining": [
+    "actual qualified optimum",
+    "exact FV adjoint/VJP and perturbation reanalysis",
+    "current target independent future score"
+  ],
+  "FV_milestone_percent": 70,
+  "milestone_definition": "historical 60 foundation points + 10/20 partial original-root search; exact response0/15 and independent final future0/5",
+  "fresh_checkout_parent_fixture": {
+    "path": "graphify-out/fv-root-cause-20260919/gn_policy_experiment_20261011_attempt1/seeded_JR/point_0/closed_provisional.json",
+    "sha256": "8658f5614fb294bc33427a3b3a490b85cfd1f3f8c559ac8a6d5c02cd5071df3f",
+    "bytes": 4980451,
+    "archive_bytes_match": true,
+    "reason": "read-only canonical parent test can run without unpacking prior run tar",
+    "new_numerical_execution": false,
+    "standalone_test": {
+      "passed": 1,
+      "seconds": 1.04,
+      "scope": "detached clean checkout parent receipt loader; no FV or derivative execution",
+      "tested_commit": "38e1a3843bfb8b696e252a65ba191c7f9ab299ce"
+    }
+  }
+}

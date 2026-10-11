@@ -1,0 +1,27 @@
+{
+  "kind": "evidence-backed active-event diagnostic",
+  "current_canonical": "68a6e8219e79e8367b7fdd049bc25f4c431db9abdda1ba2af7ed0b52411f9ed8",
+  "experiment_plan_sha256": "eb3d2a9bc5b458de864d28cdae23c0240189dcd9dae53766624e736792bf814a",
+  "source_locations": [
+    "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+    "examples/weather_scenarios/fv_point_3h_active_limiter_probe.py",
+    "tests/test_fv_independent_nonlinear_oracles.py"
+  ],
+  "evidence": [
+    "ACTIVE_INTERSECTION_METRICS_20261011.json",
+    "ACTIVE_INTERSECTION_ARCHIVE_20261011.json",
+    "ACTIVE_INTERSECTION_FINDINGS_20261011.md"
+  ],
+  "findings": [
+    "trace179 external-face/limiter intersection located",
+    "four nearby native strict sectors reachable without other branch changes",
+    "sampled hull and common tangent gradient remain nonzero",
+    "native Q0 chart cost decreases along common tangent direction"
+  ],
+  "limits": [
+    "finite samples, not exact limiting-gradient hull",
+    "no canonical promotion",
+    "no final FV response or current forecast skill"
+  ],
+  "next": "current-point event-aware tangent direction with original full residual and final individual gradient approval; do not make limiter a permanent constraint"
+}

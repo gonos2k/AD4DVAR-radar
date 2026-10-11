@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py",
+    "--child",
+    "--plan-sha256",
+    "eb3d2a9bc5b458de864d28cdae23c0240189dcd9dae53766624e736792bf814a"
+  ],
+  "child_pid": 71554,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 37.66503308410756,
+  "sampled_peak_rss_bytes": 760446976,
+  "rss_samples": 143,
+  "wall_limit_seconds": 660.0,
+  "rss_limit_bytes": 2147483648,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}
