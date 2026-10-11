@@ -1,0 +1,32 @@
+{
+  "files": {
+    "attempt1/step.run.json": {
+      "sha256": "ff7381d7394f262186cd37975087ce373f8faf679f008e723ef2a5e33761e512",
+      "bytes": 926
+    },
+    "attempt1/step.json": {
+      "sha256": "620ba8f831eb249175dea6b2dbe26657927a1006f4070d861df04476c564e7ed",
+      "bytes": 23816904
+    },
+    "attempt1/step.resource.json": {
+      "sha256": "d966205067b7f32401e3c9c949865335e9ab5d10f6071e5bde9d82a17f807758",
+      "bytes": 745
+    },
+    "attempt1/step.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "attempt1/base_requalification.json": {
+      "sha256": "c2fc86640fba37a34d477a4d99ba0e73abaa670ed964caacd655447fac33448d",
+      "bytes": 5079756
+    },
+    "attempt1/point_00/candidate_01.json": {
+      "sha256": "b28a695aa167cb51acd2229fe89fa23b0f73a2d8931759bfa07054aa832c4039",
+      "bytes": 2248192
+    }
+  },
+  "receipt_bundle_sha256": "fc3c2bbb9f0612131d2d2d295eb1f7464fbd02d91f347925cbf482739e025412",
+  "diagnosis_bundle_sha256": "e1d998c70e7182850abca2556ccb6cc012f52cb7c39408354dc72dd1d9c4ac9b",
+  "diagnosis_original_manifest_sha256": "bb6dc470e7f9ac6413992044fc24c26f09e719205295814f38d79e02b6a3beba",
+  "extraction": "Extract receipts.tar.gz at this directory to restore attempt1 raw files without altering bytes. Extract eight_team_diagnosis.tar.gz into a separate directory; it preserves all 85 files in the original diagnosis manifest plus that manifest. These are historical diagnosis receipts, not new-version P2."
+}
