@@ -1,0 +1,14 @@
+{
+  "scope": "재사용 실행기/계획으로 same-point 검색비용 대조와 고정1%/3스텝 R회복 pilot",
+  "base_control": "fec9f3062339a0a24d1934fe9ad35fbe9c9cbea4951ca2a5967bde933d6a841c",
+  "canonical_control": "68a6e8219e79e8367b7fdd049bc25f4c431db9abdda1ba2af7ed0b52411f9ed8",
+  "selected_policy": "seeded_JR",
+  "candidate_counts": {"dyadic": 22, "seeded": 6, "bounded_logical": 17, "bounded_fresh": 16},
+  "nonmonotone_result": "fixed initial R cap1% upheld; horizon3 recovery failed; noncanonical",
+  "cost_result": "same-point seed cut candidate evaluations72.7273%; no standalone timing/speed claim",
+  "graph_consulted": "FINITE_CHART_GRAPHIFY_20261011.json",
+  "graph_incremental": "GN_POLICY_GRAPHIFY_20261011.json",
+  "independent_preparation": "analytic characteristic cell/face-average FV truth and exact27-variable adjoint/reanalysis scaffold; not current radar response/forecast",
+  "remaining": ["meaningful original residual convergence", "qualified point/exact curvature/active structure", "FV response/reanalysis/independent forecast", "broader policy claims require separate fixed experiments"],
+  "completion": {"historical_theory": 100, "FV_extension": 70}
+}

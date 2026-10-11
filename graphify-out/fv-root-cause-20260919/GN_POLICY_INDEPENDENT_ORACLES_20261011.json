@@ -1,0 +1,48 @@
+{
+  "transport": [
+    {
+      "n": 8,
+      "lead": 0.4,
+      "relative_L2": 0.0004954166262554004,
+      "relative_squared_score": 2.454376335702831e-07,
+      "proxy_integral_budget_quadrature_error": -1.2328947671114143e-06
+    },
+    {
+      "n": 8,
+      "lead": 0.8,
+      "relative_L2": 0.0008139810524973096,
+      "relative_squared_score": 6.625651538246279e-07,
+      "proxy_integral_budget_quadrature_error": -4.444745615256318e-06
+    },
+    {
+      "n": 16,
+      "lead": 0.4,
+      "relative_L2": 0.00030776865607332277,
+      "relative_squared_score": 9.472154566117918e-08,
+      "proxy_integral_budget_quadrature_error": -5.445660071351499e-07
+    },
+    {
+      "n": 16,
+      "lead": 0.8,
+      "relative_L2": 0.00045518683460996697,
+      "relative_squared_score": 2.0719505440224142e-07,
+      "proxy_integral_budget_quadrature_error": -1.1042875045219613e-06
+    }
+  ],
+  "adjoint": {
+    "dimension": 27,
+    "adjoint_linear_residual_norm": 3.66205343881779e-15,
+    "implicit_vs_analytic_error": 3.552713678800501e-15,
+    "central_reanalysis": [
+      {
+        "h": 0.002,
+        "error": 7.1900468618935065e-06
+      },
+      {
+        "h": 0.001,
+        "error": 1.7975053374641448e-06
+      }
+    ]
+  },
+  "scope": "independent synthetic fixtures; ROOT small FV fixture run only; no current radar future score or qualified optimum"
+}
