@@ -1,0 +1,12 @@
+{
+  "scope": "PR288 이후 같은 점의 고정 두 후보 실제 재평가와 P2 한 점 확정",
+  "graph_consulted": "GN_LOCAL_EXTENSION_GRAPHIFY_20261011.json",
+  "graph_incremental": "GN_LOCAL_CANDIDATE_GRAPHIFY_20261011.json",
+  "graph_scope": "소유한 producer와 시험의 격리 AST 추출; 공유 graph.json 미변경",
+  "base_control": "454396e77e2f10492e80e0fd625b55e1a08c2be53fe9721b59a4a27d60be3b7a",
+  "committed_control": "a3d2ad7bd5b358619c55ca8c52f9ffe15a276a1b0ec10fd4620e440bea30cc5a",
+  "evidence": ["GN_LOCAL_CANDIDATE_ARCHIVE_20261011.json", "GN_LOCAL_CANDIDATE_METRICS_20261011.json", "GN_LOCAL_CANDIDATE_FINDINGS_20261011.md"],
+  "claims": {"closed_commit": true, "postcommit_readiness": false, "root": false, "minimum": false, "response": false, "forecast_score": false},
+  "remaining": ["새점 현재 미분과 후속 수렴", "정확 최적조건·곡률·활성 자격", "수반·재분석·독립 미래검증", "PR286 producer의 실제 FV 반복 검증", "후보별 interrupted 상태와 OS 종료 보존은 이번 인증 범위 밖"],
+  "completion": {"historical_theory": 100, "FV_extension": 70}
+}

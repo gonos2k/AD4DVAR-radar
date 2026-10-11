@@ -1,0 +1,17 @@
+{
+  "plan_sha256": "db51873c025abc29e4b3af25b26e6c06027f5f3697ae064be1bec10968592db8",
+  "guarded_launch_count": 1,
+  "optimizer_steps_applied": 1,
+  "lossless_roundtrip": true,
+  "raw_bytes": 13135698,
+  "gzip_bytes": 139703,
+  "scope": "fixed two actual candidates; selected P2; one closed commit; no readiness",
+  "raw_path": "graphify-out/fv-root-cause-20260919/gn_local_candidate_20261011_attempt1/step.json",
+  "raw_sha256": "94d60f5df099b08e6b8c9ff315347f3f6705d82f6134c52fa5e5783cf7ba7f0b",
+  "gzip_path": "graphify-out/fv-root-cause-20260919/gn_local_candidate_20261011_attempt1/step.json.gz",
+  "gzip_sha256": "b01b50406beb164a1fa85c63680be8d0d7946b9750908b390a3369b0f03b96d5",
+  "run_path": "graphify-out/fv-root-cause-20260919/gn_local_candidate_20261011_attempt1/step.run.json",
+  "run_sha256": "7b334de0b80a42e86a52dab2ce7a5a72315434185a7e307024688215f19f5f99",
+  "resource_path": "graphify-out/fv-root-cause-20260919/gn_local_candidate_20261011_attempt1/step.resource.json",
+  "resource_sha256": "511d068a60fc97461a4150b59e1b11d5d21032874d250344c158f20911c65a5c"
+}

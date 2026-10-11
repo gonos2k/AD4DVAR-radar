@@ -1,0 +1,60 @@
+{
+  "base_control_sha256": "454396e77e2f10492e80e0fd625b55e1a08c2be53fe9721b59a4a27d60be3b7a",
+  "committed_control_sha256": "a3d2ad7bd5b358619c55ca8c52f9ffe15a276a1b0ec10fd4620e440bea30cc5a",
+  "base_J": 0.06102493753540203,
+  "base_R": 0.003127039112866745,
+  "base_norm": 0.05591993484319116,
+  "base_max_component": 0.026589023539169445,
+  "candidates": [
+    {
+      "index": 1,
+      "alpha": 2.404138610194166e-05,
+      "objective": 0.061024895390148964,
+      "F_squared": 0.0031263066786563877,
+      "theta": 0.6860964916049087,
+      "actual_path_norm": 9.66604993031249e-07,
+      "eligible": true,
+      "trace_matches_base": false,
+      "residual_norm": 0.05591338550522931,
+      "max_mixed_component": 0.02658847396545451,
+      "J_decrease_percent": 6.906234527610847e-05,
+      "R_decrease_percent": 0.023422611100175506,
+      "model_R": 0.0031268685742514533,
+      "vector_model_error_norm": 0.00014655393045814681,
+      "model_error_over_actual_change": 0.9988089634599
+    },
+    {
+      "index": 2,
+      "alpha": 1.202069305097083e-05,
+      "objective": 0.06102491646716873,
+      "F_squared": 0.0031269538437563244,
+      "theta": 0.6860532709626198,
+      "actual_path_norm": 4.833024965187389e-07,
+      "eligible": true,
+      "trace_matches_base": true,
+      "residual_norm": 0.05591917241659004,
+      "max_mixed_component": 0.02658874888374624,
+      "J_decrease_percent": 3.452397355526514e-05,
+      "R_decrease_percent": 0.0027268322314759007,
+      "model_R": 0.003126953842908536,
+      "vector_model_error_norm": 3.521928212927799e-11,
+      "model_error_over_actual_change": 4.366566785715825e-05
+    }
+  ],
+  "selected_index": 1,
+  "raw_control_displacement": 9.666049930312492e-07,
+  "same_point_DG_linf": 0.0,
+  "counts": {
+    "fresh_HVP": 2,
+    "fresh_rows": 0,
+    "fresh_solves": 0,
+    "actual_candidates": 2,
+    "commits": 1,
+    "postcommit_readiness": false
+  },
+  "elapsed_seconds": 34.20565741718747,
+  "sampled_peak_rss_bytes": 793985024,
+  "theory_completion_percent": 100,
+  "FV_completion_percent": 70,
+  "qualification_claims": false
+}
