@@ -1,0 +1,16 @@
+{
+  "control_sha256": "a3d2ad7bd5b358619c55ca8c52f9ffe15a276a1b0ec10fd4620e440bea30cc5a",
+  "all_current_last_proposal_repeat_controls_equal": true,
+  "side_gradient_max_drift": 0.0,
+  "theta_from_individual_gradients": 0.6860964916049087,
+  "theta_stored": 0.6860964916049087,
+  "mixed_gradient_norm": 0.05591338550522931,
+  "mixed_gradient_max": 0.02658847396545451,
+  "R_from_gradient": 0.0031263066786563877,
+  "R_recorded": 0.0031263066786563877,
+  "J_decrease_percent": 6.906234527610847e-05,
+  "R_decrease_percent": 0.023422611100175506,
+  "norm_decrease_percent": 0.011711991403804337,
+  "max_decrease_percent": 0.0020669195095715455,
+  "all_trial_accepted_false": true
+}

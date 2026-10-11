@@ -1,0 +1,29 @@
+{
+  "source_pins": 173,
+  "archive_pins": 248,
+  "all_pins_match": true,
+  "snapshots_match": true,
+  "saved_HVP_minimum_chain_checks": [
+    {
+      "point": 0,
+      "theta_prime_error": 0.0,
+      "DG_gradient_part_linf": 0.0
+    },
+    {
+      "point": 1,
+      "theta_prime_error": 0.0,
+      "DG_gradient_part_linf": 0.0
+    }
+  ],
+  "affected_tests": 18,
+  "test_seconds": 2.2,
+  "type_errors": 0,
+  "type_warnings": 0,
+  "production_launches": 1,
+  "commits": 2,
+  "third_point_rows": 19,
+  "three_step_completed": false,
+  "numerical_convergence": false,
+  "terminal_deadline_passed": false,
+  "each_committed_P2_deadline_passed": true
+}

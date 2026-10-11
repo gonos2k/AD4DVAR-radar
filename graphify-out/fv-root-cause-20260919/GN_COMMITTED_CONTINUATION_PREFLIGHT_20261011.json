@@ -1,0 +1,20 @@
+{
+  "plan_sha256": "34cb70203a5baf8cfc0d56b3e9783cae49040df460afadeac3d193476b8acfa3",
+  "source_count": 173,
+  "archive_count": 248,
+  "all_pins_verified": true,
+  "parent_control_sha256": "a3d2ad7bd5b358619c55ca8c52f9ffe15a276a1b0ec10fd4620e440bea30cc5a",
+  "parent_P2_verified": true,
+  "parent_full_G_bound": true,
+  "source_snapshots_match": true,
+  "affected_tests": 18,
+  "test_seconds": 2.2,
+  "type_errors": 0,
+  "type_warnings": 0,
+  "production_launched": false,
+  "preflight_followup_findings_resolved": [
+    "full G vector carry/compare",
+    "JSON-safe nonfinite candidate refusal",
+    "slot vs evaluation counters"
+  ]
+}

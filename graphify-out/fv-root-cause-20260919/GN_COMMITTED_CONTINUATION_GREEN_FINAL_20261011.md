@@ -1,0 +1,13 @@
+# GREEN saved-evidence review: committed GN continuation
+
+Read-only audit of the closed raw run and frozen source/plan; I did not run FV or HVPs. No discrepancy found in the two P2-closed points or their saved receipts.
+
+- Plan SHA-256 `34cb70203a5baf8cfc0d56b3e9783cae49040df460afadeac3d193476b8acfa3`; all 173 source and 248 archive pins match. Raw/gzip/run/resource hashes match the manifest; gzip round-trip is byte-identical.
+- The control chain is `a3d2ad7b…cc5a` → `b9cea52e…9774` → `fec9f306…841c`. I independently hashed the float64 proposal, repeat, current, and last-confirmed controls; each step’s values agree, and recomputed control movement matches the stored norm (`4.83478e-7`, then `1.20868e-7`).
+- Both closed steps pass the saved P2 closure predicate. Recomputed theta from each pair of individual side gradients matches stored theta; candidate full-G mixed-gradient components match those gradients (`L∞=0`), and `G·G` matches stored R exactly. Final-repeat side-gradient drift is zero; trace, objective, merit, input, runtime, source, and per-step deadline checks pass.
+- Fresh operators are point-bound: each committed point has 24 unique completed rows at its own control/theta, one positive-definite 12×12 solve, and two HVPs. HVP base-control, direction SHA, point index, and theta match that point’s newly formed GN direction. No prior point’s operator products were reused.
+- The third point is partial: 19/24 fresh rows completed, with zero solve, HVP, candidate, or commit. Totals are 67 rows, 2 solves, 4 HVPs, 36 candidate slots, and 2 commits. The final control/last-confirmed prefix remains `fec9f306…841c`.
+- Across the two committed steps, J decreased by `0.0000431933%`, R by `0.003408147%`, and residual norm by `0.001704088%`. These are small finite decreases, not a convergence or optimum result.
+- The child exited 0 under the outer guard after 620.876 s; sampled peak RSS was 502,497,280 bytes (<2 GiB). Numerical termination was the 600 s internal budget; `deadline_passed=false` at terminal status. Source/input/runtime remained unchanged. Readiness and root/minimum/response/forecast claims are false.
+
+Cross-read of final findings, metrics, KG, verification, and RED records found no discrepancy with the raw step. In particular, the 67 rows partition as 24+24+19, the 36 candidate slots as 17+19, and the two model-error fractions convert to the reported `0.00536307%`/`0.00241264%`. Both endpoint trace matches are per committed step; they do not certify trace invariance over the continuation. The convenience top-level `dense_solve_audit` matches exactly the point-1 (second point, `b9cea52e…`) audit, not a third-point solve; the findings and metrics label this limitation correctly.
