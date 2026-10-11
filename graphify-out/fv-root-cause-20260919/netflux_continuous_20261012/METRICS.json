@@ -398,5 +398,7 @@
     "operator_control_sha256": "b6470069c9b8992bf19fa85ab848f5ef424a1e2e8e33a4909bcb0d036ef88660",
     "point_HVP_completed": 1
   },
-  "verification_scope": "Stored raw receipts, same-version source/input/runtime pins, componentwise prefix/P2 reconstruction and arithmetic; no additional production FV/HVP/adjoint or forecast run."
+  "verification_scope": "Stored raw receipts, same-version source/input/runtime pins, componentwise prefix/P2 reconstruction and arithmetic; no additional production FV/HVP/adjoint or forecast run.",
+  "started_HVP_requests": 24,
+  "HVP_count_scope": "Recorded qualified completions. The final request may have failed the pre- or post-JVP deadline check; actual execution of that request is not identifiable from the raw receipt."
 }
