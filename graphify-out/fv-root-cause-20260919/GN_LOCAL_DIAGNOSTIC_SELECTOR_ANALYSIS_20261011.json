@@ -1,0 +1,327 @@
+[
+  {
+    "alpha": 0.0030772974210485325,
+    "c12_c13_c14_error_squared_fraction": 0.9991748031149207,
+    "choice_diff_count": 20,
+    "first_diffs": [
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 111
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 112
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 113
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 114
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 115
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 116
+      }
+    ],
+    "index": 1
+  },
+  {
+    "alpha": 0.0015386487105242663,
+    "c12_c13_c14_error_squared_fraction": 0.999322235869213,
+    "choice_diff_count": 8,
+    "first_diffs": [
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 111
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 112
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 113
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 114
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 177
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 178
+      }
+    ],
+    "index": 2
+  },
+  {
+    "alpha": 0.0007693243552621331,
+    "c12_c13_c14_error_squared_fraction": 0.9994482769483954,
+    "choice_diff_count": 4,
+    "first_diffs": [
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 111
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 112
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 179
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 180
+      }
+    ],
+    "index": 3
+  },
+  {
+    "alpha": 0.00038466217763106656,
+    "c12_c13_c14_error_squared_fraction": 0.9995444765121091,
+    "choice_diff_count": 4,
+    "first_diffs": [
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 111
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 112
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 179
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 180
+      }
+    ],
+    "index": 4
+  },
+  {
+    "alpha": 0.00019233108881553328,
+    "c12_c13_c14_error_squared_fraction": 0.9995791703896293,
+    "choice_diff_count": 4,
+    "first_diffs": [
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 111
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 112
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 179
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 180
+      }
+    ],
+    "index": 5
+  },
+  {
+    "alpha": 9.616554440776664e-05,
+    "c12_c13_c14_error_squared_fraction": 0.9992684261441875,
+    "choice_diff_count": 2,
+    "first_diffs": [
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 179
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 180
+      }
+    ],
+    "index": 6
+  },
+  {
+    "alpha": 4.808277220388332e-05,
+    "c12_c13_c14_error_squared_fraction": 0.999284516430108,
+    "choice_diff_count": 2,
+    "first_diffs": [
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 179
+      },
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 180
+      }
+    ],
+    "index": 7
+  },
+  {
+    "alpha": 2.404138610194166e-05,
+    "c12_c13_c14_error_squared_fraction": 0.9992912419864223,
+    "choice_diff_count": 1,
+    "first_diffs": [
+      {
+        "axis": "x",
+        "base": false,
+        "column": 2,
+        "key": "choose_left",
+        "row": 1,
+        "sample": true,
+        "stage": 180
+      }
+    ],
+    "index": 8
+  }
+]

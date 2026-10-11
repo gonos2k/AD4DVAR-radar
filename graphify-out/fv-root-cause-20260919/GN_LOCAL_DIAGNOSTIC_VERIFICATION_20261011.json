@@ -1,0 +1,8 @@
+{
+  "plan_sha256": "c98b16be54351c1f5711abc86e93bdc067a59578914e18f14f12d187181781f8",
+  "scope": "savedparent/syntheticfixeddiagnostic/noaccept/interruption +priorprogressregression; actualROOTdiagnosticseparate",
+  "seconds": 1.23,
+  "tests_passed": 7,
+  "type_errors": 0,
+  "type_warnings": 0
+}
