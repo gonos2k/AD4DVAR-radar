@@ -1,0 +1,30 @@
+{
+  "kind": "actual current-point tangent search after problem-definition correction",
+  "base": "68a6e821\u202611f9ed8",
+  "new_endpoint": "98ee63abf614756ddbdbba5cc480d66a3235a17b4def8c50b084c4f20dcdd957",
+  "findings": [
+    "current face-gradient and current event-removed gradient both pass first candidate",
+    "baseline chosen by lower actual full R",
+    "selected baseline changes trace180 only; trace179 unchanged",
+    "individual P2/full G repeat and original J/R approved",
+    "observational matched-twin E increases despite J/R reduction"
+  ],
+  "operator_scope": "current point; no diagnostic intersection/fec9 operators reused",
+  "face_scope": "current outward derivatives positive; conditional retain for one test, no general release solver",
+  "remaining": [
+    "qualified original-J local minimum",
+    "exact current-point curvature/active stability",
+    "actual FV response and perturbation reoptimization",
+    "independent current-target future validation"
+  ],
+  "milestone": 70,
+  "source_locations": [
+    "examples/weather_scenarios/fv_point_3h_current_tangent_search.py",
+    "examples/weather_scenarios/fv_point_3h_current_event_tangent.py"
+  ],
+  "evidence": [
+    "CURRENT_TANGENT_METRICS_20261011.json",
+    "CURRENT_TANGENT_ARCHIVE_20261011.json",
+    "CURRENT_TANGENT_FINDINGS_20261011.md"
+  ]
+}

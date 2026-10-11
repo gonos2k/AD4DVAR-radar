@@ -1,0 +1,14 @@
+# Current tangent search: GREEN review
+
+Read-only cross-check of the frozen plan, raw/gzip/run/resource receipts, candidate records, final P2, and metrics. No FV/AD/seed rerun was performed.
+
+- The frozen plan hash is `82ba9f107658f4fd75016c434692073f31690c7fa94816a380e45146a7d9227b`; all 190 source and 261 archive pins match. Raw and gzip hashes match the archive, and gzip decompression reproduces the raw JSON byte-for-byte. Candidate receipt hashes match their manifest entries.
+- The packaged execution tarball hash/size match the archive; it contains exactly five manifest members, each byte-identical to its local receipt. The standalone saved analyzer uses FP64 arrays and calls no FV, HVP, optimizer, or score function. Independent scalar recomputation matches the report: J −0.0014186612%, R −7.7412514%, ‖G‖ −3.9485822%, max mixed component −0.02974327%, model-error/actual-ΔG 0.9529787%, and observation-only E +0.0012434495%.
+- The guard completed with exit 0, no resource termination, 57.1847 s, and 787,644,416-byte sampled peak RSS. Raw source/input/runtime identities and deadline flags all pass.
+- The run requalified current P2 `68a6e821…f9ed8`, then recorded 2/2 event-gradient calls, 4/4 HVPs, 2/2 candidate evaluations, one P2/full-G repeat, and one commit. Row VJPs, GN solves, and postcommit readiness are zero/false.
+- Both directions yielded one eligible dyadic candidate. Selection was complete and used actual R then J: `face_tangent_gradient` had lower R (`0.00288419066` vs `0.00289074061`) and lower J. The observation-only matched-twin terminal MSE increased by 0.00124345%; it did not affect selection and is not forecast-skill evidence.
+- The selected candidate passed original J/R Armijo. P2 flags pass; independently re-forming the first 26 G entries from P2 side gradients and vartheta reproduces stored G with zero component difference. The stored last component is zero on the closed face; `dot(G,G)` equals P2 R. Current and last-confirmed control hashes both bind `98ee63ab…dcdd957`.
+- The selected full trace changed one recorded selector at stage 180 (`choose_left`, x axis, cell [1,2]); both external-side traces remain strict and the current native-pair gate passes. This is consistent with the pinned policy allowing selector changes under a strict current pair; it is not a trace-preservation claim. The starting event has nonzero zeta, so the commit is not an event-root point.
+- Findings correctly keep the endpoint conditional on the Q=0 one-step search, with `original_problem_solved=false` and no root/minimum/response/score claim. The 70% remains a historical milestone, not solved fraction. Verification reports 35 tests passed, type errors/warnings 0, and isolated Graphify 42 nodes/117 edges.
+
+No actionable discrepancy found. The endpoint is P2-closed for this policy and is not an eligible original-J local minimum, exact FV response, or independent future validation.

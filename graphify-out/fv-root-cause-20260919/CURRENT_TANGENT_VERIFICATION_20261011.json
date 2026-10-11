@@ -1,0 +1,74 @@
+{
+  "kind": "one current-point tangent-direction actual search and independent repeat",
+  "source_pins": 190,
+  "archive_pins": 261,
+  "tests_passed": 35,
+  "test_seconds": 0.88,
+  "type_errors": 0,
+  "type_warnings": 0,
+  "graphify": {
+    "nodes": 42,
+    "edges": 117,
+    "AST_model_tokens": 0,
+    "isolated": true
+  },
+  "production_guards": 1,
+  "event_gradients": 2,
+  "HVP": 4,
+  "observation_row_VJPs": 0,
+  "GN_solves": 0,
+  "candidate_evaluations": 2,
+  "final_P2_full_G": 1,
+  "commits": 1,
+  "canonical_control": "98ee63abf614756ddbdbba5cc480d66a3235a17b4def8c50b084c4f20dcdd957",
+  "physical_problem": "original J local minimization",
+  "search_domain": "conditional Q0 one-step; not permanent constraint",
+  "candidate_branch_scope": "current strict native pair, changes allowed, candidate P2 trace equality",
+  "future_scores": {
+    "count": 2,
+    "scope": "native matched-twin terminal score observation only",
+    "used_for_selection": false,
+    "independent_skill_certificate": false,
+    "score_increased": true
+  },
+  "archive": {
+    "plan_sha256": "82ba9f107658f4fd75016c434692073f31690c7fa94816a380e45146a7d9227b",
+    "raw_sha256": "1bffd3c6cf79edef1d393434585d3aebfcc631a2d3896175647f40d7d3a671a0",
+    "gzip_sha256": "2929a14ff21969acef3ba26ca9b9502c58612eaf31ed44b44e1658656c8209ed",
+    "raw_bytes": 17641002,
+    "gzip_bytes": 170280,
+    "manifest": {
+      "graphify-out/fv-root-cause-20260919/current_tangent_search_20261011_attempt1/event_tangent_gradient/candidate_02.json": {
+        "sha256": "9e5d922a8e35e1ba2abb0663e79c57f93815b03e18f4c804ff2403486d72ba0a",
+        "bytes": 2235950
+      },
+      "graphify-out/fv-root-cause-20260919/current_tangent_search_20261011_attempt1/face_tangent_gradient/candidate_01.json": {
+        "sha256": "f0329f1070508db8e808c7a38de98f9c3a14a23cfdbe77690ced0c27a48724da",
+        "bytes": 2235931
+      },
+      "graphify-out/fv-root-cause-20260919/current_tangent_search_20261011_attempt1/step.json": {
+        "sha256": "1bffd3c6cf79edef1d393434585d3aebfcc631a2d3896175647f40d7d3a671a0",
+        "bytes": 17641002
+      },
+      "graphify-out/fv-root-cause-20260919/current_tangent_search_20261011_attempt1/step.resource.json": {
+        "sha256": "db943304b1d0fda4489ffb299788ae4f376c2c589effb2143933600ea9362006",
+        "bytes": 747
+      },
+      "graphify-out/fv-root-cause-20260919/current_tangent_search_20261011_attempt1/step.run.json": {
+        "sha256": "c385cae7f37bfa17d93cf3964b2ae0f7d036e4bb5401b04fd5d86f8157443dc2",
+        "bytes": 928
+      }
+    },
+    "bundle_file": "graphify-out/fv-root-cause-20260919/CURRENT_TANGENT_EXECUTION_20261011.tar.gz",
+    "bundle_sha256": "06e89788c5b7189f2b9f302ef1b800e0f6c6b9311f220a95f498f73ba097c4cb",
+    "bundle_bytes": 202931,
+    "all_bundle_members_byte_match": true
+  },
+  "support_and_complete_comparison": true,
+  "final_full_G_component_difference": 0.0,
+  "qualified_original_minimum": false,
+  "exact_FV_response_completed": false,
+  "postcommit_readiness": false,
+  "historical_FV_milestone": 70,
+  "percentage_is_solution_fraction": false
+}
