@@ -1,0 +1,10 @@
+{
+  "atomic_writer_callback_on_disk_timeout_passed": true,
+  "candidate_slots_total": 12,
+  "prior_slots": 9,
+  "new_evaluations_started": 3,
+  "new_evaluations_completed": 2,
+  "P2_prefix_preserved": true,
+  "full_child_process_timeout_tested": false,
+  "production_executed": false
+}

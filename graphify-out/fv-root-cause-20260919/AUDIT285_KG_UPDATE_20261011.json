@@ -1,0 +1,16 @@
+{
+  "FV_extension_percent": 70,
+  "actualPR285completed_results_invalidated": false,
+  "disk_callback_repro": "AUDIT285_FIX_DISK_REPRO_20261011.json",
+  "finding": "P2 interruptedsearchpartialcandidateaccounting",
+  "fix": "newcontinuation_progress andsearch_progress modules",
+  "historical_theory_percent": 100,
+  "old_frozen_sources_results_unchanged": true,
+  "plan": "GN_CONTINUATION_PROGRESS_PLAN_20261011.json",
+  "remaining": [
+    "prospectiverevisedproducer actualresourcecostunmeasured",
+    "optimalpoint/adjoint/reanalysis/futurevalidation"
+  ],
+  "reproduction": "AUDIT285_PROGRESS_REPRO_20261011.py",
+  "verification": "8synthetictests/type0/readpreflight, no production"
+}

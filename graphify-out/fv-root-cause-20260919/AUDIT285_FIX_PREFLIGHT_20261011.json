@@ -1,0 +1,22 @@
+{
+  "archives": 228,
+  "closed_parent_passed": true,
+  "load_plan_passed": true,
+  "plan_sha256": "09e51cb8cb74ade0990052c0ef5e62cc95c0dbf1453a003a264655a8bed89af6",
+  "production_executed": false,
+  "snapshots": {
+    "examples/weather_scenarios/fv_point_3h_gn_continuation_progress.py": {
+      "path": "graphify-out/fv-root-cause-20260919/audit285_progress_source_20261011/fv_point_3h_gn_continuation_progress.py",
+      "sha256": "e0e4a2b8809e68bfde06551632603a73e845fd637ed1cef04278807b21b898e2"
+    },
+    "examples/weather_scenarios/fv_point_3h_search_progress.py": {
+      "path": "graphify-out/fv-root-cause-20260919/audit285_progress_source_20261011/fv_point_3h_search_progress.py",
+      "sha256": "9a3472772003e09ba7fbbc749482b0fb8d85d89bfc6583249c29d88d58146779"
+    },
+    "tests/test_fv_point_3h_gn_continuation_progress.py": {
+      "path": "graphify-out/fv-root-cause-20260919/audit285_progress_source_20261011/test_fv_point_3h_gn_continuation_progress.py",
+      "sha256": "7d562cb89f8f43fd40023f8f41f5ad5c96e235bfaba3807a60ca409c273b8bad"
+    }
+  },
+  "sources": 165
+}

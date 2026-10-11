@@ -1,0 +1,9 @@
+{
+  "prior_recorded_slots": 9,
+  "actual_new_evaluations_completed": 2,
+  "new_evaluation_started_at_timeout": 3,
+  "recorded_slots_after_timeout": 9,
+  "current_trials_saved": false,
+  "closed_prefix_preserved": true,
+  "production_executed": false
+}
