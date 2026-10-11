@@ -1,0 +1,12 @@
+# GREEN saved-evidence review: two local candidates
+
+Read-only review of the frozen source/tests and completed saved run found no actionable blocker.
+
+- Frozen plan SHA-256: `db51873c025abc29e4b3af25b26e6c06027f5f3697ae064be1bec10968592db8`. Child step SHA-256: `94d60f5df099b08e6b8c9ff315347f3f6705d82f6134c52fa5e5783cf7ba7f0b`. The run receipt reports exit 0, 34.206 s, no resource termination, and sampled peak RSS 793,985,024 bytes under the 2 GiB limit.
+- Current base was requalified at control SHA `454396e77e2f10492e80e0fd625b55e1a08c2be53fe9721b59a4a27d60be3b7a`, with fresh J/G/theta/full-G/strict pair/trace/input/runtime checks. The archived direction was reused; 2/2 HVPs were fresh and matched the archived residual direction exactly. Fresh row VJPs and dense solves were both zero.
+- Both prescribed candidates passed the same finite/minimum, branch-pair, face, native-cost, gradient, and J/R Armijo gates. The α=`2.404138610194166e-5` candidate changed the base trace and the α=`1.202069305097083e-5` candidate retained it. Selection did not privilege trace equality: it chose the first candidate because its R was lower.
+- Base J/R were `0.06102493753540203` / `0.003127039112866745`. Selected J/R were `0.061024895390148964` / `0.0031263066786563877` (decreases of about 0.0000691% and 0.02342%). The selected actual path norm was `9.66605e-7`.
+- Only the selected candidate received P2 closure and commit. The final repeat matched proposal trace, objective, merit, and theta; branch-pair, face, finite-gradient, source, input, runtime, and deadline checks passed. Exactly one optimizer step/commit was recorded. No postcommit readiness or further candidate evaluation occurred; readiness, root, minimum, response, and score claims remain false.
+- Preflight logs show 11 focused tests passed and basedpyright 0 errors/warnings/notes. The result supports a small local descent and one closed commit only; it does not establish a minimum or convergence.
+
+Final cross-check against `GN_LOCAL_CANDIDATE_FINDINGS_20261011.md`, metrics, RED review, KG/task records, verification receipt, and raw step found no concrete discrepancy. I independently checked all 171 source and 243 archive pins against the frozen plan, recomputed raw/gzip/run/resource SHA-256 values, and confirmed decompression reproduces the raw step byte-for-byte. The documented unverified scope is consistent: no postcommit readiness, optimum/convergence certificate, PR286 multi-step FV reproduction, or candidate-specific interruption/OS-termination guarantee.

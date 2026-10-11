@@ -1,0 +1,16 @@
+{
+  "all_source_pins_match": true,
+  "source_count": 171,
+  "archive_pins_match": true,
+  "archive_count": 243,
+  "snapshots_byte_identical": true,
+  "affected_tests": {
+    "passed": 11,
+    "seconds": 2.8
+  },
+  "type_errors": 0,
+  "type_warnings": 0,
+  "production_guard_count": 1,
+  "raw_archive_roundtrip": true,
+  "limitations": "No postcommit readiness; no exact optimum/response; interrupted-state and OS termination remain limited."
+}
