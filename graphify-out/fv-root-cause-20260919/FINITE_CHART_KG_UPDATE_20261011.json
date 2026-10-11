@@ -1,0 +1,14 @@
+{
+  "scope": "PR290 비유한 차트 이동량 JSON 저장 P2의 새 후속 경로 수정",
+  "frozen_helper_sha256": "9a3472772003e09ba7fbbc749482b0fb8d85d89bfc6583249c29d88d58146779",
+  "graph_consulted": "GN_COMMITTED_CONTINUATION_GRAPHIFY_20261011.json",
+  "graph_incremental": "FINITE_CHART_GRAPHIFY_20261011.json",
+  "resolved": ["비유한 차트 이동량 null 기록 및 원래 거부 유지", "실제 writer 연결 3종 회귀와 다음 정상 후보 진행", "후속 producer 최상위 stale dense audit 제거"],
+  "prospective_plan": "FINITE_CHART_CONTINUATION_PLAN_20261011.json",
+  "current_control": "fec9f3062339a0a24d1934fe9ad35fbe9c9cbea4951ca2a5967bde933d6a841c",
+  "production_launches": 0,
+  "new_optimizer_commits": 0,
+  "remaining": ["새점 미분·GN·후보의 실제 후속 실행", "가까운 거부 후보의 실패 gate·selector 분석", "정확 최적조건·수반·재분석·미래검증", "후속 producer 실제 완주·OS 종료 검증"],
+  "completion": {"historical_theory": 100, "FV_extension": 70},
+  "frozen_evidence_modified": false
+}

@@ -1,0 +1,1496 @@
+{
+  "nodes": [
+    {
+      "id": "weather_scenarios_fv_point_3h_search_progress_finite",
+      "label": "fv_point_3h_search_progress_finite.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "label": "search_candidates()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_search_progress_finite_rationale_1",
+      "label": "Keep nonfinite chart refusal receipts JSON-safe without changing the search.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "label": "fv_point_3h_gn_finite_continuation.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_sha",
+      "label": "_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L63",
+      "_origin": "ast"
+    },
+    {
+      "id": "path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L63",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_plan",
+      "label": "_load_plan()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L72",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L72",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_parent",
+      "label": "_load_parent()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L103",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_base_model_closure",
+      "label": "_base_model_closure()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L169",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L169",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_full_g_match",
+      "label": "_full_G_match()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L179",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_sanitize_json_leaves",
+      "label": "_sanitize_json_leaves()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L186",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_safe_candidate_facts",
+      "label": "_safe_candidate_facts()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L203",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_commit_closed_point",
+      "label": "_commit_closed_point()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L212",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_persist_search_progress",
+      "label": "_persist_search_progress()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L242",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_run_child",
+      "label": "_run_child()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L253",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L506",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_main",
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L528",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_rationale_1",
+      "label": "Run at most three current-point GN corrections from the latest closed GN point.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_rationale_180",
+      "label": "Compare residual components, so equal norms cannot hide a changed vector.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L180",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_gn_finite_continuation_rationale_187",
+      "label": "Make refusal facts JSON-safe and report whether every numeric leaf was finite.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L187",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_search_progress_finite",
+      "label": "test_fv_point_3h_search_progress_finite.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_search_progress_finite_model",
+      "label": "_model()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L16",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_search_progress_finite_facts",
+      "label": "_facts()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L22",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_search_progress_finite_search_with_writer",
+      "label": "_search_with_writer()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L35",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_search_progress_finite_test_nonfinite_chart_is_recorded_then_good_candidate_evaluated",
+      "label": "test_nonfinite_chart_is_recorded_then_good_candidate_evaluated()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L57",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_search_progress_finite_test_frozen_helper_reproduces_json_failure",
+      "label": "test_frozen_helper_reproduces_json_failure()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L74",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_search_progress_finite_test_finite_search_results_and_progress_receipts_are_unchanged",
+      "label": "test_finite_search_results_and_progress_receipts_are_unchanged()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L84",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_search_progress_finite_test_chart_exception_preserves_zero_evaluation_count",
+      "label": "test_chart_exception_preserves_zero_evaluation_count()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L102",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_search_progress_finite_test_prospective_parent_admits_closed_prefix_without_partial_operators",
+      "label": "test_prospective_parent_admits_closed_prefix_without_partial_operators()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L120",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_search_progress_finite_test_new_atomic_checkpoint_drops_unqualified_top_solve_audit",
+      "label": "test_new_atomic_checkpoint_drops_unqualified_top_solve_audit()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L131",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite",
+      "target": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite_search_candidates",
+      "target": "examples_weather_scenarios_fv_point_3h_search_progress_finite_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_search_progress_finite_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_search_progress_finite",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_search_progress_finite.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "argparse",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "gzip",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L26",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "examples_weather_scenarios_fv_diagnostic_guard",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_sha",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_plan",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_plan",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_plan",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_parent",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_parent",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_base_model_closure",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L169",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_base_model_closure",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L169",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_base_model_closure",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L169",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_base_model_closure",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L169",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_full_g_match",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L179",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_full_g_match",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L179",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_full_g_match",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L179",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_full_g_match",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L179",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_sanitize_json_leaves",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_sanitize_json_leaves",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_sanitize_json_leaves",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_safe_candidate_facts",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_safe_candidate_facts",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_safe_candidate_facts",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_commit_closed_point",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L212",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_commit_closed_point",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L212",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_commit_closed_point",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L212",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_commit_closed_point",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L212",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_commit_closed_point",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L212",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_commit_closed_point",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L212",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_commit_closed_point",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L212",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_persist_search_progress",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L242",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_persist_search_progress",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L242",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_persist_search_progress",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L242",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_persist_search_progress",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L242",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_persist_search_progress",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L242",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_run_child",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L253",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run_child",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L253",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run_child",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L253",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run_child",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L253",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run",
+      "target": "examples_weather_scenarios_fv_point_3h_gn_finite_continuation_py_any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L506",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L528",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_plan",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L73",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_parent",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_parent",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_plan",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_safe_candidate_facts",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_sanitize_json_leaves",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L204",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run_child",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_plan",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L256",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run_child",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_parent",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L258",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run_child",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_full_g_match",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L321",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run_child",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_base_model_closure",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L401",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run_child",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_commit_closed_point",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L494",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_load_plan",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L507",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run",
+      "target": "path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L512",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_run",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L518",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_main",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_run_child",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L538",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_main",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_run",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L540",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_rationale_180",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_full_g_match",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L180",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_gn_finite_continuation_rationale_187",
+      "target": "weather_scenarios_fv_point_3h_gn_finite_continuation_sanitize_json_leaves",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+      "source_location": "L187",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "types",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "examples_weather_scenarios",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "tests_test_fv_point_3h_search_progress_finite_model",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "tests_test_fv_point_3h_search_progress_finite_facts",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "tests_test_fv_point_3h_search_progress_finite_search_with_writer",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "tests_test_fv_point_3h_search_progress_finite_test_nonfinite_chart_is_recorded_then_good_candidate_evaluated",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "tests_test_fv_point_3h_search_progress_finite_test_frozen_helper_reproduces_json_failure",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "tests_test_fv_point_3h_search_progress_finite_test_finite_search_results_and_progress_receipts_are_unchanged",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L84",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "tests_test_fv_point_3h_search_progress_finite_test_chart_exception_preserves_zero_evaluation_count",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "tests_test_fv_point_3h_search_progress_finite_test_prospective_parent_admits_closed_prefix_without_partial_operators",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L120",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite",
+      "target": "tests_test_fv_point_3h_search_progress_finite_test_new_atomic_checkpoint_drops_unqualified_top_solve_audit",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite_search_with_writer",
+      "target": "tests_test_fv_point_3h_search_progress_finite_model",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite_test_nonfinite_chart_is_recorded_then_good_candidate_evaluated",
+      "target": "tests_test_fv_point_3h_search_progress_finite_search_with_writer",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite_test_frozen_helper_reproduces_json_failure",
+      "target": "tests_test_fv_point_3h_search_progress_finite_search_with_writer",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L77",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite_test_finite_search_results_and_progress_receipts_are_unchanged",
+      "target": "tests_test_fv_point_3h_search_progress_finite_model",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_search_progress_finite_test_chart_exception_preserves_zero_evaluation_count",
+      "target": "tests_test_fv_point_3h_search_progress_finite_model",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_search_progress_finite.py",
+      "source_location": "L110",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "scope": "isolated AST of three owned files; shared graph unchanged",
+  "consulted_graph_sha256": "0ad3f04b3fb3de745d8f502610010a70ba0f69e11c6d757bfb8a557e85e847f9"
+}

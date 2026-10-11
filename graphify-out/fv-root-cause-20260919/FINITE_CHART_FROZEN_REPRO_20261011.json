@@ -1,0 +1,29 @@
+[
+  {
+    "case": "inf",
+    "error": "Out of range float values are not JSON compliant: inf",
+    "evaluator_calls": 0,
+    "chart_calls": 1,
+    "saved_trial_status": "slot_started",
+    "saved_eval_started": 0,
+    "prefix_preserved": true
+  },
+  {
+    "case": "nan",
+    "error": "Out of range float values are not JSON compliant: nan",
+    "evaluator_calls": 0,
+    "chart_calls": 1,
+    "saved_trial_status": "slot_started",
+    "saved_eval_started": 0,
+    "prefix_preserved": true
+  },
+  {
+    "case": "norm_overflow",
+    "error": "Out of range float values are not JSON compliant: inf",
+    "evaluator_calls": 0,
+    "chart_calls": 1,
+    "saved_trial_status": "slot_started",
+    "saved_eval_started": 0,
+    "prefix_preserved": true
+  }
+]
