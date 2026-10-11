@@ -1,0 +1,17 @@
+{
+  "plan_sha256": "34cb70203a5baf8cfc0d56b3e9783cae49040df460afadeac3d193476b8acfa3",
+  "guarded_launch_count": 1,
+  "optimizer_steps_applied": 2,
+  "lossless_roundtrip": true,
+  "raw_bytes": 132110823,
+  "gzip_bytes": 973883,
+  "scope": "two P2 commits; third-point partial rows; internal time budget exhausted",
+  "raw_path": "graphify-out/fv-root-cause-20260919/gn_committed_continuation_20261011_attempt1/step.json",
+  "raw_sha256": "4db3d2fa3defd6beecd9feb44006bfb8c07c3684809d79a2a3b701d43f563ce6",
+  "gzip_path": "graphify-out/fv-root-cause-20260919/gn_committed_continuation_20261011_attempt1/step.json.gz",
+  "gzip_sha256": "68491f08d3244853f556dbe6af83c122451700005fea4235f97c24b0b4c4b52d",
+  "run_path": "graphify-out/fv-root-cause-20260919/gn_committed_continuation_20261011_attempt1/step.run.json",
+  "run_sha256": "3ec61ece2fd5d2153ff55ee1a833b875f670e188d5660cc76e810d27612ba543",
+  "resource_path": "graphify-out/fv-root-cause-20260919/gn_committed_continuation_20261011_attempt1/step.resource.json",
+  "resource_sha256": "b10dd182d89f6ca4270d6cf620828eaf8e806ae01e55f5409145903d8098e071"
+}

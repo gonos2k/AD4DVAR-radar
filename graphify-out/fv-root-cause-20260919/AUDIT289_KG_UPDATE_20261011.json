@@ -1,0 +1,34 @@
+{
+  "scope": "PR289 사용자 요청 GREEN/RED/수학 재감사",
+  "main": "36e85740621e7ff2997017d6e76dff07ad03eed3",
+  "frozen_evidence_modified": false,
+  "new_FV_or_HVP_runs": 0,
+  "confirmed": [
+    "실제 두 후보·한 P2 확정 유효",
+    "개별 양측 gradient 재평가 차이 0",
+    "원시 제어 FP64 해시 일치",
+    "최소 혼합 미분 및 R Armijo 계수 2 정합"
+  ],
+  "findings": [
+    "차트 실패 이전 평가 시작 횟수 증가로 실제 evaluator 0회인데 시작 1회 기록",
+    "현재 producer 후보 loop 실패 경로의 직접 회귀시험 누락"
+  ],
+  "action": "과거 frozen producer/계획/실행은 유지; 새 후속 경로에서 slot/평가 구분 및 실패 회귀 필요",
+  "evidence": [
+    "AUDIT289_FINDINGS_20261011.md",
+    "AUDIT289_GREEN_20261011.md",
+    "AUDIT289_COUNTER_REPRO_20261011.json",
+    "AUDIT289_ROOT_SCALARS_20261011.json",
+    "AUDIT289_RED_20261011.md",
+    "AUDIT289_COUNTER_REPRO_20261011.py"
+  ],
+  "remaining": [
+    "새점 현재 미분·수렴",
+    "정확 최적조건·수반·재분석·미래검증",
+    "PR286 실제 FV 반복",
+    "OS 강제 종료 검증"
+  ],
+  "finding_severity": {
+    "counter_error": "P2; completed successful receipt unaffected"
+  }
+}

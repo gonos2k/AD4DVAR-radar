@@ -1,0 +1,17 @@
+{
+  "scope": "PR289 현재 a3d2 점에서 최대3 GN 한 계획 연속 실행; 실제2확정 후 내부 예산 종료",
+  "graph_consulted": "GN_LOCAL_CANDIDATE_GRAPHIFY_20261011.json",
+  "graph_incremental": "GN_COMMITTED_CONTINUATION_GRAPHIFY_20261011.json",
+  "graph_scope": "소유한 두 파일 격리 AST; 공유 그래프 미변경",
+  "base_control": "a3d2ad7bd5b358619c55ca8c52f9ffe15a276a1b0ec10fd4620e440bea30cc5a",
+  "last_confirmed_control": "fec9f3062339a0a24d1934fe9ad35fbe9c9cbea4951ca2a5967bde933d6a841c",
+  "commits": 2,
+  "terminal_status": "internal_time_budget_exhausted",
+  "third_point_partial_rows": 19,
+  "resolved_in_new_path": ["slot/실제 평가 시작 기록 P2", "전체 G 성분별 carry·자격 검사", "비유한 후보 반환 facts JSON 거부 저장"],
+  "P3_record_scope": "top dense_solve_audit is last completed point index1/b9cea audit; not a third-point solve",
+  "remaining": ["현재 fec9 점 GN·HVP 준비 완료", "극소 적용 이동의 원인과 후속 수렴", "최종 정확 곡률·자격·수반·재분석·미래검증", "후보 timeout·OS 강제 종료 실제 검증", "최상위 완료 풀이 기록의 점 표기 또는 제거"],
+  "evidence": ["GN_COMMITTED_CONTINUATION_ARCHIVE_20261011.json", "GN_COMMITTED_CONTINUATION_METRICS_20261011.json", "GN_COMMITTED_CONTINUATION_FINDINGS_20261011.md", "GN_COMMITTED_CONTINUATION_VERIFICATION_20261011.json"],
+  "completion": {"historical_theory": 100, "FV_extension": 70},
+  "claims": {"three_step_completed": false, "qualified_root": false, "minimum": false, "response": false, "forecast": false}
+}

@@ -1,0 +1,26 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_gn_committed_continuation.py",
+    "--child",
+    "--plan",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/GN_COMMITTED_CONTINUATION_PLAN_20261011.json",
+    "--plan-sha256",
+    "34cb70203a5baf8cfc0d56b3e9783cae49040df460afadeac3d193476b8acfa3",
+    "--output",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/gn_committed_continuation_20261011_attempt1/step.json"
+  ],
+  "child_pid": 47704,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 620.8759575840086,
+  "sampled_peak_rss_bytes": 502497280,
+  "rss_samples": 2234,
+  "wall_limit_seconds": 660.0,
+  "rss_limit_bytes": 2147483648,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}

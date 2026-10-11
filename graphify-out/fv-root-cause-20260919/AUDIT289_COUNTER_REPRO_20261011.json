@@ -1,0 +1,9 @@
+{
+  "reproduction": "AST exact frozen candidate loop; chart fails before evaluator; no FV/HVP",
+  "chart_calls": 1,
+  "actual_evaluator_calls": 0,
+  "saved_candidate_evaluations_started": 1,
+  "saved_trial_status": "evaluation_started",
+  "exception": "synthetic chart failure",
+  "candidate_committed": false
+}
