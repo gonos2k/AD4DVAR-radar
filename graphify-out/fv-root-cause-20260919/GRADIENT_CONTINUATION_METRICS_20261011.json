@@ -1,0 +1,91 @@
+{
+  "scope": "three capped current-point conditional-Q0 gradient steps, not convergence/minimum",
+  "plan_sha256": "a3e5b0cfb9d639a236efc0d126bfec91c2fee891108f14340cdfe28a3bf14b92",
+  "raw_sha256": "c64cde977e9a28dc28addd81d6d116aa7de6b1e005a6e1643622c9a7b28e5e37",
+  "base_control_sha256": "98ee63abf614756ddbdbba5cc480d66a3235a17b4def8c50b084c4f20dcdd957",
+  "current_control_sha256": "556a25d910cad707b108cc8c6770af9ebf6b34f5a84196736e9fee82ed298a8b",
+  "base_J": 0.06102400263642211,
+  "base_R": 0.002884190660581822,
+  "steps": [
+    {
+      "control_sha256": "96602a6e0fc68ad708d31601ee91229e66aaffe8d0210da7861da39c536eb73c",
+      "J": 0.06102242211605974,
+      "R": 0.0028150443422582205,
+      "norm": 0.05305699145502146,
+      "max_component": 0.02645612518807207,
+      "vartheta": 0.6923829992170437,
+      "alpha": 0.0005546431718883426,
+      "movement": 2.978692376466453e-05,
+      "candidate_count": 1,
+      "R_reduction_percent": 2.3974253598634365,
+      "P2_full_G_passed": true,
+      "outward_derivatives": {
+        "gminus_budget": 5.735776692048786e-15,
+        "gminus_dot_minus_n": 0.1945326833696527,
+        "gplus_budget": 2.8730242357656644e-15,
+        "gplus_dot_plus_n": 0.08563935142563975,
+        "release_required": false
+      }
+    },
+    {
+      "control_sha256": "1b742dc3c2ea69e735215fa462a22554ac41f5b33f1b96fa76dd5384fbb39168",
+      "J": 0.06102149488925386,
+      "R": 0.0027856515722992654,
+      "norm": 0.05277927218425113,
+      "max_component": 0.026394338895672304,
+      "vartheta": 0.694789462546524,
+      "alpha": 0.00033104816688164226,
+      "movement": 1.7564419760350166e-05,
+      "candidate_count": 1,
+      "R_reduction_percent": 1.0441316862304317,
+      "P2_full_G_passed": true,
+      "outward_derivatives": {
+        "gminus_budget": 5.727570039608734e-15,
+        "gminus_dot_minus_n": 0.19441103656573477,
+        "gplus_budget": 2.8810663332581596e-15,
+        "gplus_dot_plus_n": 0.08637436224616189,
+        "release_required": false
+      }
+    },
+    {
+      "control_sha256": "556a25d910cad707b108cc8c6770af9ebf6b34f5a84196736e9fee82ed298a8b",
+      "J": 0.06101963540296555,
+      "R": 0.0027594786201932237,
+      "norm": 0.052530739764381995,
+      "max_component": 0.026256190770419217,
+      "vartheta": 0.6926534545496984,
+      "alpha": 0.0006703032057201334,
+      "movement": 3.537811533707981e-05,
+      "candidate_count": 1,
+      "R_reduction_percent": 0.9395630223933082,
+      "P2_full_G_passed": true,
+      "outward_derivatives": {
+        "gminus_budget": 5.740338376034085e-15,
+        "gminus_dot_minus_n": 0.1949520727160593,
+        "gplus_budget": 2.8591415692094887e-15,
+        "gplus_dot_plus_n": 0.0856395067841912,
+        "release_required": false
+      }
+    }
+  ],
+  "total_J_reduction_percent": 0.007156583094980462,
+  "total_R_reduction_percent": 4.323987387277661,
+  "total_norm_reduction_percent": 2.1858841410288377,
+  "total_max_component_reduction_percent": 1.2190391455426886,
+  "base_E": 7.389658368267996,
+  "final_E": 7.3888197708345675,
+  "E_change_percent": -0.01134825714040888,
+  "base_E_cached": true,
+  "E_scope": "matched-twin terminal observation only, not selection or independent skill",
+  "hvp_completed": 6,
+  "candidate_evaluations": 3,
+  "commits": 3,
+  "termination": "commit_cap_reached",
+  "seconds": 102.99844645801932,
+  "peak_RSS": 778551296,
+  "exit_code": 0,
+  "termination_resource": null,
+  "historical_milestone": 70,
+  "eligible_minimum": false,
+  "response_completed": false
+}
