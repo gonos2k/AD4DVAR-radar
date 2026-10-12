@@ -1,0 +1,43 @@
+{
+  "plan_sha256": "7c2b7f317e90e49a0c1bd9a289529816b8cef91e9d33048c8017b9b884279ae5",
+  "raw_sha256": "2003ceee1aa058fc1aa866ea36f000fbf2d9210b321c0c461711171494fefb89",
+  "numerical_version": "minmod_net_flux_fp64_v1",
+  "start_control_sha256": "0aafdf8069fcb8d5adc4ec813646707a3d1e083804631b17facb24664098655b",
+  "final_control_sha256": "b6470069c9b8992bf19fa85ab848f5ef424a1e2e8e33a4909bcb0d036ef88660",
+  "delta_E_final_minus_start": -0.0022631327682036684,
+  "final_E": 7.386491165784028,
+  "forecast_scope": "last frame at +180 minutes after the +20 minute analysis window",
+  "forecast_steps": 18,
+  "forecast_time_seconds_from_start": 12000.0,
+  "score_evaluations": 2,
+  "selection_use": false,
+  "start_E": 7.388754298552231,
+  "decrease_percent": 0.030629422454162693,
+  "source_input_runtime_closure": true,
+  "guard": {
+    "child_pid": 64651,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_netflux_future_observation.py",
+      "--child",
+      "--plan-sha256",
+      "7c2b7f317e90e49a0c1bd9a289529816b8cef91e9d33048c8017b9b884279ae5"
+    ],
+    "elapsed_seconds": 12.638017082819715,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 2147483648,
+    "rss_samples": 42,
+    "sampled_peak_rss_bytes": 944701440,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 660.0
+  },
+  "candidate_selection_use": false,
+  "optimizer_steps": 0,
+  "candidate_evaluations": 0,
+  "score_scope": "New-kernel terminal score against fixed old-kernel synthetictruth atthe11-step run start/end,notnewcomparisonselectedd19e; noindependentforecastskill/adjoint."
+}

@@ -1,0 +1,71 @@
+{
+  "files": {
+    "attempt1/baseline_tangent/candidate_01.json": {
+      "bytes": 2235916,
+      "sha256": "3c01c0b59daa9ed198bd494853e00d09cda23052373e7a94a8e7ea2cdbc4c820"
+    },
+    "attempt1/operators/GN.json": {
+      "bytes": 39975,
+      "sha256": "ccbb3efe65e7f5d9dda537d142e017a81a56cb401d2a19f47a6fd9c0061effe3"
+    },
+    "attempt1/robust_gn_coupled/candidate_01.json": {
+      "bytes": 2230428,
+      "sha256": "07e8fcef197485ef2d603a2d927b0e4acd2a6693265769fd174f1a6ee0cbc6cb"
+    },
+    "attempt1/robust_gn_coupled/candidate_02.json": {
+      "bytes": 2246293,
+      "sha256": "8ae7a3f98d05cd75e09967b2d22c276603fae794ed6b86fe15173cd2d3730c8c"
+    },
+    "attempt1/robust_gn_coupled/candidate_03.json": {
+      "bytes": 2247987,
+      "sha256": "26e807fb34463bcd3999fcd35563f69f947ac0578205aa6c4f0a436027e293ae"
+    },
+    "attempt1/robust_gn_coupled/candidate_04.json": {
+      "bytes": 2235759,
+      "sha256": "64fb109a9e805b59063d437313f4599cd7b1ed274ba46f941b0637408c0934a7"
+    },
+    "attempt1/robust_gn_coupled/candidate_05.json": {
+      "bytes": 2248026,
+      "sha256": "37f48f210a1e05e3d67c51cd6510231d9699d9283877891181837efe148dff36"
+    },
+    "attempt1/robust_gn_coupled/candidate_06.json": {
+      "bytes": 2235803,
+      "sha256": "f29b4072566ca31afa939ecf7bd3ab5f5ccecedad7ac89b2e67cc1cdd3d145ab"
+    },
+    "attempt1/robust_gn_coupled/candidate_07.json": {
+      "bytes": 2235811,
+      "sha256": "f1333c88c7970940727eef8855798b0a555ebe7479e9d907ae737987418bc757"
+    },
+    "attempt1/robust_gn_coupled/candidate_08.json": {
+      "bytes": 2235854,
+      "sha256": "a9a62f658ca996638ea77dedd1684f306c7b9bc261dff948dbca0010e8d9309b"
+    },
+    "attempt1/robust_gn_coupled/candidate_09.json": {
+      "bytes": 2248120,
+      "sha256": "4992f6b223f3ebccbdd395d66ac58e23fbe9b6b635fa3fb8d385bdb492311607"
+    },
+    "attempt1/robust_gn_coupled/candidate_10.json": {
+      "bytes": 2248865,
+      "sha256": "f9de5d0b3d15b3aea1a3fc5329cb730a975937c09a1ef4bedeecb770e4c1ca63"
+    },
+    "attempt1/step.json": {
+      "bytes": 33816627,
+      "sha256": "1c79690de1d8e42ff4accf5e6b3bd62dac5c55c0607d3cc8b771fb6b6a8b4703"
+    },
+    "attempt1/step.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt1/step.resource.json": {
+      "bytes": 753,
+      "sha256": "024110672de6ee4b7d3aaa639f8d819556d429938b2026fe8b0cfb54b5630901"
+    },
+    "attempt1/step.run.json": {
+      "bytes": 934,
+      "sha256": "dc53cc8d970bc06aa649e356a6cbf53f8a1628d13644d96482e8f9171d088c72"
+    }
+  },
+  "bundle_sha256": "55f220c1f5da91a2a76175984e419049470acb324aef8b34b1eacd36e77a4040",
+  "source_bundle_sha256": "556fec30ca5b0a06c0b00601c8652b616b02705a09d7ac82fcea3203fd0c46bc",
+  "extraction": "Extract receipts.tar.gz at this directory to restore original attempt1 byte strings. verify_result.py reads stored receipts only, with no additional FV/operator/forecast run."
+}

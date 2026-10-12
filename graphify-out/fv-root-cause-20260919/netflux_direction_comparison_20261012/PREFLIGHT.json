@@ -1,0 +1,37 @@
+{
+  "plan_sha256": "36686ccf05c55ab9dff1d6c0c4658e14049a108eba402b76c86fc0b9ac904b35",
+  "source_files": 209,
+  "archive_files": 283,
+  "source_bundle_sha256": "556fec30ca5b0a06c0b00601c8652b616b02705a09d7ac82fcea3203fd0c46bc",
+  "all_inherited_numerical_input_pins_unchanged": true,
+  "affected_tests_passed": 39,
+  "affected_test_seconds": 27.75,
+  "existing_deprecation_warnings": 18,
+  "test_scope": "three new modules/tests +existing coupled-GN algebra andpolicy search; previous untouchedsource evidence reused,notfullsuite",
+  "type_check": {
+    "files": 6,
+    "mode": "basic",
+    "errors": 0,
+    "warnings": 0
+  },
+  "Graphify": {
+    "files": 17,
+    "new_source_tests": 6,
+    "relevant_unchanged_GN": 1,
+    "cached_previous": 10,
+    "nodes": 212,
+    "edges": 400,
+    "semantic_tokens": 0
+  },
+  "GREEN_preflight": "passed",
+  "RED_preflight": "passed",
+  "budget_scope": "oneglobal600s baseline thenGN; unequalactualcosts chargedbyarm; not600s independentlyeach",
+  "final_affected_tests_passed": 43,
+  "final_affected_test_seconds": 29.91,
+  "final_Graphify": {
+    "files": 17,
+    "nodes": 219,
+    "edges": 417,
+    "semantic_tokens": 0
+  }
+}

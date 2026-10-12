@@ -1,0 +1,22 @@
+{
+  "plan_sha256": "36686ccf05c55ab9dff1d6c0c4658e14049a108eba402b76c86fc0b9ac904b35",
+  "raw_sha256": "1c79690de1d8e42ff4accf5e6b3bd62dac5c55c0607d3cc8b771fb6b6a8b4703",
+  "source": 209,
+  "archives": 283,
+  "all_pins_checked": true,
+  "metrics": "METRICS.json",
+  "receipt_manifest": "RECEIPT_MANIFEST.json",
+  "stored_arithmetic_and_closure_script": "verify_result.py",
+  "GREEN": "GREEN_FINAL.md",
+  "RED": "RED_FINAL.md",
+  "additional_numerical_rerun": false,
+  "final_focused_test_count": 43,
+  "test_seconds": 29.91,
+  "new_basic_typechecked_files": 6,
+  "type_errors": 0,
+  "type_warnings": 0,
+  "full_repository_test_claim": false,
+  "exact_minimum": false,
+  "exact_adjoint": false,
+  "independent_forecast": false
+}
