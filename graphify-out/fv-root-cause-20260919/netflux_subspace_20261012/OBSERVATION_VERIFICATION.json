@@ -1,0 +1,29 @@
+{
+  "checks": {
+    "run_child_link": true,
+    "completed": true,
+    "exactly2scores": true,
+    "no_optimizer": true,
+    "source": true,
+    "inputs": true,
+    "runtime": true,
+    "resource": true
+  },
+  "all_checks_passed": true,
+  "metrics": {
+    "delta_E_final_minus_start": -7.640233114170059e-05,
+    "final_E": 7.386414763452886,
+    "forecast_scope": "last frame at +180 minutes after the +20 minute analysis window",
+    "forecast_steps": 18,
+    "forecast_time_seconds_from_start": 12000.0,
+    "score_evaluations": 2,
+    "selection_use": false,
+    "start_E": 7.386491165784028,
+    "E_decrease_percent": 0.0010343521629811762,
+    "start_RMSE": 2.7178099944227205,
+    "final_RMSE": 2.717795938523142,
+    "start_control_sha256": "b6470069c9b8992bf19fa85ab848f5ef424a1e2e8e33a4909bcb0d036ef88660",
+    "final_control_sha256": "d19e882d31b634ef0be755e6419b57ecf3691734efc736d5f40ea18c3ac4145e"
+  },
+  "scope": "terminal matched fixed-truth score; d19e observed, new7839 point not scored; no independent weather validation"
+}

@@ -1,0 +1,9 @@
+{
+  "plan_sha256": "a0fef5718772032b4567d24ca75fbaf39cff8b58e30f7e4b249dbabb4a5c7d26",
+  "score_plan_sha256": "4d467799150c88af4ebdef79cda7034aedbbb2e9bbb99f8321c8e10f4809b667",
+  "source_bundle_sha256": "b332268a74f0c5ed9f9e05b3d890288d2e953215b1422253eec2426cb183cab3",
+  "source_count": 216,
+  "archive_count": 287,
+  "superseded_score_plan_sha256": "e848aced52e94e19b0476709c10fa885a0137a305a6d9cd159554a4a1473d5dd",
+  "superseded_score_plan_calls": 0
+}
