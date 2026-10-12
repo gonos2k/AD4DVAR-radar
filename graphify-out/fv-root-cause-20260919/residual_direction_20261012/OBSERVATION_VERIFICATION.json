@@ -1,0 +1,29 @@
+{
+  "checks": {
+    "rawrun": true,
+    "completed": true,
+    "exact2calls": true,
+    "no_selection": true,
+    "source": true,
+    "input": true,
+    "runtime": true,
+    "resource": true
+  },
+  "all_checks_passed": true,
+  "metrics": {
+    "delta_E_final_minus_start": -0.0016700863918748254,
+    "final_E": 7.384565484459929,
+    "forecast_scope": "last frame at +180 minutes after the +20 minute analysis window",
+    "forecast_steps": 18,
+    "forecast_time_seconds_from_start": 12000.0,
+    "score_evaluations": 2,
+    "selection_use": false,
+    "start_E": 7.386235570851804,
+    "E_decrease_percent": 0.022610792410486656,
+    "RMSE_delta": -0.00030727124197849065,
+    "score_start_control": "7839625d5ff2ab8f3d482f5fab368f19a6a3d60405ed373267c0fcacc81c7c1a",
+    "score_final_control": "2a4dba130d28273a63e97d0de39a11f64fdee09b0ad754559bc8902ba6cddbca",
+    "newfb0a_scored": false
+  },
+  "scope": "matched fixed-truth terminal lead; no independent validation or newfb0a score"
+}

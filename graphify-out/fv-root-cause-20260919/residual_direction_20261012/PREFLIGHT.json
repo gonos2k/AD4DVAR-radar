@@ -1,0 +1,8 @@
+{
+  "plan_sha256": "cd9db66869652c8807264dcdb9172f94e4c65118fc3982465e516e706502fa64",
+  "source_bundle_sha256": "da936a87c96bcb5970afbed650ba00760949763652f77febfebdd9b44d6ac2b8",
+  "source_count": 234,
+  "archive_count": 302,
+  "tests": "42passed",
+  "types": "0errors0warnings"
+}

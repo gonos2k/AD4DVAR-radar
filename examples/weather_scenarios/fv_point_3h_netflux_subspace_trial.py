@@ -124,6 +124,19 @@ def choose_radius(G: Tensor, D: Tensor, V: Tensor, record: dict[str,Any]) -> flo
     return INITIAL_RADIUS
 
 
+def direction_specs(context: dict[str,Any], c: Tensor, theta: float, gm: Tensor,
+        gp: Tensor, normal: Tensor, chart: Tensor, pivot: int) -> list[dict[str,Any]]:
+    return comparison.coupled._direction_model_factory(context)(c,theta,gm,gp,normal,chart,pivot)
+
+
+def next_direction(model: Any, gm: Tensor, gp: Tensor, normal: Tensor,
+        chart: Tensor, pivot: int) -> dict[str,Any]:
+    raise ValueError("the configured factory did not supply two directions")
+
+
+DIRECTION_ORDER = comparison.ARM_ORDER
+
+
 def _run_child(path: Path, digest: str, output: Path, *, experiment: Any | None = None) -> dict[str, Any]:
     config = sys.modules[__name__] if experiment is None else experiment
     started = time.monotonic()
@@ -197,14 +210,17 @@ def _run_child(path: Path, digest: str, output: Path, *, experiment: Any | None 
             "plan": plan, "plan_path": path, "plan_sha": digest, "model_state": {"observed": observed}}
         gn_started = time.monotonic()
         try:
-            specs = comparison.coupled._direction_model_factory(context)(c,theta,gm,gp,normal,chart,pivot)
+            specs = config.direction_specs(context,c,theta,gm,gp,normal,chart,pivot)
         finally:
             record["GN_preparation_seconds"] = time.monotonic()-gn_started
             backend.timings["row_solve_seconds_inclusive"] += record["GN_preparation_seconds"]
-        if op["jacobian_rows_completed"] != 24 or op["dense_solves_completed"] != 1:
+        if op["jacobian_rows_completed"] != config.POLICY["jacobian_row_vjp_calls"] or op["dense_solves_completed"] != config.POLICY["dense_solves"]:
             raise ValueError("GN row/solve budget closure failed")
         models, products = [], []
-        for spec in specs:
+        for index in range(2):
+            if index == len(specs):
+                specs.append(config.next_direction(models[0],gm,gp,normal,chart,pivot))
+            spec = specs[index]
             direction = spec["direction"]
             tangent._validate_direction_override(gm,normal,chart,pivot,direction)
             pair = {}
@@ -234,7 +250,7 @@ def _run_child(path: Path, digest: str, output: Path, *, experiment: Any | None 
                 "residual_direction":model.residual_direction.tolist(),"side_HVP":{str(s):pair[s].tolist() for s in (-1,1)},
                 "model_gates":model.gates,"efficiency":comparison.direction_efficiency(model)})
             write()
-        if len(models) != 2 or [s["name"] for s in specs] != list(comparison.ARM_ORDER):
+        if len(models) != 2 or [s["name"] for s in specs] != list(config.DIRECTION_ORDER):
             raise ValueError("unexpected shared direction factory order")
         D = torch.stack([m.direction for m in models],dim=1)
         V = torch.stack([m.residual_direction for m in models],dim=1)

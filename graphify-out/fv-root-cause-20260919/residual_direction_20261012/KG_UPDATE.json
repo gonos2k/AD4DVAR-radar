@@ -1,0 +1,18 @@
+{
+  "consulted": "graphify-out/fv-root-cause-20260919/subspace_active_qr_20261012/graph_delta_final/graphify-out/graph.json",
+  "updated_AST": "graphify-out/fv-root-cause-20260919/residual_direction_20261012/graph_delta_final/graphify-out/graph.json",
+  "nodes": 50,
+  "links": 82,
+  "source_transition": {
+    "examples/weather_scenarios/fv_point_3h_netflux_subspace_trial.py": {
+      "after": "fbb12fa7e4616bd26c40ba2dd807b5be941203211aa6954c659f73a123cccc39",
+      "before": "78bba8dac47f3731b04f65c9ec9a2d1709c128e9e8c8d539df037fc9cdd35f51"
+    },
+    "tests/test_fv_point_3h_netflux_comparison_endpoint.py": {
+      "after": "4f94b8dc54e91c6f09d4dcf8028908765bc1aad6236a61b6249016caa1f6ba60",
+      "before": "697f3b09ec98982e510527f2946608fd896a613b2dda4e541db2870233baf613"
+    }
+  },
+  "result": "d,s experiment selects0s;onevalidfb0a step;separatepastpathEobservation;legacyfrozenendpointtestsrepaired",
+  "limits": "about70percent;noeligibleminimum/adjoint/reoptimization/independentfuture"
+}

@@ -1,0 +1,47 @@
+{
+  "bundle_sha256": "5fae12a5f5a8a39c1556a6e62180c399d654f837882026f650bd2c2cb7b1aa11",
+  "source_bundle_sha256": "da936a87c96bcb5970afbed650ba00760949763652f77febfebdd9b44d6ac2b8",
+  "files": {
+    "attempt1/baseline_tangent/candidate_01.json": {
+      "bytes": 2238975,
+      "sha256": "36920f717aaca388b794a712baae12458c8c30ddf99289e2729488ea9d545989"
+    },
+    "attempt1/step.json": {
+      "bytes": 33690087,
+      "sha256": "d8d36a361834439968a188ba669d5ea6352a0cc0f0e39288ec4a290b016dd014"
+    },
+    "attempt1/step.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt1/step.resource.json": {
+      "bytes": 765,
+      "sha256": "c69624e8ebf450abd2801dab0146292d2c206607936c39e65b07940a1cc54e9f"
+    },
+    "attempt1/step.run.json": {
+      "bytes": 946,
+      "sha256": "8d4ef4501f7eef6762de15e756afdb2dba0b970bb0d1117fc57b1ce71e454cc6"
+    },
+    "attempt1/two_direction_subspace/candidate_01.json": {
+      "bytes": 2239378,
+      "sha256": "69a985a4f89b9701f9c202c185c40e812ed15e3fe2e96485976ceaf4fc03a47f"
+    },
+    "observation1/step.json": {
+      "bytes": 163696,
+      "sha256": "fecc4fb16a6b220fe145e84093b16c93ad9589478c51f158040aa85b376711fd"
+    },
+    "observation1/step.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "observation1/step.resource.json": {
+      "bytes": 763,
+      "sha256": "1da003b4f47b3d2158f7756029efbbf6be072f0fa1d5daffd96499ede6f4ab8e"
+    },
+    "observation1/step.run.json": {
+      "bytes": 944,
+      "sha256": "442535a685ccfa984a5f7db2022feea2a9183206d360eee88dcc1332e247e43f"
+    }
+  },
+  "restore": "Extract receipts.tar.gz here for exact attempt1/observation1 bytes, never rerun."
+}
