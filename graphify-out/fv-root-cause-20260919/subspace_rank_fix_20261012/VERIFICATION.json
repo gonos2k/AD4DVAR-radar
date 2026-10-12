@@ -1,0 +1,33 @@
+{
+  "checks": {
+    "raw_run_link": true,
+    "source_pin_closure": true,
+    "fixed_input": true,
+    "runtime": true,
+    "caps": true,
+    "no_future_selection": true,
+    "no_root_or_minimum_claim": true,
+    "resource_closed": true,
+    "base_is_7839": true,
+    "fresh_HVP_base": true,
+    "commit_requires_both_closed": true,
+    "current_control_hash": true,
+    "base_preserved": true
+  },
+  "all_checks_passed": true,
+  "metrics": {
+    "execution_status": "completed",
+    "numerical_status": "no_resolved_subspace_entry_within_frozen_radius_cap",
+    "termination_reason": "",
+    "elapsed_seconds": 77.86434745811857,
+    "hvp_started": 4,
+    "hvp_completed": 4,
+    "row_vjps": 24,
+    "GN_solves": 1,
+    "candidates": 0,
+    "commits": 0,
+    "control_sha256": "7839625d5ff2ab8f3d482f5fab368f19a6a3d60405ed373267c0fcacc81c7c1a",
+    "arms": []
+  },
+  "scope": "stored-vector arithmetic and pinned receipt audit; no FV/HVP regeneration, no exact adjoint/minimum/independent forecast claim"
+}

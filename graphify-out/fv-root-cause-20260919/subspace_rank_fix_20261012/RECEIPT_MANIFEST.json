@@ -1,0 +1,27 @@
+{
+  "bundle_sha256": "0ddb163057c4a4d7650c009f77401e604fb7aab0dcf7c2d7e3186656f91cdca0",
+  "source_bundle_sha256": "ac3dd6ece38bd23425adbca6d5c436529cc4054e4b5e8fedb709ef4f7723bbed",
+  "files": {
+    "expansion1/operators/GN.json": {
+      "sha256": "8b46c27912b43d53e65b8f23f7d59715dcc4024b81d764c2558e3512a6602d34",
+      "bytes": 40017
+    },
+    "expansion1/step.json": {
+      "sha256": "00b097714e7b6e76c207ebe87c2fa49a96ce822b8c6cb1889ae91c714ca73e92",
+      "bytes": 221713
+    },
+    "expansion1/step.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "expansion1/step.resource.json": {
+      "sha256": "352c91df25a2e60bb836fe8b59cd9f126f5efe2eb28efda22032509ca98a1b28",
+      "bytes": 771
+    },
+    "expansion1/step.run.json": {
+      "sha256": "07a526e86657c5edc95f2a865ebc40cc8ed38696200e31625b7aa1cf69b3353c",
+      "bytes": 952
+    }
+  },
+  "restore": "Extract receipts.tar.gz here to restore exact expansion1 records, without rerunning."
+}

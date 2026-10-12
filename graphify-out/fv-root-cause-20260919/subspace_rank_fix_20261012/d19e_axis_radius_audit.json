@@ -1,0 +1,400 @@
+{
+  "D_singular_values": [
+    1.3488990050224403,
+    0.4248193430735823
+  ],
+  "G_norm": 0.050595120029397624,
+  "M": [
+    [
+      12858.11097647704,
+      5.939184619345169
+    ],
+    [
+      5.939184619345169,
+      2.5168081147429513
+    ]
+  ],
+  "M_condition_number": 5114.472980748609,
+  "Q": [
+    [
+      0.9999999999999998,
+      0.8195285257505296
+    ],
+    [
+      0.8195285257505296,
+      0.9999999999999996
+    ]
+  ],
+  "V_condition_number": 71.51554363037873,
+  "V_rank": 2,
+  "V_rank_tolerance": 4.350834812794232e-11,
+  "V_singular_values": [
+    113.39362292621925,
+    1.5855801014711344
+  ],
+  "archive_pin_count": 287,
+  "axis0_activation": {
+    "axis_lambda_zero_radius": 3.249526221387056e-05,
+    "beta0_at_axis_lambda_zero": 3.2495262213870564e-05,
+    "beta0_at_mu1_zero": 2.5388646371002713e-05,
+    "critical_axis_activation_radius": 2.538864637100271e-05,
+    "critical_radius_status": "resolved_axis_activation",
+    "inactive_axis_activates_before_axis_lambda_zero": true,
+    "lambda_at_mu1_zero": 3599.1542770531664,
+    "lambda_sign_budget_at_mu1_zero": 1.187537713336919e-14,
+    "mu1_at_critical_radius": 0.0,
+    "mu1_intercept": 0.2673843260741916,
+    "mu1_intercept_budget": 9.732210314841603e-15,
+    "mu1_intercept_resolved": true,
+    "mu1_slope_budget": 2.9949628505189974e-10,
+    "mu1_slope_downward": true,
+    "mu1_slope_per_beta0": -10531.649547869589,
+    "mu1_slope_resolved": true,
+    "unconstrained_positive_mu1_root_radius": 2.538864637100271e-05
+  },
+  "axis0_current_radius_KKT": {
+    "axis0_kkt": true,
+    "beta0": 1.8757177916958828e-05,
+    "beta1": 0.0,
+    "lambda": 9417.504769423647,
+    "lambda_numerator": 0.17664581249388764,
+    "lambda_sign_budget": 1.187537713336919e-14,
+    "lambda_sign_resolved": true,
+    "mu1": 0.0698403017457428,
+    "mu1_sign_budget": 4.114505210654904e-15,
+    "mu1_sign_resolved": true,
+    "radius_budget": 9.999659011113178e-24,
+    "radius_residual": 1.0339757656912846e-25,
+    "stationarity_budget": 1.187537713336919e-14,
+    "stationarity_free_coordinate": 0.0
+  },
+  "axis0_gradient_active_interval": [
+    0.0,
+    2.538864637100271e-05
+  ],
+  "base_control_sha256": "d19e882d31b634ef0be755e6419b57ecf3691734efc736d5f40ea18c3ac4145e",
+  "bounded_expansion_screen": {
+    "candidate_radius": 2.8135766875438237e-05,
+    "candidate_radius_factor": 1.5,
+    "positive_gain_resolved": true,
+    "predicted_gain_roundoff_budget": 7.23768244336321e-17,
+    "predicted_gain_vs_gradient_axis": 8.671701739451296e-08,
+    "second_coefficient": 2.9417619133867635e-06,
+    "second_coefficient_roundoff_budget": 7.297092962581918e-19
+  },
+  "c": [
+    -0.4178276877556687,
+    -0.07503738288996417
+  ],
+  "critical_radius_bracket_fp64": [
+    2.5388646363621617e-05,
+    2.5388646378383802e-05
+  ],
+  "current_radius": 1.8757177916958825e-05,
+  "current_solver_sha256": "4a8b34378f139d39297a7e035666a00cd1a1cd91fc1cfccd771756f8d01c7242",
+  "full_positive_lambda0_solution": {
+    "beta": [
+      1.8744320918245823e-05,
+      0.029770269917903085
+    ],
+    "movement_radius": 0.029785633360325667
+  },
+  "inactive_multiplier_at_bracket": [
+    7.773512389341874e-11,
+    -7.773499899332847e-11
+  ],
+  "limited_new_point_experiment_worthwhile": true,
+  "limits": [
+    "KKT sweep is for the frozen d19e linear residual model only.",
+    "No finite candidate, chart retraction, branch change, or J/R outcome was evaluated above the stored radius.",
+    "The rank-one fixture tests lambda=0 feasibility separately; d19e itself is full rank in V."
+  ],
+  "normalization_scales": [
+    0.05059512002939763,
+    0.0383646413588573
+  ],
+  "plan_sha256": "a0fef5718772032b4567d24ca75fbaf39cff8b58e30f7e4b249dbabb4a5c7d26",
+  "radius_sweep": [
+    {
+      "coefficients_normalized": [
+        1.4067883437719119e-05,
+        0.0
+      ],
+      "coefficients_raw": [
+        0.0002780482273694609,
+        0.0
+      ],
+      "full_kkt_status": "full_2d_orthant_boundary_axis",
+      "gradient_axis_R": 0.002550654957253711,
+      "model_gain_relative_to_axis_R": 0.0,
+      "model_gain_vs_gradient_axis": 0.0,
+      "movement_norm": 1.4067883437719119e-05,
+      "predicted_R": 0.002550654957253711,
+      "radius": 1.4067883437719119e-05,
+      "radius_factor": 0.75,
+      "second_coefficient_positive": false,
+      "selected_active_set": "axis_0"
+    },
+    {
+      "coefficients_normalized": [
+        1.8757177916958825e-05,
+        0.0
+      ],
+      "coefficients_raw": [
+        0.0003707309698259479,
+        0.0
+      ],
+      "full_kkt_status": "full_2d_orthant_boundary_axis",
+      "gradient_axis_R": 0.002548715525578055,
+      "model_gain_relative_to_axis_R": 0.0,
+      "model_gain_vs_gradient_axis": 0.0,
+      "movement_norm": 1.8757177916958825e-05,
+      "predicted_R": 0.002548715525578055,
+      "radius": 1.8757177916958825e-05,
+      "radius_factor": 1.0,
+      "second_coefficient_positive": false,
+      "selected_active_set": "axis_0"
+    },
+    {
+      "coefficients_normalized": [
+        2.250861350035059e-05,
+        0.0
+      ],
+      "coefficients_raw": [
+        0.0004448771637911375,
+        0.0
+      ],
+      "full_kkt_status": "full_2d_orthant_boundary_axis",
+      "gradient_axis_R": 0.0025475711304585465,
+      "model_gain_relative_to_axis_R": 0.0,
+      "model_gain_vs_gradient_axis": 0.0,
+      "movement_norm": 2.250861350035059e-05,
+      "predicted_R": 0.0025475711304585465,
+      "radius": 2.250861350035059e-05,
+      "radius_factor": 1.2,
+      "second_coefficient_positive": false,
+      "selected_active_set": "axis_0"
+    },
+    {
+      "coefficients_normalized": [
+        2.438433129204647e-05,
+        0.0
+      ],
+      "coefficients_raw": [
+        0.00048195026077373223,
+        0.0
+      ],
+      "full_kkt_status": "full_2d_orthant_boundary_axis",
+      "gradient_axis_R": 0.002547134649639131,
+      "model_gain_relative_to_axis_R": 0.0,
+      "model_gain_vs_gradient_axis": 0.0,
+      "movement_norm": 2.4384331292046468e-05,
+      "predicted_R": 0.002547134649639131,
+      "radius": 2.438433129204647e-05,
+      "radius_factor": 1.3,
+      "second_coefficient_positive": false,
+      "selected_active_set": "axis_0"
+    },
+    {
+      "coefficients_normalized": [
+        2.5134618408724823e-05,
+        0.0
+      ],
+      "coefficients_raw": [
+        0.0004967794995667701,
+        0.0
+      ],
+      "full_kkt_status": "full_2d_orthant_boundary_axis",
+      "gradient_axis_R": 0.002546985391102895,
+      "model_gain_relative_to_axis_R": 0.0,
+      "model_gain_vs_gradient_axis": 0.0,
+      "movement_norm": 2.5134618408724823e-05,
+      "predicted_R": 0.002546985391102895,
+      "radius": 2.5134618408724826e-05,
+      "radius_factor": 1.34,
+      "second_coefficient_positive": false,
+      "selected_active_set": "axis_0"
+    },
+    {
+      "coefficients_normalized": [
+        2.532219018789441e-05,
+        0.0
+      ],
+      "coefficients_raw": [
+        0.0005004868092650296,
+        0.0
+      ],
+      "full_kkt_status": "full_2d_orthant_boundary_axis",
+      "gradient_axis_R": 0.0025469503384145083,
+      "model_gain_relative_to_axis_R": -1.7027456815831386e-16,
+      "model_gain_vs_gradient_axis": -4.336808689942018e-19,
+      "movement_norm": 2.532219018789441e-05,
+      "predicted_R": 0.0025469503384145087,
+      "radius": 2.5322190187894414e-05,
+      "radius_factor": 1.35,
+      "second_coefficient_positive": false,
+      "selected_active_set": "axis_0"
+    },
+    {
+      "coefficients_normalized": [
+        2.538864637100271e-05,
+        0.0
+      ],
+      "coefficients_raw": [
+        0.0005018002992433059,
+        0.0
+      ],
+      "full_kkt_status": "full_2d_orthant_boundary_axis",
+      "gradient_axis_R": 0.0025469381364072665,
+      "model_gain_relative_to_axis_R": 0.0,
+      "model_gain_vs_gradient_axis": 0.0,
+      "movement_norm": 2.5388646371002706e-05,
+      "predicted_R": 0.0025469381364072665,
+      "radius": 2.538864637100271e-05,
+      "radius_factor": 1.3535429734367563,
+      "second_coefficient_positive": false,
+      "selected_active_set": "axis_0"
+    },
+    {
+      "coefficients_normalized": [
+        2.5418734792148584e-05,
+        2.725012876573651e-07
+      ],
+      "coefficients_raw": [
+        0.0005023949894254497,
+        7.102928060982703e-06
+      ],
+      "full_kkt_status": "full_2d_radius_active",
+      "gradient_axis_R": 0.002546892566120241,
+      "model_gain_relative_to_axis_R": 2.8662142197501754e-07,
+      "model_gain_vs_gradient_axis": 7.299939689189849e-10,
+      "movement_norm": 2.564253283471274e-05,
+      "predicted_R": 0.0025468918361262723,
+      "radius": 2.5642532834712736e-05,
+      "radius_factor": 1.3670784031711238,
+      "second_coefficient_positive": true,
+      "selected_active_set": "full_2d"
+    },
+    {
+      "coefficients_normalized": [
+        2.5488454902743916e-05,
+        9.348417956387496e-07
+      ],
+      "coefficients_raw": [
+        0.0005037729901210667,
+        2.4367275765577337e-05
+      ],
+      "full_kkt_status": "full_2d_radius_active",
+      "gradient_axis_R": 0.002546788646646609,
+      "model_gain_relative_to_axis_R": 3.390002332194068e-06,
+      "model_gain_vs_gradient_axis": 8.633619451737379e-09,
+      "movement_norm": 2.6260049083742353e-05,
+      "predicted_R": 0.0025467800130271573,
+      "radius": 2.6260049083742353e-05,
+      "radius_factor": 1.4,
+      "second_coefficient_positive": true,
+      "selected_active_set": "full_2d"
+    },
+    {
+      "coefficients_normalized": [
+        2.5674363396227964e-05,
+        2.9417619133867635e-06
+      ],
+      "coefficients_raw": [
+        0.0005074474253902395,
+        7.667898901673414e-05
+      ],
+      "full_kkt_status": "full_2d_radius_active",
+      "gradient_axis_R": 0.002546533121480979,
+      "model_gain_relative_to_axis_R": 3.4052970551618516e-05,
+      "model_gain_vs_gradient_axis": 8.671701739451296e-08,
+      "movement_norm": 2.8135766875438237e-05,
+      "predicted_R": 0.0025464464044635845,
+      "radius": 2.8135766875438237e-05,
+      "radius_factor": 1.5,
+      "second_coefficient_positive": true,
+      "selected_active_set": "full_2d"
+    },
+    {
+      "coefficients_normalized": [
+        2.625812509729277e-05,
+        1.2845194478998213e-05
+      ],
+      "coefficients_raw": [
+        0.0005189853306412917,
+        0.00033481857314515527
+      ],
+      "full_kkt_status": "full_2d_radius_active",
+      "gradient_axis_R": 0.0025462887505153173,
+      "model_gain_relative_to_axis_R": 0.0005588969967586832,
+      "model_gain_vs_gradient_axis": 1.4231131355434308e-06,
+      "movement_norm": 3.751435583391765e-05,
+      "predicted_R": 0.002544865637379774,
+      "radius": 3.751435583391765e-05,
+      "radius_factor": 2.0,
+      "second_coefficient_positive": true,
+      "selected_active_set": "full_2d"
+    }
+  ],
+  "rank_deficient_lambda0_fixture": {
+    "D_normalized": [
+      [
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0
+      ]
+    ],
+    "G": [
+      -1.0,
+      0.0,
+      0.0
+    ],
+    "V_normalized": [
+      [
+        1.0,
+        1.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "purpose": "rank-one residual columns with a feasible lambda=0 nonnegative minimizer",
+    "result": {
+      "beta": [
+        0.49999999999999983,
+        0.49999999999999967
+      ],
+      "equation_budget_l2": 5.1448789686149945e-12,
+      "equation_error_l2": 6.280369834735101e-16,
+      "feasible_at_lambda_zero": true,
+      "movement_norm": 0.7071067811865471,
+      "predicted_R": 1.9721522630525295e-31,
+      "radius": 0.8,
+      "rank_tolerance": 6.029155041345697e-14
+    }
+  },
+  "raw_step_sha256": "0802769b3dd6624c11e67ff9a222594f2ec25c728ea704021903419e64c6a4cb",
+  "receipt_bundle_sha256": "cb05abcc41fd0b3f1a3cb86208caec566eb3fb5f363014094fd3b6c9a3f7bfc0",
+  "receipt_manifest_sha256": "879b35fd94d9e77036badf3bad47dba8f4885794a3a4841206bc3be3104a960c",
+  "receipt_member_count": 11,
+  "recommendation": "A single bounded fresh-point test near 1.5x the starting radius is mathematically worth considering: the cached d19e local KKT model predicts activation of the second direction at the reported critical radius, and the original-radius actual vector model was accurate. Requalify the next base and freshly rebuild both directions before any such test; the stored d19e result does not authorize radius expansion at a later point.",
+  "scope": "receipt-only d19e local KKT/radius analysis; no FV/HVP/score calls",
+  "source_bundle_sha256": "b332268a74f0c5ed9f9e05b3d890288d2e953215b1422253eec2426cb183cab3",
+  "source_member_count": 216,
+  "stored_actual_candidate_evidence": {
+    "actual_R": 0.002548715176361377,
+    "branch_signature_matches_base": true,
+    "eta_vec": 4.557458384961589e-05,
+    "predicted_R": 0.002548715525578055,
+    "radius": 1.8757177916130278e-05,
+    "rho_R": 1.000031318069182
+  }
+}

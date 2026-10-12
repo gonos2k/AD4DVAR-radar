@@ -1,0 +1,8 @@
+{
+  "reproduced": true,
+  "error_type": "_LinAlgError",
+  "error": "torch.linalg.solve: The solver failed because the input matrix is singular.",
+  "torch_version": "2.13.0",
+  "source_sha256": "6f9e2068cb041fa11f388f307489f981c1bb82193b6e7e52889ff5ab1ad73f30",
+  "scope": "pinned PR301 solver-only; no production FV/HVP/score calls"
+}
