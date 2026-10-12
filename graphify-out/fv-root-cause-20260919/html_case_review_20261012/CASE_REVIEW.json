@@ -1,0 +1,150 @@
+{
+  "scope": "cached PR300–304; no new FV/HVP/forecast calls",
+  "cases": [
+    {
+      "title": "기존 4×5 · 조건부 FV 응답 데모",
+      "status": "소형 수치 기준 통과 · 정확 FSOI 미검증",
+      "start": "기존 4×5 저장 사례 · 26제어 경로와 별개",
+      "end": "분석 후 +1·+2분 저장 프레임",
+      "demo": {
+        "forecast_mae": [
+          0.0013897676576155149,
+          0.002000150092769637
+        ],
+        "persistence_mae": [
+          0.06495136890033529,
+          0.1277411294372813
+        ],
+        "gradient_max": 1.626980494773278e-11,
+        "adjoint_relative_residual": 3.248123338100677e-12,
+        "normal_products": 18,
+        "curvature": "irls_gauss_newton"
+      },
+      "counts": "동일 모형 합성 검증 · 알려진 미래 경계",
+      "note": "비용 감소·gradient 기준·GN 선형 수반 잔차·두 리드의 persistence 대비 MAE 개선이 저장 검사에서 통과. GN 근사 응답이며 전체 원래 문제의 정확 수반·운영 예측성능 인증이 아님.",
+      "source": "html_case_review_20261012/TOY_REPLAY_METRICS.json"
+    },
+    {
+      "title": "PR300 · gradient",
+      "status": "실제 감소 확인",
+      "start": "b6470069c9b8992bf19fa85ab848f5ef424a1e2e8e33a4909bcb0d036ef88660",
+      "end": "d19e882d31b634ef0be755e6419b57ecf3691734efc736d5f40ea18c3ac4145e",
+      "J0": 0.061003289930848054,
+      "J": 0.061002341038211755,
+      "R0": 0.0025752047662763056,
+      "R": 0.002559866170789153,
+      "counts": "후보 1개 · 양쪽 독립 재평가 후 R 우선 선택",
+      "note": "gradient가 잔차 기준으로 선택됨. GN은 비용을 더 낮춰 J/R의 우열이 다름.",
+      "source": "netflux_direction_comparison_20261012/METRICS.json"
+    },
+    {
+      "title": "PR300 · 강건 GN",
+      "status": "국소 예측의 유한 실현 제한",
+      "start": "b6470069c9b8992bf19fa85ab848f5ef424a1e2e8e33a4909bcb0d036ef88660",
+      "end": null,
+      "J0": 0.061003289930848054,
+      "J": 0.06100086445604125,
+      "R0": 0.0025752047662763056,
+      "R": 0.002567751483553327,
+      "counts": "후보 10개 · 양쪽 독립 재평가 후 R 우선 선택",
+      "note": "χ=87.468%지만 채택 배율은 모형 최소배율의 1/512. 앞선 9개 후보는 R 증가. 채택 후보의 벡터 모형오차/실제 변화≈100.073%. 비선택 후보이며 새 확정점이 아님.",
+      "source": "netflux_direction_comparison_20261012/METRICS.json"
+    },
+    {
+      "title": "PR301 · gradient + GN",
+      "status": "한 점 개선 · 추가 방향 이득 없음",
+      "start": "d19e882d31b634ef0be755e6419b57ecf3691734efc736d5f40ea18c3ac4145e",
+      "end": "7839625d5ff2ab8f3d482f5fab368f19a6a3d60405ed373267c0fcacc81c7c1a",
+      "J0": 0.061002341038211755,
+      "J": 0.061001393469310765,
+      "R0": 0.002559866170789153,
+      "R": 0.002548715176361377,
+      "counts": "후보 2개 · 독립 최종 반복 2회 · 확정 1점",
+      "note": "GN 계수 0. 두 경로의 제어점·J·R가 같아 추가 보정 이득은 미입증. 작은 이동의 벡터 오차≈0.004557%.",
+      "source": "netflux_subspace_20261012/METRICS.json"
+    },
+    {
+      "title": "PR302 · 현재점 반경/KKT 준비",
+      "status": "준비 완료 · 후보 미평가",
+      "start": "7839625d5ff2ab8f3d482f5fab368f19a6a3d60405ed373267c0fcacc81c7c1a",
+      "end": null,
+      "J0": null,
+      "J": null,
+      "R0": null,
+      "R": null,
+      "counts": "HVP 4회 · row VJP 24회 · 후보 0개 · 확정 0점",
+      "note": "GN 진입 반경≈2.666배로 사전 2배 상한 밖. 기법 추가이득 조건에 따른 중단이며, 더 큰 gradient 이동의 실패나 최적화 수렴을 뜻하지 않음.",
+      "source": "subspace_rank_fix_20261012/METRICS.json"
+    },
+    {
+      "title": "PR303 · gradient 연속 9단계",
+      "status": "연속 개선 · 수렴 미완료",
+      "start": "7839625d5ff2ab8f3d482f5fab368f19a6a3d60405ed373267c0fcacc81c7c1a",
+      "end": "2a4dba130d28273a63e97d0de39a11f64fdee09b0ad754559bc8902ba6cddbca",
+      "J0": 0.061001393469310765,
+      "J": 0.06099005811764152,
+      "R0": 0.002548715176361377,
+      "R": 0.002441269566693863,
+      "counts": "후보 9개 · 확정 9점 · 새 HVP 완료 16회",
+      "note": "2–9단계는 해당 방향의 선형 잔차모형 최소배율. 후반 χ≈0.437–0.453%로 방향 효율 제한. 8번째 벡터 모형오차≈31.046%, 나머지 8개는 ≤0.015889%; 모두 실제 J/R 승인. 예산 종료; 가산 child 607.160초로 내부 600초 초과, 외부 660초 내. 최종점 후속 JVP 미실행.",
+      "source": "subspace_active_qr_20261012/METRICS.json"
+    },
+    {
+      "title": "PR304 · gradient + 잔차 하강방향 s",
+      "status": "한 점 개선 · 추가 방향 이득 없음",
+      "start": "2a4dba130d28273a63e97d0de39a11f64fdee09b0ad754559bc8902ba6cddbca",
+      "end": "fb0a2efaeefe3a8b07a9385a81260757e4923b181a9430c384cfb96b8d8ea7b4",
+      "J0": 0.06099005811764152,
+      "J": 0.060988878373729814,
+      "R0": 0.002441269566693863,
+      "R": 0.002430534626706718,
+      "counts": "후보 2개 · 독립 최종 반복 2회 · 확정 1점",
+      "note": "s 계수 0. 두 경로의 제어점·J·R가 같아 가속 미입증. 새 HVP 4회, GN row/풀이 0회. 새 확정점 fb0a의 미래점수는 미평가.",
+      "source": "residual_direction_20261012/METRICS.json"
+    },
+    {
+      "title": "PR300 · 이전 11단계 미래점수",
+      "status": "고정 합성 참값의 관찰 감소",
+      "start": "0aafdf8069fcb8d5adc4ec813646707a3d1e083804631b17facb24664098655b",
+      "end": "b6470069c9b8992bf19fa85ab848f5ef424a1e2e8e33a4909bcb0d036ef88660",
+      "E0": 7.388754298552231,
+      "E": 7.386491165784028,
+      "counts": "미래점수 2회 · 최적화/후보 선택 0회",
+      "note": "20분 분석창 이후 최종 +180분 dBZ MSE. 전체 lead 평균이 아님. 같은 고정 합성 참값에 대한 작은 변화이며 독립 예측성능·통계적 유의성 미검증.",
+      "source": "netflux_future_observation_20261012/METRICS.json"
+    },
+    {
+      "title": "PR301 · b647 → d19e 미래점수",
+      "status": "고정 합성 참값의 관찰 감소",
+      "start": "b6470069c9b8992bf19fa85ab848f5ef424a1e2e8e33a4909bcb0d036ef88660",
+      "end": "d19e882d31b634ef0be755e6419b57ecf3691734efc736d5f40ea18c3ac4145e",
+      "E0": 7.386491165784028,
+      "E": 7.386414763452886,
+      "counts": "미래점수 2회 · 최적화/후보 선택 0회",
+      "note": "20분 분석창 이후 최종 +180분 dBZ MSE. 전체 lead 평균이 아님. 같은 고정 합성 참값에 대한 작은 변화이며 독립 예측성능·통계적 유의성 미검증.",
+      "source": "netflux_subspace_20261012/OBSERVATION_VERIFICATION.json"
+    },
+    {
+      "title": "PR304 · 7839 → 2a4d 미래점수",
+      "status": "고정 합성 참값의 관찰 감소",
+      "start": "7839625d5ff2ab8f3d482f5fab368f19a6a3d60405ed373267c0fcacc81c7c1a",
+      "end": "2a4dba130d28273a63e97d0de39a11f64fdee09b0ad754559bc8902ba6cddbca",
+      "E0": 7.386235570851804,
+      "E": 7.384565484459929,
+      "counts": "미래점수 2회 · 최적화/후보 선택 0회",
+      "note": "20분 분석창 이후 최종 +180분 dBZ MSE. 전체 lead 평균이 아님. 같은 고정 합성 참값에 대한 작은 변화이며 독립 예측성능·통계적 유의성 미검증.",
+      "source": "residual_direction_20261012/OBSERVATION_VERIFICATION.json"
+    }
+  ],
+  "evidence_sha256": {
+    "html_case_review_20261012/TOY_REPLAY_METRICS.json": "eedd1c737caab9a24cbac6884c7b8f9e6df29b10dff57fc9cb771a51557c17d9",
+    "netflux_direction_comparison_20261012/METRICS.json": "d43eca32dd67c160fd3933524a3e80a115a0615afa135482023f67f9149aa979",
+    "netflux_future_observation_20261012/METRICS.json": "d51bdaaa08e05933c15fe9d63517ca467ac4e04a5daf62c94462a7ae9d65e34b",
+    "netflux_subspace_20261012/METRICS.json": "be6f31b8c33e6e7eaed3c4e5cb8b3af6744f5bbbb664c8052a440a26fd844ab2",
+    "netflux_subspace_20261012/OBSERVATION_VERIFICATION.json": "73550e51cd3e2f0440f2542b95d9b5fbd48138821a980f07fa2198b0e6ac836e",
+    "residual_direction_20261012/METRICS.json": "d87109090d40876d40f0f8c7463f893c5cb8dac72ca8af03a39e3aa7fd777cc8",
+    "residual_direction_20261012/OBSERVATION_VERIFICATION.json": "1553b88c1cf010d777873297be4bacaa52435c9890df79ed275f9dac284a05e3",
+    "subspace_active_qr_20261012/METRICS.json": "af44e442b08bb7473352ed47c1afb04812851e7ceb2c1bc356659c49bc63f707",
+    "subspace_rank_fix_20261012/METRICS.json": "1931fd03fc60a9c51279fcf7bb5e49ef6cb7f7093a37545bf9ebd571b50792c2"
+  }
+}

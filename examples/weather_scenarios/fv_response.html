@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>ADVAR · FV 관측 응답 실증</title>
+    <style>
+      :root {
+        --paper: #edeee4;
+        --paper2: #e4e6da;
+        --panel: #f7f8f0;
+        --ink: #23291f;
+        --muted: #5c6354;
+        --faint: #7b816d;
+        --rule: #c6cab6;
+        --red: #7a1f2b;
+        --blue: #1b4c63;
+        --cyan: #6e9daa;
+        --yellow: #d5b34c;
+        --disp: Hahmlet, "Apple SD Gothic Neo", serif;
+        --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, monospace;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-width: 0; }
+      body {
+        background: var(--paper); color: var(--ink); font-family: var(--body);
+        font-size: 16px; line-height: 1.55; word-break: keep-all;
+        overflow-x: hidden;
+        background-image: repeating-linear-gradient(to right, var(--rule) 0 1px, transparent 1px 52px),
+          repeating-linear-gradient(to bottom, var(--rule) 0 1px, transparent 1px 52px);
+        background-attachment: fixed;
+      }
+      .wrap { max-width: 1320px; margin: auto; padding: 24px clamp(14px, 3vw, 38px) 64px; }
+      .eyebrow { display: flex; gap: .8rem; align-items: center; margin: 0 0 .7rem; color: var(--faint); font: 500 .75rem var(--mono); letter-spacing: .05em; }
+      .eyebrow:after { content: ""; height: 1px; background: var(--rule); flex: 1; }
+      .masthead { display: flex; justify-content: space-between; align-items: end; gap: 24px; border-bottom: 2px solid var(--ink); padding-bottom: 18px; }
+      h1 { font: 800 clamp(2.15rem, 6vw, 5.3rem)/.94 var(--disp); letter-spacing: -.045em; margin: 0; }
+      .mastcopy { max-width: 650px; }
+      .dek { font: 400 clamp(1.08rem, 2vw, 1.5rem)/1.35 var(--disp); margin: 0; }
+      .dek em { color: var(--red); font-style: normal; }
+      .subdek { color: var(--muted); margin: .55rem 0 0; }
+      .badge { font: 500 .72rem var(--mono); color: var(--blue); border: 1px solid var(--blue); padding: .35rem .55rem; white-space: nowrap; }
+      .panel { background: color-mix(in srgb, var(--panel) 92%, transparent); border: 1px solid var(--rule); min-width: 0; }
+      .panel-title { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--rule); padding: 9px 13px 7px; margin: 0; font: 500 .74rem var(--mono); letter-spacing: .08em; color: var(--muted); }
+      .panel-title small { font: 400 .78rem var(--body); letter-spacing: 0; color: var(--faint); overflow-wrap: anywhere; }
+      .lab { margin-top: 22px; display: grid; gap: 12px; grid-template-columns: minmax(0, 1.55fr) minmax(250px, .72fr) minmax(215px, .58fr); grid-template-areas: "stage stage stage" "controls read dial"; }
+      #stage { grid-area: stage; }
+      .stage-tools, .legend, .controls-body, .read-body, .dial-body, .status-body { padding: 10px 12px; }
+      .stage-tools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--rule); }
+      button, select, input { font: inherit; }
+      button, select { border: 1px solid var(--rule); border-radius: 2px; background: transparent; color: var(--ink); padding: 7px 10px; min-height: 44px; cursor: pointer; }
+      button:hover, select:hover { background: var(--paper2); border-color: var(--faint); }
+      button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+      button[aria-pressed="true"] { background: var(--red); color: var(--panel); border-color: var(--red); }
+      .heatmaps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--rule); }
+      .heatmap { position: relative; background: var(--panel); min-width: 0; }
+      .heatmap canvas { display: block; width: 100%; height: auto; aspect-ratio: 1; image-rendering: auto; }
+      .heatmap h3 { position: absolute; z-index: 1; top: 7px; left: 9px; right: 9px; margin: 0; color: var(--ink); background: color-mix(in srgb, var(--panel) 86%, transparent); font: 500 .7rem var(--mono); padding: 2px 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .heatmap p { position: absolute; inset: 45% 12px auto; margin: 0; text-align: center; color: var(--muted); }
+      .legend { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: .78rem; border-top: 1px solid var(--rule); }
+      .diff-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 9px 12px; border-top: 1px solid var(--rule); color: var(--muted); font-size: .8rem; }
+      #differenceView { display: none; }
+      #stage.difference-on #differenceView { display: block; border-top: 1px solid var(--rule); }
+      .difference-view canvas { aspect-ratio: 1; }
+      .swatch { display: inline-block; width: 40px; height: 9px; vertical-align: middle; margin-right: 4px; background: linear-gradient(90deg,#183c56,#5f9aaa,#e9dd73,#d88947,#641f2b); }
+      .swatch.signed { background: linear-gradient(90deg,#1b4c63,#dce1d2,#7a1f2b); }
+      #controls { grid-area: controls; } #read { grid-area: read; } #dial { grid-area: dial; }
+      .control-row { display: grid; gap: 5px; margin-bottom: 12px; }
+      .control-row label { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: .9rem; }
+      output, .mono { font: 500 .82rem var(--mono); color: var(--ink); }
+      input[type="range"] { accent-color: var(--red); width: 100%; height: 30px; cursor: ew-resize; }
+      .button-row { display: flex; gap: 6px; flex-wrap: wrap; } .button-row button { flex: 1 1 100px; }
+      .read-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--rule); }
+      .read-row:last-child { border: 0; } .read-row dt { color: var(--muted); font-size: .88rem; } .read-row dd { margin: 0; text-align: right; font: 500 1rem var(--mono); }
+      .read-row.hero { display: block; background: var(--paper2); margin: -2px -4px 6px; padding: 9px 8px; } .read-row.hero dd { color: var(--red); font-size: 1.65rem; margin-top: 2px; }
+      .read-note { color: var(--faint); font-size: .77rem; margin: 9px 0 0; }
+      #dial canvas { display: block; width: 100%; height: 190px; } .dial-caption { color: var(--muted); font-size: .76rem; margin: 5px 4px 0; }
+      .response-panel { margin-top: 12px; }
+      .sensitivity-tools { display: flex; gap: 6px; flex-wrap: wrap; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+      .status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+      .status-card { padding: 10px; background: var(--paper2); border-left: 3px solid var(--red); min-width: 0; }
+      .status-card strong { display: block; font: 600 1rem var(--disp); } .status-card span { color: var(--muted); font-size: .85rem; }
+      .check-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+      .check-list li { display: grid; grid-template-columns: 7.5rem 5rem 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--rule); align-items: baseline; font-size: .88rem; }
+      .check-list li:last-child { border: 0; } .pass { color: #2d684c; } .fail { color: var(--red); } .unverified { color: #8b6d21; }
+      .notice { padding: 13px; margin-top: 12px; background: var(--paper2); color: var(--muted); }
+      .notice strong { display: block; color: var(--ink); font: 600 1.15rem var(--disp); margin-bottom: 3px; }
+      .foot { border-top: 1px solid var(--rule); margin-top: 34px; padding-top: 13px; color: var(--faint); font-size: .8rem; }
+      #sha256 { overflow-wrap: anywhere; }
+      #sensitivityCanvas, #differenceCanvas { max-height: 360px; }
+      @media (max-width: 1050px) { .lab { grid-template-columns: minmax(0,1.2fr) minmax(0,.8fr); grid-template-areas: "stage stage" "controls read" "dial dial"; } .status-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+      @media (max-width: 680px) { .wrap { padding-top: 16px; } .masthead { display: block; } .mastcopy { margin-top: 16px; } .badge { display: inline-block; margin-top: 12px; } .lab { grid-template-columns: 1fr; grid-template-areas: "stage" "controls" "read" "dial"; } .heatmaps { grid-template-columns: repeat(2,minmax(0,1fr)); } .heatmap canvas { aspect-ratio: 1; } .status-grid { grid-template-columns: 1fr; } .check-list li { grid-template-columns: 1fr; gap: 1px; } }
+      @media (prefers-reduced-motion: reduce) { *, *:before, *:after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <p class="eyebrow">ADVAR 연구 실험실 · FV 관측 응답과 조건부 민감도</p>
+      <header class="masthead">
+        <h1>응답을<br />추적하다</h1>
+        <div class="mastcopy">
+          <p class="dek">같은 유한체적 수송에서, <em>관측 변화가 무엇을 바꾸는가?</em></p>
+          <p class="subdek">실제 저장 프레임과 조건부 관측 응답을 함께 읽습니다. 이 화면은 <strong>4 × 5 동일 모형 검증</strong>이며 날씨 예보 성능이 아닙니다.</p>
+          <span class="badge" id="dataBadge">자료 확인 중</span>
+        </div>
+      </header>
+
+<!-- FV_CASE_REVIEW_START -->
+      <style>
+        #session-runs { margin-top:22px; }
+        .case-review-body { padding:16px; }
+        .case-review-body h3 { font-size:1.12rem; margin:20px 0 8px; }
+        .case-review-body p { margin:8px 0 14px; }
+        .case-verdicts { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+        .case-verdict { border-left:3px solid var(--blue); background:var(--paper2); padding:12px; }
+        .case-verdict.limited { border-color:var(--red); }
+        .case-verdict strong { display:block; margin-bottom:8px; }
+        .case-card { border-top:1px solid var(--rule); }
+        .case-card summary { cursor:pointer; padding:14px 0; min-height:44px; font-weight:600; }
+        .case-card summary span { display:block; color:var(--muted); font-size:.86rem; font-weight:400; }
+        .case-detail { padding:0 8px 16px; }
+        .case-detail dl { margin:0; display:grid; grid-template-columns:130px minmax(0,1fr); gap:6px 12px; }
+        .case-detail dt { color:var(--muted); }
+        .case-detail dd { margin:0; overflow-wrap:anywhere; font: .85rem/1.6 var(--mono); }
+        #session-runs a { color:var(--blue); overflow-wrap:anywhere; }
+        @media(max-width:520px) { .case-detail dl { grid-template-columns:1fr; } }
+      </style>
+      <section class="panel" id="session-runs" aria-labelledby="sessionRunsTitle">
+        <h2 class="panel-title" id="sessionRunsTitle"><span>수행 사례 · 무엇이 되고, 무엇이 어려운가</span><small>2026-10-12 · PR300–304 저장 근거</small></h2>
+        <div class="case-review-body">
+          <p>아래 26제어·12점관측·3시간 연구와 기존 4×5·2분 응답 데모는 서로 다른 예시입니다. 비용 J, 정상성 잔차 R, 미래 오차 E를 각각 판정합니다. 사례 제목을 열면 수치와 계산점·근거를 확인할 수 있습니다.</p>
+          <div class="case-verdicts">
+            <div class="case-verdict"><strong>잘된 범위 · 실제 J/R 진행</strong>작은 gradient 이동은 반복 승인됐고 9단계에서 R 4.215677% 감소. 한 점의 계산·국소모형 검증은 작동합니다. 최종 최소점의 수렴은 아직 확인하지 못했습니다.</div>
+            <div class="case-verdict limited"><strong>제한된 범위 · 방향 가속</strong>PR300의 앞선 9개 큰 GN 후보는 J를 낮춰도 시작점보다 R가 증가했습니다. 최종 GN 후보는 R도 감소했지만 gradient 후보보다 높았습니다. gradient+GN 및 gradient+s는 같은 gradient 후보를 반환해 추가 이득이 없었습니다. 기존 수치 solver 결함은 보강됐지만 수렴 효율은 남아 있습니다.</div>
+            <div class="case-verdict limited"><strong>미검증 · 물리 복원과 응답</strong>미래 MSE는 작은 고정 합성 사례의 관찰 감소입니다. 참상태 유일 복원·독립 기상예측·정확 수반·섭동 재최적화는 미완료입니다. 준비만 끝난 실험은 실패 사례로 세지 않습니다.</div>
+          </div>
+          <h3>예시가 이론적으로 풀 수 있는 문제인가</h3>
+          <p><strong>원래 정규화 최소화 문제는, 고정된 유한 입력에서 목적함수가 전 제어공간에 연속·유한하게 정의된다는 전제 아래 최소해가 존재합니다.</strong> identity prior를 쓰는 이 예시의 J(c,p) = Σρ(rᵢ(c,p)) + ½‖c‖² + Jₛ(c)는 J ≥ ½‖c‖²를 만족합니다. 따라서 비용의 하위수준집합은 유계이고 닫혀 있으며, 유한차원에서 최소값을 달성합니다. 이는 정확한 수학적 연산에 대한 조건부 존재 논증으로, FP64 overflow나 코드가 거부하는 제어영역까지 보장하지 않습니다.</p>
+          <p><strong>최소해 존재와 참상태의 유일 복원은 다릅니다.</strong> 관측 Jacobian은 12×26이므로 매끄러운 분기에서 관측만의 미소 제어 nullspace는 적어도 14차원입니다. prior가 그 방향을 정규화하지만 참상태를 선택한다는 보장은 없습니다. 비선형 수송·변환과 residual 곡률 때문에 identity prior가 있어도 전체 J의 전역 볼록성·유일성이 자동 성립하지 않습니다. 일반적으로 참상태에서 관측잔차가 0이어도 prior 기울기 때문에 참상태가 J의 최소점이 아닐 수 있습니다.</p>
+          <p><strong>현재 Q=0 면의 추적은 원래 문제의 제한된 가설입니다.</strong> Q(c)=wᵀtanh(c₂₀:₂₅)=0인 전체 면은 0 유동을 포함하는 닫힌 비공집합이므로 같은 전제 아래 면 제한 최소해도 존재합니다. 하지만 그 해가 현재 차트·limiter 분기 자격을 만족하거나 원래 문제의 최소해라는 보장은 없습니다. 면 위의 접선 정상성, 양측 gradient의 유효한 혼합, 정확 축약 곡률·활성구조를 따로 확인해야 합니다. 국소 최소점이 존재해도 비퇴화 곡률과 고정 활성구조가 없으면 매끄럽고 유일한 파라미터 응답이나 정확 implicit 수반을 얻는다는 보장은 없습니다.</p>
+          <h3>현재 기법으로 추적이 어려운 이유</h3>
+          <p>저장 근거는 두 병목을 구분합니다. PR300은 selector 변화와 큰 유한 잔차모형 오차가 함께 나타났습니다. PR303 후반은 대체로 모형이 잘 맞지만 이미 방향별 최소배율에서 χ가 약 0.44%로 작습니다. PR303의 8번째는 벡터 오차≈31.046%로 별도 예외입니다. 전자는 국소 미분을 유한 이동으로 연결하는 문제이고, 후자는 방향 효율의 문제입니다. J/R 동시 감소는 탐색 정책이며 J 최소화의 모든 중간 단계에 필요한 조건은 아닙니다. 이 정책이 유효한 경로를 제한할 가능성은 있으나 전체 정체의 원인으로 입증되지는 않았습니다.</p>
+          <p>또한 identity prior와 현재 J≈0.06099는 비용이 더 낮은 해에 ‖c‖≤√(2J)≈0.3493을 줍니다. 이 범위에서 유동·성장 tanh 변환의 도함수는 약 0.887 이상입니다. 따라서 이 경로의 정체를 강한 tanh 포화 탓으로 단정할 근거는 없습니다. 위 관측 nullspace도 prior가 포함된 전체 Hessian의 특이성을 뜻하지 않습니다.</p>
+          <p><strong>판정: 풀 수 없다는 증거는 없습니다. 현재 방식의 빠른 종단 수렴·유일한 참상태 복원·정확 응답을 보장할 근거도 없습니다.</strong> 기존 합성 한 사례의 서로 다른 계산점·실험이므로 어느 기상 유형 전체가 성공/실패한다고 일반화하지 않습니다.</p>
+          <p><a href="../../graphify-out/fv-root-cause-20260919/html_case_review_20261012/THEORETICAL_REVIEW.md">이론 검토와 코드 근거</a> · <a href="../../graphify-out/fv-root-cause-20260919/html_case_review_20261012/CASE_REVIEW.json">사례 목록 JSON</a></p>
+          <h3>실행 기록 · 10개</h3>
+          <details class="case-card"><summary>기존 4×5 · 조건부 FV 응답 데모<span>소형 수치 기준 통과 · 정확 FSOI 미검증</span></summary>
+          <div class="case-detail"><dl><dt>gradient max</dt><dd>1.62698e-11</dd><dt>GN 선형 수반 잔차</dt><dd>3.24812e-12</dd><dt>FV MAE +1/+2분</dt><dd>0.00138977 / 0.00200015 dBZ</dd><dt>persistence MAE</dt><dd>0.0649514 / 0.127741 dBZ</dd><dt>시작점</dt><dd>기존 4×5 저장 사례 · 26제어 경로와 별개</dd><dt>확정/관찰 끝점</dt><dd>분석 후 +1·+2분 저장 프레임</dd></dl>
+          <p>동일 모형 합성 검증 · 알려진 미래 경계</p><p>비용 감소·gradient 기준·GN 선형 수반 잔차·두 리드의 persistence 대비 MAE 개선이 저장 검사에서 통과. GN 근사 응답이며 전체 원래 문제의 정확 수반·운영 예측성능 인증이 아님.</p><a href="../../graphify-out/fv-root-cause-20260919/html_case_review_20261012/TOY_REPLAY_METRICS.json">저장 수치 확인</a></div></details><details class="case-card"><summary>PR300 · gradient<span>실제 감소 확인</span></summary>
+          <div class="case-detail"><dl><dt>J</dt><dd>0.0610032899308 → 0.0610023410382 · 0.001555% 감소</dd><dt>R</dt><dd>0.00257520476628 → 0.00255986617079 · 0.595626% 감소</dd><dt>시작점</dt><dd>b6470069c9b8992bf19fa85ab848f5ef424a1e2e8e33a4909bcb0d036ef88660</dd><dt>확정/관찰 끝점</dt><dd>d19e882d31b634ef0be755e6419b57ecf3691734efc736d5f40ea18c3ac4145e</dd></dl>
+          <p>후보 1개 · 양쪽 독립 재평가 후 R 우선 선택</p><p>gradient가 잔차 기준으로 선택됨. GN은 비용을 더 낮춰 J/R의 우열이 다름.</p><a href="../../graphify-out/fv-root-cause-20260919/netflux_direction_comparison_20261012/METRICS.json">저장 수치 확인</a></div></details><details class="case-card"><summary>PR300 · 강건 GN<span>국소 예측의 유한 실현 제한</span></summary>
+          <div class="case-detail"><dl><dt>J</dt><dd>0.0610032899308 → 0.061000864456 · 0.003976% 감소</dd><dt>R</dt><dd>0.00257520476628 → 0.00256775148355 · 0.289425% 감소</dd><dt>시작점</dt><dd>b6470069c9b8992bf19fa85ab848f5ef424a1e2e8e33a4909bcb0d036ef88660</dd><dt>확정/관찰 끝점</dt><dd>없음 · 비선택 또는 후보 미평가</dd></dl>
+          <p>후보 10개 · 양쪽 독립 재평가 후 R 우선 선택</p><p>χ=87.468%지만 채택 배율은 모형 최소배율의 1/512. 앞선 9개 후보는 R 증가. 채택 후보의 벡터 모형오차/실제 변화≈100.073%. 비선택 후보이며 새 확정점이 아님.</p><a href="../../graphify-out/fv-root-cause-20260919/netflux_direction_comparison_20261012/METRICS.json">저장 수치 확인</a></div></details><details class="case-card"><summary>PR301 · gradient + GN<span>한 점 개선 · 추가 방향 이득 없음</span></summary>
+          <div class="case-detail"><dl><dt>J</dt><dd>0.0610023410382 → 0.0610013934693 · 0.001553% 감소</dd><dt>R</dt><dd>0.00255986617079 → 0.00254871517636 · 0.435608% 감소</dd><dt>시작점</dt><dd>d19e882d31b634ef0be755e6419b57ecf3691734efc736d5f40ea18c3ac4145e</dd><dt>확정/관찰 끝점</dt><dd>7839625d5ff2ab8f3d482f5fab368f19a6a3d60405ed373267c0fcacc81c7c1a</dd></dl>
+          <p>후보 2개 · 독립 최종 반복 2회 · 확정 1점</p><p>GN 계수 0. 두 경로의 제어점·J·R가 같아 추가 보정 이득은 미입증. 작은 이동의 벡터 오차≈0.004557%.</p><a href="../../graphify-out/fv-root-cause-20260919/netflux_subspace_20261012/METRICS.json">저장 수치 확인</a></div></details><details class="case-card"><summary>PR302 · 현재점 반경/KKT 준비<span>준비 완료 · 후보 미평가</span></summary>
+          <div class="case-detail"><dl><dt>J</dt><dd>미평가</dd><dt>R</dt><dd>미평가</dd><dt>시작점</dt><dd>7839625d5ff2ab8f3d482f5fab368f19a6a3d60405ed373267c0fcacc81c7c1a</dd><dt>확정/관찰 끝점</dt><dd>없음 · 비선택 또는 후보 미평가</dd></dl>
+          <p>HVP 4회 · row VJP 24회 · 후보 0개 · 확정 0점</p><p>GN 진입 반경≈2.666배로 사전 2배 상한 밖. 기법 추가이득 조건에 따른 중단이며, 더 큰 gradient 이동의 실패나 최적화 수렴을 뜻하지 않음.</p><a href="../../graphify-out/fv-root-cause-20260919/subspace_rank_fix_20261012/METRICS.json">저장 수치 확인</a></div></details><details class="case-card"><summary>PR303 · gradient 연속 9단계<span>연속 개선 · 수렴 미완료</span></summary>
+          <div class="case-detail"><dl><dt>J</dt><dd>0.0610013934693 → 0.0609900581176 · 0.018582% 감소</dd><dt>R</dt><dd>0.00254871517636 → 0.00244126956669 · 4.215677% 감소</dd><dt>시작점</dt><dd>7839625d5ff2ab8f3d482f5fab368f19a6a3d60405ed373267c0fcacc81c7c1a</dd><dt>확정/관찰 끝점</dt><dd>2a4dba130d28273a63e97d0de39a11f64fdee09b0ad754559bc8902ba6cddbca</dd></dl>
+          <p>후보 9개 · 확정 9점 · 새 HVP 완료 16회</p><p>2–9단계는 해당 방향의 선형 잔차모형 최소배율. 후반 χ≈0.437–0.453%로 방향 효율 제한. 8번째 벡터 모형오차≈31.046%, 나머지 8개는 ≤0.015889%; 모두 실제 J/R 승인. 예산 종료; 가산 child 607.160초로 내부 600초 초과, 외부 660초 내. 최종점 후속 JVP 미실행.</p><a href="../../graphify-out/fv-root-cause-20260919/subspace_active_qr_20261012/METRICS.json">저장 수치 확인</a></div></details><details class="case-card"><summary>PR304 · gradient + 잔차 하강방향 s<span>한 점 개선 · 추가 방향 이득 없음</span></summary>
+          <div class="case-detail"><dl><dt>J</dt><dd>0.0609900581176 → 0.0609888783737 · 0.001934% 감소</dd><dt>R</dt><dd>0.00244126956669 → 0.00243053462671 · 0.439728% 감소</dd><dt>시작점</dt><dd>2a4dba130d28273a63e97d0de39a11f64fdee09b0ad754559bc8902ba6cddbca</dd><dt>확정/관찰 끝점</dt><dd>fb0a2efaeefe3a8b07a9385a81260757e4923b181a9430c384cfb96b8d8ea7b4</dd></dl>
+          <p>후보 2개 · 독립 최종 반복 2회 · 확정 1점</p><p>s 계수 0. 두 경로의 제어점·J·R가 같아 가속 미입증. 새 HVP 4회, GN row/풀이 0회. 새 확정점 fb0a의 미래점수는 미평가.</p><a href="../../graphify-out/fv-root-cause-20260919/residual_direction_20261012/METRICS.json">저장 수치 확인</a></div></details><details class="case-card"><summary>PR300 · 이전 11단계 미래점수<span>고정 합성 참값의 관찰 감소</span></summary>
+          <div class="case-detail"><dl><dt>E · dBZ MSE</dt><dd>7.38875429855 → 7.38649116578 dBZ² · 0.030629% 감소</dd><dt>시작점</dt><dd>0aafdf8069fcb8d5adc4ec813646707a3d1e083804631b17facb24664098655b</dd><dt>확정/관찰 끝점</dt><dd>b6470069c9b8992bf19fa85ab848f5ef424a1e2e8e33a4909bcb0d036ef88660</dd></dl>
+          <p>미래점수 2회 · 최적화/후보 선택 0회</p><p>20분 분석창 이후 최종 +180분 dBZ MSE. 전체 lead 평균이 아님. 같은 고정 합성 참값에 대한 작은 변화이며 독립 예측성능·통계적 유의성 미검증.</p><a href="../../graphify-out/fv-root-cause-20260919/netflux_future_observation_20261012/METRICS.json">저장 수치 확인</a></div></details><details class="case-card"><summary>PR301 · b647 → d19e 미래점수<span>고정 합성 참값의 관찰 감소</span></summary>
+          <div class="case-detail"><dl><dt>E · dBZ MSE</dt><dd>7.38649116578 → 7.38641476345 dBZ² · 0.001034% 감소</dd><dt>시작점</dt><dd>b6470069c9b8992bf19fa85ab848f5ef424a1e2e8e33a4909bcb0d036ef88660</dd><dt>확정/관찰 끝점</dt><dd>d19e882d31b634ef0be755e6419b57ecf3691734efc736d5f40ea18c3ac4145e</dd></dl>
+          <p>미래점수 2회 · 최적화/후보 선택 0회</p><p>20분 분석창 이후 최종 +180분 dBZ MSE. 전체 lead 평균이 아님. 같은 고정 합성 참값에 대한 작은 변화이며 독립 예측성능·통계적 유의성 미검증.</p><a href="../../graphify-out/fv-root-cause-20260919/netflux_subspace_20261012/OBSERVATION_VERIFICATION.json">저장 수치 확인</a></div></details><details class="case-card"><summary>PR304 · 7839 → 2a4d 미래점수<span>고정 합성 참값의 관찰 감소</span></summary>
+          <div class="case-detail"><dl><dt>E · dBZ MSE</dt><dd>7.38623557085 → 7.38456548446 dBZ² · 0.022611% 감소</dd><dt>시작점</dt><dd>7839625d5ff2ab8f3d482f5fab368f19a6a3d60405ed373267c0fcacc81c7c1a</dd><dt>확정/관찰 끝점</dt><dd>2a4dba130d28273a63e97d0de39a11f64fdee09b0ad754559bc8902ba6cddbca</dd></dl>
+          <p>미래점수 2회 · 최적화/후보 선택 0회</p><p>20분 분석창 이후 최종 +180분 dBZ MSE. 전체 lead 평균이 아님. 같은 고정 합성 참값에 대한 작은 변화이며 독립 예측성능·통계적 유의성 미검증.</p><a href="../../graphify-out/fv-root-cause-20260919/residual_direction_20261012/OBSERVATION_VERIFICATION.json">저장 수치 확인</a></div></details>
+        </div>
+      </section>
+      <!-- FV_CASE_REVIEW_END -->
+
+      <div class="lab" aria-label="FV 응답 시각화 실험실">
+        <section class="panel" id="stage" aria-labelledby="stageTitle">
+          <h2 class="panel-title" id="stageTitle"><span>시간별 dBZ 프레임</span><small id="timeLabel">자료 없음</small></h2>
+          <div class="stage-tools" role="toolbar" aria-label="프레임 조작">
+            <button type="button" id="play" aria-pressed="false">재생</button>
+            <button type="button" id="reset">초기화</button>
+            <span style="flex:1"></span><span class="badge" id="gridLabel">격자 —</span>
+          </div>
+          <div class="heatmaps">
+            <div class="heatmap"><h3 id="observationTitle">관측 · 저장값</h3><canvas id="observationCanvas" role="img" aria-label="관측 dBZ 격자"></canvas><p id="observationEmpty" hidden>관측 자료 없음</p></div>
+            <div class="heatmap"><h3>FV 예측 · 분석 이후</h3><canvas id="forecastCanvas" role="img" aria-label="FV 예측 dBZ 격자"></canvas><p id="forecastEmpty" hidden>예측 자료 없음</p></div>
+            <div class="heatmap"><h3>검증 truth · 저장값</h3><canvas id="truthCanvas" role="img" aria-label="검증 truth dBZ 격자"></canvas><p id="truthEmpty" hidden>truth 자료 없음</p></div>
+            <div class="heatmap"><h3 id="persistenceTitle">persistence · 기준선</h3><canvas id="persistenceCanvas" role="img" aria-label="persistence dBZ 격자"></canvas><p id="persistenceEmpty" hidden>기준선 자료 없음</p></div>
+          </div>
+          <div class="legend"><span><i class="swatch"></i>dBZ · 공통 낮음 → 높음</span><span id="rangeLabel">공통 색 범위 —</span><span>프레임은 저장된 시각만 표시</span></div>
+          <div class="diff-tools"><button type="button" id="differenceToggle" aria-pressed="false">예측 − truth 보기</button><span id="differenceLabel">차이 보기 꺼짐</span></div>
+          <div id="differenceView" class="difference-view"><div class="heatmap"><h3>예측 − truth · signed dBZ</h3><canvas id="differenceCanvas" role="img" aria-label="예측과 truth의 signed dBZ 차이"></canvas><p id="differenceEmpty" hidden>현재 시각의 예측 또는 truth 자료 없음</p></div><div class="legend"><span><i class="swatch signed"></i>음수 · 0 · 양수</span><span id="differenceRange">오차 공통 범위 —</span><span>대칭 색 범위 · 원자료 프레임만 사용</span></div></div>
+          <div class="stage-tools"><label for="timeline">타임라인 <output id="timelineValue">—</output></label><input id="timeline" type="range" min="0" max="4" step="1" value="2" aria-label="관측 및 예측 타임라인" /></div>
+        </section>
+
+        <section class="panel" id="controls" aria-labelledby="controlsTitle">
+          <h2 class="panel-title" id="controlsTitle"><span>프레임 조작</span><small>Space · ← → · Home</small></h2>
+          <div class="controls-body">
+            <div class="button-row"><button type="button" id="prev">이전 시각</button><button type="button" id="next">다음 시각</button></div>
+            <div class="notice"><strong id="scopeTitle">범위 확인 중</strong><span id="scopeCopy">연구용 FV 응답 자료를 불러옵니다.</span></div>
+          </div>
+        </section>
+
+        <section class="panel" id="read" aria-labelledby="readTitle" aria-live="polite">
+          <h2 class="panel-title" id="readTitle"><span>판독 · 현재 시각</span><small id="statusLabel">자료 없음</small></h2>
+          <dl class="read-body">
+            <div class="read-row hero"><dt>시각</dt><dd id="readTime">—</dd></div>
+            <div class="read-row"><dt>FV MAE <small id="forecastLead"></small></dt><dd id="forecastMae">N/A</dd></div>
+            <div class="read-row"><dt>persistence MAE <small id="persistenceLead"></small></dt><dd id="persistenceMae">N/A</dd></div>
+            <div class="read-row"><dt>gradient max</dt><dd id="gradientMax">N/A</dd></div>
+            <div class="read-row"><dt>adjoint residual</dt><dd id="adjointResidual">N/A</dd></div>
+            <div class="read-row"><dt>normal products</dt><dd id="normalProducts">N/A</dd></div>
+            <div class="read-row"><dt>curvature</dt><dd id="curvature">N/A</dd></div>
+            <p class="read-note">공통 dBZ 색 범위는 모든 저장 프레임에서 고정합니다. 조건부 GN 응답은 exact FSOI가 아닙니다.</p>
+          </dl>
+        </section>
+
+        <section class="panel" id="dial" aria-labelledby="dialTitle">
+          <h2 class="panel-title" id="dialTitle"><span>리드별 MAE</span><small>저장 metrics</small></h2>
+          <div class="dial-body"><canvas id="dialCanvas" role="img" aria-label="FV와 persistence MAE 비교"></canvas><p class="dial-caption" id="dialCaption">자료를 불러오면 비교선을 그립니다.</p></div>
+        </section>
+      </div>
+
+      <section class="panel response-panel" aria-labelledby="responseTitle">
+        <h2 class="panel-title" id="responseTitle"><span>조건부 GN 관측 민감도</span><small id="sensitivityLabel">관측 시각 0</small></h2>
+        <div class="sensitivity-tools" role="toolbar" aria-label="관측 응답 시각 선택">
+          <span>관측 시각</span><button type="button" data-sensitivity="0" aria-pressed="true">−2분</button><button type="button" data-sensitivity="1" aria-pressed="false">−1분</button><button type="button" data-sensitivity="2" aria-pressed="false">0분</button>
+        </div>
+        <div class="heatmaps" style="grid-template-columns:minmax(0,1fr);"><div class="heatmap"><h3>∂미래 MSE / ∂관측 dBZ · 부호 있는 민감도</h3><canvas id="sensitivityCanvas" role="img" aria-label="선택한 관측 시각의 미래 MSE 민감도"></canvas><p id="sensitivityEmpty" hidden>응답 자료 없음</p></div></div>
+        <div class="legend"><span><i class="swatch signed"></i>음수 · 0 · 양수</span><span id="sensitivityRange">signed 공통 범위 —</span><span>GN inverse · fixed branch · research only</span></div>
+      </section>
+
+      <section class="panel response-panel" aria-labelledby="checksTitle">
+        <h2 class="panel-title" id="checksTitle"><span>조건부 성공 상태</span><small>통과와 미검증을 분리</small></h2>
+        <div class="status-body">
+          <div class="status-grid">
+            <div class="status-card"><strong>현재 자료</strong><span id="scopeStatus">확인 중</span></div>
+            <div class="status-card"><strong>정확한 FSOI</strong><span class="unverified">pending · 제품 적격성 미검증</span></div>
+            <div class="status-card"><strong>D7</strong><span class="unverified">pending · 별도 검증 필요</span></div>
+            <div class="status-card"><strong>learning</strong><span class="unverified">pending · 별도 검증 필요</span></div>
+          </div>
+          <ul class="check-list" id="checkList" aria-label="검증 체크 목록"></ul>
+          <p class="notice"><strong>해석 범위</strong>이 결과는 4 × 5 동일 모형 합성 검증의 조건부 응답입니다. 운영 날씨 예보 skill, 전역 최적성, 정확한 FSOI, D7 자원, 학습 효과를 주장하지 않습니다.</p>
+        </div>
+      </section>
+
+      <p class="foot">ADVAR · generated <span id="generatedAt">—</span> · sha256 <span id="sha256">—</span></p>
+    </main>
+    <script>
+      "use strict";
+      const DATA = {"scope": "4×5 CPU FP64 · 같은 FV 모형의 합성 실증 · 알려진 미래 경계 · 실자료 성능 아님", "grid": [4, 5], "times_minutes": [-2, -1, 0, 1, 2], "observations_dbz": [[[18.0, 20.999999999999996, 18.999999999999996, 22.999999999999993, 19.999999999999996], [21.999999999999996, 18.0, 23.999999999999993, 18.999999999999996, 20.999999999999996], [18.999999999999996, 23.999999999999993, 19.999999999999996, 21.999999999999996, 18.0], [20.999999999999996, 19.999999999999996, 22.999999999999993, 18.0, 21.999999999999996]], [[18.091790430908333, 20.994005718981153, 19.125742832004384, 22.992774211592128, 20.1152348471521], [21.985660010403954, 18.21663856876002, 23.983194673317186, 19.191351058791717, 21.018081148674618], [19.049749419952043, 23.987697579515817, 20.146890255134778, 22.015628481684864, 18.134649186122147], [21.007743331477865, 20.053386048419924, 23.007958037828338, 18.153727996807383, 22.01192170694773]], [[18.181419545888392, 20.989553889103224, 19.246237470116807, 22.986664855964072, 20.226439160549898], [21.972160205385673, 18.41995568905998, 23.9675901649249, 19.37260826760633, 21.03787264708623], [19.09933224378604, 23.975824363642765, 20.287581366863954, 22.032509554428266, 18.265244928613217], [21.016368978791622, 20.106310019149188, 23.016337542481672, 18.302174871882052, 22.0245395478754]]], "forecast_dbz": [[[18.180975753450262, 20.990496687952348, 19.247116570725687, 22.987048982846446, 20.224971643796426], [21.97333492026086, 18.418722299639764, 23.968181672668813, 19.37116155822064, 21.037283337641124], [19.099325496398937, 23.976259197503595, 20.287386450276177, 22.031812235061714, 18.267500780956887], [21.016573501015973, 20.10629445744016, 23.015900688958332, 18.30264824581663, 22.02365911173044]], [[18.2682084782064, 20.98846145590979, 19.36362436490901, 22.982394188136993, 20.331123531301323], [21.961769609840825, 18.609232696272375, 23.954300372051733, 19.542100802341878, 21.058129311067884], [19.14874974268778, 23.965219303582508, 20.422182232329835, 22.04927557238051, 18.396263934562608], [21.026259200243015, 20.158768368264287, 23.0242869734382, 18.446566090662674, 22.036130567653238]], [[18.353551779976154, 20.987877307028604, 19.475647543213437, 22.97882078483382, 20.433859870722074], [21.95101277871819, 18.78919968789136, 23.94157766406242, 19.704882933815167, 21.080567643006717], [19.198021818850037, 23.954606544931544, 20.55167643085211, 22.06793365788912, 18.521331674353945], [21.03679101133511, 20.210824799950736, 23.033097260789425, 18.585850231005843, 22.049309370557197]]], "truth_dbz": [[[18.0, 20.999999999999993, 18.999999999999993, 22.999999999999986, 19.999999999999993], [21.999999999999993, 18.0, 23.999999999999986, 18.999999999999993, 20.999999999999993], [18.999999999999993, 23.999999999999986, 19.999999999999993, 21.999999999999993, 18.0], [20.999999999999993, 19.999999999999993, 22.999999999999986, 18.0, 21.999999999999993]], [[18.091790430908333, 20.99400571898115, 19.12574283200438, 22.99277421159212, 20.11523484715209], [21.98566001040395, 18.21663856876001, 23.98319467331718, 19.191351058791714, 21.018081148674614], [19.04974941995204, 23.98769757951581, 20.146890255134775, 22.015628481684857, 18.134649186122143], [21.007743331477855, 20.05338604841992, 23.00795803782833, 18.153727996807383, 22.011921706947724]], [[18.181419545888392, 20.98955388910322, 19.246237470116803, 22.986664855964065, 20.226439160549898], [21.972160205385673, 18.419955689059975, 23.967590164924893, 19.372608267606328, 21.037872647086225], [19.099332243786037, 23.975824363642758, 20.28758136686395, 22.03250955442826, 18.265244928613217], [21.01636897879162, 20.10631001914918, 23.016337542481665, 18.302174871882052, 22.0245395478754]], [[18.269000499021754, 20.986616431270626, 19.361886663733735, 22.981651676121487, 20.333885294485643], [21.95949861054082, 18.611353984481724, 23.953172361081506, 19.544736893768302, 21.059320040465185], [19.148754299245105, 23.96438175746796, 20.422534919065036, 22.050608432959137, 18.392065454581857], [21.02586313663839, 20.15879180921346, 23.025134565657496, 18.445705057030146, 22.037845519300546]], [[18.354638502267285, 20.98516444398763, 19.4730524638297, 22.97771431759069, 20.43782104064723], [21.947672851203976, 18.79202980942196, 23.93992651469103, 19.708574893845903, 21.082368767842745], [19.19802101038409, 23.953371111674493, 20.552164205556544, 22.069890141516048, 18.515363423931795], [21.03621165415519, 20.210850328313526, 23.034345133941756, 18.584647380165, 22.05183142723309]]], "persistence_dbz": [[18.181419545888392, 20.989553889103224, 19.246237470116807, 22.986664855964072, 20.226439160549898], [21.972160205385673, 18.41995568905998, 23.9675901649249, 19.37260826760633, 21.03787264708623], [19.09933224378604, 23.975824363642765, 20.287581366863954, 22.032509554428266, 18.265244928613217], [21.016368978791622, 20.106310019149188, 23.016337542481672, 18.302174871882052, 22.0245395478754]], "sensitivity_dbz": [[[6.033849285545944e-05, -0.0001691479099118774, -0.0001763942569026578, -5.876611751480112e-05, 0.00026494516952913405], [-0.00020053364480058635, 0.00020384558151807666, -9.736765692709206e-05, 0.0002629453238815102, 0.00010389210663602454], [-1.0472437368859907e-05, -6.946331253593638e-05, 3.0939155279462794e-05, 0.00011922463184283135, -0.0004214708745437253], [-3.8298291931971644e-05, 4.440385654060289e-06, 7.776354309301128e-05, -8.081233125415995e-05, 0.00015453596488342207]], [[-3.528856011129458e-05, 7.856782503296624e-05, 7.262084278931316e-05, 2.9474070971561587e-05, -0.00012077493942029071], [9.508386429619977e-05, -0.00010188907551296005, 4.7236546482264314e-05, -0.00012034847996200625, -4.86826436739778e-05], [1.4207135442397098e-07, 3.4628338335146156e-05, -1.608224517491797e-05, -5.5123395901114315e-05, 0.0001872247072241589], [1.682690921995724e-05, -1.5116293659063178e-06, -3.56318845162984e-05, 3.8685198655003654e-05, -7.282555329312924e-05]], [[-0.00011601924595729067, 0.00031779360016143793, 0.0003196896610905359, 0.00011853846820476849, -0.000477797428675646], [0.00038307094722389096, -0.0003480974592658487, 0.00018735595660572467, -0.0004590042604607534, -0.00020344905954073123], [1.1236633455875977e-05, 0.0001377017802793226, -5.6639294661620954e-05, -0.00022524951560573168, 0.0007415162475333715], [6.984209302092568e-05, -5.563680863941753e-06, -0.00014610450037243116, 0.00014421877464503954, -0.00029441700561654683]]], "checks": [{"label": "실제 분석 비용 감소", "status": "pass", "detail": "34.1012 → 0.035042; 10회 외부 반복"}, {"label": "분석 정상성 수치 기준", "status": "pass", "detail": "제어 기울기 최대 1.627e-11 ≤ 1e-8; 전역 정상성 인증은 아님"}, {"label": "GN 수반 실제 잔차", "status": "pass", "detail": "3.248e-12 ≤ 1e-10; 정상 연산 18/128회"}, {"label": "예측 에코 비음수", "status": "pass", "detail": "실제 FV 반환장의 모든 화소 확인"}, {"label": "고정 영역 persistence 비교", "status": "pass", "detail": "+1·+2분 각각 20화소 전체에서 MAE 비교; 같은 모형의 합성 사례"}, {"label": "관측 민감도 유한성", "status": "pass", "detail": "B=y[0] 직접·암시적 경로 포함; IRLS–GN 역행렬 근사"}, {"label": "일반 기상 시나리오의 성공", "status": "unverified", "detail": "이번 데모의 검증 범위 밖 · 완료로 판정하지 않음"}, {"label": "정확한 implicit FSO/FSOI 제품 적격성", "status": "unverified", "detail": "이번 데모의 검증 범위 밖 · 완료로 판정하지 않음"}, {"label": "전체 P1·FSO/FSOI D7", "status": "unverified", "detail": "이번 데모의 검증 범위 밖 · 완료로 판정하지 않음"}, {"label": "FSO/FSOI 기반 지속 학습·재적재", "status": "unverified", "detail": "이번 데모의 검증 범위 밖 · 완료로 판정하지 않음"}], "metrics": {"forecast_mae": [0.0013897676576155149, 0.002000150092769637], "persistence_mae": [0.06495136890033529, 0.1277411294372813], "gradient_max": 1.626980494773278e-11, "adjoint_relative_residual": 3.248123338100677e-12, "normal_products": 18, "curvature": "irls_gauss_newton"}, "source": {"generated_at": "2026-09-14T05:13:38.469142+00:00", "files": {"src/advar/variational.py": "c9c336803daea0d6781fc147fd026122d8720cd3cce945d737728d2c5f47c24d", "src/advar/transport.py": "8bbf9c189c87322cef5b4a723c19fde62a7ae648410718747898ad42aee222e7", "src/advar/matrix_free.py": "88c55bc4acb4e5e08a927bc98ded12caecaffed35b0dff32e64e63ab920c6b6f", "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3", "src/advar/fv_sensitivity.py": "51117966543fe656b21dc4174aeca7810275b8eff257503265a6925518adb8ce", "examples/weather_scenarios/build_fv_response_demo.py": "b6ea2363e9b87f802271f921b814c3456f04e7dc5556f6726524e1c61730c3ec", "examples/weather_scenarios/fv_sensitivity_probe.py": "90c2195f0ef9a371bb62401fb44d505be9af799a5a098117199a44ca0c29dccd"}, "sha256": "7517ec21e5cb3179f523263ebb32440f992402eab7b84a1843fc0af4e4f33c83"}};
+      const $ = (id) => document.getElementById(id);
+      const state = { frame: 2, sensitivity: 0, difference: false, playing: false, timer: 0 };
+      const fieldPalette = ["#183c56", "#27627a", "#5f9aaa", "#b9cbb7", "#e9dd73", "#d88947", "#9c3b36", "#641f2b"];
+      const signedPalette = ["#1b4c63", "#6e9daa", "#dce1d2", "#f7f8f0", "#d8898b", "#7a1f2b"];
+      const finite = (v) => typeof v === "number" && Number.isFinite(v);
+      const grid = () => DATA && Array.isArray(DATA.grid) ? DATA.grid : [0, 0];
+      const shape = () => grid()[0] * grid()[1];
+      function flatField(value) {
+        if (!Array.isArray(value)) return null;
+        if (value.length === shape() && value.every((v) => v === null || finite(v))) return value;
+        if (value.length === grid()[0] && value.every((row) => Array.isArray(row) && row.length === grid()[1])) return value.flat();
+        return null;
+      }
+      function allFinite(values) { return (flatField(values) || []).filter(finite); }
+      function dbzRange() {
+        const values = [];
+        [DATA.observations_dbz, DATA.forecast_dbz, DATA.truth_dbz, [DATA.persistence_dbz]].forEach((series) => (series || []).forEach((frame) => values.push(...allFinite(frame))));
+        if (finite(DATA.color_min) && finite(DATA.color_max) && DATA.color_max > DATA.color_min) return [DATA.color_min, DATA.color_max];
+        if (!values.length) return [0, 1];
+        const lo = Math.min(...values), hi = Math.max(...values);
+        return [lo, hi > lo ? hi : lo + 1];
+      }
+      function sensitivityRange() {
+        const values = [];
+        (DATA.sensitivity_dbz || []).forEach((frame) => values.push(...allFinite(frame)));
+        const declared = Math.max(Math.abs(Number(DATA.sensitivity_min) || 0), Math.abs(Number(DATA.sensitivity_max) || 0));
+        const observed = values.length ? Math.max(...values.map((v) => Math.abs(v))) : 0;
+        return Math.max(declared, observed, 1e-12);
+      }
+      function canvasSize(canvas) { const rect = canvas.getBoundingClientRect(); const dpr = Math.min(window.devicePixelRatio || 1, 2); canvas.width = Math.max(1, Math.round(rect.width * dpr)); canvas.height = Math.max(1, Math.round(rect.height * dpr)); const ctx = canvas.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); return [ctx, rect.width, rect.height]; }
+      function color(value, lo, hi, palette, centered) { if (!finite(value) || !finite(lo) || !finite(hi) || hi <= lo) return null; const denominator = centered ? Math.max(Math.abs(lo), Math.abs(hi)) : hi - lo; const t = centered ? (value / denominator + 1) / 2 : (value - lo) / denominator; return palette[Math.max(0, Math.min(palette.length - 1, Math.floor(Math.max(0, Math.min(.999999, t)) * palette.length)))]; }
+      function draw(canvas, values, centered = false, forcedRange = null) { const [ctx, width, height] = canvasSize(canvas); ctx.clearRect(0, 0, width, height); const flat = flatField(values); if (!flat) return false; const valid = flat.filter(finite); if (!valid.length) return false; const range = forcedRange || (centered ? [-sensitivityRange(), sensitivityRange()] : dbzRange()); const rows = grid()[0], cols = grid()[1], cw = width / cols, ch = height / rows; flat.forEach((v, i) => { const fill = color(v, range[0], range[1], centered ? signedPalette : fieldPalette, centered); if (!fill) return; ctx.fillStyle = fill; ctx.fillRect((i % cols) * cw, Math.floor(i / cols) * ch, Math.ceil(cw + .25), Math.ceil(ch + .25)); }); return true; }
+      function number(value, digits = 4) { return finite(value) ? value.toFixed(digits) : "N/A"; }
+      function scientific(value) { return finite(value) ? value.toExponential(3) : "N/A"; }
+      function currentTruth() { return DATA && DATA.truth_dbz && DATA.truth_dbz[state.frame]; }
+      function difference(a, b) { const left = flatField(a), right = flatField(b); if (!left || !right) return null; return left.map((v, i) => finite(v) && finite(right[i]) ? v - right[i] : null); }
+      function differenceRange() { const values = []; (DATA.forecast_dbz || []).forEach((frame, i) => values.push(...allFinite(difference(frame, (DATA.truth_dbz || [])[i + 2])))); return values.length ? Math.max(...values.map((v) => Math.abs(v)), 1e-12) : 1; }
+      function render() {
+        if (!DATA) return;
+        const times = DATA.times_minutes || [], t = times[state.frame];
+        $("timeLabel").textContent = finite(t) ? `t ${t > 0 ? "+" : ""}${t}분` : "자료 없음";
+        $("timelineValue").textContent = finite(t) ? `${t > 0 ? "+" : ""}${t}분` : "—";
+        $("readTime").textContent = finite(t) ? `${t > 0 ? "+" : ""}${t}분` : "—";
+        const obs = DATA.observations_dbz ? DATA.observations_dbz[Math.min(state.frame, 2)] : null;
+        const forecastIndex = state.frame - 2, forecast = forecastIndex >= 0 && DATA.forecast_dbz ? DATA.forecast_dbz[forecastIndex] : null;
+        const truth = currentTruth();
+        $("observationTitle").textContent = state.frame <= 2 ? "관측 · 저장값" : "관측 · t=0 유지";
+        $("persistenceTitle").textContent = state.frame < 2 ? "persistence · t=0 이전 미발행" : "persistence · 기준선";
+        const persistence = state.frame >= 2 ? DATA.persistence_dbz : null;
+        const drawn = [draw($("observationCanvas"), obs), draw($("forecastCanvas"), forecast), draw($("truthCanvas"), truth), draw($("persistenceCanvas"), persistence)];
+        ["observationEmpty", "forecastEmpty", "truthEmpty", "persistenceEmpty"].forEach((id, i) => $(id).hidden = drawn[i]);
+        const fm = DATA.metrics && DATA.metrics.forecast_mae, pm = DATA.metrics && DATA.metrics.persistence_mae;
+        const lead = forecastIndex - 1;
+        const availableMetric = lead >= 0 && lead < 2;
+        $("statusLabel").textContent = availableMetric ? "고정 20화소 평가" : "미래 점수 미발행";
+        $("forecastLead").textContent = availableMetric ? `(리드 +${lead + 1}분)` : "(리드 미발행)";
+        $("persistenceLead").textContent = availableMetric ? `(리드 +${lead + 1}분)` : "(리드 미발행)";
+        $("forecastMae").textContent = availableMetric && fm && finite(fm[lead]) ? number(fm[lead]) + " dBZ" : "N/A";
+        $("persistenceMae").textContent = availableMetric && pm && finite(pm[lead]) ? number(pm[lead]) + " dBZ" : "N/A";
+        $("gradientMax").textContent = scientific(DATA.metrics && DATA.metrics.gradient_max);
+        $("adjointResidual").textContent = scientific(DATA.metrics && DATA.metrics.adjoint_relative_residual);
+        $("normalProducts").textContent = finite(DATA.metrics && DATA.metrics.normal_products) ? String(DATA.metrics.normal_products) : "N/A";
+        $("curvature").textContent = DATA.metrics && DATA.metrics.curvature ? DATA.metrics.curvature : "N/A";
+        const diff = difference(forecast, truth), diffScale = differenceRange(), diffDrawn = state.difference && draw($("differenceCanvas"), diff, true, [-diffScale, diffScale]);
+        $("differenceEmpty").hidden = diffDrawn;
+        $("differenceRange").textContent = `오차 공통 범위 ±${number(diffScale, 4)} dBZ`;
+        $("differenceLabel").textContent = state.difference ? `예측 − truth · ±${number(differenceRange(), 4)} dBZ` : "차이 보기 꺼짐";
+        renderSensitivity();
+      }
+      function renderSensitivity() {
+        const values = DATA && DATA.sensitivity_dbz && DATA.sensitivity_dbz[state.sensitivity];
+        const drawn = draw($("sensitivityCanvas"), values, true);
+        $("sensitivityEmpty").hidden = drawn;
+        $("sensitivityLabel").textContent = `관측 시각 ${DATA.times_minutes[state.sensitivity]}분`;
+        $("sensitivityRange").textContent = `±${scientific(sensitivityRange())} dBZ (MSE/dBZ)`;
+        document.querySelectorAll("[data-sensitivity]").forEach((button) => button.setAttribute("aria-pressed", String(Number(button.dataset.sensitivity) === state.sensitivity)));
+      }
+      function plot() { const [ctx, width, height] = canvasSize($("dialCanvas")); ctx.clearRect(0, 0, width, height); const fm = DATA && DATA.metrics && DATA.metrics.forecast_mae; const pm = DATA && DATA.metrics && DATA.metrics.persistence_mae; if (!Array.isArray(fm) || !Array.isArray(pm)) return; const all = fm.concat(pm).filter(finite); if (!all.length) return; const max = Math.max(...all) || 1; const x = (i) => 18 + i * (width - 36) / Math.max(1, fm.length - 1); const y = (v) => height - 22 - v / max * (height - 38); ctx.strokeStyle = "#c6cab6"; ctx.beginPath(); ctx.moveTo(18, 8); ctx.lineTo(18, height - 22); ctx.lineTo(width - 8, height - 22); ctx.stroke(); [[fm, "#7a1f2b"], [pm, "#1b4c63"]].forEach(([values, stroke]) => { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.beginPath(); values.forEach((v, i) => { if (!finite(v)) return; if (i === 0) ctx.moveTo(x(i), y(v)); else ctx.lineTo(x(i), y(v)); }); ctx.stroke(); values.forEach((v, i) => { if (!finite(v)) return; ctx.fillStyle = stroke; ctx.beginPath(); ctx.arc(x(i), y(v), 3, 0, 2 * Math.PI); ctx.fill(); }); }); $("dialCaption").textContent = "빨강 FV · 파랑 persistence · 실제 metrics"; }
+      function checks() { const checks = Array.isArray(DATA && DATA.checks) ? DATA.checks : []; $("checkList").innerHTML = checks.map((item) => `<li><strong>${String(item.label || "check")}</strong><b class="${String(item.status || "unverified")}">${String(item.status || "unverified")}</b><span>${String(item.detail || "")}</span></li>`).join(""); const scope = DATA.scope || "연구용 FV 응답"; const range = dbzRange(); $("scopeTitle").textContent = scope; $("scopeCopy").textContent = "고정 branch에서 계산한 조건부 응답입니다."; $("scopeStatus").textContent = "conditional · research only"; $("dataBadge").textContent = DATA.source && DATA.source.generated_at ? `국소 ${checks.filter(c => c.status === "pass").length} 통과 · ${checks.filter(c => c.status === "unverified").length} 미검증` : "자료 확인됨"; $("gridLabel").textContent = `${grid()[0]} × ${grid()[1]} cell`; $("rangeLabel").textContent = `공통 범위 ${number(range[0], 2)}–${number(range[1], 2)} dBZ`; $("generatedAt").textContent = DATA.source && DATA.source.generated_at || "—"; $("sha256").textContent = DATA.source && DATA.source.sha256 || "—"; }
+      function setFrame(value) { state.frame = Math.max(0, Math.min(4, value)); $("timeline").value = String(state.frame); render(); }
+      function tick() { setFrame((state.frame + 1) % 5); }
+      $("timeline").addEventListener("input", (event) => setFrame(Number(event.target.value))); $("prev").addEventListener("click", () => setFrame(state.frame - 1)); $("next").addEventListener("click", () => setFrame(state.frame + 1)); $("reset").addEventListener("click", () => setFrame(2)); $("differenceToggle").addEventListener("click", () => { state.difference = !state.difference; $("stage").classList.toggle("difference-on", state.difference); $("differenceToggle").setAttribute("aria-pressed", String(state.difference)); render(); }); $("play").addEventListener("click", () => { state.playing = !state.playing; $("play").textContent = state.playing ? "일시정지" : "재생"; $("play").setAttribute("aria-pressed", String(state.playing)); if (state.playing) state.timer = setInterval(tick, 1200); else clearInterval(state.timer); }); document.querySelectorAll("[data-sensitivity]").forEach((button) => button.addEventListener("click", () => { state.sensitivity = Number(button.dataset.sensitivity); renderSensitivity(); })); window.addEventListener("resize", () => { render(); plot(); }); document.addEventListener("keydown", (event) => { if (event.target.matches("input,select,button")) return; if (event.code === "Space") { event.preventDefault(); $("play").click(); } else if (event.key === "ArrowLeft") setFrame(state.frame - 1); else if (event.key === "ArrowRight") setFrame(state.frame + 1); else if (event.key === "Home") setFrame(0); });
+      if (DATA) { checks(); render(); plot(); } else { $("dataBadge").textContent = "자료 없음"; $("scopeTitle").textContent = "자료가 아직 없습니다"; }
+    </script>
+  </body>
+</html>

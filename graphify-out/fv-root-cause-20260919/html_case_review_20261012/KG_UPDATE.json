@@ -1,0 +1,10 @@
+{
+  "consulted": "graphify-out/graph.json:build_fv_response_demo.py -> render/template; previous residual_direction graph delta",
+  "refresh": "changed display updater AST only; no numerical code changed",
+  "source": "examples/weather_scenarios/update_fv_case_review.py",
+  "sha256": "9b91622da43a12b1305af8802cd0bb6db14de4ca6821172cec0ffd463c76f4ab",
+  "nodes": 9,
+  "links": 13,
+  "evidence": "CASE_REVIEW.json and THEORETICAL_REVIEW.md",
+  "limits": "no fresh FV/HVP/score; browser protocol blocked; original replay payload unchanged"
+}
