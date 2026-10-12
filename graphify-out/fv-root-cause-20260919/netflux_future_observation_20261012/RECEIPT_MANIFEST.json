@@ -1,0 +1,23 @@
+{
+  "files": {
+    "attempt1/score_pair.json": {
+      "bytes": 154261,
+      "sha256": "2003ceee1aa058fc1aa866ea36f000fbf2d9210b321c0c461711171494fefb89"
+    },
+    "attempt1/score_pair.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt1/score_pair.resource.json": {
+      "bytes": 750,
+      "sha256": "ca58d0aefe7724e0ed554ff6ca8b00a745f19ffc7e814f7515d6d64e00f6c555"
+    },
+    "attempt1/score_pair.run.json": {
+      "bytes": 967,
+      "sha256": "154aec5a7af86f2a36a47f8edb00dd09d4960b1ddd20d0d6cd4c529ba798ef22"
+    }
+  },
+  "bundle_sha256": "ab3e8a87ffd39279542379e53064fb6649a36c26b41ee58dc4afd765e2a88494",
+  "source_bundle_sha256": "2a5eb415af2b8f873d319b45fd443894cba8c4533bc5694b4013ea96f8caf833",
+  "extraction": "Extract receipts.tar.gz at this directory to restore original attempt1 byte strings. verify_result.py reads stored receipts only, with no additional FV/operator/forecast run."
+}

@@ -1,0 +1,199 @@
+{
+  "plan_sha256": "36686ccf05c55ab9dff1d6c0c4658e14049a108eba402b76c86fc0b9ac904b35",
+  "raw_sha256": "1c79690de1d8e42ff4accf5e6b3bd62dac5c55c0607d3cc8b771fb6b6a8b4703",
+  "source_files": 209,
+  "archive_files": 283,
+  "base_control_sha256": "b6470069c9b8992bf19fa85ab848f5ef424a1e2e8e33a4909bcb0d036ef88660",
+  "current_control_sha256": "d19e882d31b634ef0be755e6419b57ecf3691734efc736d5f40ea18c3ac4145e",
+  "selected_direction": "baseline_tangent",
+  "start": {
+    "J": 0.061003289930848054,
+    "R": 0.0025752047662763056,
+    "G_norm": 0.05074647540742416,
+    "mixed_gradient_max": 0.02547686391175494
+  },
+  "arms": [
+    {
+      "name": "baseline_tangent",
+      "inclusive_arm_seconds": 33.799126208992675,
+      "GN_preparation_seconds": 0.0,
+      "chi": 0.004852971120509362,
+      "alpha_model_min": 0.00036962523539489384,
+      "alpha_selected": 0.0003696252353948939,
+      "alpha_selected_over_model_min": 1.0000000000000002,
+      "candidate_count": 1,
+      "J": 0.061002341038211755,
+      "R": 0.002559866170789153,
+      "G_norm": 0.050595120029397624,
+      "mixed_gradient_max": 0.025442822459990508,
+      "decrease_percent": {
+        "J": 0.0015554778068108607,
+        "R": 0.5956262464259143,
+        "mixed_gradient_max": 0.13361711976145862
+      },
+      "model_error_norm": 0.001615089204735835,
+      "actual_G_delta_norm": 0.0038645799233142358,
+      "model_error_over_actual_delta": 0.4179210255149145,
+      "displacement_l2": 1.8757177916958825e-05,
+      "trials": [
+        {
+          "alpha": 0.0003696252353948939,
+          "objective": 0.061002341038211755,
+          "F_squared": 0.002559866170789153,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": true,
+          "branch_signature_matches_base": false,
+          "model_error_norm": 0.0016150892047358352
+        }
+      ]
+    },
+    {
+      "name": "robust_gn_coupled",
+      "inclusive_arm_seconds": 89.30456458288245,
+      "GN_preparation_seconds": 14.909891792107373,
+      "chi": 0.8746815342713339,
+      "alpha_model_min": 0.7774483583886893,
+      "alpha_selected": 0.0015184538249779086,
+      "alpha_selected_over_model_min": 0.0019531249999999998,
+      "candidate_count": 10,
+      "J": 0.06100086445604125,
+      "R": 0.002567751483553327,
+      "G_norm": 0.05067298573750443,
+      "mixed_gradient_max": 0.02544323322451528,
+      "decrease_percent": {
+        "J": 0.0039759737705208865,
+        "R": 0.28942485741651214,
+        "mixed_gradient_max": 0.13200481564822308
+      },
+      "model_error_norm": 0.0037770116979530125,
+      "actual_G_delta_norm": 0.0037742411115568976,
+      "model_error_over_actual_delta": 1.0007340777428424,
+      "displacement_l2": 5.86952048469856e-05,
+      "trials": [
+        {
+          "alpha": 0.7774483583886892,
+          "objective": 0.06049526846046454,
+          "F_squared": 0.041299682302486276,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_signature_matches_base": false,
+          "model_error_norm": 0.2047608145915316
+        },
+        {
+          "alpha": 0.3887241791943446,
+          "objective": 0.060625672101419184,
+          "F_squared": 0.023291368034341373,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_signature_matches_base": false,
+          "model_error_norm": 0.1514123213671192
+        },
+        {
+          "alpha": 0.1943620895971723,
+          "objective": 0.060770470724433284,
+          "F_squared": 0.007996970940110388,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_signature_matches_base": false,
+          "model_error_norm": 0.0809292282128728
+        },
+        {
+          "alpha": 0.09718104479858615,
+          "objective": 0.06087479190050075,
+          "F_squared": 0.004406164512579963,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_signature_matches_base": false,
+          "model_error_norm": 0.05017013016326508
+        },
+        {
+          "alpha": 0.048590522399293075,
+          "objective": 0.0609362084485107,
+          "F_squared": 0.003744505477232928,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_signature_matches_base": false,
+          "model_error_norm": 0.039666181226879836
+        },
+        {
+          "alpha": 0.024295261199646537,
+          "objective": 0.06096866869634788,
+          "F_squared": 0.0035612136157710263,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_signature_matches_base": false,
+          "model_error_norm": 0.03530638605513946
+        },
+        {
+          "alpha": 0.012147630599823269,
+          "objective": 0.06098533499618072,
+          "F_squared": 0.003505720275773975,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_signature_matches_base": false,
+          "model_error_norm": 0.033436702431165144
+        },
+        {
+          "alpha": 0.006073815299911634,
+          "objective": 0.06099384887135368,
+          "F_squared": 0.002842824584407758,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_signature_matches_base": false,
+          "model_error_norm": 0.01924615286997702
+        },
+        {
+          "alpha": 0.003036907649955817,
+          "objective": 0.060998476702414796,
+          "F_squared": 0.002595368210244845,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": false,
+          "branch_signature_matches_base": false,
+          "model_error_norm": 0.008133711226866474
+        },
+        {
+          "alpha": 0.0015184538249779086,
+          "objective": 0.06100086445604125,
+          "F_squared": 0.002567751483553327,
+          "J_armijo_passed": true,
+          "F_squared_armijo_passed": true,
+          "branch_signature_matches_base": false,
+          "model_error_norm": 0.003777011697953012
+        }
+      ]
+    }
+  ],
+  "common_preparation_seconds": 6.394537208136171,
+  "guard": {
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_point_3h_netflux_direction_comparison.py",
+      "--child",
+      "--plan-sha256",
+      "36686ccf05c55ab9dff1d6c0c4658e14049a108eba402b76c86fc0b9ac904b35"
+    ],
+    "child_pid": 44947,
+    "exit_code": 0,
+    "resource_termination": null,
+    "monitor_error": null,
+    "elapsed_seconds": 133.6395507918205,
+    "sampled_peak_rss_bytes": 1119698944,
+    "rss_samples": 483,
+    "wall_limit_seconds": 660.0,
+    "rss_limit_bytes": 2147483648,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "received_sigterm": false,
+    "child_process_group_cleanup_sent": false,
+    "child_process_group_cleanup_error": null
+  },
+  "HVP_completed": 4,
+  "GN_rows": 24,
+  "GN_solves": 1,
+  "candidate_count": 11,
+  "commits": 1,
+  "termination": "same_point_comparison_one_candidate_committed",
+  "source_input_runtime_closure": true,
+  "final_point_operator_readiness": false,
+  "future_E_calls": 0,
+  "scope": "Stored gradients/G vectors, independent repeat/Armijo/fullG and receipt/source/resource closure arithmetic; no additional FV/HVP/forecast or exact-minimum validation."
+}
