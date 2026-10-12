@@ -1,0 +1,87 @@
+.............................................FF.........                 [100%]
+=================================== FAILURES ===================================
+__________ test_receipt_endpoint_admits_d19e_without_model_evaluation __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11774ade0>
+
+    def test_receipt_endpoint_admits_d19e_without_model_evaluation(monkeypatch: pytest.MonkeyPatch) -> None:
+        def forbidden(*args: object, **kwargs: object) -> None:
+            raise AssertionError("receipt-only endpoint invoked production evaluation")
+    
+        monkeypatch.setattr(endpoint.comparison, "CurrentBackend", forbidden)
+        monkeypatch.setattr(endpoint.comparison.tangent, "_observe", forbidden)
+>       admitted = endpoint.load_endpoint()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_fv_point_3h_netflux_comparison_endpoint.py:14: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+examples/weather_scenarios/fv_point_3h_netflux_comparison_endpoint.py:166: in load_endpoint
+    plan = comparison.load_plan(PLAN, PLAN_SHA)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+examples/weather_scenarios/fv_point_3h_netflux_direction_comparison.py:45: in load_plan
+    parent = endpoint.load_endpoint()["parent_plan"]
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+examples/weather_scenarios/fv_point_3h_netflux_continuous_endpoint.py:209: in load_endpoint
+    plan = continuation.load_plan(PLAN, PLAN_SHA)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/netflux_continuous_20261012/PLAN.json')
+digest = '5fd879837c2e5898b16b01007aabae34d0eeea7da8b6d094d6d03b9dad366e07'
+
+    def load_plan(path: Path, digest: str) -> dict[str, Any]:
+        if path.is_symlink() or path.resolve() != PLAN.resolve() or _sha(path) != digest:
+            raise ValueError("continuous plan identity mismatch")
+        base = endpoint.load_endpoint()
+        parent = base["parent_plan"]
+        plan = json.loads(path.read_text())
+        archives = set(parent["archive_files"]) | {p.relative_to(ROOT).as_posix() for p in endpoint.RECEIPTS}
+        if (_sha(PARENT_PLAN) != PARENT_SHA
+                or plan.get("experiment_kind") != "netflux_fixed_version_continuous_gradient"
+                or plan.get("numerical_version") != VERSION
+                or plan.get("policy") != POLICY or plan.get("base_control_sha256") != BASE_SHA
+                or set(plan.get("source_files", {})) != set(parent["source_files"]) | NEW_SOURCES
+                or set(plan.get("archive_files", {})) != archives):
+            raise ValueError("continuous plan changed input, version, sources, or policy")
+        for name, pinned in parent["source_files"].items():
+            if plan["source_files"].get(name) != pinned:
+                raise ValueError(f"fixed numerical source changed: {name}")
+        for name, pinned in parent["archive_files"].items():
+            if plan["archive_files"].get(name) != pinned:
+                raise ValueError(f"inherited archive changed: {name}")
+        for name, pinned in {**plan["source_files"], **plan["archive_files"]}.items():
+            if _sha(ROOT / name) != pinned:
+>               raise ValueError(f"continuous source/archive pin mismatch: {name}")
+E               ValueError: continuous source/archive pin mismatch: examples/weather_scenarios/fv_point_3h_netflux_continuation.py
+
+examples/weather_scenarios/fv_point_3h_netflux_continuation.py:68: ValueError
+_______________ test_endpoint_rejects_a_changed_receipt_manifest _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11773daf0>
+
+    def test_endpoint_rejects_a_changed_receipt_manifest(monkeypatch: pytest.MonkeyPatch) -> None:
+        original = endpoint._read
+    
+        def changed_manifest(path, digest):
+            if path == endpoint.RECEIPT_MANIFEST:
+                return b"{}"
+            return original(path, digest)
+    
+        monkeypatch.setattr(endpoint, "_read", changed_manifest)
+>       with pytest.raises(ValueError, match="manifest|pinned"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'manifest|pinned'
+E         Actual message: 'continuous source/archive pin mismatch: examples/weather_scenarios/fv_point_3h_netflux_continuation.py'
+
+tests/test_fv_point_3h_netflux_comparison_endpoint.py:34: AssertionError
+=============================== warnings summary ===============================
+tests/test_fv_point_3h_cached_gradient_progress.py: 18 warnings
+  /Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_fv_point_3h_netflux_comparison_endpoint.py::test_receipt_endpoint_admits_d19e_without_model_evaluation
+FAILED tests/test_fv_point_3h_netflux_comparison_endpoint.py::test_endpoint_rejects_a_changed_receipt_manifest
+2 failed, 54 passed, 18 warnings in 6.76s

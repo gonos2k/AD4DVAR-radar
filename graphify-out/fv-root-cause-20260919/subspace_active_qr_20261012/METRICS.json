@@ -1,0 +1,21 @@
+{
+  "control_sha256": "2a4dba130d28273a63e97d0de39a11f64fdee09b0ad754559bc8902ba6cddbca",
+  "commits": 9,
+  "candidate_calls": 9,
+  "new_HVP_completed": 16,
+  "HVP_requested": 17,
+  "cached_HVP_reused": 2,
+  "J": 0.06099005811764152,
+  "R": 0.002441269566693863,
+  "J_decrease_percent": 0.018582119234614294,
+  "R_decrease_percent": 4.215677399500811,
+  "residual_norm": 0.04940920528296183,
+  "mixed_gradient_max": 0.024876546774200644,
+  "execution_status": "completed",
+  "numerical_status": "budget_exhausted",
+  "child_elapsed_seconds": 527.4582353339065,
+  "charged_preparation_seconds": 79.70184350013733,
+  "charged_child_seconds": 607.1600788340438,
+  "internal_deadline_passed": false,
+  "score_calls": 0
+}

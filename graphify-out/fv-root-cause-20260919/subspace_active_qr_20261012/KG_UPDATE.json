@@ -1,0 +1,18 @@
+{
+  "consulted": "graphify-out/fv-root-cause-20260919/subspace_rank_fix_20261012/graph_delta_final/graphify-out/graph.json",
+  "updated_AST": "graphify-out/fv-root-cause-20260919/subspace_active_qr_20261012/graph_delta_final/graphify-out/graph.json",
+  "nodes": 49,
+  "links": 90,
+  "source_transition": {
+    "examples/weather_scenarios/fv_point_3h_netflux_continuation.py": {
+      "after": "3cfcb5a754c3193d9abcdbf4b4295d463a9fb7d28ab68342135964cc0ee239fd",
+      "before": "8c9464bdf42e90941234cdfd8ccafd5cf7f623e0b2dc81fa796264423304ceac"
+    },
+    "examples/weather_scenarios/fv_point_3h_subspace_model.py": {
+      "after": "408038a384a52187306730077413dcde7f53690ac2d9c4d73f62d5c0940112ae",
+      "before": "4a8b34378f139d39297a7e035666a00cd1a1cd91fc1cfccd771756f8d01c7242"
+    }
+  },
+  "result": "nineoriginalJR steps;final2a4d;4.215677percentRdecrease;internalcloseoverrun;legacy2pinrefusals",
+  "limits": "no exactminimum/adjoint/forecast;currentfinalHVPprecheckonly"
+}

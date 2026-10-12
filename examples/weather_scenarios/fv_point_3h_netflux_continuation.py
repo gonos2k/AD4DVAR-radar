@@ -95,24 +95,44 @@ def convergence_progress(steps: list[dict[str, Any]]) -> dict[str, Any]:
     return result
 
 
-def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
+def initial_products(backend: Any, c: Tensor, direction: Tensor, G: Tensor,
+        theta: float, record: dict[str,Any], point: dict[str,Any]) -> dict[int,Tensor]:
+    return {}
+
+
+def candidate_chart(backend: Any, bundle: dict[str,Any], c: Tensor,
+        direction: Tensor, alpha: float) -> Tensor:
+    return backend.chart(bundle,c,direction,alpha)
+
+
+def evaluate_candidate(backend: Any, bundle: dict[str,Any], c: Tensor,
+        alpha: float) -> dict[str,Any]:
+    return backend.evaluate(bundle,c,alpha)
+
+
+def qualify_model(model: Any, point_index: int, point: dict[str,Any]) -> None:
+    return None
+
+
+def _run_child(path: Path, digest: str, output: Path, *, experiment: Any | None = None) -> dict[str, Any]:
+    config = sys.modules[__name__] if experiment is None else experiment
     start = time.monotonic()
-    plan = load_plan(path, digest)
-    base: dict[str, Any] = endpoint.load_endpoint()
-    deadline = start + POLICY["internal_seconds"]
-    backend = CurrentBackend(plan, path, digest, ATTEMPT / "operators", deadline, base)
+    plan = config.load_plan(path, digest)
+    base: dict[str, Any] = config.endpoint.load_endpoint()
+    deadline = start + config.POLICY["internal_seconds"] - config.POLICY.get("prior_preparation_seconds",0.)
+    backend = CurrentBackend(plan, path, digest, config.ATTEMPT / "operators", deadline, base)
     record: dict[str, Any] = {"phase": "running", "execution_status": "running",
-        "numerical_status": "preflight", "plan_sha256": digest, "policy": POLICY,
+        "numerical_status": "preflight", "plan_sha256": digest, "policy": config.POLICY,
         "physical_problem": "original_J_local_minimization",
         "search_domain": "selected_Q0_conditional_continuation",
-        "base_control_sha256": BASE_SHA,
-        "current_control": base["control"].tolist(), "current_control_sha256": BASE_SHA,
+        "base_control_sha256": config.BASE_SHA,
+        "current_control": base["control"].tolist(), "current_control_sha256": config.BASE_SHA,
         "current_theta": base["theta"], "current_full_G": base["full_G"].tolist(),
-        "last_confirmed_control": base["control"].tolist(), "last_confirmed_control_sha256": BASE_SHA,
+        "last_confirmed_control": base["control"].tolist(), "last_confirmed_control_sha256": config.BASE_SHA,
         "last_confirmed_theta": base["theta"], "last_confirmed_full_G": base["full_G"].tolist(),
         "closed_steps": [], "candidate_committed": False, "optimizer_steps_applied": 0,
         "candidate_evaluations_started": 0, "candidate_evaluations_completed": 0,
-        "hvp_started": 0, "hvp_completed": 0, "root_claim": False,
+        "hvp_started": 0, "hvp_completed": 0, "hvp_history": [], "root_claim": False,
         "minimum_claim": False, "response_claim": False, "score_claim": False,
         "original_problem_solved": False, "numerical_version": VERSION,
         "base_endpoint_admitted": True, "last_confirmed_numerical_version": VERSION, "Q0_scope": "conditional hypothesis; not physical constraint",
@@ -146,7 +166,9 @@ def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
         return record
 
     try:
-        for point_index in range(MAX_COMMITS):
+        for point_index in range(config.MAX_COMMITS):
+            if record["candidate_evaluations_started"] >= config.POLICY["max_candidates"]:
+                return finish("global_candidate_cap_reached")
             stage = "fresh_current_direction"
             record["numerical_status"] = stage
             write()
@@ -208,27 +230,35 @@ def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
                 direction_sha256=tangent._tensor_sha(direction), direction_audit=direction_audit)
             write()
             residual_norm = float(torch.linalg.vector_norm(G))
-            if residual_norm <= POLICY["residual_norm_candidate_tolerance"]:
+            if residual_norm <= config.POLICY["residual_norm_candidate_tolerance"]:
                 return finish("residual_candidate_requires_qualification")
             stage = "fresh_current_direction_HVP"
             record["numerical_status"] = stage
             write()
             products: dict[int, Tensor] = {}
+            if point_index == 0:
+                products = config.initial_products(backend, c, direction, G, theta, record, point)
+                write()
             grad_fn = torch.func.grad(backend.problem.objective, argnums=0)
-            for side in (-1, 1):
-                if record["hvp_started"] >= MAX_HVP or point["hvp_started"] >= 2:
+            for side in (() if products else (-1, 1)):
+                if record["hvp_started"] >= config.MAX_HVP or point["hvp_started"] >= 2:
                     return finish("budget_exhausted", "fresh HVP cap reached")
+                event={"control_sha256":tangent._tensor_sha(c),"side":side,"point_index":point_index,"stage":"precheck"}
+                record["hvp_history"].append(event)
                 record["hvp_started"] += 1
                 point["hvp_started"] += 1
                 write()
                 backend._check(c)
+                event["stage"]="jvp_started"; write()
                 with transport.selected_face_extension("y", 4, 3, side):
                     products[side] = torch.func.jvp(lambda x: grad_fn(x, backend.parameters), (c,), (direction,))[1]
+                event.update(stage="jvp_returned",vector=products[side].tolist());write()
                 backend._check(c)
                 if (products[side].shape != c.shape or products[side].dtype != c.dtype
                         or products[side].device != c.device
                         or not bool(torch.isfinite(products[side]).all())):
                     raise ValueError("fresh current-point HVP is malformed or nonfinite")
+                event["stage"]="qualified_complete"
                 record["hvp_completed"] += 1
                 point["hvp_completed"] += 1
                 backend.hvp_count += 1
@@ -238,6 +268,7 @@ def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
                 pivot, FACE_SCALE, direction_override=direction)
             if not finite._base_model_closure(model, G, theta)["passed"]:
                 raise ValueError("current point model does not reproduce the fresh full G")
+            config.qualify_model(model,point_index,point)
             point.update(side_HVP={str(s): products[s].tolist() for s in (-1, 1)},
                 model_gates=model.gates, merit_product=model.merit_product)
             if not all(model.gates.get(k) is True for k in
@@ -252,14 +283,17 @@ def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
             def evaluate(candidate: Tensor, _theta: float, alpha: float) -> dict[str, Any]:
                 record["candidate_evaluations_started"] += 1
                 write()
-                facts = backend.evaluate(bundle, candidate, alpha)
+                if record["candidate_evaluations_started"] > config.POLICY["max_candidates"]:
+                    raise ValueError("global candidate cap exceeded")
+                facts = config.evaluate_candidate(backend,bundle,candidate,alpha)
                 record["candidate_evaluations_completed"] += 1
-                receipt_path = ATTEMPT / f"point_{point_index:02d}" / f"candidate_{record['candidate_evaluations_completed']:02d}.json"
+                receipt_path = config.ATTEMPT / f"point_{point_index:02d}" / f"candidate_{record['candidate_evaluations_completed']:02d}.json"
                 tangent._write(receipt_path, facts)
-                receipts[alpha] = {"facts": facts, "path": receipt_path, "sha256": _sha(receipt_path)}
+                receipt_alpha = float(facts.get("alpha",alpha))
+                receipts[receipt_alpha] = {"facts": facts, "path": receipt_path, "sha256": _sha(receipt_path)}
                 compact = {key: value for key, value in facts.items() if key != "branch_trace"}
                 compact.update(candidate_receipt=str(receipt_path.relative_to(ROOT)),
-                    candidate_receipt_sha256=receipts[alpha]["sha256"])
+                    candidate_receipt_sha256=receipts[receipt_alpha]["sha256"])
                 return compact
 
             def progress(trials: list[dict[str, Any]], meta: dict[str, Any]) -> None:
@@ -270,15 +304,15 @@ def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
             record["numerical_status"] = stage
             write()
             selected, trials, meta = search.search(model, c, evaluate,
-                chart_candidate=lambda x, d, a: backend.chart(bundle, x, d, a),
-                progress=progress, policy={"name": "dyadic_JR", "max_evaluations": 24,
-                    "max_backtracks": 24, "radius": RADIUS})
+                chart_candidate=lambda x, d, a: config.candidate_chart(backend,bundle,x,d,a),
+                progress=progress, policy={"name": "dyadic_JR", "max_evaluations": min(config.MAX_CANDIDATES_PER_POINT,config.POLICY["max_candidates"]-record["candidate_evaluations_started"]),
+                    "max_backtracks": config.MAX_CANDIDATES_PER_POINT, "radius": config.RADIUS})
             point.update(trials=trials, search=meta)
             if selected is None:
-                if residual_norm <= POLICY["residual_norm_candidate_tolerance"]:
+                if residual_norm <= config.POLICY["residual_norm_candidate_tolerance"]:
                     return finish("residual_candidate_requires_qualification")
                 status = classify_no_candidate(residual_norm=residual_norm,
-                    cap_hit=len(trials) >= MAX_CANDIDATES_PER_POINT,
+                    cap_hit=len(trials) >= config.MAX_CANDIDATES_PER_POINT,
                     unsupported=not all(model.gates.get(k) is True for k in
                         ("finite", "both_side_gradients_descend", "merit_descends", "envelope_slope_matches_residual_dot")),
                     budget_hit=time.monotonic() >= deadline)
@@ -302,9 +336,9 @@ def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
             stage = "postcommit_progress_classification"
             record["convergence_progress"] = convergence_progress(record["closed_steps"])
             write()
-            if float(torch.linalg.vector_norm(torch.as_tensor(record["current_full_G"], dtype=torch.float64))) <= POLICY["residual_norm_candidate_tolerance"]:
+            if float(torch.linalg.vector_norm(torch.as_tensor(record["current_full_G"], dtype=torch.float64))) <= config.POLICY["residual_norm_candidate_tolerance"]:
                 return finish("residual_candidate_requires_qualification")
-            if record["convergence_progress"]["direction_comparison_required"]:
+            if config.POLICY.get("stop_on_rolling_comparison",True) and record["convergence_progress"]["direction_comparison_required"]:
                 status = ("rolling_metric_regression_requires_same_point_direction_comparison"
                     if record["convergence_progress"]["window_metric_regression"]
                     else "rolling_stagnation_requires_same_point_direction_comparison")

@@ -1,0 +1,13 @@
+{
+  "all_checks_passed": true,
+  "failed": [],
+  "accepted_points": 9,
+  "time_caveat": {
+    "charged_child_seconds": 607.1600788340438,
+    "internal_overrun_seconds": 7.160078834043816,
+    "charged_guarded_seconds": 611.636640541954,
+    "guarded_over_internal_seconds": 11.636640541953966,
+    "outer_margin_seconds": 48.363359458046034,
+    "cause": "not instrumented; no JVP/candidate/commit at final precheck"
+  }
+}
