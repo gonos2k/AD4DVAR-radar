@@ -1,0 +1,10 @@
+{
+  "bundle_sha256": "2543da031743c0901b3df0cd585250ca0366935a27c0f45509e7466513443fe9",
+  "files": {
+    "CLOSED_ENDPOINT_SNAPSHOT.json": {
+      "sha256": "0044aee455f4eec8b6b082583c0849f9fa70e0f1ca8a85aa29b641db1410ec54",
+      "bytes": 2762303
+    }
+  },
+  "restore": "Extract closed_endpoint.tar.gz into this evidence directory before cache admission; original byte pin remains unchanged."
+}

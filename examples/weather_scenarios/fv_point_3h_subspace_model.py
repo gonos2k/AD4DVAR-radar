@@ -28,6 +28,24 @@ def _candidate_R(G: Tensor, V: Tensor, beta: Tensor) -> Tensor:
     return torch.linalg.vector_norm(G + V @ beta).square()
 
 
+def _radius_coefficients(G: Tensor, D: Tensor, V: Tensor,
+        multiplier: Tensor) -> tuple[Tensor, Tensor]:
+    # This is the multiplier's original KKT system, not an extra ridge.
+    augmented = torch.cat((V, torch.sqrt(multiplier) * D), dim=0)
+    target = torch.cat((-G, G.new_zeros(D.shape[0])))
+    orthogonal, triangular = torch.linalg.qr(augmented, mode="reduced")
+    beta = torch.linalg.solve_triangular(triangular,
+        (orthogonal.T @ target).reshape(2, 1), upper=True).reshape(2)
+    return beta, triangular
+
+
+def _radius_inverse_product(triangular: Tensor, D: Tensor, beta: Tensor) -> Tensor:
+    # Apply (A^T A)^-1 D^T D beta through the QR factor without forming A^T A.
+    rhs = (D.T @ (D @ beta)).reshape(2, 1)
+    intermediate = torch.linalg.solve_triangular(triangular.T, rhs, upper=False)
+    return torch.linalg.solve_triangular(triangular, intermediate, upper=True).reshape(2)
+
+
 def _rank_one_candidate(G: Tensor, D: Tensor, V: Tensor,
         radius: float) -> tuple[Tensor | None, str]:
     # For V=u w^T, every least-squares solution satisfies w^T beta=-u^T G.
@@ -107,7 +125,6 @@ def solve_two_direction_subspace(
     Vn = V / scales
     if not bool(torch.isfinite(Dn).all() and torch.isfinite(Vn).all()):
         raise ValueError("direction normalization produced nonfinite columns")
-    Q = Dn.T @ Dn
     correlation = torch.dot(Dn[:, 0], Dn[:, 1]).clamp(min=-1.0, max=1.0)
     orthogonal_part = Dn[:, 1] - correlation * Dn[:, 0]
     angular_separation = torch.linalg.vector_norm(orthogonal_part)
@@ -138,13 +155,11 @@ def solve_two_direction_subspace(
     elif not dependent and residual_rank == 1:
         full_beta, full_status = _rank_one_candidate(G, Dn, Vn, radius)
     elif not dependent:
-        M = Vn.T @ Vn
-        c = Vn.T @ G
-        if not bool(torch.isfinite(M).all() and torch.isfinite(c).all()):
-            raise ValueError("residual model normal equations overflowed")
+        m_scale = Vn.square().sum().clamp_min(torch.finfo(G.dtype).tiny)
+        if not bool(torch.isfinite(m_scale)):
+            raise ValueError("residual model scale overflowed")
         # If the unconstrained normal equations have a unique positive solution
         # inside the movement ball, it is the full KKT minimizer (lambda=0).
-        m_scale = torch.clamp_min(torch.linalg.vector_norm(M), torch.finfo(G.dtype).tiny)
         # Rank was revealed in V itself. QR avoids squaring its condition number
         # when checking the unconstrained lambda=0 solution.
         orthogonal, triangular = torch.linalg.qr(Vn, mode="reduced")
@@ -164,7 +179,7 @@ def solve_two_direction_subspace(
             lam_hi = lam
             bracketed = False
             for _ in range(80):
-                beta_hi = torch.linalg.solve(M + lam_hi * Q, -c)
+                beta_hi, _ = _radius_coefficients(G, Dn, Vn, lam_hi)
                 r_hi = torch.linalg.vector_norm(Dn @ beta_hi)
                 if bool(torch.isfinite(r_hi)) and bool(r_hi <= radius):
                     bracketed = True
@@ -176,7 +191,7 @@ def solve_two_direction_subspace(
             if bracketed:
                 for _ in range(bisection_steps):
                     lam_mid = 0.5 * (lam_lo + lam_hi)
-                    trial = torch.linalg.solve(M + lam_mid * Q, -c)
+                    trial, _ = _radius_coefficients(G, Dn, Vn, lam_mid)
                     trial_radius = torch.linalg.vector_norm(Dn @ trial)
                     if bool(trial_radius > radius):
                         lam_lo = lam_mid
@@ -186,13 +201,12 @@ def solve_two_direction_subspace(
                 # restore the implicit derivative d(lambda)/d(M,c) from the
                 # active norm equation instead of differentiating branch tests.
                 lam_star = lam_hi
-                beta_mid = torch.linalg.solve(M + lam_star * Q, -c)
                 for _ in range(2):
-                    system = M + lam_star * Q
-                    beta_mid = torch.linalg.solve(system, -c)
-                    inverse_Q_beta = torch.linalg.solve(system, Q @ beta_mid)
-                    norm_residual = torch.dot(beta_mid, Q @ beta_mid) - radius * radius
-                    norm_derivative = -2.0 * torch.dot(beta_mid, Q @ inverse_Q_beta)
+                    beta_mid, triangular = _radius_coefficients(G, Dn, Vn, lam_star)
+                    inverse_Q_beta = _radius_inverse_product(triangular, Dn, beta_mid)
+                    movement = Dn @ beta_mid
+                    norm_residual = movement.square().sum() - radius * radius
+                    norm_derivative = -2.0 * torch.dot(movement, Dn @ inverse_Q_beta)
                     if (not bool(torch.isfinite(norm_derivative))
                             or bool(norm_derivative.abs() <= torch.finfo(G.dtype).tiny)):
                         break
@@ -200,18 +214,16 @@ def solve_two_direction_subspace(
                     if not bool(torch.isfinite(corrected)) or bool(corrected <= 0.0):
                         break
                     lam_star = corrected
-                beta_mid = torch.linalg.solve(M + lam_star * Q, -c)
+                beta_mid, triangular = _radius_coefficients(G, Dn, Vn, lam_star)
                 if bracketed and bool((beta_mid >= 0.0).all()):
                     beta_radius = torch.linalg.vector_norm(Dn @ beta_mid)
-                    radius_tolerance = 128.0 * eps * max(radius, torch.finfo(G.dtype).tiny)
-                    if bool(beta_radius <= radius + radius_tolerance):
-                        full_beta = beta_mid
-                        full_status = "full_2d_radius_active"
-                    else:
-                        # Keep the feasible bracket endpoint if a last-bit
-                        # Newton correction rounded just outside the ball.
-                        full_beta = torch.linalg.solve(M + lam_hi * Q, -c)
-                        full_status = "full_2d_radius_active_bracket_endpoint"
+                    radius_tolerance = 128.0 * eps * torch.linalg.cond(triangular) * radius
+                    if not bool((beta_radius - radius).abs() <= radius_tolerance):
+                        raise ValueError("active radius root is unresolved at QR precision")
+                    # Close the active norm equation without amplifying radial
+                    # roundoff into a false derivative of the constrained step.
+                    full_beta = beta_mid * (radius / beta_radius)
+                    full_status = "full_2d_radius_active"
                 elif bracketed:
                     full_status = "full_2d_orthant_boundary_axis"
             else:

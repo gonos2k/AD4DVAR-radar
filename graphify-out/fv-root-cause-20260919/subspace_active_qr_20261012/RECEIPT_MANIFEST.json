@@ -1,0 +1,59 @@
+{
+  "bundle_sha256": "d180241d688c7cd98db7757aa9f03d6560b176d6e5d1773998dff14a08d1a728",
+  "source_bundle_sha256": "0166b2a66e55c4a3e182b96f24a79f4d903147dd1d5076f4871b30d1fa281b3a",
+  "files": {
+    "progress1/point_00/candidate_01.json": {
+      "bytes": 2248587,
+      "sha256": "7e777f3086a52b926bce145c44829167115617f96316731ec0213a959d5a519e"
+    },
+    "progress1/point_01/candidate_02.json": {
+      "bytes": 2248600,
+      "sha256": "b51436ae6b24631c4289ea8c081ddd54ed4ef7a90d26d7bd6b64baaa8faf3466"
+    },
+    "progress1/point_02/candidate_03.json": {
+      "bytes": 2236369,
+      "sha256": "feec249ce1b37d30a9f882442d0b246ff98879e47b94553f9e5f9a1ab0f81bce"
+    },
+    "progress1/point_03/candidate_04.json": {
+      "bytes": 2249319,
+      "sha256": "52b8039268f546afcd5e3ceeaea5775f041c16fff994915ed7bf294ecd357da0"
+    },
+    "progress1/point_04/candidate_05.json": {
+      "bytes": 2236372,
+      "sha256": "29b3e5a21663284738c2b83cdb7d34d82f258ed1a3eeea7d0ab2a38fd689a2c5"
+    },
+    "progress1/point_05/candidate_06.json": {
+      "bytes": 2236386,
+      "sha256": "5aba8cb8ed25979774a8583a9fb55fae0bc48401446f9c67531cf2f9923daa96"
+    },
+    "progress1/point_06/candidate_07.json": {
+      "bytes": 2236355,
+      "sha256": "9e60f63d930720768c946d0c9f80f30bf7015b6dfbe922125c451cff2b9f0454"
+    },
+    "progress1/point_07/candidate_08.json": {
+      "bytes": 2236351,
+      "sha256": "a066575a277a692d0191018868c883313e8297fedf4aa8a120d5ec037f7ae50d"
+    },
+    "progress1/point_08/candidate_09.json": {
+      "bytes": 2248603,
+      "sha256": "bc11673c1ebd0b0f7645cd1322edab172f51db54a7d9851a06b62ea7c20cb112"
+    },
+    "progress1/step.json": {
+      "bytes": 110683692,
+      "sha256": "0d9c090c633cb57cf1c5da5d2b33e9433f53f8397c0db4ece7fba87db831584c"
+    },
+    "progress1/step.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "progress1/step.resource.json": {
+      "bytes": 786,
+      "sha256": "bc905e2c31f79e9f0449564faeac25fdae0983d8ae81b0f6fe5f4bdcfb38db53"
+    },
+    "progress1/step.run.json": {
+      "bytes": 1092,
+      "sha256": "680677dc2b55f41d668dbc9094f53be1ec071d2700a2b2fb816ce48b74c77a36"
+    }
+  },
+  "restore": "Extract receipts.tar.gz here to restore progress1 exact bytes without rerunning."
+}
