@@ -1,0 +1,51 @@
+{
+  "bundle_sha256": "cb05abcc41fd0b3f1a3cb86208caec566eb3fb5f363014094fd3b6c9a3f7bfc0",
+  "source_bundle_sha256": "b332268a74f0c5ed9f9e05b3d890288d2e953215b1422253eec2426cb183cab3",
+  "files": {
+    "attempt1/baseline_tangent/candidate_01.json": {
+      "bytes": 2239017,
+      "sha256": "d258ec3c558c533a3b314984b7024daad22487e934b71cde7303bbfda51d238e"
+    },
+    "attempt1/operators/GN.json": {
+      "bytes": 39972,
+      "sha256": "f32a3d9e2bf7360d3f8ecf081557dbb7cfe3c0f3dadf3708cbde71d7bfab39da"
+    },
+    "attempt1/step.json": {
+      "bytes": 33723203,
+      "sha256": "0802769b3dd6624c11e67ff9a222594f2ec25c728ea704021903419e64c6a4cb"
+    },
+    "attempt1/step.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt1/step.resource.json": {
+      "bytes": 746,
+      "sha256": "d56d580513f824f5be1a229881dfdc0115e98ce73196ba1f9a5b782a7a053b19"
+    },
+    "attempt1/step.run.json": {
+      "bytes": 927,
+      "sha256": "917059fdb21fa40d564e556078a3e194de174cbec574ecb4bcd2289bd07e6279"
+    },
+    "attempt1/two_direction_subspace/candidate_01.json": {
+      "bytes": 2239313,
+      "sha256": "4bb6f2025db348e72e5cadbe0bd18d9587060f77751e73ac2c28150dda3afb9a"
+    },
+    "observation1/step.json": {
+      "bytes": 154037,
+      "sha256": "7248c681645ee37cb2f2900618bb777da095eed8107323409e2f3b99a7d6fe1d"
+    },
+    "observation1/step.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "observation1/step.resource.json": {
+      "bytes": 759,
+      "sha256": "21e8b93af6636dfd19e996842ac82a670887a5cd06ef3226545566cd55ecdbd2"
+    },
+    "observation1/step.run.json": {
+      "bytes": 940,
+      "sha256": "698c85fbd9a7983fb1178d5969ef3534a8e4b74f9d4822637fb7de3964b50c82"
+    }
+  },
+  "restore": "Extract receipts.tar.gz into this directory to restore exact loose attempt1 and observation1 receipts; never rerun to reconstruct them."
+}

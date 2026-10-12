@@ -1,0 +1,26 @@
+{
+  "kind": "incremental_AST_supplement",
+  "consulted_cached_graph": "graphify-out/fv-root-cause-20260919/netflux_direction_comparison_20261012/graph_delta/graphify-out/graph.json",
+  "root_graph_updated_by_RED": true,
+  "root_graph_scope": "code AST refresh; prior semantic graph evidence remains historical",
+  "structural_delta": "graphify-out/fv-root-cause-20260919/netflux_subspace_20261012/graph_delta/graphify-out/graph.json",
+  "nodes": 62,
+  "links": 107,
+  "changed_source_hashes": {
+    "examples/weather_scenarios/fv_point_3h_netflux_comparison_endpoint.py": "c2cc1dc2bfc78ee959d56fe872b2b800d194a58159fa0c6bfbcc5515f0bcb440",
+    "examples/weather_scenarios/fv_point_3h_netflux_subspace_trial.py": "a1cbc75b84a3c7b7ea4afbfb841c0cadebe2a1c7cc3d2e1f1f66caf961e56551",
+    "examples/weather_scenarios/fv_point_3h_subspace_model.py": "6f9e2068cb041fa11f388f307489f981c1bb82193b6e7e52889ff5ab1ad73f30",
+    "examples/weather_scenarios/fv_point_3h_subspace_policy.py": "05f1eb43edb5319b712acaf9ebce5a9faa33720d29ceaf5ebc2fdf82a233a3f9",
+    "tests/test_fv_point_3h_netflux_comparison_endpoint.py": "697f3b09ec98982e510527f2946608fd896a613b2dda4e541db2870233baf613",
+    "tests/test_fv_point_3h_netflux_subspace_trial.py": "a01ec6408d751ccde5dcc0be61e9e23f79d3d9321e9c5d1169dec8b6069a2742",
+    "tests/test_fv_point_3h_subspace_model.py": "978389dbf4310cc89b188d8530cbeb3af6bb7ebd22cdbdb82f613f48a93b4c29"
+  },
+  "reason": "fresh d19e two-direction trust model and preserved actual J/R approval",
+  "limits": [
+    "cached GN candidate model-error dominant in echo0:20, not flow12:17",
+    "no causal selector attribution",
+    "no minimum or exact adjoint qualification",
+    "paired terminal score is matched fixed truth observation only"
+  ],
+  "result": "one current point confirmed; subspace model selected zero GN so no incremental benefit; observed only b647/d19e E; historical completion about70percent"
+}

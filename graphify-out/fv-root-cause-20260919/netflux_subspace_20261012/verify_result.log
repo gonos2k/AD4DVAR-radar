@@ -1,0 +1,75 @@
+{
+  "all_checks_passed": true,
+  "failed": [],
+  "metrics": {
+    "execution_status": "completed",
+    "numerical_status": "subspace_comparison_one_candidate_committed",
+    "termination_reason": "",
+    "elapsed_seconds": 72.48476337501779,
+    "hvp_started": 4,
+    "hvp_completed": 4,
+    "row_vjps": 24,
+    "GN_solves": 1,
+    "candidates": 2,
+    "commits": 1,
+    "control_sha256": "7839625d5ff2ab8f3d482f5fab368f19a6a3d60405ed373267c0fcacc81c7c1a",
+    "arms": [
+      {
+        "name": "baseline_tangent",
+        "J": 0.061001393469310765,
+        "R": 0.002548715176361377,
+        "J_decrease_percent": 0.001553332027694484,
+        "R_decrease_percent": 0.4356084921556005,
+        "mixed_gradient_max": 0.025399639444260994,
+        "candidate_count": 1,
+        "coefficients": [
+          0.0003707309698259479,
+          0.0
+        ],
+        "actual_path_norm": 1.8757177916130278e-05,
+        "fidelity": {
+          "actual_change_norm": 0.0021268943085482606,
+          "actual_decrease": 1.1150994427775937e-05,
+          "eta_vec": 4.557458384961589e-05,
+          "predicted_R": 0.002548715525578055,
+          "predicted_change_norm": 0.002126944132936029,
+          "predicted_decrease": 1.1150645211097793e-05,
+          "rho_R": 1.000031318069182,
+          "vector_error_norm": 9.693232300420351e-08
+        },
+        "branch_matches_base": true,
+        "search_seconds": 7.179771333932877,
+        "inclusive_shared_preparation_seconds": 59.106293209129944
+      },
+      {
+        "name": "two_direction_subspace",
+        "J": 0.061001393469310765,
+        "R": 0.002548715176361377,
+        "J_decrease_percent": 0.001553332027694484,
+        "R_decrease_percent": 0.4356084921556005,
+        "mixed_gradient_max": 0.025399639444260994,
+        "candidate_count": 1,
+        "coefficients": [
+          0.0003707309698259479,
+          0.0
+        ],
+        "actual_path_norm": 1.8757177916130278e-05,
+        "fidelity": {
+          "actual_change_norm": 0.0021268943085482606,
+          "actual_decrease": 1.1150994427775937e-05,
+          "eta_vec": 4.557458384961589e-05,
+          "predicted_R": 0.002548715525578055,
+          "predicted_change_norm": 0.002126944132936029,
+          "predicted_decrease": 1.1150645211097793e-05,
+          "rho_R": 1.000031318069182,
+          "vector_error_norm": 9.693232300420351e-08
+        },
+        "branch_matches_base": true,
+        "search_seconds": 10.938034875085577,
+        "inclusive_shared_preparation_seconds": 62.864556750282645
+      }
+    ],
+    "selected_direction": "baseline_tangent",
+    "final_R": 0.002548715176361377
+  }
+}
