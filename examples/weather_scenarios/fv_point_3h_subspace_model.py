@@ -28,6 +28,33 @@ def _candidate_R(G: Tensor, V: Tensor, beta: Tensor) -> Tensor:
     return torch.linalg.vector_norm(G + V @ beta).square()
 
 
+def _rank_one_candidate(G: Tensor, D: Tensor, V: Tensor,
+        radius: float) -> tuple[Tensor | None, str]:
+    # For V=u w^T, every least-squares solution satisfies w^T beta=-u^T G.
+    # Its minimum control-norm representative uses Q, not coefficient norm.
+    pivot = torch.argmax(torch.linalg.vector_norm(V, dim=0))
+    u = V[:, pivot] / torch.linalg.vector_norm(V[:, pivot])
+    w = V.T @ u
+    # QR applies the control metric without squaring D's condition number.
+    _, triangular = torch.linalg.qr(D, mode="reduced")
+    metric_w = torch.linalg.solve_triangular(triangular.T, w.reshape(2, 1), upper=False)
+    inverse_w = torch.linalg.solve_triangular(triangular, metric_w, upper=True).reshape(2)
+    curvature = metric_w.square().sum()
+    if not bool(torch.isfinite(curvature)) or bool(curvature <= torch.finfo(G.dtype).tiny):
+        raise ValueError("rank-one residual curvature is numerically unresolved")
+    beta = -torch.dot(u, G) * inverse_w / curvature
+    if not bool(torch.isfinite(beta).all()):
+        raise ValueError("rank-one least-squares solution is nonfinite")
+    if not bool((beta >= 0.0).all()):
+        # In two dimensions the nearest nonnegative member of the affine
+        # solution set is on an axis. The caller already enumerates both axes.
+        return None, "rank_one_orthant_boundary_axis"
+    movement = torch.linalg.vector_norm(D @ beta)
+    if bool(movement <= radius):
+        return beta, "rank_one_interior"
+    return beta * (radius / movement), "rank_one_radius_active"
+
+
 def solve_two_direction_subspace(
     G: Tensor,
     D: Tensor,
@@ -51,8 +78,8 @@ def solve_two_direction_subspace(
     multiplier, remains differentiable with respect to tensor inputs away from
     active-set changes. Scalar branch decisions select the active set.
     """
-    if G.ndim != 1 or D.ndim != 2 or V.ndim != 2:
-        raise ValueError("G must be a vector and D/V must be matrices")
+    if G.ndim != 1 or G.numel() == 0 or D.ndim != 2 or V.ndim != 2:
+        raise ValueError("G must be a nonempty vector and D/V must be matrices")
     if D.shape[1] != 2 or V.shape != (G.numel(), 2) or D.shape[0] == 0:
         raise ValueError("D and V must contain exactly two matching direction columns")
     if (D.dtype != G.dtype or V.dtype != G.dtype or D.device != G.device
@@ -101,9 +128,16 @@ def solve_two_direction_subspace(
         beta = beta.scatter(0, G.new_tensor([index], dtype=torch.long), beta_i.reshape(1))
         candidates.append((name, beta))
 
+    singular_values = torch.linalg.svdvals(Vn)
+    rank_tolerance = 64.0 * eps * max(Vn.shape) * singular_values[0]
+    residual_rank = int((singular_values > rank_tolerance).sum())
     full_status = "dependent_axis_fallback" if dependent else "full_2d_not_needed"
     full_beta: Tensor | None = None
-    if not dependent:
+    if residual_rank == 0:
+        full_status = "zero_residual_derivative"
+    elif not dependent and residual_rank == 1:
+        full_beta, full_status = _rank_one_candidate(G, Dn, Vn, radius)
+    elif not dependent:
         M = Vn.T @ Vn
         c = Vn.T @ G
         if not bool(torch.isfinite(M).all() and torch.isfinite(c).all()):
@@ -111,19 +145,16 @@ def solve_two_direction_subspace(
         # If the unconstrained normal equations have a unique positive solution
         # inside the movement ball, it is the full KKT minimizer (lambda=0).
         m_scale = torch.clamp_min(torch.linalg.vector_norm(M), torch.finfo(G.dtype).tiny)
-        m_determinant = M[0, 0] * M[1, 1] - M[0, 1] * M[1, 0]
-        m_nonsingular = bool(m_determinant > 64.0 * eps * m_scale.square())
-        radius0 = G.new_zeros(())
-        if m_nonsingular:
-            beta0 = torch.linalg.solve(M, -c)
-            radius0 = torch.linalg.vector_norm(Dn @ beta0)
-            if bool((beta0 >= 0.0).all()) and bool(radius0 <= radius):
-                full_beta = beta0
-                full_status = "full_2d_interior"
-            elif bool((beta0 >= 0.0).all()):
-                full_status = "full_2d_radius_active"
-
-        needs_radius_solve = not m_nonsingular or bool(radius0 > radius)
+        # Rank was revealed in V itself. QR avoids squaring its condition number
+        # when checking the unconstrained lambda=0 solution.
+        orthogonal, triangular = torch.linalg.qr(Vn, mode="reduced")
+        beta0 = torch.linalg.solve_triangular(triangular,
+            -(orthogonal.T @ G).reshape(2, 1), upper=True).reshape(2)
+        radius0 = torch.linalg.vector_norm(Dn @ beta0)
+        if bool((beta0 >= 0.0).all()) and bool(radius0 <= radius):
+            full_beta = beta0
+            full_status = "full_2d_interior"
+        needs_radius_solve = bool(radius0 > radius)
         if full_beta is None and needs_radius_solve:
             # For an active movement constraint, stationarity is
             # (V'V + lambda D'D) beta = -V'G. Bracket lambda, then check that
@@ -186,8 +217,8 @@ def solve_two_direction_subspace(
             else:
                 raise ValueError("failed to bracket a feasible radius-active KKT multiplier")
 
-        if full_beta is not None:
-            candidates.append(("full_2d", full_beta))
+    if full_beta is not None:
+        candidates.append(("full_2d", full_beta))
 
     values = torch.stack([_candidate_R(G, Vn, beta) for _, beta in candidates])
     selected_index = torch.argmin(values)
@@ -208,6 +239,8 @@ def solve_two_direction_subspace(
         "full_kkt_status": full_status,
         "reduced_domain": dependent,
         "control_columns_near_dependent": dependent,
+        "residual_derivative_rank": G.new_tensor(residual_rank),
+        "residual_rank_tolerance": rank_tolerance,
         "movement_norm": movement_norm,
         "radius": G.new_tensor(radius),
         "predicted_R_before": torch.dot(G, G),

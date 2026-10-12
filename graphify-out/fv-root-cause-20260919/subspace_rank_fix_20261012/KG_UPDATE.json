@@ -1,0 +1,17 @@
+{
+  "consulted": "graphify-out/fv-root-cause-20260919/netflux_subspace_20261012/graph_delta/graphify-out/graph.json",
+  "updated_AST": "graphify-out/fv-root-cause-20260919/subspace_rank_fix_20261012/graph_delta_final/graphify-out/graph.json",
+  "nodes": 61,
+  "links": 109,
+  "source_transition": {
+    "examples/weather_scenarios/fv_point_3h_netflux_subspace_trial.py": {
+      "after": "78bba8dac47f3731b04f65c9ec9a2d1709c128e9e8c8d539df037fc9cdd35f51",
+      "before": "a1cbc75b84a3c7b7ea4afbfb841c0cadebe2a1c7cc3d2e1f1f66caf961e56551"
+    },
+    "examples/weather_scenarios/fv_point_3h_subspace_model.py": {
+      "after": "4a8b34378f139d39297a7e035666a00cd1a1cd91fc1cfccd771756f8d01c7242",
+      "before": "6f9e2068cb041fa11f388f307489f981c1bb82193b6e7e52889ff5ab1ad73f30"
+    }
+  },
+  "scope": "rank-aware lambda0 fix; cachedd19e KKT; fresh7839 declined underfixedcap; no newpoint orforecastclaim"
+}

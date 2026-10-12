@@ -119,17 +119,23 @@ def chart_within_radius(backend: Any, bundle: dict[str, Any], c: Tensor,
     return candidate, lower, 33
 
 
-def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
+def choose_radius(G: Tensor, D: Tensor, V: Tensor, record: dict[str,Any]) -> float:
+    """The original fixed-radius experiment keeps its frozen search length."""
+    return INITIAL_RADIUS
+
+
+def _run_child(path: Path, digest: str, output: Path, *, experiment: Any | None = None) -> dict[str, Any]:
+    config = sys.modules[__name__] if experiment is None else experiment
     started = time.monotonic()
-    plan, base = load_plan(path, digest), endpoint.load_endpoint()
-    deadline = started + POLICY["internal_seconds"]
-    backend = comparison.CurrentBackend(plan, path, digest, ATTEMPT / "operators", deadline, base)
+    plan, base = config.load_plan(path, digest), config.endpoint.load_endpoint()
+    deadline = started + config.POLICY["internal_seconds"]
+    backend = comparison.CurrentBackend(plan, path, digest, config.ATTEMPT / "operators", deadline, base)
     c = backend.control
     record: dict[str, Any] = {"phase": "running", "execution_status": "running", "numerical_status": "current_P2",
-        "plan_sha256": digest, "policy": POLICY, "numerical_version": VERSION, "base_control_sha256": BASE_SHA,
-        "current_control": c.tolist(), "current_control_sha256": BASE_SHA, "current_theta": base["theta"],
+        "plan_sha256": digest, "policy": config.POLICY, "numerical_version": VERSION, "base_control_sha256": config.BASE_SHA,
+        "current_control": c.tolist(), "current_control_sha256": config.BASE_SHA, "current_theta": base["theta"],
         "current_full_G": base["full_G"].tolist(), "last_confirmed_control": c.tolist(),
-        "last_confirmed_control_sha256": BASE_SHA, "last_confirmed_theta": base["theta"],
+        "last_confirmed_control_sha256": config.BASE_SHA, "last_confirmed_theta": base["theta"],
         "last_confirmed_full_G": base["full_G"].tolist(), "last_confirmed_numerical_version": VERSION,
         "closed_steps": [], "optimizer_steps_applied": 0, "candidate_committed": False,
         "hvp_started": 0, "hvp_completed": 0, "hvp_history": [], "arms": [], "fresh_models": [],
@@ -179,7 +185,7 @@ def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
         if not rematch["passed"]:
             raise ValueError("current minimum mixture differs from PR300 P2")
         record.update(minimum_mixture_P2_match=rematch, base_J=float(observed["native_j"]), base_R=float(torch.dot(G,G)))
-        if float(G.norm()) <= POLICY["residual_norm_candidate_tolerance"]:
+        if float(G.norm()) <= config.POLICY["residual_norm_candidate_tolerance"]:
             return finish("residual_candidate_requires_exact_qualification")
         pivot = geometry._pivot(c, backend.weights)
         _, chart, _ = geometry._chart_jacobian(c, backend.weights, pivot, 0.)
@@ -187,7 +193,7 @@ def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
             "dense_solves_started": 0, "dense_solves_completed": 0}
         record["GN_operator"] = op; record["numerical_status"] = "GN_rows_and_solve"; write()
         context = {"problem": backend.problem, "parameters": backend.parameters, "record": op,
-            "output": ATTEMPT/"operators/GN.json", "deadline": deadline, "weights": backend.weights,
+            "output": config.ATTEMPT/"operators/GN.json", "deadline": deadline, "weights": backend.weights,
             "plan": plan, "plan_path": path, "plan_sha": digest, "model_state": {"observed": observed}}
         gn_started = time.monotonic()
         try:
@@ -206,7 +212,7 @@ def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
                 backend._check(c)
                 if record["hvp_started"] >= 4:
                     raise ValueError("HVP cap reached")
-                event = {"direction": spec["name"], "side": side, "control_sha256": BASE_SHA, "stage": "precheck"}
+                event = {"direction": spec["name"], "side": side, "control_sha256": config.BASE_SHA, "stage": "precheck"}
                 record["hvp_started"] += 1; record["hvp_history"].append(event); write()
                 event["stage"] = "jvp_started"; write()
                 hs = time.perf_counter()
@@ -232,13 +238,17 @@ def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
             raise ValueError("unexpected shared direction factory order")
         D = torch.stack([m.direction for m in models],dim=1)
         V = torch.stack([m.residual_direction for m in models],dim=1)
+        radius0 = config.choose_radius(G,D,V,record)
+        record["initial_radius"] = radius0
         record["common_preparation_seconds"] = time.monotonic()-started; write()
+        if radius0 is None:
+            return finish("no_resolved_subspace_entry_within_frozen_radius_cap")
         bundles = {}
         for name in ARM_ORDER:
             arm_started = time.monotonic()
             arm: dict[str,Any] = {"name":name,"status":"searching","trials":[],"candidate":None}
             record["arms"].append(arm); write()
-            radius = INITIAL_RADIUS
+            radius = radius0
             for index in range(6):
                 backend._check(c)
                 if name == "baseline_tangent":
@@ -268,7 +278,7 @@ def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
                 factor = radius_factor(accepted,fidelity["rho_R"],fidelity["eta_vec"])
                 trial.update(**facts,accepted=accepted,status="accepted" if accepted else "rejected",
                     fidelity={k:v if math.isfinite(v) else None for k,v in fidelity.items()},next_radius=radius*factor)
-                receipt = ATTEMPT/name/f"candidate_{index+1:02d}.json"
+                receipt = config.ATTEMPT/name/f"candidate_{index+1:02d}.json"
                 tangent._write(receipt,trial)
                 trial.update(candidate_receipt=receipt.relative_to(ROOT).as_posix(),candidate_receipt_sha256=comparison._sha(receipt))
                 arm["trials"].append(trial); write()
@@ -291,7 +301,7 @@ def _run_child(path: Path, digest: str, output: Path) -> dict[str, Any]:
             return finish("comparison_incomplete_no_commit")
         name = winner["name"]
         record["selected_direction"] = name
-        point = {"point_index":0,"base_control_sha256":BASE_SHA,"J":record["base_J"],"R":record["base_R"],"full_G":G.tolist(),
+        point = {"point_index":0,"base_control_sha256":config.BASE_SHA,"J":record["base_J"],"R":record["base_R"],"full_G":G.tolist(),
             "previous_P2_match":match,"minimum_mixture_P2_match":rematch,"outward_derivatives":outward,
             "direction":winner["candidate"]["direction"],"selected_candidate":winner["candidate"],
             "hvp_started":4,"hvp_completed":4,"model_gates":bundles[name]["model"].gates}
