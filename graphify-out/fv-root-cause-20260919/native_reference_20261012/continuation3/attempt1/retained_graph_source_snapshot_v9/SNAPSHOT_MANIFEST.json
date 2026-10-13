@@ -1,0 +1,32 @@
+{
+  "files": {
+    "inputs/fixed_metric_face_qualification.json": {
+      "bytes": 330236,
+      "sha256": "4418f5d6b6794d43dbb4043abd336c2ab3d8a1ef58ebc199d7295318a3472062"
+    },
+    "inputs/modified_newton_face_qualification_attempt2.json": {
+      "bytes": 249597,
+      "sha256": "9b23c181ade095b754d7acad9a0abc13bb4ec8a04312e28793570940b8d0fb2c"
+    },
+    "inputs/replay_off_equivalence_probe.json": {
+      "bytes": 5148,
+      "sha256": "113afa5ec1854d1e4cda1fa02366b1499d160cedb0bde9ea085a09b9ddbeff73"
+    },
+    "inputs/retained_graph_attempt1_preflight_error.json": {
+      "bytes": 1371,
+      "sha256": "b4a42de01bed47d8f01aee11d862d4a9941cbd2c19804c27ed1054103e06cb95"
+    },
+    "plans/QUALIFICATION_CONTINUATION_PLAN_v9.json": {
+      "bytes": 39605,
+      "sha256": "09cc1bb5d34094833b5b4cda13e491f06a1c77ecbec9b359bc6107761958f701"
+    },
+    "plans/continuation3_CONTINUATION_PLAN.json": {
+      "bytes": 90836,
+      "sha256": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01"
+    },
+    "source/continue_face_retained_graph_newton.py": {
+      "bytes": 23907,
+      "sha256": "99fad9343443970db011b4ed2103977cef6a522ff1b3d52e9e4420d715cae6f2"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "execution_status": "failed",
+  "plan_sha256": "9ce8f55b18f7741d1dd85d7b2c6a4090d9e7930fceca48b7afb706b45490842b",
+  "resource": {
+    "child_pid": 45727,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/private/tmp/advar-independent-reference-20261012/bin/python",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/native_reference_20261012/resume_search.py",
+      "--child",
+      "--plan-sha256",
+      "9ce8f55b18f7741d1dd85d7b2c6a4090d9e7930fceca48b7afb706b45490842b"
+    ],
+    "elapsed_seconds": 3.443094667047262,
+    "exit_code": 1,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 2147483648,
+    "rss_samples": 12,
+    "sampled_peak_rss_bytes": 365117440,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 3244.6823426249903
+  }
+}

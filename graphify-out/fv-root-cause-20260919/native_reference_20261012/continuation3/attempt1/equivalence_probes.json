@@ -1,0 +1,23 @@
+{
+  "plan_sha256": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+  "probes": [
+    {
+      "J": 0.060988878373729814,
+      "control_sha256": "fb0a2efaeefe3a8b07a9385a81260757e4923b181a9430c384cfb96b8d8ea7b4",
+      "elapsed_seconds": 0.20293479203246534,
+      "label": "fb0a-baseline"
+    },
+    {
+      "J": 34.42763429404292,
+      "control_sha256": "46f531b7ea0428fbf2c3ca2b60e8dc33d6bbfa000e0fd1b489c5e39140a47006",
+      "elapsed_seconds": 0.1714127918239683,
+      "label": "zero-start-equivalence"
+    },
+    {
+      "J": 15.376696845742751,
+      "control_sha256": "6d74816e658b0cd44ee4891fd5244dc56d6cdfeb7cc6b8de13da30df756cef61",
+      "elapsed_seconds": 0.17685187491588295,
+      "label": "zero-checkpoint-equivalence"
+    }
+  ]
+}

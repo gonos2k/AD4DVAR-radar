@@ -1,0 +1,234 @@
+{
+  "B_or_response_computed": false,
+  "HVP_calls": 0,
+  "H_checkpoint_sha256": "1d63d543bc0b074c3b179fa2d28551e132e996cc0a86c593048563f6a2face8a",
+  "base_candidate_control_sha256": "ec38e098b3e887aff049e5d5536b9b037f0d81c081257d1e0a946419c3994c13",
+  "candidate_receipt_sha256": "2e78864d424d5cf5aaa0757f4dc35c1403f0e8dab9e6dc30a6ef05ceb18b337d",
+  "continuation_plan_sha256": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+  "event_alpha": 1.6150458748143137e-10,
+  "event_alpha_bracket": [
+    1.6150281112459197e-10,
+    1.6150636383827077e-10
+  ],
+  "event_branch": {
+    "actual_selector_signature_sha256": "b365e71504422b5e39d6b453e8c6810dd820040262bc8e05192db3e2489cdd08",
+    "classification": "singleface",
+    "expected_analysis_stage_count": 360,
+    "face_sign_counts_over_stages": {
+      "x": {
+        "negative": 8640,
+        "positive": 0,
+        "zero": 0
+      },
+      "y": {
+        "negative": 6120,
+        "positive": 2520,
+        "zero": 360
+      }
+    },
+    "native_J_on_audited_path": 0.06070843108112071,
+    "normalized_branch_margins": {
+      "face_abs_over_global_max_flux": {
+        "first_flat_index": 23,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 0,
+          "substep_index": 0
+        },
+        "stage_index": 0,
+        "value": 0.0
+      },
+      "x_active_gap_over_q_scale": {
+        "first_flat_index": 3,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 54
+        },
+        "stage_index": 109,
+        "value": 1.5547824277861358e-09
+      },
+      "x_operand_over_q_scale": {
+        "first_flat_index": 2,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 1200,
+          "interval_index": 1,
+          "interval_start_seconds": 600,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 89
+        },
+        "stage_index": 359,
+        "value": 0.0014652504181324273
+      },
+      "y_active_gap_over_q_scale": {
+        "first_flat_index": 2,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 1200,
+          "interval_index": 1,
+          "interval_start_seconds": 600,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 0,
+          "substep_index": 40
+        },
+        "stage_index": 260,
+        "value": 7.965737724797064e-05
+      },
+      "y_operand_over_q_scale": {
+        "first_flat_index": 5,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 0,
+          "substep_index": 43
+        },
+        "stage_index": 86,
+        "value": 2.8052591697030136e-05
+      }
+    },
+    "objective_finite": true,
+    "selector_counts": {
+      "x": {
+        "active_tie": 0,
+        "inactive_zero": 720,
+        "left": 1015,
+        "right": 425
+      },
+      "y": {
+        "active_tie": 0,
+        "inactive_zero": 805,
+        "left": 979,
+        "right": 376
+      }
+    },
+    "stage_count": 360,
+    "strict_pointwise_branch": false,
+    "unique_near_tie_slope_entities": [],
+    "unique_nearzero_face_entities": [
+      "y:4:3"
+    ],
+    "violation_counts": {
+      "y_face_flux_nonzero": 360
+    }
+  },
+  "event_control": [
+    -0.0017690770660129572,
+    0.023701786186363816,
+    -0.023625545303754842,
+    -0.00852897090634974,
+    -0.0010459690282547793,
+    0.0050473879072133136,
+    -0.03258625750503654,
+    -0.031065373299903453,
+    -0.0018029536574910392,
+    -0.013648868696209243,
+    -0.03448060408811117,
+    -0.03227644515786523,
+    0.07205364624181854,
+    0.028741290937408303,
+    -0.017339061269400873,
+    4.01302111756125e-10,
+    -0.001949914854099935,
+    -8.538529145234206e-05,
+    -0.026541612473797563,
+    -0.01441625365920928,
+    -0.0531745367841089,
+    0.010153823104543339,
+    -0.03016205554697399,
+    0.06047728608450513,
+    -0.000983304088280229,
+    0.185126360376603
+  ],
+  "event_control_sha256": "b69f27abcd0939ec12e1fed0ebbf9187e88df2883f85bd7c5476eaf144dd1579",
+  "event_face": {
+    "axis": "y",
+    "chart": {
+      "chart_sha256": "15995f5271caa1578082f5f15eedfc1dabd3005aefa64b930379db746f496d64",
+      "face": [
+        "y",
+        4,
+        3
+      ],
+      "metric": "normalized signed face flux in real arithmetic; FP64 reduction order may differ; no event or branch certificate",
+      "normalization": "abs(pivot face weight) * pivot coefficient limit",
+      "pivot_flow_index": 4
+    },
+    "chart_residual_ratio": 0.0,
+    "column": 3,
+    "normal_l2": 0.8998400159251624,
+    "pivot_flow_index": 4,
+    "q_value": -0.0,
+    "row": 4
+  },
+  "event_native_J": 0.06070843108112071,
+  "event_projection_l2": 7.419691200464908e-12,
+  "full_side_gradient_inf_by_side": {
+    "-1": 0.18408461106875162,
+    "1": 0.0624685509220618
+  },
+  "input_parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+  "minimum_claim": false,
+  "one_sided_normal_pass": true,
+  "one_sided_normal_roundoff_budgets": {
+    "-1": 6.047972536149858e-15,
+    "1": 3.0810889218954505e-15
+  },
+  "one_sided_normal_slopes": {
+    "-1": -0.19553319304693062,
+    "1": 0.06858420662481972
+  },
+  "phase": "singleface_point_measured",
+  "reason": "P2 reduced curvature was not run: explicit request required",
+  "scope": "conditional one-face event on qy[4,3]; original native 26-control J; not generic nonsmooth support",
+  "source_transition": {
+    "after": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9",
+    "before": "b0335b7a72ecd22084d5ab8ea0e46707240be15ef0039f4b31f96adbc937ee1a",
+    "path": "src/advar/transport.py"
+  },
+  "status": "singleface_first_order_not_qualified",
+  "tangent_coordinates": [
+    -0.0017690770660129572,
+    0.023701786186363816,
+    -0.023625545303754842,
+    -0.00852897090634974,
+    -0.0010459690282547793,
+    0.0050473879072133136,
+    -0.03258625750503654,
+    -0.031065373299903453,
+    -0.0018029536574910392,
+    -0.013648868696209243,
+    -0.03448060408811117,
+    -0.03227644515786523,
+    0.07205364624181854,
+    0.028741290937408303,
+    -0.017339061269400873,
+    4.01302111756125e-10,
+    -0.001949914854099935,
+    -8.538529145234206e-05,
+    -0.026541612473797563,
+    -0.01441625365920928,
+    -0.0531745367841089,
+    0.010153823104543339,
+    -0.03016205554697399,
+    0.06047728608450513,
+    0.185126360376603
+  ],
+  "tangent_gradient_inf_by_side": {
+    "-1": 0.06235051975380165,
+    "1": 0.06235051975380165
+  },
+  "tangent_stationary": false
+}

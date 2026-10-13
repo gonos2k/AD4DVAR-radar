@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/signed_span_20261012/signed_trial.py",
+    "--child",
+    "--plan-sha256",
+    "707bf06bf0432a3f46b6fcc8901908186d70336e075ea5dc72b3cf4658bcfe9b"
+  ],
+  "child_pid": 88708,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 35.82440720894374,
+  "sampled_peak_rss_bytes": 1217134592,
+  "rss_samples": 124,
+  "wall_limit_seconds": 605.995210708119,
+  "rss_limit_bytes": 2147483648,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}

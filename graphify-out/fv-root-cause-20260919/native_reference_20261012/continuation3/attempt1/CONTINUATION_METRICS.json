@@ -1,0 +1,107 @@
+{
+  "archive_pin_count": 335,
+  "continuation": {
+    "continuation_guard_seconds": 65.68576145800762,
+    "cumulative_search_seconds": 417.4280023330357,
+    "failed_point_recovered": true,
+    "new_equivalence_probes": 3,
+    "new_zero_native_calls_including_zero_rechecks": 300,
+    "sampled_peak_rss_bytes": 369983488,
+    "total_successful_native_J_calls": 2000,
+    "zero_callback_stop": 998,
+    "zero_powell_callbacks_replayed": 998
+  },
+  "continuation_plan_sha256": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+  "equivalence_probes": [
+    {
+      "J": 0.060988878373729814,
+      "control_sha256": "fb0a2efaeefe3a8b07a9385a81260757e4923b181a9430c384cfb96b8d8ea7b4",
+      "elapsed_seconds": 0.20293479203246534,
+      "label": "fb0a-baseline"
+    },
+    {
+      "J": 34.42763429404292,
+      "control_sha256": "46f531b7ea0428fbf2c3ca2b60e8dc33d6bbfa000e0fd1b489c5e39140a47006",
+      "elapsed_seconds": 0.1714127918239683,
+      "label": "zero-start-equivalence"
+    },
+    {
+      "J": 15.376696845742751,
+      "control_sha256": "6d74816e658b0cd44ee4891fd5244dc56d6cdfeb7cc6b8de13da30df756cef61",
+      "elapsed_seconds": 0.17685187491588295,
+      "label": "zero-checkpoint-equivalence"
+    },
+    {
+      "completed": true,
+      "label": "zero-start-equivalence"
+    },
+    {
+      "completed": true,
+      "label": "zero-checkpoint-equivalence"
+    }
+  ],
+  "hashes": {
+    "checkpoint_sha256": "463d219858942470a9266e166b65611f5567baf01923d2f554bf782a597a740d",
+    "continuation_eval_log_sha256": "3a38aaa6cb8626e59db4f1100be6ccbd079f4c5bfa48c29775649016bf0703df",
+    "equivalence_probes_sha256": "6329fe31301c32230488cb87809a03eb2af74d1316ec33e2dde2ed20401e13ff",
+    "powell_replay_log_sha256": "717170826a614985a0f55687463ff2ff0cfd402dc92dcddeed0f32587434446b",
+    "run_sha256": "7f6e6ad90393c260f039b4d97edf78a41096d56154f3ea1cfa40b918581e7e83",
+    "zero_candidate_checkpoint_sha256": "b955f5af79524441b73d7c6aba556edc6603a93e88986473768fa3bab885cc2d"
+  },
+  "limits": {
+    "completed_local_minimum_claim": false,
+    "cross_start_E_selection": false,
+    "source_input_runtime_check": "pre/post source and fixed input hashes validated by continuation runner",
+    "zero_start_converged": false
+  },
+  "old_plan_sha256": "b6f3a08e02ec6da684ea8ea7c9611e6eedf3b8de9de8a9ebc6830347dd13d9ac",
+  "physical_call_accounting": {
+    "E_calls": 0,
+    "Q_calls": 0,
+    "R_calls": 0,
+    "continuation_HVP_calls": 0,
+    "equivalence_J_calls": 3,
+    "failed_objective_attempts_before_continuation": 1,
+    "historical_partial_HVP_status": "unknown_aborted_attempt; no completed HVP receipt",
+    "new_zero_native_calls": 300,
+    "old_successful_native_J_calls": 1699,
+    "prior_failed_preflight_objective_calls": 0,
+    "separate_failed_support_reproduction_attempts": 1,
+    "total_successful_native_J_calls": 2000
+  },
+  "previous_search": {
+    "aborted_support_attempts": 1,
+    "elapsed_seconds": 355.31765737500973,
+    "fb0a_successful_evaluations": 1000,
+    "initial_zero_powell_callbacks": 700,
+    "successful_native_J_evaluations": 1699,
+    "zero_successful_evaluations": 699
+  },
+  "source_bundle_sha256": "0b49facc69c9689335455d324e442bd4bf5da0e807ee408473acfba1b53ed97d",
+  "source_member_count": 240,
+  "source_transition": {
+    "src/advar/transport.py": {
+      "after": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9",
+      "before": "b0335b7a72ecd22084d5ab8ea0e46707240be15ef0039f4b31f96adbc937ee1a"
+    }
+  },
+  "starts": {
+    "fb0a": {
+      "completed_function_evaluations": 1000,
+      "completed_powell_J": 0.06070843108137676,
+      "control_sha256": "ec38e098b3e887aff049e5d5536b9b037f0d81c081257d1e0a946419c3994c13",
+      "start_J": 0.060988878373729814,
+      "status": "maxfev limit reached; not stationarity proof"
+    },
+    "zero": {
+      "Powell_callback_count": 997,
+      "best_control_l2_norm": 0.46123515798455905,
+      "best_control_prior_cost": 0.10636893548052058,
+      "best_control_sha256": "a3f56714ca5495bd3ec8ba57c675ec6adf1339b6be3f7a8373b66490fefba5ad",
+      "best_so_far_J": 8.059181667110185,
+      "start_J": 34.42763429404292,
+      "status": "stopped at cumulative actual-J cap before Powell completed"
+    }
+  },
+  "status": "budget_refusal_with_best_so_far"
+}

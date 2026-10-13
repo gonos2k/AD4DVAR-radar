@@ -1,0 +1,55 @@
+{
+  "continuation_source_tar_sha256": "0b49facc69c9689335455d324e442bd4bf5da0e807ee408473acfba1b53ed97d",
+  "effective_physical_source_map_sha256": "0adbf01806578371ae9e40da1ff9303082fa027288a3b6014a7c84e09679010a",
+  "identity_chart_preflight_sha256": "99ff8763e43d55fd55a56751418628bbaf94355c0bc028e1f8cf916c166538a8",
+  "members": {
+    "examples/weather_scenarios/fv_face_flux_coordinates.py": "8283f5370766423f2e13f45e6ed7dac2b514b6826429f6a3c011ca58fc4285d5",
+    "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py": "2a77cb9fcdf246e9f310bf7bf64925ee293f32f9b2d9d8f4fa49802d899485c2",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/CONTINUATION_PLAN.json": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/CONTINUATION_PLAN_SHA256.txt": "8b58e78987e8d2eb52dedf951e098211872ec3778f8bf75d6ddb0ddec9867630",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/attempt1/retained_graph_source_snapshot_v9.tar.gz": "298e1895f83811ce6a9ec66b61098f19fd87d57ba14c7f8fd4d3d2b4a7ebd34e",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/source.tar.gz": "0b49facc69c9689335455d324e442bd4bf5da0e807ee408473acfba1b53ed97d",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/qualify_candidate.py": "4d8c29bd56890a65665484fcfcb051bb6972fdbce5f8c5ef4b41a5540966ae61",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/NATIVE24_PLAN_v5.json": "0bf59b8cfff59fd2254900faf52993df3a33866e63772061fa1255d803fbabff",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/NATIVE24_PLAN_v5_SHA256.txt": "6380c3d0547a64da9b5df064754513f9c2fd0338f8dde5b9d75526cdcbccf2e5",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/TWO_FACE_PLAN.json": "21fa7a816bc6be2f41087905e2e329e06abb3194f4ebd10b8d01567a1fb511dd",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/TWO_FACE_PLAN_SHA256.txt": "64970d1411efb6e375465adcafd73532526e42b3145f8bb7aae84bd2aafc60c8",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/continue_native24.py": "7abc813a7481064431715ea7cea752d4d579f6f00fbe384961948daed3dd82dd",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/diagnose.py": "5aa0be5899501e286d4a9d69aa207c53385f87513bdef0199abca97d7c59ce41",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/launch_snapshot.tar.gz": "435f868641c736458f256465cba322a19da1fbd76483334f2ff118721bea2f83",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_attempt1_preflight_error.json": "082deae4ccc8ce04b0db30804a53a2f1c7b38c53bb4fa10966368b13dc3b3ebf",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_attempt2_preflight_error.json": "1792865f005962c8ae18ccd7cc174ac146181de7eb7599548344b102828cf431",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_attempt3_preflight_error.json": "ce436938adccc55dc6d6710244adedc2a8f0f841af7141d926a54907b9d0473f",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_identity_chart_preflight.json": "99ff8763e43d55fd55a56751418628bbaf94355c0bc028e1f8cf916c166538a8",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_launch_snapshot_v5.tar.gz": "6560ddf0532910b5d08545eecd89f4ea25bb15de264cdefca7bd10839df5fc07",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/transport_before.py": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/transport_before.py.sha256": "21d1734878d91d133699eaacdf3ed0219248653c5d014ec6c5042c8198496526",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/two_face_diagnostic.json": "bbe7706ee613727de290e878562f0706c39407b2d4b72d4c07135b761cb689a3",
+    "src/advar/transport.py": "f6c680da7ca130fcbc505a03b73741591dc023f57a7745e47cfd49dd72622fab",
+    "tests/test_fv_selected_face_extension.py": "67f9752b64de97771dc682e24d474130df4fd1841377d95e72c471ce35c7267f"
+  },
+  "prior_failed_preflights": [
+    {
+      "path": "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_attempt1_preflight_error.json",
+      "sha256": "082deae4ccc8ce04b0db30804a53a2f1c7b38c53bb4fa10966368b13dc3b3ebf"
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_attempt2_preflight_error.json",
+      "sha256": "1792865f005962c8ae18ccd7cc174ac146181de7eb7599548344b102828cf431"
+    },
+    {
+      "path": "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_attempt3_preflight_error.json",
+      "sha256": "ce436938adccc55dc6d6710244adedc2a8f0f841af7141d926a54907b9d0473f"
+    }
+  ],
+  "record_type": "native24_prelaunch_source_and_input_snapshot",
+  "source_bundle_sha256": "0b49facc69c9689335455d324e442bd4bf5da0e807ee408473acfba1b53ed97d",
+  "supersedes_unexecuted_plan_sha256": "0bf59b8cfff59fd2254900faf52993df3a33866e63772061fa1255d803fbabff",
+  "transport_transition": {
+    "after": "f6c680da7ca130fcbc505a03b73741591dc023f57a7745e47cfd49dd72622fab",
+    "before": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9",
+    "path": "src/advar/transport.py",
+    "scope": "additive selected_face_extensions tuple context only; transport primal and native selector logic unchanged"
+  },
+  "two_face_diagnostic_sha256": "bbe7706ee613727de290e878562f0706c39407b2d4b72d4c07135b761cb689a3"
+}

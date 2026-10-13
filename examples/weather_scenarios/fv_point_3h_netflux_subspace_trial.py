@@ -151,7 +151,7 @@ def _run_child(path: Path, digest: str, output: Path, *, experiment: Any | None 
         "last_confirmed_control_sha256": config.BASE_SHA, "last_confirmed_theta": base["theta"],
         "last_confirmed_full_G": base["full_G"].tolist(), "last_confirmed_numerical_version": VERSION,
         "closed_steps": [], "optimizer_steps_applied": 0, "candidate_committed": False,
-        "hvp_started": 0, "hvp_completed": 0, "hvp_history": [], "arms": [], "fresh_models": [],
+        "hvp_started": 0, "hvp_completed": 0, "hvp_reused": 0, "hvp_history": [], "arms": [], "fresh_models": [],
         "candidate_evaluations_started": 0, "candidate_evaluations_completed": 0,
         "root_claim": False, "minimum_claim": False, "response_claim": False, "score_claim": False,
         "original_problem_solved": False, "terminal_E_recomputed": False,
@@ -226,20 +226,29 @@ def _run_child(path: Path, digest: str, output: Path, *, experiment: Any | None 
             pair = {}
             for side in (-1,1):
                 backend._check(c)
-                if record["hvp_started"] >= 4:
-                    raise ValueError("HVP cap reached")
+                reuse = getattr(config, "hvp_pair", None)
+                cached = reuse(context, c, spec, side) if reuse is not None else None
                 event = {"direction": spec["name"], "side": side, "control_sha256": config.BASE_SHA, "stage": "precheck"}
-                record["hvp_started"] += 1; record["hvp_history"].append(event); write()
-                event["stage"] = "jvp_started"; write()
-                hs = time.perf_counter()
-                with previous.transport.selected_face_extension("y",4,3,side):
-                    pair[side] = torch.func.jvp(lambda x: torch.func.grad(backend.problem.objective,argnums=0)(x,backend.parameters), (c,), (direction,))[1]
-                backend.timings["pure_hvp_seconds"] += time.perf_counter()-hs
+                record["hvp_history"].append(event)
+                if cached is None:
+                    if record["hvp_started"] >= config.POLICY.get("new_hvp_cap", 4):
+                        raise ValueError("HVP cap reached")
+                    record["hvp_started"] += 1; write()
+                    event["stage"] = "jvp_started"; write()
+                    hs = time.perf_counter()
+                    with previous.transport.selected_face_extension("y",4,3,side):
+                        pair[side] = torch.func.jvp(lambda x: torch.func.grad(backend.problem.objective,argnums=0)(x,backend.parameters), (c,), (direction,))[1]
+                    backend.timings["pure_hvp_seconds"] += time.perf_counter()-hs
+                else:
+                    # The configured receipt loader owns same-point/source and
+                    # direction qualification; no derivative is regenerated here.
+                    pair[side] = cached
                 value = pair[side]
-                if value.shape != c.shape or value.dtype != c.dtype or not bool(torch.isfinite(value).all()):
-                    raise ValueError("fresh HVP malformed/nonfinite")
-                event.update(stage="jvp_returned",vector=value.tolist()); write(); backend._check(c)
-                event["stage"] = "qualified_complete"; record["hvp_completed"] += 1; write()
+                if value.shape != c.shape or value.dtype != c.dtype or value.device != c.device or not bool(torch.isfinite(value).all()):
+                    raise ValueError("HVP malformed/nonfinite")
+                event.update(stage="jvp_returned" if cached is None else "cached_supplied",vector=value.tolist()); write(); backend._check(c)
+                event["stage"] = "qualified_complete" if cached is None else "qualified_reuse"
+                record["hvp_completed" if cached is None else "hvp_reused"] += 1; write()
             model = prepared.mixing.minimum_tangent_model(gm,gp,pair[-1],pair[1],normal,chart,theta,
                 float(observed["q"]),pivot,previous.FACE_SCALE,direction_override=direction)
             if not finite._base_model_closure(model,G,theta)["passed"] or not all(model.gates.get(k) is True for k in
@@ -272,7 +281,8 @@ def _run_child(path: Path, digest: str, output: Path, *, experiment: Any | None 
                     coefficients = torch.tensor([alpha,0.],dtype=c.dtype)
                     solver_diag: dict[str,Any] = {"scope":"gradient ray within same radius"}
                 else:
-                    solution = solve_two_direction_subspace(G,D,V,radius)
+                    coefficient_solve = getattr(config, "coefficient_solve", solve_two_direction_subspace)
+                    solution = coefficient_solve(G,D,V,radius)
                     coefficients = solution.coefficients
                     solver_diag = {k: float(v) if isinstance(v,Tensor) else v for k,v in solution.diagnostics.items()}
                 model = composed_model(gm,gp,normal,chart,theta,float(observed["q"]),pivot,models,products,coefficients)
@@ -320,7 +330,8 @@ def _run_child(path: Path, digest: str, output: Path, *, experiment: Any | None 
         point = {"point_index":0,"base_control_sha256":config.BASE_SHA,"J":record["base_J"],"R":record["base_R"],"full_G":G.tolist(),
             "previous_P2_match":match,"minimum_mixture_P2_match":rematch,"outward_derivatives":outward,
             "direction":winner["candidate"]["direction"],"selected_candidate":winner["candidate"],
-            "hvp_started":4,"hvp_completed":4,"model_gates":bundles[name]["model"].gates}
+            "hvp_started":record["hvp_started"],"hvp_completed":record["hvp_completed"],
+            "hvp_reused":record["hvp_reused"],"model_gates":bundles[name]["model"].gates}
         record = previous.persist_commit(output,record,point,winner["proposal"],winner["repeat"],winner["full_G_check"])
         return finish("subspace_comparison_one_candidate_committed")
     except TimeoutError as error:

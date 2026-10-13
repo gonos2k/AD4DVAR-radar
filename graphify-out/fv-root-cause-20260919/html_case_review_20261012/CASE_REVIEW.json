@@ -1,5 +1,5 @@
 {
-  "scope": "cached PR300–304; no new FV/HVP/forecast calls",
+  "scope": "stored execution/observer receipts and model-only diagnostics; renderer makes no new physical calls",
   "cases": [
     {
       "title": "기존 4×5 · 조건부 FV 응답 데모",
@@ -99,7 +99,7 @@
       "R0": 0.002441269566693863,
       "R": 0.002430534626706718,
       "counts": "후보 2개 · 독립 최종 반복 2회 · 확정 1점",
-      "note": "s 계수 0. 두 경로의 제어점·J·R가 같아 가속 미입증. 새 HVP 4회, GN row/풀이 0회. 새 확정점 fb0a의 미래점수는 미평가.",
+      "note": "s 계수 0. 두 경로의 제어점·J·R가 같아 가속 미입증. 새 HVP 4회, GN row/풀이 0회. 당시 fb0a는 미평가였고 이번 후속의 별도 3점 미래 관찰에서 평가함.",
       "source": "residual_direction_20261012/METRICS.json"
     },
     {
@@ -134,17 +134,229 @@
       "counts": "미래점수 2회 · 최적화/후보 선택 0회",
       "note": "20분 분석창 이후 최종 +180분 dBZ MSE. 전체 lead 평균이 아님. 같은 고정 합성 참값에 대한 작은 변화이며 독립 예측성능·통계적 유의성 미검증.",
       "source": "residual_direction_20261012/OBSERVATION_VERIFICATION.json"
+    },
+    {
+      "title": "PR304 후속 · 비음수 원뿔과 signed span",
+      "status": "저장 선형모형 진단 · 실제 후보 성과와 구분",
+      "start": "2a4dba130d28273a63e97d0de39a11f64fdee09b0ad754559bc8902ba6cddbca",
+      "end": null,
+      "model_R0": 0.0024305357397502642,
+      "model_R": 0.0024215440768215043,
+      "counts": "추가 FV/HVP/실제 후보 0회 · 기존 반경에서 4개 부호 영역 비교",
+      "note": "비음수 해는 반경 내부이고 0인 s 계수의 KKT margin≈+0.34812. signed 결합은 반경 경계에서 양측 비용 미소 하강을 만족하며 예상 R를 더 낮춤. 무반경 signed 해는 반경의 약 100배로 실행 불가. 원래 비음수 문제의 solver 오류를 뜻하지 않음.",
+      "source": "signed_span_20261012/AUDIT.json"
+    },
+    {
+      "title": "PR304 후속 · signed 결합 실제 비교",
+      "status": "실제 J/R 승인 · 적격 최소점 미완료",
+      "start": "2a4dba130d28273a63e97d0de39a11f64fdee09b0ad754559bc8902ba6cddbca",
+      "end": "96108bdcf2cd6abc05878bf2cfc9e2531f37cf82e152ad1a9eaf0a67de746411",
+      "J0": 0.06099005811764152,
+      "J": 0.06098820859901043,
+      "R0": 0.002441269566693863,
+      "R": 0.002421541200192015,
+      "counts": "후보 2개 · 확정 1점 · 새 HVP 0회 · 저장 HVP 4개 재자격",
+      "note": "동일 2a4d 점의 대안 경로이며 fb0a에서의 후속 스텝이 아님. 이전 준비 비용을 예산에 가산. signed 결합의 한 점 추가 J/R 이득을 확인함. 새점 연산·정확 응답은 미완료지만 미래점수와 독립 시간적분 비교는 아래 별도 실행에서 수행함.",
+      "source": "signed_span_20261012/METRICS.json"
+    },
+    {
+      "title": "현재 3점 · 별도 최종 +180분 미래점수",
+      "status": "평가 완료 · signed의 추가 감소는 매우 작음",
+      "start": "2a4dba130d28273a63e97d0de39a11f64fdee09b0ad754559bc8902ba6cddbca",
+      "end": "96108bdcf2cd6abc05878bf2cfc9e2531f37cf82e152ad1a9eaf0a67de746411",
+      "custom_metrics": {
+        "2a4d MSE": "7.384565484460 dBZ²",
+        "fb0a MSE": "7.384323633729 dBZ²",
+        "96108 MSE": "7.384251516265 dBZ²"
+      },
+      "counts": "최적화/후보 선택/HVP 0회 · score/forward 3회 · 각 18개 미래장 저장",
+      "note": "동일한 고정 참값의 전체 4×5 최종 검증장. signed vs fb0a MSE 감소≈0.000977%. 원시 기록의 off-grid라는 주석 오류는 정오표에서 바로잡았고 원시 값·파일은 보존함. 18리드 평균/독립 수송기준 결과와 따로 표시함.",
+      "source": "signed_span_20261012/forecast_validation_attempt1/forecast_validation.json"
+    },
+    {
+      "title": "Historical 96108 candidate · independent semidiscrete 18-lead reference",
+      "status": "historical synthetic truth comparison · mean/late-lead persistence worse",
+      "start": "분석창 끝 +20분 · 동일 분석장 persistence",
+      "end": "96108bdcf2cd6abc05878bf2cfc9e2531f37cf82e152ad1a9eaf0a67de746411",
+      "custom_metrics": {
+        "18리드 평균 예측 MAE": "1.162843858 dBZ",
+        "18리드 평균 persistence MAE": "1.145868469 dBZ",
+        "+180분 예측 MAE": "2.380312275 dBZ",
+        "+180분 persistence MAE": "1.479199081 dBZ"
+      },
+      "counts": "NumPy 공간 flux 구현 + DOP853 시간적분 · 두 정밀도 비교 · 모든 18×20 화소 평가",
+      "note": "+10–100분은 분석장 persistence보다 MAE가 낮지만 +110–180분은 높음. 평균·최종 오차도 더 높음. 관측장 persistence가 아니라 분석장을 고정한 기준선. 같은 공간 minmod 모형의 독립 구현/시간적분이며 연속 PDE 참값·보류 기상사례 검증을 뜻하지 않음.",
+      "source": "signed_span_20261012/independent_semidiscrete_reference.json"
+    },
+    {
+      "title": "문제 정의 · 참제어 복원과 원래 J의 불일치",
+      "status": "하한으로 확인 · 참제어는 이 J의 최소점 불가",
+      "start": "동일 고정 입력의 알려진 생성 제어",
+      "end": "96108bdcf2cd6abc05878bf2cfc9e2531f37cf82e152ad1a9eaf0a67de746411",
+      "custom_metrics": {
+        "참제어 J 하한 · prior만": "0.942152047227",
+        "현재 후보 전체 J": "0.060988208599",
+        "유동 flux 상대 오차 norm": "113.1879%",
+        "에코 log 성장/10분 · 참값→분석": "0.08000 → 0.05493886"
+      },
+      "counts": "추가 FV/HVP/점수 0회 · 동일 identity prior와 봉인 제어의 재산술",
+      "note": "비음수 나머지 손실을 더하기 전 참제어 prior가 이미 현재 전체 J보다 큼. 정확한 생성 제어 복원과 이 고정 J 최소화는 양립하지 않음. 생성 제어의 Q≈0.104도 선택 Q=0 면 밖. 모든 J 최소점의 예측이 나쁘다는 증명은 아니며 목적/관측/prior와 탐색면을 구분해야 함.",
+      "source": "signed_span_20261012/PHYSICAL_RECOVERY.json"
+    },
+    {
+      "title": "A · Native Powell, current two-face endpoint, and ray diagnostics",
+      "status": "6ca actual-J chord accepted · full/tangent first-order gate still fails",
+      "start": "zero J=34.4276342940 · fb0a J=0.0609888784",
+      "end": "Powell: zero best-so-far J=8.0591816671 (budget stop), fb0a J=0.0607084311 (1000-call cap) · modified face chart: 8eff → 6a5d J=0.0601979708822 · separate native24 chord: d88b6556ce2e → 6ca56498 J=0.0601191808342",
+      "custom_metrics": {
+        "callback 700 · support 수정 후 native J 재생산": "15.7086740286 · control 5556eec11e69",
+        "두 start · Powell 제한 시점 최선 J": "zero 8.05918166711 · fb0a 0.0607084310814",
+        "support min / strict tolerance": "0.9999999999999963 / 3.553e-15",
+        "support excess beyond tolerance": "1.110e-16 · boundary supports all 1 · CFL pass",
+        "fb0a native gradient ∞ / gate": "0.0624686 / 1.0e-10 · gate fail",
+        "fb0a full Hessian": "PD · λmin 0.264114 · nonstationary point",
+        "later 25D face-chart Hessian": "not PD · λmin -0.0306827 at 8eff6b1f2285",
+        "modified face-chart corrections": "2 · α=1 each · J 0.060253351746 → 0.0601979708822",
+        "final face-chart gradient ∞ / gate": "0.00680491 / 1e−10 · first-order gate fail",
+        "face-chart Hessians along corrections": "λmin -0.0306827 (shifted descent), then 0.373106 · final point not curvature-qualified",
+        "latest native24 chord": "J 0.060119180839 → 0.0601191808342 · α=0.0078125 · fixed-H chord",
+        "latest 6ca finite-neighborhood gradient hull proxy ∞ / gate": "0.0011450217 / 1e−10 · first-order fail",
+        "6ca face and terminal qualification": "two faces · strict normal signs · terminal Hessian/P2 not run",
+        "growth-coordinate partial": "same selector signature at h=±2e−7 · dJ/dc25 -0.00171272 / -0.00057732; ΔJ(+2e−7)=-1.722e-10",
+        "stale-metric coupled ray": "7 native-J / 0 AD · selector changes by α=0.0009765625; ΔJ(α=.0078125)=+5.690e-11 vs linear descent",
+        "current sequence native-J union": "506/512 · main493 + observer1 + growth5 + coupled7 · 6 remain, no new grant"
+      },
+      "counts": "zero: 997 callbacks then cumulative native-J cap · fb0a: 1000 calls then maxfev · modified face corrections: 2 · native24 chord: 9 J / 4 gradient calls · growth ray: 5 J / 4 gradients · coupled ray: 7 J / 0 AD · HVP=0 on these diagnostics",
+      "note": "At callback 34, one propagated support value was 3.66e−15 below one, exceeding the 16-epsilon tolerance by 1.11e−16; all boundary support was one, there were no unknown incoming faces, and CFL passed. The sealed transport-only fix updates coverage as a material scalar so constant support stays exact on the validated divergence-free domain. It reproduces callback 700, then zero-start Powell stops at its cumulative objective-call cap. fb0a exhausts maxfev without a stationarity result. At distinct selected-face point 8eff, the exact chart Hessian had λmin<0; spectrally shifted directions passed actual native-J Armijo twice to 6a5d. A separate bounded fixed-H chord ended at 6ca. Its finite-gradient hull ∞ norm 0.001145 is still far above 1e−10; terminal Hessian and P2 were not run. Growth is a fixed-flow/field scalar partial, not a stationarity certificate. The coupled ray uses an explicitly stale SPD metric and crosses selector signature at its first nonzero sample, so linear predictions are not actual-J guarantees. All results remain local and do not certify a minimum.",
+      "source": "native_reference_20261012/continuation3/attempt1/CONTINUATION_FINDINGS.md",
+      "sources": [
+        "native_reference_20261012/continuation3/attempt1/CONTINUATION_METRICS.json",
+        "native_reference_20261012/continuation3/attempt1/CONTINUATION_FINDINGS.md",
+        "native_reference_20261012/continuation3/attempt1/continuation_evaluations.jsonl",
+        "native_reference_20261012/zero_powell_support_diagnosis.json",
+        "native_reference_20261012/continuation1/qualification_fb0a_hessian_attempt2.json",
+        "native_reference_20261012/continuation3/attempt1/face_chart_newton_resume.json",
+        "native_reference_20261012/continuation3/attempt1/modified_newton_face_qualification_attempt2.json",
+        "native_reference_20261012/two_face_intersection_20261013/continuation2_20261013/native24_chord_extension_result.json",
+        "native_reference_20261012/two_face_intersection_20261013/continuation2_20261013/native24_chord_readonly_terminal_closure.json",
+        "native_reference_20261012/growth_ray_20261013/PLAN.json",
+        "native_reference_20261012/growth_ray_20261013/RESULT.json",
+        "native_reference_20261012/coupled_ray_20261013/PLAN.json",
+        "native_reference_20261012/coupled_ray_20261013/RESULT.json",
+        "native_reference_20261012/coupled_ray_20261013/FLUX_SIGN_COMPARISON.json",
+        "native_reference_20261012/coupled_ray_20261013/executed_ray.py",
+        "native_reference_20261012/coupled_ray_20261013/POST_RUN_SOURCE_PROVENANCE.json",
+        "native_reference_20261012/continuation3/CONTINUATION_PLAN.json"
+      ]
+    },
+    {
+      "title": "B · Native perturbation response gate at 6ca",
+      "status": "Gated · measured finite-gradient hull proxy remains above tolerance",
+      "start": "6ca56498f82002634a5103fecd41b1ec9d67e8ff745ecbe9b554906043c0c4d5",
+      "end": null,
+      "custom_metrics": {
+        "latest 6ca measured full/tangent finite-gradient hull ∞ / gate": "0.0011450217 / 1e−10 · fail",
+        "terminal Hessian / P2": "not run at 6ca",
+        "response routine": "wired, but exact qualification callback did not pass",
+        "perturbed Powell grids / score": "not run / 0",
+        "historical fb0a Hessian": "PD, but ∞-gradient 0.0624686 failed stationarity"
+      },
+      "counts": "Current endpoint: 2 faces / strict normals · 0 terminal Hessian/P2 · response evaluations 0",
+      "note": "The native response routine is wired but was not run. Its gate requires the current full/tangent first-order residual below 1e−10, terminal Hessian/P2 qualification, and a stable smooth branch. At 6ca the measured finite-gradient full/tangent hull proxy infinity norm is 0.00114502; no terminal Hessian or P2 was computed. The older fb0a full Hessian was positive definite at a different, nonstationary point and does not open this gate. No perturbed reoptimization, adjoint response, or score comparison is claimed.",
+      "source": "native_reference_20261012/PERTURBATION_RESPONSE.md",
+      "sources": [
+        "native_reference_20261012/PERTURBATION_RESPONSE.md",
+        "native_reference_20261012/continuation1/qualification_fb0a_hessian_attempt2.json",
+        "native_reference_20261012/two_face_intersection_20261013/continuation2_20261013/native24_chord_readonly_terminal_closure.json"
+      ]
+    },
+    {
+      "title": "C · Current native forecast at endpoint 6ca",
+      "status": "observer complete · mean MAE slightly worse · not selected",
+      "start": "6ca56498f82002634a5103fecd41b1ec9d67e8ff745ecbe9b554906043c0c4d5",
+      "end": "+180min · 18-lead stored truth comparison",
+      "custom_metrics": {
+        "native J · independently reproduced": "0.0601191808342",
+        "latest measured full/tangent finite-gradient hull proxy ∞ / stationarity gate": "0.0011450217 / 1e−10 · fail",
+        "18-lead mean MAE · forecast / persistence": "1.163358 / 1.144573 dBZ",
+        "forecast MAE excess · 18-lead mean": "+0.018785 dBZ",
+        "+180min MAE · forecast / persistence": "2.370457 / 1.477708 dBZ",
+        "18-lead aggregate MSE · forecast / persistence": "2.434426 / 1.821550 dBZ²",
+        "lead-wise MAE first worse than persistence": "+110min (derived from all 18 rows)",
+        "observer trajectory / score selection": "1 / disabled",
+        "unique native-J sequence total": "506/512 · 6 calls remain · no budget reset"
+      },
+      "counts": "18 forecast leads · 1 native-J observer recheck · 0 score-selection/HVP calls",
+      "note": "This observer forecast is from the latest nonstationary 6ca endpoint; its measured finite-gradient full/tangent hull proxy is 0.00114502 (not limiting-gradient certification), and terminal Hessian/P2 was not run. Forecast MAE is below analysis persistence at +10…+100min, then above from +110min; the 18-lead mean is worse by 0.018785 dBZ. E was observed after fixing 6ca and did not qualify or select it. The independent reference is the fixed-case true generator trajectory, not the forecast previously associated with control 96108. This is one synthetic case, not held-out weather skill or a response/minimum result.",
+      "source": "native_reference_20261012/current_endpoint_observer_20261013/final_native_forecast_20261013.json",
+      "sources": [
+        "native_reference_20261012/current_endpoint_observer_20261013/final_native_forecast_20261013.json",
+        "native_reference_20261012/current_endpoint_observer_20261013/OBSERVER_VERIFICATION.json",
+        "native_reference_20261012/current_endpoint_observer_20261013/final_native_forecast_20261013.npz",
+        "signed_span_20261012/independent_semidiscrete_reference.npz",
+        "native_reference_20261012/two_face_intersection_20261013/continuation2_20261013/native24_chord_readonly_terminal_closure.json",
+        "native_reference_20261012/two_face_intersection_20261013/continuation2_20261013/native24_chord_extension_result.json",
+        "native_reference_20261012/growth_ray_20261013/RESULT.json",
+        "native_reference_20261012/coupled_ray_20261013/RESULT.json",
+        "native_reference_20261012/coupled_ray_20261013/FLUX_SIGN_COMPARISON.json",
+        "native_reference_20261012/coupled_ray_20261013/executed_ray.py",
+        "native_reference_20261012/coupled_ray_20261013/POST_RUN_SOURCE_PROVENANCE.json"
+      ]
     }
   ],
   "evidence_sha256": {
     "html_case_review_20261012/TOY_REPLAY_METRICS.json": "eedd1c737caab9a24cbac6884c7b8f9e6df29b10dff57fc9cb771a51557c17d9",
+    "native_reference_20261012/PERTURBATION_RESPONSE.md": "e221285e3d0be50f3b8ace45d9b97797cb16533662e892d68a25d3e534785dc1",
+    "native_reference_20261012/continuation1/qualification_fb0a_hessian_attempt2.json": "1d63d543bc0b074c3b179fa2d28551e132e996cc0a86c593048563f6a2face8a",
+    "native_reference_20261012/continuation3/CONTINUATION_PLAN.json": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+    "native_reference_20261012/continuation3/attempt1/CONTINUATION_FINDINGS.md": "e6045d1f071d1b11bed40bf93a89396df7f4ea0376daf278e4beb1d6e5a2cc82",
+    "native_reference_20261012/continuation3/attempt1/CONTINUATION_METRICS.json": "a83dc6c701e734a41ac8aa0e1929f8e790555f642af296b777191907ba4a171b",
+    "native_reference_20261012/continuation3/attempt1/continuation_evaluations.jsonl": "3a38aaa6cb8626e59db4f1100be6ccbd079f4c5bfa48c29775649016bf0703df",
+    "native_reference_20261012/continuation3/attempt1/face_chart_newton_resume.json": "43e1ab27c6298221916c6dd6d967f305d16bd114f160d503e64f1197da2f726c",
+    "native_reference_20261012/continuation3/attempt1/modified_newton_face_qualification_attempt2.json": "9b23c181ade095b754d7acad9a0abc13bb4ec8a04312e28793570940b8d0fb2c",
+    "native_reference_20261012/coupled_ray_20261013/FLUX_SIGN_COMPARISON.json": "b53a37f5cd479009b06baea128568789d700ea8f5ad972a83f207f8aaf1815e0",
+    "native_reference_20261012/coupled_ray_20261013/PLAN.json": "e34012056390af3ff6ffb044e6ac4eb75244caa9267f44282607c5c6515ff4de",
+    "native_reference_20261012/coupled_ray_20261013/POST_RUN_SOURCE_PROVENANCE.json": "de6bda7fa4584a5a5471699aac97a2356b14301637034e3b874cc6e8a34aaf93",
+    "native_reference_20261012/coupled_ray_20261013/RESULT.json": "9678173de950ab18602cfc061707f92543091b881e27f87808ad136be603158a",
+    "native_reference_20261012/coupled_ray_20261013/executed_ray.py": "0f3f5bd6839c657b9913573516cc2be7fbab911bf10587617d9a33544f896e1b",
+    "native_reference_20261012/current_endpoint_observer_20261013/OBSERVER_VERIFICATION.json": "d94dbd8ef892e966561e8813e724eebcee8069cc0d7fcfadce0c7fc39e182428",
+    "native_reference_20261012/current_endpoint_observer_20261013/final_native_forecast_20261013.json": "90f2abcb750c41f1d668e002add9f4db525b03ddfe38ac737bbc06b5b547d1fe",
+    "native_reference_20261012/current_endpoint_observer_20261013/final_native_forecast_20261013.npz": "ab7f324178c5bd5145bf596e2b0c27ee8f04894591a0978a6dfda9e4e9087967",
+    "native_reference_20261012/growth_ray_20261013/PLAN.json": "fa288448e07f431901fe7b2025e9e9789a6d8e1bec81cf498ef7684ea344575d",
+    "native_reference_20261012/growth_ray_20261013/RESULT.json": "d413088cda8bfe6210c4b89335c470955590548ef5f59aa448e71d9c507852f5",
+    "native_reference_20261012/two_face_intersection_20261013/continuation2_20261013/native24_chord_extension_result.json": "46c56f85adaf2134ddd22ca9fd7f8a62e5c3aac78cab34adf4c1f2fb31eab41c",
+    "native_reference_20261012/two_face_intersection_20261013/continuation2_20261013/native24_chord_readonly_terminal_closure.json": "540fbd05798d1f5d8bedcbdf6c4b501de78acd8e6428128c8d603ed9f4665b65",
+    "native_reference_20261012/zero_powell_support_diagnosis.json": "bfec6eff1afae10c80e7bc6a90414b3e98834759d09194ce866908c11a1cb266",
     "netflux_direction_comparison_20261012/METRICS.json": "d43eca32dd67c160fd3933524a3e80a115a0615afa135482023f67f9149aa979",
     "netflux_future_observation_20261012/METRICS.json": "d51bdaaa08e05933c15fe9d63517ca467ac4e04a5daf62c94462a7ae9d65e34b",
     "netflux_subspace_20261012/METRICS.json": "be6f31b8c33e6e7eaed3c4e5cb8b3af6744f5bbbb664c8052a440a26fd844ab2",
     "netflux_subspace_20261012/OBSERVATION_VERIFICATION.json": "73550e51cd3e2f0440f2542b95d9b5fbd48138821a980f07fa2198b0e6ac836e",
     "residual_direction_20261012/METRICS.json": "d87109090d40876d40f0f8c7463f893c5cb8dac72ca8af03a39e3aa7fd777cc8",
     "residual_direction_20261012/OBSERVATION_VERIFICATION.json": "1553b88c1cf010d777873297be4bacaa52435c9890df79ed275f9dac284a05e3",
+    "signed_span_20261012/AUDIT.json": "eb91dff78cfa36e44dce1ff3f1c53969af36e62fbd9448496385cfcc5eb11035",
+    "signed_span_20261012/METRICS.json": "da2418190e614e95ddb98f5adf905770d59cdb4a70fd8500541e1cc5d6d33eb3",
+    "signed_span_20261012/PHYSICAL_RECOVERY.json": "8218e5e057f16b7bd4d8b16368a0d36032c3d2b4357fe0fceb9109a772e9b814",
+    "signed_span_20261012/forecast_validation_attempt1/forecast_validation.json": "ba2364d8ddca0bc5b16a7093008506d16b7f85a4baa78dc1f937c7d955450a4e",
+    "signed_span_20261012/independent_semidiscrete_reference.json": "7e7b340744d1ef6be8e39f3c2bc654530ff103aefeb31239651dd6708f2cfee2",
+    "signed_span_20261012/independent_semidiscrete_reference.npz": "3614d099c52f9c8b70ebb72061205fd56887728697f1abf5e87849868c9e8209",
     "subspace_active_qr_20261012/METRICS.json": "af44e442b08bb7473352ed47c1afb04812851e7ceb2c1bc356659c49bc63f707",
-    "subspace_rank_fix_20261012/METRICS.json": "1931fd03fc60a9c51279fcf7bb5e49ef6cb7f7093a37545bf9ebd571b50792c2"
+    "subspace_rank_fix_20261012/METRICS.json": "1931fd03fc60a9c51279fcf7bb5e49ef6cb7f7093a37545bf9ebd571b50792c2",
+    "signed_span_20261012/forecast_mae.svg": "c9695617540671ce77ba4f29725694aa67dcc0af4791a706ae0b9993f4779e8e"
+  },
+  "visualizations": {
+    "native_forecast_8eff6b1f_mae": {
+      "data_sha256": "3733aed0d698cc130a6509da6c6e75c31f4c80e14c20608fd06205d1c3bc3b1e",
+      "svg_sha256": "f6a8a3c5bfbeb1910573bf5fe49599a24146a72ee38f9e528ccb2c141a691627",
+      "png_sha256": "defd7ba7f2e99c1820f9bf9ecb788323a87ba6232d5a6647d915bcb70f88c602",
+      "candidate_control_sha256": "8eff6b1f2285ff626fcd8815b43e0b772cdef050501511837e4f51fcbaadb47c",
+      "first_worse_lead_minutes": "110"
+    },
+    "native_forecast_6ca56498_mae": {
+      "data_sha256": "9f23dd6a9318f0ca467b969aec93c34f0757e19f94435d3eb224943322fc7d92",
+      "svg_sha256": "b91d310021d9d3829af4326bc3e8530a635eab93375682c1ac7ac2b352fa1d26",
+      "png_sha256": "b07a61389f90750f5f87af74404d96e0a482005ba7e11f7790445812c914d3bc",
+      "candidate_control_sha256": "6ca56498f82002634a5103fecd41b1ec9d67e8ff745ecbe9b554906043c0c4d5",
+      "first_worse_lead_minutes": "110"
+    }
   }
 }

@@ -1,0 +1,276 @@
+{
+  "accounting": {
+    "Hessian_rows_completed": 192,
+    "Hessian_rows_started": 192,
+    "charged_at_phase_end_seconds": 3232.479948957843,
+    "charged_before_phase_seconds": 3078.875938999859,
+    "estimated_remaining_at_phase_end_seconds": 367.52005104215687,
+    "forecast_calls": 0,
+    "gradient_calls_this_phase": 44,
+    "native_J_cumulative_at_end": 299,
+    "native_J_cumulative_before_phase": 250,
+    "native_J_started_this_phase": 49,
+    "original_cap_seconds": 3600.0,
+    "peak_rss_bytes": 493731840,
+    "profile_scalar_calls": 8,
+    "remaining_Hessian_rows_under_frozen_cap": 96,
+    "score_calls": 0
+  },
+  "execution": {
+    "elapsed_seconds": 153.6349869580008,
+    "phase": "final_first_order_not_met",
+    "preflight_model_callbacks": 0,
+    "preflight_zero_callback_attempts": 3,
+    "source_archive_closure": true,
+    "status": "eight_steps_without_two_face_stationarity"
+  },
+  "limitations": [
+    "The reported full-hull and tangent residuals are not stationarity certificates because they exceed the threshold.",
+    "No minimum or response claim.",
+    "Curvature matrices belong to earlier optimizer points only; no exact four-sector terminal-point P2 was run.",
+    "No forecast or score evaluation."
+  ],
+  "preflight_error_paths": [
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_attempt1_preflight_error.json",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_attempt2_preflight_error.json",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_attempt3_preflight_error.json"
+  ],
+  "qualification_result": {
+    "accepted_native24_corrections": 8,
+    "final_native_J": 0.060119180907603945,
+    "full_clarke_gradient_inf": 0.0011848233293419996,
+    "initial_native_J": 0.060121098811763404,
+    "minimum_claim": false,
+    "reason": "Eight-step cap reached with a nonzero four-sector full Clarke hull/tangent gradient; final-point four-quadrant P2 matrices were not computed.",
+    "stationarity_threshold": 1e-10,
+    "tangent_gradient_inf": 0.0011848233293419996
+  },
+  "record_type": "native24_read_only_terminal_closure",
+  "source_artifacts": {
+    "frozen_plan_path": "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/NATIVE24_PLAN_v6.json",
+    "frozen_plan_sha256": "46aa85fead56aa0196499982019c242142c34ebcb1b1c347dc5e50b1746f96cf",
+    "input_two_face_control_sha256": "58f5ddc2e3594d1b369c0bb62c932ede7de5a9a5d9e2051c209a1dd8422a597f",
+    "launch_snapshot_path": "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_launch_snapshot_v6.tar.gz",
+    "launch_snapshot_sha256": "2b90f45cb0e81cfe9cb5c70df232f23a101e857d85f2a609ece712fae36a3a97",
+    "raw_result_path": "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_qualification.json",
+    "raw_result_sha256": "5a06813f31372a07f24fe223b9e0424469de3d675188c25f94db791bfb41d638",
+    "terminal_control_sha256": "dccb0c9938f7cd8fa7fc386f9ae2158a8831b036acbc0ce0ae26240c43159376"
+  },
+  "terminal_point": {
+    "active_face_entities": [
+      "y:2:1",
+      "y:4:3"
+    ],
+    "actual_branch_classification": "multiplefaces",
+    "all_normal_signs_strict": true,
+    "control": [
+      0.007949750888188513,
+      0.007289486376869927,
+      -0.037058649376618645,
+      -0.010796163797401743,
+      -0.001251982183600421,
+      0.0034011273561187078,
+      -0.0113402098625648,
+      -0.028710420137051877,
+      0.0041341659362558675,
+      -0.013367913138843874,
+      -0.03802323464483003,
+      -0.025462501357943326,
+      0.0519952328085856,
+      0.029289611561320296,
+      -0.01457976742994573,
+      0.0,
+      0.0,
+      0.0002599300710999934,
+      -0.02698874140418063,
+      -0.019916266166498626,
+      -0.06327432776911633,
+      0.008530941822347588,
+      -0.02870136106611733,
+      0.058709393004670624,
+      -0.001021629244190323,
+      0.1852316217947737
+    ],
+    "control_sha256": "dccb0c9938f7cd8fa7fc386f9ae2158a8831b036acbc0ce0ae26240c43159376",
+    "face_values": [
+      6.938893903907228e-18,
+      -0.0
+    ],
+    "final_exact_hessian_at_terminal_control": false,
+    "first_order_pass": false,
+    "full_clarke_hull": {
+      "scope": "finite gradients at nearby points; not limiting-gradient certification",
+      "squared_norm": 2.7186820169751178e-06,
+      "vector": [
+        -0.00023975638187591353,
+        -0.0004514413271368553,
+        -4.501530562791428e-05,
+        -6.653903237389958e-07,
+        6.203019213297384e-09,
+        -0.0001435956385025059,
+        -0.0004544611823444223,
+        -0.00031847515666771214,
+        -0.00012000368777470398,
+        3.883729098578051e-05,
+        3.7544707031260394e-05,
+        -0.0005685856983276248,
+        -0.0005559110837920211,
+        0.00010154339804388166,
+        4.690708904667683e-05,
+        0.0,
+        0.0,
+        -2.6043939386599223e-07,
+        0.00014952982302021342,
+        5.640001907683198e-05,
+        0.00010271235968739567,
+        -3.640658216037701e-05,
+        7.78867613809141e-05,
+        -0.000131705041469403,
+        -5.984843050849064e-07,
+        -0.0011848233293419996
+      ],
+      "weights": [
+        0.2867831127276358,
+        0.0,
+        0.15988625777960697,
+        0.5533306294927572
+      ]
+    },
+    "native_J": 0.060119180907603945,
+    "near_tie_entities": [],
+    "normal_coefficients": [
+      {
+        "eta": [
+          -0.19474362103089796,
+          -0.039456896779464894
+        ],
+        "eta_roundoff_budget": [
+          5.820533034841471e-15,
+          2.1044627793572135e-14
+        ],
+        "eta_sign_margin": [
+          0.19474362103089796,
+          0.039456896779464894
+        ],
+        "sides": [
+          -1,
+          -1
+        ],
+        "strict_sign_match": [
+          true,
+          true
+        ]
+      },
+      {
+        "eta": [
+          -0.19474362103089846,
+          0.03185109644627846
+        ],
+        "eta_roundoff_budget": [
+          5.306885619147977e-15,
+          1.918749226737643e-14
+        ],
+        "eta_sign_margin": [
+          0.19474362103089846,
+          0.03185109644627846
+        ],
+        "sides": [
+          -1,
+          1
+        ],
+        "strict_sign_match": [
+          true,
+          true
+        ]
+      },
+      {
+        "eta": [
+          0.07830602839016085,
+          -0.039456896779464894
+        ],
+        "eta_roundoff_budget": [
+          1.9462663928162415e-15,
+          7.036890191805537e-15
+        ],
+        "eta_sign_margin": [
+          0.07830602839016085,
+          0.039456896779464894
+        ],
+        "sides": [
+          1,
+          -1
+        ],
+        "strict_sign_match": [
+          true,
+          true
+        ]
+      },
+      {
+        "eta": [
+          0.07830602839016088,
+          0.031851096446276726
+        ],
+        "eta_roundoff_budget": [
+          2.4574747929839756e-15,
+          8.885207251786016e-15
+        ],
+        "eta_sign_margin": [
+          0.07830602839016088,
+          0.031851096446276726
+        ],
+        "sides": [
+          1,
+          1
+        ],
+        "strict_sign_match": [
+          true,
+          true
+        ]
+      }
+    ],
+    "normal_rank_two": true,
+    "normal_singular_values": [
+      0.9285914780268306,
+      0.09692197856151133
+    ],
+    "stage_count": 360,
+    "tangent_gradient_agreement_budget": 9.390971139467827e-17,
+    "tangent_gradient_agreement_inf": 2.0691998461885852e-16,
+    "tangent_hull": {
+      "scope": "finite gradients at nearby points; not limiting-gradient certification",
+      "squared_norm": 2.7293587913710383e-06,
+      "vector": [
+        -0.00023975638187591353,
+        -0.0004514413271368553,
+        -4.501530562791428e-05,
+        -6.653903237389958e-07,
+        6.203019213297384e-09,
+        -0.0001435956385025059,
+        -0.0004544611823444223,
+        -0.00031847515666771214,
+        -0.00012000368777470398,
+        3.883729098578051e-05,
+        3.7544707031260394e-05,
+        -0.0005685856983276248,
+        -0.0005559110837920211,
+        0.00010154339804388166,
+        4.690708904667683e-05,
+        0.0,
+        0.0,
+        -2.6043939386599223e-07,
+        0.00014952982302021342,
+        5.640001907683198e-05,
+        0.0001027123596873264,
+        -9.774903207663855e-05,
+        -0.00016081126850735179,
+        -0.0011848233293419996
+      ],
+      "weights": [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ]
+    }
+  }
+}

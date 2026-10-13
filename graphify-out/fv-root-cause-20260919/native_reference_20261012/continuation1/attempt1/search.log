@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/native_reference_20261012/resume_search.py", line 472, in <module>
+    if __name__=="__main__":main()
+  File "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/native_reference_20261012/resume_search.py", line 458, in main
+    result=_run(args.plan_sha256);print(json.dumps({k:v for k,v in result.items() if k!="source_before" and k!="input_before"},sort_keys=True));return
+  File "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/native_reference_20261012/resume_search.py", line 276, in _run
+    input_before={name:cycle.shared._input_identity(problem,original,point,parameters,truth)
+  File "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/native_reference_20261012/resume_search.py", line 276, in <dictcomp>
+    input_before={name:cycle.shared._input_identity(problem,original,point,parameters,truth)
+NameError: name 'cycle' is not defined

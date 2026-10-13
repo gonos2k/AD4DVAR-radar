@@ -1,0 +1,29 @@
+{
+  "additional_FV_calls": 0,
+  "all_boundary_support_edges_min": 1.0,
+  "all_incoming_boundary_unknown_faces": 0,
+  "boundary_unknown_input_cells": 0,
+  "cfl": 0.007281598577549242,
+  "cfl_passed": true,
+  "effective_cfl_cap": 0.5,
+  "excess_over_tolerance": 1.1102230246251565e-16,
+  "interpretation": "All boundary supports remain exactly 1 and there are no unknown incoming boundary faces. At check 34, one propagated support cell is 1\u22123.66e\u221215, exceeding the strict 16-epsilon tolerance by about 1.11e\u221216; this is accumulated FP support drift, not an unknown initial/boundary value or a CFL violation.",
+  "minmod_support_validator_check": 34,
+  "objective_attempts": 1,
+  "reconstructed_flux_max_abs_diff_from_failure_diag": 0.0,
+  "replay_control_sha256": "5556eec11e69aebb4a6e76a7b2e33787c76cf6145ad87eec7dd201ec3f5b9e62",
+  "replay_powell_callback": 700,
+  "source": "src/advar/transport.py::_check_minmod_support and finite_volume_step; no source edits",
+  "status": "support_roundoff_cause_identified",
+  "support_deficit_from_one": 3.6637359812630166e-15,
+  "support_max": 1.0,
+  "support_min": 0.9999999999999963,
+  "support_threshold_tolerance": 3.552713678800501e-15,
+  "support_unknown_cells": 1,
+  "unknown_cell_indices": [
+    [
+      2,
+      3
+    ]
+  ]
+}

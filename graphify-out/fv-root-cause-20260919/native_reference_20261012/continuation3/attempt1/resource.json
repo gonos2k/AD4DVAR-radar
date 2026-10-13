@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/private/tmp/advar-independent-reference-20261012/bin/python",
+    "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/native_reference_20261012/resume_search.py",
+    "--child",
+    "--plan-sha256",
+    "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01"
+  ],
+  "child_pid": 48244,
+  "exit_code": 0,
+  "resource_termination": null,
+  "monitor_error": null,
+  "elapsed_seconds": 65.68576145800762,
+  "sampled_peak_rss_bytes": 369983488,
+  "rss_samples": 244,
+  "wall_limit_seconds": 3241.239247957943,
+  "rss_limit_bytes": 2147483648,
+  "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+  "received_sigterm": false,
+  "child_process_group_cleanup_sent": false,
+  "child_process_group_cleanup_error": null
+}

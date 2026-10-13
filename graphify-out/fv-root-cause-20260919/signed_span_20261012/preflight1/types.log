@@ -1,0 +1,5 @@
+/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/signed_span_20261012/signed_trial.py
+  /Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/signed_span_20261012/signed_trial.py:286:11 - error: Argument of type "Any | None" cannot be assigned to parameter "a" of type "Tensor" in function "_same"
+    Type "Any | None" is not assignable to type "Tensor"
+      "None" is not assignable to "Tensor" (reportArgumentType)
+1 error, 0 warnings, 0 informations

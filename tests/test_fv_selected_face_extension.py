@@ -11,6 +11,7 @@ from advar.transport import (
     finite_volume_step,
     finite_volume_trajectory,
     selected_face_extension,
+    selected_face_extensions,
 )
 
 
@@ -131,6 +132,109 @@ def test_selected_face_rejects_indices_outside_matching_flux(axis, row, column):
     with selected_face_extension(axis, row, column, 1):
         with pytest.raises(ValueError, match="outside the face-flux shape"):
             _volume_parts(torch.zeros((1, 2), dtype=torch.float64), axis=axis)
+
+
+@pytest.mark.parametrize("side1", [-1, 1])
+@pytest.mark.parametrize("side2", [-1, 1])
+def test_two_selected_faces_choose_independent_zero_flux_derivatives(side1, side2):
+    dtype = torch.float64
+    q = torch.zeros((2, 3), dtype=dtype, requires_grad=True)
+    selections = (("y", 0, 1, side1), ("y", 1, 2, side2))
+    with selected_face_extensions(*selections):
+        plus, minus = _volume_parts(q, axis="y")
+        score = (2 * plus + 3 * minus).sum()
+        gradient = torch.autograd.grad(score, q)[0]
+
+    torch.testing.assert_close(plus, torch.zeros_like(q), atol=0, rtol=0)
+    torch.testing.assert_close(minus, torch.zeros_like(q), atol=0, rtol=0)
+    expected1 = 3.0 if side1 < 0 else 2.0
+    expected2 = 3.0 if side2 < 0 else 2.0
+    assert gradient[0, 1].item() == expected1
+    assert gradient[1, 2].item() == expected2
+    assert gradient[0, 0].item() == 2.5
+
+
+def test_two_face_context_is_order_independent_unique_and_restored():
+    q = torch.zeros((2, 3), dtype=torch.float64, requires_grad=True)
+    first = (("y", 0, 1, -1), ("y", 1, 2, 1))
+    outputs = []
+    for faces in (first, tuple(reversed(first))):
+        with selected_face_extensions(*faces):
+            plus, minus = _volume_parts(q, axis="y")
+            outputs.append((plus.clone(), minus.clone()))
+    for actual, expected in zip(outputs[0], outputs[1]):
+        torch.testing.assert_close(actual, expected, atol=0, rtol=0)
+
+    with pytest.raises(ValueError, match="exactly two"):
+        with selected_face_extensions(("y", 0, 1, -1)):
+            pass
+    with pytest.raises(ValueError, match="distinct faces"):
+        with selected_face_extensions(("y", 0, 1, -1), ("y", 0, 1, 1)):
+            pass
+    with pytest.raises(ValueError, match="side"):
+        with selected_face_extensions(("y", 0, 1, -1), ("y", 1, 2, 0)):
+            pass
+
+    restored = _volume_parts(q, axis="y")
+    restored_gradient = torch.autograd.grad(restored[0][0, 1], q)[0]
+    assert restored_gradient[0, 1].item() == 0.5
+
+
+def _two_face_trajectory(*, coefficients: torch.Tensor, replay: bool):
+    dtype = coefficients.dtype
+    y, x = torch.meshgrid(
+        torch.arange(3, dtype=dtype),
+        torch.arange(3, dtype=dtype),
+        indexing="ij",
+    )
+    echo = 1.0 + 0.05 * x.square() + 0.03 * y.square() + 0.02 * x * y
+    support = torch.ones_like(echo)
+    basis = torch.zeros((2, 4, 4), dtype=dtype)
+    basis[0, 1, 1] = 1.0
+    basis[1, 1, 3] = 1.0
+    zero_echo = cast(BoundaryEdges, tuple(torch.zeros(3, dtype=dtype) for _ in range(4)))
+    known_support = cast(BoundaryEdges, tuple(torch.ones_like(edge) for edge in zero_echo))
+    return finite_volume_trajectory(
+        echo,
+        support,
+        coefficients,
+        torch.tensor(0.0, dtype=dtype),
+        psi_basis=basis,
+        leads=1,
+        substeps_per_interval=1,
+        interval_seconds=0.05,
+        spacing_yx=(1.0, 1.0),
+        boundary_echo=((zero_echo, zero_echo),),
+        boundary_support=((known_support, known_support),),
+        reconstruction="donorcell",
+        replay=replay,
+    )[0]
+
+
+def test_two_selected_faces_are_captured_for_replay_gradient_and_hvp():
+    dtype = torch.float64
+    objective_weights = torch.tensor(
+        [[0.3, 0.8, 0.7], [1.2, 0.5, 0.4], [0.9, 0.6, 1.1]],
+        dtype=dtype,
+    )
+    for side1 in (-1, 1):
+        for side2 in (-1, 1):
+            results = []
+            for replay in (False, True):
+                coefficients = torch.zeros(2, dtype=dtype, requires_grad=True)
+                faces = (("y", 1, 1, side1), ("y", 1, 2, side2))
+                with selected_face_extensions(*faces):
+                    frames = _two_face_trajectory(coefficients=coefficients, replay=replay)
+                objective = (frames[-1] * objective_weights).sum()
+                gradient = torch.autograd.grad(objective, coefficients, create_graph=True)[0]
+                hvp = torch.autograd.grad(gradient.sum(), coefficients)[0]
+                results.append((frames.detach(), gradient.detach(), hvp.detach()))
+            for actual, expected in zip(results[1], results[0]):
+                torch.testing.assert_close(actual, expected, atol=1e-12, rtol=1e-12)
+            assert bool(torch.isfinite(results[1][1]).all())
+            assert bool(torch.isfinite(results[1][2]).all())
+            assert results[1][1].abs().sum().item() > 0
+            assert results[1][2].abs().sum().item() > 0
 
 
 def _trajectory(

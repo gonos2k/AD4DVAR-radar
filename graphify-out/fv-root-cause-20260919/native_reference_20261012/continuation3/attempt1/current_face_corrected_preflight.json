@@ -1,0 +1,208 @@
+{
+  "branch": {
+    "actual_selector_signature_sha256": "3f3e88b64e84f3110abfa735172c423ee4eae6c03afab1f12d039ef42b23e04b",
+    "classification": "singleface",
+    "expected_analysis_stage_count": 360,
+    "face_sign_counts_over_stages": {
+      "x": {
+        "negative": 8640,
+        "positive": 0,
+        "zero": 0
+      },
+      "y": {
+        "negative": 5760,
+        "positive": 3240,
+        "zero": 360
+      }
+    },
+    "native_J_on_audited_path": 0.06032493087285347,
+    "normalized_branch_margins": {
+      "face_abs_over_global_max_flux": {
+        "first_flat_index": 23,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 0,
+          "substep_index": 0
+        },
+        "stage_index": 0,
+        "value": 2.715384389458397e-16
+      },
+      "x_active_gap_over_q_scale": {
+        "first_flat_index": 0,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 0,
+          "substep_index": 0
+        },
+        "stage_index": 0,
+        "value": 0.010232356826862868
+      },
+      "x_operand_over_q_scale": {
+        "first_flat_index": 2,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 1200,
+          "interval_index": 1,
+          "interval_start_seconds": 600,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 0,
+          "substep_index": 50
+        },
+        "stage_index": 280,
+        "value": 3.6552296807700066e-05
+      },
+      "y_active_gap_over_q_scale": {
+        "first_flat_index": 3,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 1200,
+          "interval_index": 1,
+          "interval_start_seconds": 600,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 53
+        },
+        "stage_index": 287,
+        "value": 3.671337591696288e-06
+      },
+      "y_operand_over_q_scale": {
+        "first_flat_index": 5,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 39
+        },
+        "stage_index": 79,
+        "value": 1.631144751219669e-05
+      }
+    },
+    "objective_finite": true,
+    "selector_counts": {
+      "x": {
+        "active_tie": 0,
+        "inactive_zero": 439,
+        "left": 1080,
+        "right": 641
+      },
+      "y": {
+        "active_tie": 0,
+        "inactive_zero": 441,
+        "left": 1369,
+        "right": 350
+      }
+    },
+    "stage_count": 360,
+    "strict_pointwise_branch": false,
+    "unique_near_tie_slope_entities": [],
+    "unique_nearzero_face_entities": [
+      "y:4:3"
+    ],
+    "violation_counts": {
+      "y_face_flux_nonzero": 360
+    }
+  },
+  "branch_single_selected_face": true,
+  "chart_identity": {
+    "chart_sha256": "15995f5271caa1578082f5f15eedfc1dabd3005aefa64b930379db746f496d64",
+    "face": [
+      "y",
+      4,
+      3
+    ],
+    "metric": "normalized signed face flux in real arithmetic; FP64 reduction order may differ; no event or branch certificate",
+    "normalization": "abs(pivot face weight) * pivot coefficient limit",
+    "pivot_flow_index": 4
+  },
+  "continuation_plan_sha256": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+  "face_normal_l2": 0.8998572152148154,
+  "face_q": 6.938893903907228e-18,
+  "minmix_theta": 0.7088527773893992,
+  "mixed_gradient_inf": 0.0698878391907519,
+  "mixed_gradient_tangent_inf": 0.0698878391907519,
+  "outward_budgets": {
+    "-1": 6.119174449576503e-15,
+    "1": 4.128268032296199e-15
+  },
+  "outward_slopes": {
+    "-1": -0.17430261100118918,
+    "1": 0.07159134125659854
+  },
+  "pivot_flow_index": 4,
+  "point_control": [
+    0.008047595338150708,
+    0.011126864754705881,
+    -0.034611911000200654,
+    -0.010274582425120457,
+    -0.0011874783236495384,
+    0.005745738164432669,
+    -0.019681799856702317,
+    -0.03245795388272203,
+    0.006412614123951912,
+    -0.01442838580273195,
+    -0.0361291011845686,
+    -0.026404472692198065,
+    0.058899957531706355,
+    0.029002583436095356,
+    -0.02318636351703152,
+    0.0,
+    -0.0028315869214361055,
+    -0.0011222144916249216,
+    -0.026106183619275507,
+    -0.015183794596391345,
+    -0.06259623135227181,
+    0.008490799105045145,
+    -0.02827280683994945,
+    0.05758961003757313,
+    -0.0009745410721767099,
+    0.1854957875023836
+  ],
+  "point_native_J": 0.06032493087285347,
+  "point_sha256": "8eff6b1f2285ff626fcd8815b43e0b772cdef050501511837e4f51fcbaadb47c",
+  "prior_cycle_count": 2,
+  "prior_hvp_returned": 50,
+  "prior_hvp_started": 50,
+  "prior_ledger": {
+    "cancelled_event_draft_charge_s": 170.0,
+    "charged_s": 1653.0,
+    "earlier_refinement_s": [
+      67.0,
+      307.0
+    ],
+    "estimated_remaining_s": 1947.0,
+    "full26H_conservative_charge_s": 100.0,
+    "native_search_s": 424.0,
+    "original_cap_s": 3600.0,
+    "prior_face_newton_run_s": 480.0,
+    "resume_preflight_s": 5.0,
+    "tests_probes_conservative_s": 100.0
+  },
+  "prior_point_status": "nonpositive_or_unresolved_face_curvature",
+  "side_gradient_inf": {
+    "-1": 0.16520876867841341,
+    "1": 0.0698878391907519
+  },
+  "side_tangent_agreement_inf": 2.0816681711721685e-17,
+  "source_archive_closure": true,
+  "source_transition": {
+    "after": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9",
+    "before": "b0335b7a72ecd22084d5ab8ea0e46707240be15ef0039f4b31f96adbc937ee1a",
+    "path": "src/advar/transport.py"
+  },
+  "strict_outward": true,
+  "tangent_gradient_inf": {
+    "-1": 0.0698878391907519,
+    "1": 0.0698878391907519
+  }
+}

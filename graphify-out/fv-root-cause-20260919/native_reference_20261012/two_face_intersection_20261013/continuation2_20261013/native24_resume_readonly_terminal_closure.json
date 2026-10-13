@@ -1,0 +1,270 @@
+{
+  "accounting": {
+    "charged_at_phase_end_recorded": 3403.5560173330095,
+    "charged_before_plus_elapsed": 3403.663868373792,
+    "elapsed_seconds": 166.0529424159322,
+    "estimated_remaining_before_chord_phase_exact": 196.33613162620804,
+    "forecast_calls": 0,
+    "gradients_this_phase": 72,
+    "hessian_rows_this_phase": 96,
+    "native_J_added": 185,
+    "native_J_before": 299,
+    "native_J_total": 484,
+    "profile_scalar_calls": 4,
+    "score_calls": 0
+  },
+  "elapsed_seconds": 166.0529424159322,
+  "final_point": {
+    "all_normal_signs_strict": true,
+    "branch_classification": "multiplefaces",
+    "control": [
+      0.007949718888029094,
+      0.007289456185731899,
+      -0.03705859271891706,
+      -0.010796175218107145,
+      -0.0012519829672125082,
+      0.0034010697458623012,
+      -0.011340081174670795,
+      -0.02871084041142497,
+      0.004134862509247761,
+      -0.013368737950980954,
+      -0.038023232278632794,
+      -0.02546233579276608,
+      0.05199515103874492,
+      0.02928952842019001,
+      -0.014579881790290655,
+      0.0,
+      0.0,
+      0.00025992949096134157,
+      -0.0269886426713319,
+      -0.01991628917005332,
+      -0.06327414158208952,
+      0.008530958093340627,
+      -0.028701387239099076,
+      0.05870942877571473,
+      -0.001021628017888858,
+      0.18523163816040913
+    ],
+    "control_sha256": "d88b6556ce2eec95c0cd3fee661152a1068e113b9c43bfce7aa812d966ae31a1",
+    "face_values": [
+      -6.938893903907228e-18,
+      -3.469446951953614e-18
+    ],
+    "faces": [
+      "y:2:1",
+      "y:4:3"
+    ],
+    "first_order_pass": false,
+    "full_clarke_hull": {
+      "scope": "finite gradients at nearby points; not limiting-gradient certification",
+      "squared_norm": 2.5781515046389106e-06,
+      "vector": [
+        -0.00023351772746763554,
+        -0.0004396972004965215,
+        -4.384067092969013e-05,
+        -6.479666993953331e-07,
+        6.039417875091518e-09,
+        -0.00014083821677177448,
+        -0.00044066935828663764,
+        -0.0003111424753853981,
+        -0.00011692130268971951,
+        3.78386668110145e-05,
+        3.656769281408512e-05,
+        -0.0005537896746283383,
+        -0.0005414489500360289,
+        9.946372217921676e-05,
+        4.573517917231401e-05,
+        0.0,
+        0.0,
+        -2.5366288883212247e-07,
+        0.00014508315895538776,
+        5.487616160165451e-05,
+        0.0001000618784085805,
+        -3.547220662086112e-05,
+        7.5886855230305e-05,
+        -0.00012832231339817487,
+        -5.832286883201646e-07,
+        -0.0011539926898735398
+      ],
+      "weights": [
+        0.2867832706403114,
+        0.0,
+        0.15976504269031622,
+        0.5534516866693724
+      ]
+    },
+    "native_J": 0.06011918083902075,
+    "normal_coefficients": [
+      {
+        "eta": [
+          -0.19474452221917554,
+          -0.039465346246137026
+        ],
+        "eta_roundoff_budget": [
+          5.820607974483247e-15,
+          2.1044898754643044e-14
+        ],
+        "eta_sign_margin": [
+          0.19474452221917554,
+          0.039465346246137026
+        ],
+        "sides": [
+          -1,
+          -1
+        ],
+        "strict_sign_match": [
+          true,
+          true
+        ]
+      },
+      {
+        "eta": [
+          -0.19474452221917532,
+          0.031842316548487716
+        ],
+        "eta_roundoff_budget": [
+          5.306960677510449e-15,
+          1.9187763656767245e-14
+        ],
+        "eta_sign_margin": [
+          0.19474452221917532,
+          0.031842316548487716
+        ],
+        "sides": [
+          -1,
+          1
+        ],
+        "strict_sign_match": [
+          true,
+          true
+        ]
+      },
+      {
+        "eta": [
+          0.07830645121215883,
+          -0.039465346246135985
+        ],
+        "eta_roundoff_budget": [
+          1.9461833994277135e-15,
+          7.036590125717825e-15
+        ],
+        "eta_sign_margin": [
+          0.07830645121215883,
+          0.039465346246135985
+        ],
+        "sides": [
+          1,
+          -1
+        ],
+        "strict_sign_match": [
+          true,
+          true
+        ]
+      },
+      {
+        "eta": [
+          0.07830645121215883,
+          0.03184231654848945
+        ],
+        "eta_roundoff_budget": [
+          2.457394004969615e-15,
+          8.884915160334885e-15
+        ],
+        "eta_sign_margin": [
+          0.07830645121215883,
+          0.03184231654848945
+        ],
+        "sides": [
+          1,
+          1
+        ],
+        "strict_sign_match": [
+          true,
+          true
+        ]
+      }
+    ],
+    "normal_rank_two": true,
+    "tangent_agreement_budget": 2.607698150561455e-14,
+    "tangent_agreement_inf": 5.163512846462215e-18,
+    "tangent_hull": {
+      "scope": "finite gradients at nearby points; not limiting-gradient certification",
+      "squared_norm": 2.588287023268276e-06,
+      "vector": [
+        -0.00023351772746763554,
+        -0.0004396972004965215,
+        -4.384067092969013e-05,
+        -6.479666993953331e-07,
+        6.039417875091518e-09,
+        -0.00014083821677177448,
+        -0.00044066935828663764,
+        -0.0003111424753853981,
+        -0.00011692130268971951,
+        3.78386668110145e-05,
+        3.656769281408512e-05,
+        -0.0005537896746283383,
+        -0.0005414489500360289,
+        9.946372217921676e-05,
+        4.573517917231401e-05,
+        0.0,
+        0.0,
+        -2.5366288883212247e-07,
+        0.00014508315895538776,
+        5.487616160165451e-05,
+        0.0001000618784085805,
+        -9.523957901681008e-05,
+        -0.00015668117222221366,
+        -0.0011539926898735398
+      ],
+      "weights": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "ties": []
+  },
+  "fresh_hessians": [
+    {
+      "control_sha256": "dccb0c9938f7cd8fa7fc386f9ae2158a8831b036acbc0ce0ae26240c43159376",
+      "hessian_sha256": "43ce6c350434fee37423cea044d85832a4631a1e5ae2f1755c9fe1a2736458ec",
+      "lambda_min": 0.8512090163163831,
+      "positive_definite": true,
+      "profile_match": true
+    },
+    {
+      "control_sha256": "3a8d56dc1c4e6d0027b8e605420334d189505b5947ec1cf702908c079ca2774f",
+      "hessian_sha256": "58909ee26cd1193c35fa1b99e8ce500869b42590fc0fa7ccd0444e26b335b6a0",
+      "lambda_min": 0.8515402846848583,
+      "positive_definite": true,
+      "profile_match": true
+    },
+    {
+      "control_sha256": "a5ebb14cd202b7e447d66e975f139f2dc5909e5523597a4050e32cdfd95dfc50",
+      "hessian_sha256": "d160ad90c66559699999266d3799789defbb14714f72e98d48e4fe0b9f983951",
+      "lambda_min": 0.8515659222130109,
+      "positive_definite": true,
+      "profile_match": true
+    },
+    {
+      "control_sha256": "380dcaf8d1557ac1be2b1ec3dde01079f1feb78b2f376aae6d1250621ff2a864",
+      "hessian_sha256": "e0f0cd02c102835ec3ea33f8cceac24129b8044eef0d68db1730cccb8a4382bf",
+      "lambda_min": 0.8512096305932082,
+      "positive_definite": true,
+      "profile_match": true
+    }
+  ],
+  "hashes": {
+    "input_v6_control_sha256": "dccb0c9938f7cd8fa7fc386f9ae2158a8831b036acbc0ce0ae26240c43159376",
+    "plan_sha256": "1579ae50b622059754a772e9313e926b052050edb4b4662c5079c2d57cb3621b",
+    "raw_result_sha256": "f2b68691ace3b14c684cbfbceb08f879d2e55172e2735f46f320b9c4c3d9d1b2",
+    "snapshot_sha256": "ec58d668610a7a388b52c9a819e162604bf998f0ac2f65d2367836852df8b8b1",
+    "terminal_control_sha256": "d88b6556ce2eec95c0cd3fee661152a1068e113b9c43bfce7aa812d966ae31a1"
+  },
+  "limitation": "The four-cycle cap ended with nonzero full/tangent gradient infinity norm; no terminal-point four-sector Hessians or minimum claim.",
+  "phase": "terminal_nonstationary",
+  "record_type": "native24_same_task_resume_read_only_terminal_closure",
+  "source_archive_closure": true,
+  "status": "four_cycle_budget_exhausted_without_two_face_stationarity"
+}

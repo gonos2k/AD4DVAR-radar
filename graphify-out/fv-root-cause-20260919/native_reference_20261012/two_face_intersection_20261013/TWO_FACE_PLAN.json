@@ -1,0 +1,44 @@
+{
+  "budget": {
+    "charged_seconds_before_phase": 3060.9887625839037,
+    "cumulative_native_J_calls_before": 249,
+    "estimated_remaining_seconds_before_phase": 539.0112374160963,
+    "no_reset": true,
+    "original_wall_cap_seconds": 3600.0,
+    "phase_forecast_cap": 0,
+    "phase_gradient_cap": 12,
+    "phase_hessian_cap": 0,
+    "phase_native_J_value_cap": 12,
+    "phase_wall_seconds": 120.0,
+    "reserved_after_phase_seconds": 419.01123741609626
+  },
+  "continuation_plan_sha256": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+  "created_from": "retained_graph_v9 actual terminal control only",
+  "geometry": {
+    "active_faces": [
+      "y:4:3",
+      "y:2:1"
+    ],
+    "chart_control_dimension": 26,
+    "hull_interpretation": "finite epsilon sampled sector gradients only; no limiting-gradient, stationarity, or minimum claim",
+    "intersection_chart_dimension": 24,
+    "sector_samples": "Q1 selected-face extension side -/+ crossed with Q2 actual signed-flux perturbation -/+, tangent-projected using the exact 24D intersection-chart Jacobian",
+    "selection": "enumerate all 10 pairs from the two-row physical face-flux matrix A[r,k]=face_weight[r,k]*coefficient_limit[k]; choose maximum absolute determinant; solve the two pivot tanh coefficients while holding the other three unchanged"
+  },
+  "input_control_sha256": "7748a8733f714d650a2e378f06e9d43a773f1e29d526fdedca37a5d6d2390806",
+  "input_native_J": 0.06012109894172103,
+  "input_path": "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/attempt1/retained_graph_face_qualification.json",
+  "input_previous_plan_sha256": "09cc1bb5d34094833b5b4cda13e491f06a1c77ecbec9b359bc6107761958f701",
+  "input_sha256": "10e6a6a20b2d0b9acce3f70746ce1e960c090d4db4b583a7cd18533aead8d8a5",
+  "phase_kind": "bounded_actual_two_face_intersection_first_order_diagnostic",
+  "source_files": {
+    "examples/weather_scenarios/fv_face_flux_coordinates.py": "8283f5370766423f2e13f45e6ed7dac2b514b6826429f6a3c011ca58fc4285d5",
+    "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py": "2a77cb9fcdf246e9f310bf7bf64925ee293f32f9b2d9d8f4fa49802d899485c2",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/CONTINUATION_PLAN.json": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/CONTINUATION_PLAN_SHA256.txt": "8b58e78987e8d2eb52dedf951e098211872ec3778f8bf75d6ddb0ddec9867630",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/qualify_candidate.py": "4d8c29bd56890a65665484fcfcb051bb6972fdbce5f8c5ef4b41a5540966ae61",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/diagnose.py": "5aa0be5899501e286d4a9d69aa207c53385f87513bdef0199abca97d7c59ce41",
+    "src/advar/transport.py": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9"
+  },
+  "status": "frozen_two_face_diagnostic"
+}

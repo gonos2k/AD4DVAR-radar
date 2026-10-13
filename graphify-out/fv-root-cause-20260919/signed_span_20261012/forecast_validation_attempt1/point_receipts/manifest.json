@@ -1,0 +1,21 @@
+{
+  "forecast_fields": "../forecast_fields.pt",
+  "forecast_fields_sha256": "123158fb59e4e7e4de15a5b4baefdcb20148f99ea2135fd923d3de52ccf7fe3d",
+  "point_receipts": {
+    "2a4d.json": {
+      "bytes": 1237,
+      "sha256": "a704eab5092c6671f08e6da7e02f2a9652c96b3a290456989ed67d0a4af4030f"
+    },
+    "96108.json": {
+      "bytes": 1238,
+      "sha256": "8d82f462a17045d59293e28c30ecb7f5269ffc1092b84dfdb1d34523f0e9b480"
+    },
+    "fb0a.json": {
+      "bytes": 1236,
+      "sha256": "902a9fad93313921417608b8b3cf797f75a7ee850c21dc2bfc26aeac72c2b549"
+    }
+  },
+  "producer_receipt": "../forecast_validation.json",
+  "producer_receipt_sha256": "ba2364d8ddca0bc5b16a7093008506d16b7f85a4baa78dc1f937c7d955450a4e",
+  "raw_domain_annotation_erratum": "score domain is full 4x5 terminal verification grid; raw producer string says off-grid points"
+}

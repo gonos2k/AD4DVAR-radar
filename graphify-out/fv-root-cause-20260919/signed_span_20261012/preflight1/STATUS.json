@@ -1,0 +1,5 @@
+{
+  "stage": "preflight before any physical execution",
+  "reason": "basic typecheck optional direction lookup; replaced by validated key access",
+  "FV_HVP_candidate_calls": 0
+}

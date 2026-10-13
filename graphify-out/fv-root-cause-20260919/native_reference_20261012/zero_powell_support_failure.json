@@ -1,0 +1,132 @@
+{
+  "check_count": 34,
+  "control_sha256": "5556eec11e69aebb4a6e76a7b2e33787c76cf6145ad87eec7dd201ec3f5b9e62",
+  "error": "minmod reconstruction requires fully known initial support",
+  "failing_check": {
+    "boundary_support": [
+      {
+        "edge_max": 1.0,
+        "edge_min": 1.0,
+        "edge_shape": [
+          4
+        ],
+        "incoming_faces": 0,
+        "incoming_unknown_faces": 0,
+        "side_index": 0,
+        "stage": 0
+      },
+      {
+        "edge_max": 1.0,
+        "edge_min": 1.0,
+        "edge_shape": [
+          4
+        ],
+        "incoming_faces": 4,
+        "incoming_unknown_faces": 0,
+        "side_index": 1,
+        "stage": 0
+      },
+      {
+        "edge_max": 1.0,
+        "edge_min": 1.0,
+        "edge_shape": [
+          5
+        ],
+        "incoming_faces": 0,
+        "incoming_unknown_faces": 0,
+        "side_index": 2,
+        "stage": 0
+      },
+      {
+        "edge_max": 1.0,
+        "edge_min": 1.0,
+        "edge_shape": [
+          5
+        ],
+        "incoming_faces": 5,
+        "incoming_unknown_faces": 0,
+        "side_index": 3,
+        "stage": 0
+      },
+      {
+        "edge_max": 1.0,
+        "edge_min": 1.0,
+        "edge_shape": [
+          4
+        ],
+        "incoming_faces": 0,
+        "incoming_unknown_faces": 0,
+        "side_index": 0,
+        "stage": 1
+      },
+      {
+        "edge_max": 1.0,
+        "edge_min": 1.0,
+        "edge_shape": [
+          4
+        ],
+        "incoming_faces": 4,
+        "incoming_unknown_faces": 0,
+        "side_index": 1,
+        "stage": 1
+      },
+      {
+        "edge_max": 1.0,
+        "edge_min": 1.0,
+        "edge_shape": [
+          5
+        ],
+        "incoming_faces": 0,
+        "incoming_unknown_faces": 0,
+        "side_index": 2,
+        "stage": 1
+      },
+      {
+        "edge_max": 1.0,
+        "edge_min": 1.0,
+        "edge_shape": [
+          5
+        ],
+        "incoming_faces": 5,
+        "incoming_unknown_faces": 0,
+        "side_index": 3,
+        "stage": 1
+      }
+    ],
+    "check_failed": true,
+    "check_index": 34,
+    "qx_max": -0.00865032477805451,
+    "qx_min": -0.057272361444904274,
+    "qx_shape": [
+      4,
+      6
+    ],
+    "qy_max": -0.005540939367063777,
+    "qy_min": -0.07480001760819419,
+    "qy_shape": [
+      5,
+      5
+    ],
+    "support_max": 1.0,
+    "support_min": 0.9999999999999963,
+    "support_shape": [
+      4,
+      5
+    ],
+    "support_unknown_cells": 1,
+    "unknown_cell_indices": [
+      [
+        2,
+        3
+      ]
+    ],
+    "validator_error": "minmod reconstruction requires fully known initial support"
+  },
+  "fixed_case_sha256": "1e810c23c73b93d89b2a10b46d9ddea44a8217b07dcd3ebfebb462858e3fa9b7",
+  "new_E_calls": 0,
+  "new_HVP_calls": 0,
+  "objective_forward_attempts": 1,
+  "plan_sha256": "b6f3a08e02ec6da684ea8ea7c9611e6eedf3b8de9de8a9ebc6830347dd13d9ac",
+  "replay_receipt_sha256": "4a6641eeef8e3e4fa1f85f8ee2dd04446010be57115d1c9553d6066fbb2ec979",
+  "status": "native_support_refusal_reproduced"
+}

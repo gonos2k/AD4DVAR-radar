@@ -1,0 +1,92 @@
+{
+  "artifact_hashes": {
+    "../derive_candidate_truth_comparison.py": "61244cc7c38d6c7945aba43a04fcf08d9395790ec5d3146c42af0825add7cd0e",
+    "candidate_8eff6b1f_forecast.json": "6a38d8ee7f5d42a73a364f1dca8ee9d9ffbae27c0aa543f38ac2692a100b897c",
+    "candidate_8eff6b1f_forecast_before_ledger.json": "768eee40b88c2fba1e5ef950e68839776a398a7a775b9efaffe6e43d51f95662",
+    "candidate_8eff6b1f_forecast_fields.npz": "40510dbb9904621286e0e71685b6982850ee2b48d1e04a96e0ac228c6e3ecbac",
+    "candidate_8eff6b1f_forecast_fields_before_ledger.npz": "40510dbb9904621286e0e71685b6982850ee2b48d1e04a96e0ac228c6e3ecbac",
+    "candidate_8eff6b1f_forecast_fields_preliminary_superseded.npz": "64e7ecdf57ee2fc72881e48596646b5c344fe594a7952f35cf62a49acaf69945",
+    "candidate_8eff6b1f_forecast_preliminary_superseded.json": "a606b02feef29aa2a02deec6090810e8b3581c5a065b277397186546c12f6a9c",
+    "candidate_8eff6b1f_forecast_verification.json": "77ee1654c55e31b6a9abe8ff3baa410a63f7c93b86399ed7e95a491e9b782c47",
+    "candidate_8eff6b1f_reference_comparison.json": "22894db23e374c5f5bace03402ebec22d935c4404ccaf3c07557fa419844b50e",
+    "candidate_8eff6b1f_reference_comparison_cross_control_superseded.json": "5f2c270124a51a7f64df94323d4c4ab49ff72cc30ff79d23174f56c9b1b35d22",
+    "candidate_8eff6b1f_state_auxiliary.npz": "6ad1baa678c4ef768376482f6ffc18d34b373c4c63291fe16f677ffe0f3497d9",
+    "candidate_8eff6b1f_state_auxiliary_preinterpretation.npz": "3369e8e2a232982679ad0717cc3540925fe6f446ec351358fb662f1777e83a8a",
+    "face_chart_newton_resume.json": "43e1ab27c6298221916c6dd6d967f305d16bd114f160d503e64f1197da2f726c"
+  },
+  "as_of": "after continuation3 native candidate restoration/forecast and before subsequent main-agent modified-attempt work",
+  "attempts": [
+    {
+      "artifact": "candidate_8eff6b1f_forecast_preliminary_superseded.json",
+      "elapsed_seconds": 3.157810416072607,
+      "forecast_trajectories": 1,
+      "lead_indexing_correct": false,
+      "reason": "Initial frame was incorrectly treated as +10 min; this field archive is superseded and excluded from scientific metrics.",
+      "sha256": "a606b02feef29aa2a02deec6090810e8b3581c5a065b277397186546c12f6a9c",
+      "successful_native_J_evaluations": 1
+    },
+    {
+      "artifact": "candidate_8eff6b1f_forecast_before_ledger.json",
+      "elapsed_seconds": 2.979398125084117,
+      "forecast_trajectories": 1,
+      "lead_indexing_correct": true,
+      "reason": "Correct lead mapping; intermediate accounting omitted the resume elapsed time.",
+      "sha256": "768eee40b88c2fba1e5ef950e68839776a398a7a775b9efaffe6e43d51f95662",
+      "successful_native_J_evaluations": 1
+    },
+    {
+      "artifact": "candidate_8eff6b1f_forecast.json",
+      "elapsed_seconds": 2.9190694589633495,
+      "forecast_trajectories": 1,
+      "lead_indexing_correct": true,
+      "reason": "Canonical final trajectory and corrected lead mapping.",
+      "sha256": "6a38d8ee7f5d42a73a364f1dca8ee9d9ffbae27c0aa543f38ac2692a100b897c",
+      "successful_native_J_evaluations": 1
+    }
+  ],
+  "budget_cap_seconds": 3600.0,
+  "budget_charges": {
+    "all_C_forecast_attempts_seconds": 9.056278000120074,
+    "charged_after_C_phase_seconds": 2048.5756237909663,
+    "charged_after_face_chart_resume_seconds": 2039.5193457908463,
+    "charged_before_face_chart_resume_seconds": 1653.0,
+    "face_chart_resume_elapsed_seconds": 386.5193457908463,
+    "no_new_budget_grant": true,
+    "remaining_after_C_phase_seconds": 1551.4243762090337
+  },
+  "candidate_minimum_claim": false,
+  "forecast_trajectory_accounting": {
+    "all_successful_C_trajectories": 3,
+    "canonical_correctly_indexed_trajectories": 2,
+    "canonical_fields_sha256": "40510dbb9904621286e0e71685b6982850ee2b48d1e04a96e0ac228c6e3ecbac",
+    "future_E_selection_use": false,
+    "lead_axis": "returned frames include end-of-analysis frame index 0; requested lead indices are 1,3,6,18 for 10,30,60,180 minutes after analysis",
+    "terminal_truth_MAE": 2.3786200848973165,
+    "terminal_truth_MSE": 7.381651425330995
+  },
+  "later_main_agent_work": "Not included; add its measured runtime after this C as-of point rather than backdating it into the C phase.",
+  "native_J_evaluation_accounting": {
+    "C_independent_native_J_evaluations": 3,
+    "equivalence_probe_successes_already_used": 3,
+    "interpretation": "The task-directed independent J evaluation occurred after the original 2,000-success reference-search cap was already closed. The duplicate C reruns each made another successful native-J call; disclose this overrun. No claim of cap compliance.",
+    "over_original_reference_search_cap_by": 3,
+    "reference_search_cap": 2000,
+    "reference_search_cap_closed_before_C": true,
+    "total_including_C": 2003,
+    "two_start_optimizer_successes": 1997
+  },
+  "plan_sha256": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+  "raw_receipt_path": "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/attempt1/candidate_8eff6b1f_forecast.json",
+  "raw_receipt_preserved": true,
+  "raw_receipt_sha256": "6a38d8ee7f5d42a73a364f1dca8ee9d9ffbae27c0aa543f38ac2692a100b897c",
+  "reference_truth_interpretation_correction": {
+    "96108_control_role": "candidate whose production forecast was previously compared against independent truth; it is not the truth generator",
+    "corrected_comparison_caveat": "Candidate-to-independent-truth lead errors are properly time-aligned; candidate and generator controls differ, as expected for an analysis forecast against reference truth.",
+    "corrected_comparison_receipt": "candidate_8eff6b1f_reference_comparison.json",
+    "no_new_forward_or_truth_generation": true,
+    "prior_cross_control_interpretation_preserved_as": "candidate_8eff6b1f_reference_comparison_cross_control_superseded.json",
+    "truth_generator": "fixed-case case.original control; first 20 field controls are zero, five flow fractions are [0.7,-0.6,0.5,0.4,-0.3], growth is 0.08 per 600 seconds"
+  },
+  "selection_use": false,
+  "status": "derived_cumulative_budget_and_truth_interpretation_corrections"
+}

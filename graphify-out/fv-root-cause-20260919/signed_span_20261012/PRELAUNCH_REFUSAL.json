@@ -1,0 +1,6 @@
+{
+  "stage": "parent load_plan before attempt directory creation",
+  "cause": "incorrect CLI plan digest; corrected invocation reads sealed SHA file",
+  "physical_calls": 0,
+  "second_refusal": "resolving interpreter symlink bypassed venv; import failed before physical calls; corrected command preserves .venv/bin/python path"
+}

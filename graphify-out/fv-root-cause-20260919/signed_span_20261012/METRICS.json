@@ -1,0 +1,76 @@
+{
+  "execution_status": "completed",
+  "numerical_status": "subspace_comparison_one_candidate_committed",
+  "base_control_sha256": "2a4dba130d28273a63e97d0de39a11f64fdee09b0ad754559bc8902ba6cddbca",
+  "control_sha256": "96108bdcf2cd6abc05878bf2cfc9e2531f37cf82e152ad1a9eaf0a67de746411",
+  "base_J": 0.06099005811764152,
+  "base_R": 0.002441269566693863,
+  "selected_direction": "two_direction_subspace",
+  "arms": [
+    {
+      "name": "baseline_tangent",
+      "J": 0.060988878373729814,
+      "R": 0.002430534626706718,
+      "J_decrease_percent": 0.0019343216716262725,
+      "R_decrease_percent": 0.4397277602441533,
+      "residual_norm": 0.049300452601438845,
+      "mixed_gradient_max": 0.02481356228955344,
+      "coefficients": [
+        0.00048431491079126057,
+        0.0
+      ],
+      "chart_alpha": 1.0,
+      "actual_path_norm": 2.3929614847716622e-05,
+      "fidelity": {
+        "rho_R": 1.000103694940497,
+        "eta_vec": 4.4795642286099266e-05,
+        "predicted_R": 0.0024305357397502642,
+        "predicted_decrease": 1.073382694359885e-05,
+        "actual_decrease": 1.073493998714507e-05,
+        "vector_error_norm": 1.4675976381165192e-07,
+        "actual_change_norm": 0.0032762062629737893,
+        "predicted_change_norm": 0.003276251965829099
+      },
+      "branch_matches_base": true
+    },
+    {
+      "name": "two_direction_subspace",
+      "J": 0.06098820859901043,
+      "R": 0.002421541200192015,
+      "J_decrease_percent": 0.0030324919965269517,
+      "R_decrease_percent": 0.8081191348551319,
+      "residual_norm": 0.04920915768626827,
+      "mixed_gradient_max": 0.024785554751494153,
+      "coefficients": [
+        0.0007601936136195862,
+        -1.6941850777339738e-05
+      ],
+      "chart_alpha": 1.0,
+      "actual_path_norm": 3.751435583089718e-05,
+      "fidelity": {
+        "rho_R": 1.0001458331077158,
+        "eta_vec": 0.00022253839681264244,
+        "predicted_R": 0.0024215440768215043,
+        "predicted_decrease": 1.9725489872358774e-05,
+        "actual_decrease": 1.9728366501848074e-05,
+        "vector_error_norm": 3.619291110690152e-07,
+        "actual_change_norm": 0.0016263670281301045,
+        "predicted_change_norm": 0.0016264848760035562
+      },
+      "branch_matches_base": true
+    }
+  ],
+  "candidates": 2,
+  "commits": 1,
+  "new_HVP_completed": 0,
+  "cached_HVP_reused": 4,
+  "GN_rows": 0,
+  "GN_solves": 0,
+  "score_calls": 0,
+  "child_seconds": 32.63296033395454,
+  "guard_seconds": 35.82440720894374,
+  "charged_prior_seconds": 54.004789291881025,
+  "total_guard_seconds": 89.82919650082476,
+  "sampled_peak_rss_bytes": 1217134592,
+  "scope": "same2a4d alternative branch; prior fb0a preserved; no newpoint operators/score/eligible minimum"
+}

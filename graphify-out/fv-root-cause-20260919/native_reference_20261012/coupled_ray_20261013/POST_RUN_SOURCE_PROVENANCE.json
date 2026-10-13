@@ -1,0 +1,12 @@
+{
+  "scope": "post-execution source inventory; these additional executor/helper hashes were not all frozen in the original ray PLAN before execution",
+  "hashes": {
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/coupled_ray_20261013/executed_ray.py": "0f3f5bd6839c657b9913573516cc2be7fbab911bf10587617d9a33544f896e1b",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/qualify_candidate.py": "4d8c29bd56890a65665484fcfcb051bb6972fdbce5f8c5ef4b41a5540966ae61",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/diagnose.py": "5aa0be5899501e286d4a9d69aa207c53385f87513bdef0199abca97d7c59ce41",
+    "examples/weather_scenarios/fv_point_3h_netflux_current_cycle.py": "68fb4d1eb2260720fa5f1b9b99308d478d9dceefd50c9e797db75cdefe86b283"
+  },
+  "temporary_executor_matches_saved_copy": true,
+  "pre_execution_physics_pins": "Original PLAN pins transport/variational and input/metric; preserve original PLAN and RESULT unchanged",
+  "result_sha256": "9678173de950ab18602cfc061707f92543091b881e27f87808ad136be603158a"
+}

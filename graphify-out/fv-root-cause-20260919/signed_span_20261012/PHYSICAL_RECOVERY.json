@@ -1,0 +1,31 @@
+{
+  "scope": "known generator vs confirmed analysis; cached J and algebra only; no FV/HVP/score calls",
+  "candidate_control": "96108bdcf2cd6abc05878bf2cfc9e2531f37cf82e152ad1a9eaf0a67de746411",
+  "candidate_J": 0.06098820859901043,
+  "candidate_prior_cost": 0.02758845215281157,
+  "candidate_nonnegative_data_cost_J_minus_prior": 0.03339975644619886,
+  "generator_prior_lower_bound_on_J": 0.9421520472268183,
+  "generator_J_lower_bound_over_candidate_J": 15.448101671937046,
+  "generator_cannot_minimize_this_J": true,
+  "generating_flow_fractions": [
+    0.7,
+    -0.6,
+    0.5,
+    0.4,
+    -0.30000000000000004
+  ],
+  "estimated_flow_fractions": [
+    -0.052360525588019104,
+    0.010175439828806294,
+    -0.030159796150015072,
+    0.0604850951485975,
+    -0.0009966733155999201
+  ],
+  "relative_staggered_volume_flux_error_norm": 1.131878785951831,
+  "generating_growth_per_10min": 0.08,
+  "estimated_growth_per_10min": 0.054938863956592664,
+  "generator_Q_selected_face": 0.10399999999999998,
+  "candidate_Q_selected_face": 0.0,
+  "generator_not_on_selected_Q0_face": true,
+  "interpretation": "J(generator) is bounded below by its prior cost, already above observed candidate J. Exact generator recovery and minimizing this fixed J are incompatible. The generating state is also outside the selected conditional Q0 face. Neither fact proves all J minima have poor forecasts. Echo log growth and synthetic volume flux are not observed wind/rainwater retrieval."
+}

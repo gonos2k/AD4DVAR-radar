@@ -1,0 +1,28 @@
+{
+  "stored_cases": 15,
+  "payload_unchanged": true,
+  "source_pins": true,
+  "unique_ids": true,
+  "evidence_links_exist": true,
+  "no_fb0a_score": "historical PR304 observer did not score fb0a; new three-point observer scores it separately",
+  "E_pairings": true,
+  "regeneration_preserves_review": true,
+  "idempotent": true,
+  "browser_render_check": false,
+  "browser_limit": "file protocol rejected by browser security policy; no workaround attempted",
+  "FV_HVP_score_calls": 0,
+  "replay_payload_sha256": "8e5e9772bb57111871e58e07f216bc87d3d9688240d6223e655e3bc829c4a498",
+  "before_page_sha256": "f9c89c43ad1f19472ddfb60084040d13fd5d06d14d96da1eb67e55f6af4a19c3",
+  "artifacts_sha256": {
+    "examples/weather_scenarios/fv_response.html": "368dce00b1585fdbdab63f84f24264c97dfd4ff0d6be1605d204d1b8702deb74",
+    "examples/weather_scenarios/fv_response_template.html": "58cc4ec24055bbbf091130a8ec86a20381b353486eb6ea83d8709e93d5ebe50a",
+    "examples/weather_scenarios/update_fv_case_review.py": "19f33e60ecb4b987118ab5a94ceb8c150d9fccfeb00919fa24f3a12e56522082",
+    "graphify-out/fv-root-cause-20260919/html_case_review_20261012/THEORETICAL_REVIEW.md": "10a2dece82776af433c0148f0804a46916d1bb4ca36fc455e0d8b3ca3d3014a2",
+    "graphify-out/fv-root-cause-20260919/html_case_review_20261012/CASE_REVIEW.json": "4194e7eb0dac08994e0fcb55279fd1d66e0554131ef40e42804af516d10aa98d"
+  },
+  "green_review": "10 case values, pins, pairings, preserved payload; GN overview corrected",
+  "red_review": "existence/rank/conditioning qualifications and scalar counterexample checked; PR303 exception and full F system clarified",
+  "latest_future_numerical_comparison_completed": true,
+  "forecast_average_and_late_persistence_gain": false,
+  "svg_plot_present": true
+}

@@ -1,0 +1,29 @@
+{
+  "input_sha256": "46c56f85adaf2134ddd22ca9fd7f8a62e5c3aac78cab34adf4c1f2fb31eab41c",
+  "metric_input_sha256": "f2b68691ace3b14c684cbfbceb08f879d2e55172e2735f46f320b9c4c3d9d1b2",
+  "scope": "actual native J/branch along fresh-gradient and stale-SPD-metric direction; diagnosis only",
+  "metric_is_current_hessian": false,
+  "alphas": [
+    0.0,
+    0.0009765625,
+    0.0078125,
+    0.015625,
+    0.03125,
+    0.125,
+    1.0
+  ],
+  "native_J_calls": 7,
+  "gradient_calls": 0,
+  "score_calls": 0,
+  "initial_cumulative_J": 499,
+  "final_cumulative_J": 506,
+  "seconds_cap": 30,
+  "slope": -6.524483932525888e-08,
+  "growth_ray_elapsed": 5.6573785841465,
+  "observer_elapsed": 2.40698,
+  "data_parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+  "sources": {
+    "src/advar/transport.py": "f6c680da7ca130fcbc505a03b73741591dc023f57a7745e47cfd49dd72622fab",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a"
+  }
+}

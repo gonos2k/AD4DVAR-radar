@@ -1,0 +1,40 @@
+{
+  "chart_jacobian_frobenius": 4.978720965906265,
+  "chart_jacobian_shape": [
+    26,
+    24
+  ],
+  "control_sha256": "dccb0c9938f7cd8fa7fc386f9ae2158a8831b036acbc0ce0ae26240c43159376",
+  "full_sector_gradient_l2_max": 0.1842823516339376,
+  "gradient_calls": 0,
+  "hessian_calls": 0,
+  "model_objective_or_fv_calls": 0,
+  "normal_coefficients": [
+    [
+      -0.19474362103089796,
+      -0.039456896779464894
+    ],
+    [
+      -0.19474362103089846,
+      0.03185109644627846
+    ],
+    [
+      0.07830602839016085,
+      -0.039456896779464894
+    ],
+    [
+      0.07830602839016088,
+      0.031851096446276726
+    ]
+  ],
+  "normal_matrix_frobenius": 0.9336359049395712,
+  "normal_times_chart_jacobian_inf": 1.3877787807814457e-17,
+  "proposed_budget_formula": "128*FP64_eps*max(||J_chart||F*max_s||g_s||2,max_s||J_chart^T g_s||2,tiny)",
+  "proposed_budget_scale": 0.9174904077263959,
+  "result_sha256": "5a06813f31372a07f24fe223b9e0424469de3d675188c25f94db791bfb41d638",
+  "sector_tangent_gradient_disagreement_inf": 2.0643209364124004e-16,
+  "status": "read_only_tangent_agreement_roundoff_audit",
+  "stored_agreement_inf": 2.0691998461885852e-16,
+  "stored_tangent_only_budget": 9.390971139467827e-17,
+  "tangent_sector_gradient_l2_max": 0.0016520771142326098
+}

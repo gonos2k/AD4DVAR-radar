@@ -1,0 +1,40 @@
+{
+  "base_v6_terminal_result_sha256": "5a06813f31372a07f24fe223b9e0424469de3d675188c25f94db791bfb41d638",
+  "effective_source_map_sha256": "0adbf01806578371ae9e40da1ff9303082fa027288a3b6014a7c84e09679010a",
+  "geometry_preflight_sha256": "966c251c4ed7781e1c1c8aa82615472347cf63ab3ed638cf38790a2d7caed8dd",
+  "members": {
+    "examples/weather_scenarios/fv_face_flux_coordinates.py": "8283f5370766423f2e13f45e6ed7dac2b514b6826429f6a3c011ca58fc4285d5",
+    "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py": "2a77cb9fcdf246e9f310bf7bf64925ee293f32f9b2d9d8f4fa49802d899485c2",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/CONTINUATION_PLAN.json": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/CONTINUATION_PLAN_SHA256.txt": "8b58e78987e8d2eb52dedf951e098211872ec3778f8bf75d6ddb0ddec9867630",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/attempt1/retained_graph_source_snapshot_v9.tar.gz": "298e1895f83811ce6a9ec66b61098f19fd87d57ba14c7f8fd4d3d2b4a7ebd34e",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/source.tar.gz": "0b49facc69c9689335455d324e442bd4bf5da0e807ee408473acfba1b53ed97d",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/qualify_candidate.py": "4d8c29bd56890a65665484fcfcb051bb6972fdbce5f8c5ef4b41a5540966ae61",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/NATIVE24_PLAN_v6.json": "46aa85fead56aa0196499982019c242142c34ebcb1b1c347dc5e50b1746f96cf",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/NATIVE24_PLAN_v6_SHA256.txt": "279ba1b870bb80fbc1b59c0cf06d0cfc2663fd5564737614104cf4fb2ce94501",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/NATIVE24_SNAPSHOT_MANIFEST_v6.json": "4b2ae8bed6379bf966ed9a2ba2369cde7d0c80eec9ca2981fdb2fe18577b171f",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/continuation2_20261013/RESUME_PLAN.json": "40ea6e7ae7dbe97b78850ab7921c71eedf54ad22cadf2cdc0b4d7a42dd32007b",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/continuation2_20261013/RESUME_PLAN_SHA256.txt": "e405f87b299076f3c72149c4ea627255aaf42cbdf78eba5878012d8fe5e5bb28",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/continuation2_20261013/continue_native24_resume.py": "f782dcafb248bbf9909b9036371fd920337c228ccdcdcdba0618d94ba664dc2d",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/continuation2_20261013/resume_launch_snapshot.tar.gz": "69ddc578f4eb88f43294ebe86786157d3d5c734af5867d1ea661bc8365a2d083",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/continue_native24.py": "7abc813a7481064431715ea7cea752d4d579f6f00fbe384961948daed3dd82dd",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_launch_snapshot_v6.tar.gz": "2b90f45cb0e81cfe9cb5c70df232f23a101e857d85f2a609ece712fae36a3a97",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_qualification.json": "5a06813f31372a07f24fe223b9e0424469de3d675188c25f94db791bfb41d638",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_readonly_terminal_closure.json": "a0b8eb5bd58212a0935c337f374ea5d9bf1dd3b21b5a44d939578894a1f749e7",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_resume_geometry_preflight.json": "966c251c4ed7781e1c1c8aa82615472347cf63ab3ed638cf38790a2d7caed8dd",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/native24_roundoff_agreement_preflight.json": "d877eb2c68c6db3d42c27b1e15b8c79e0f7921f96fe7fc85d314665b99c7b92d",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/transport_before.py": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/transport_before.py.sha256": "21d1734878d91d133699eaacdf3ed0219248653c5d014ec6c5042c8198496526",
+    "src/advar/transport.py": "f6c680da7ca130fcbc505a03b73741591dc023f57a7745e47cfd49dd72622fab",
+    "tests/test_fv_selected_face_extension.py": "67f9752b64de97771dc682e24d474130df4fd1841377d95e72c471ce35c7267f"
+  },
+  "record_type": "native24_same_task_resume_prelaunch_snapshot",
+  "roundoff_agreement_preflight_sha256": "d877eb2c68c6db3d42c27b1e15b8c79e0f7921f96fe7fc85d314665b99c7b92d",
+  "supersedes_unexecuted_resume_plan_sha256": "40ea6e7ae7dbe97b78850ab7921c71eedf54ad22cadf2cdc0b4d7a42dd32007b",
+  "transport_extension_transition": {
+    "after": "f6c680da7ca130fcbc505a03b73741591dc023f57a7745e47cfd49dd72622fab",
+    "before": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9",
+    "path": "src/advar/transport.py",
+    "scope": "additive selected_face_extensions tuple context only; transport primal and native selector logic unchanged"
+  }
+}

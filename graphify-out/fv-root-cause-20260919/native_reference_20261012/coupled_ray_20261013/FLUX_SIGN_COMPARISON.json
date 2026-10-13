@@ -1,0 +1,71 @@
+{
+  "result_sha256": "9678173de950ab18602cfc061707f92543091b881e27f87808ad136be603158a",
+  "executed_script_sha256": "0f3f5bd6839c657b9913573516cc2be7fbab911bf10587617d9a33544f896e1b",
+  "scope": "saved-control flux algebra only; no FV/cost/gradient",
+  "rows": [
+    {
+      "alpha": 0.0,
+      "nonselected_flux_sign_changes_x_y": [
+        0,
+        0
+      ],
+      "limiter_signature_changed": false,
+      "native_J_change": 0.0
+    },
+    {
+      "alpha": 0.0009765625,
+      "nonselected_flux_sign_changes_x_y": [
+        0,
+        0
+      ],
+      "limiter_signature_changed": true,
+      "native_J_change": -3.1632536867665095e-11
+    },
+    {
+      "alpha": 0.0078125,
+      "nonselected_flux_sign_changes_x_y": [
+        0,
+        0
+      ],
+      "limiter_signature_changed": true,
+      "native_J_change": 5.689843041167819e-11
+    },
+    {
+      "alpha": 0.015625,
+      "nonselected_flux_sign_changes_x_y": [
+        0,
+        0
+      ],
+      "limiter_signature_changed": true,
+      "native_J_change": 1.8180523753130728e-10
+    },
+    {
+      "alpha": 0.03125,
+      "nonselected_flux_sign_changes_x_y": [
+        0,
+        0
+      ],
+      "limiter_signature_changed": true,
+      "native_J_change": 4.435508973998914e-10
+    },
+    {
+      "alpha": 0.125,
+      "nonselected_flux_sign_changes_x_y": [
+        0,
+        0
+      ],
+      "limiter_signature_changed": true,
+      "native_J_change": 2.348622352155161e-09
+    },
+    {
+      "alpha": 1.0,
+      "nonselected_flux_sign_changes_x_y": [
+        0,
+        0
+      ],
+      "limiter_signature_changed": true,
+      "native_J_change": 2.3799620161440993e-07
+    }
+  ],
+  "production_calls": 0
+}

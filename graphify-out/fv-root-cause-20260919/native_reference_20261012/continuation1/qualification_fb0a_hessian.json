@@ -1,0 +1,320 @@
+{
+  "branch": {
+    "actual_selector_signature_sha256": "29d4614c0176bf50293a778d84af89732f57890ed4ee31cb06a5a087e6cec2a7",
+    "classification": "smooth_regular",
+    "expected_analysis_stage_count": 360,
+    "face_sign_counts_over_stages": {
+      "x": {
+        "negative": 8640,
+        "positive": 0,
+        "zero": 0
+      },
+      "y": {
+        "negative": 6120,
+        "positive": 2880,
+        "zero": 0
+      }
+    },
+    "native_J_on_audited_path": 0.06070843108137676,
+    "normalized_branch_margins": {
+      "face_abs_over_global_max_flux": {
+        "first_flat_index": 23,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 0,
+          "substep_index": 0
+        },
+        "stage_index": 0,
+        "value": 4.7843039374778775e-11
+      },
+      "x_active_gap_over_q_scale": {
+        "first_flat_index": 3,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 54
+        },
+        "stage_index": 109,
+        "value": 1.5554481451440853e-09
+      },
+      "x_operand_over_q_scale": {
+        "first_flat_index": 2,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 1200,
+          "interval_index": 1,
+          "interval_start_seconds": 600,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 89
+        },
+        "stage_index": 359,
+        "value": 0.0014652504187351498
+      },
+      "y_active_gap_over_q_scale": {
+        "first_flat_index": 2,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 1200,
+          "interval_index": 1,
+          "interval_start_seconds": 600,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 0,
+          "substep_index": 40
+        },
+        "stage_index": 260,
+        "value": 7.965737965610649e-05
+      },
+      "y_operand_over_q_scale": {
+        "first_flat_index": 5,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 0,
+          "substep_index": 43
+        },
+        "stage_index": 86,
+        "value": 2.805258921190461e-05
+      }
+    },
+    "objective_finite": true,
+    "selector_counts": {
+      "x": {
+        "active_tie": 0,
+        "inactive_zero": 720,
+        "left": 1015,
+        "right": 425
+      },
+      "y": {
+        "active_tie": 0,
+        "inactive_zero": 805,
+        "left": 979,
+        "right": 376
+      }
+    },
+    "stage_count": 360,
+    "strict_pointwise_branch": true,
+    "unique_near_tie_slope_entities": [],
+    "unique_nearzero_face_entities": [],
+    "violation_counts": {}
+  },
+  "branch_signature_sha256": "29d4614c0176bf50293a778d84af89732f57890ed4ee31cb06a5a087e6cec2a7",
+  "closure": {
+    "authorized_source_and_archive_set_unchanged": true,
+    "input_identity_unchanged": true,
+    "qualification_source_unchanged": true,
+    "runtime_identity_unchanged": true
+  },
+  "columns": [],
+  "continuation_plan_sha256": "9ce8f55b18f7741d1dd85d7b2c6a4090d9e7930fceca48b7afb706b45490842b",
+  "control_sha256": "ec38e098b3e887aff049e5d5536b9b037f0d81c081257d1e0a946419c3994c13",
+  "current_hvp": {
+    "column": 0,
+    "error": "NameError: name 'gradient_fn' is not defined",
+    "status": "failed"
+  },
+  "elapsed_seconds": 3.5464355000294745,
+  "gradient_inf": 0.06246855093165238,
+  "gradient_tolerance": 1e-10,
+  "hvp_calls_completed": 0,
+  "hvp_calls_started": 1,
+  "hvp_columns_completed": 0,
+  "hvp_columns_started": 1,
+  "hvp_events": [
+    {
+      "call": 1,
+      "column": 0,
+      "status": "started"
+    },
+    {
+      "column": 0,
+      "error": "NameError: name 'gradient_fn' is not defined",
+      "status": "failed"
+    }
+  ],
+  "input_after": {
+    "archived_input": {
+      "control_sha256": "adc5bfd01e98e32b09ccc963f096a6f6a3c7307d600a0ba20f8ddc8dcad3721e",
+      "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+      "problem": {
+        "fixed_problem_sha256": "16fa95b534c3b61cf5d1506770cbfc77edb527c40d1f4c536f5130cba24e1fc3",
+        "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+      },
+      "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+    },
+    "changed_control_index": 21,
+    "changed_control_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25
+    ],
+    "control_sha256": "ec38e098b3e887aff049e5d5536b9b037f0d81c081257d1e0a946419c3994c13",
+    "original_flow_fractions": [
+      0.7,
+      -0.6,
+      0.5,
+      0.4,
+      -0.30000000000000004
+    ],
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "shifted_flow_fractions": [
+      -0.05312447584339005,
+      0.010153474166611005,
+      -0.03015291223551472,
+      0.06040366186087142,
+      -0.0009833037727751336
+    ],
+    "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+  },
+  "input_before": {
+    "archived_input": {
+      "control_sha256": "adc5bfd01e98e32b09ccc963f096a6f6a3c7307d600a0ba20f8ddc8dcad3721e",
+      "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+      "problem": {
+        "fixed_problem_sha256": "16fa95b534c3b61cf5d1506770cbfc77edb527c40d1f4c536f5130cba24e1fc3",
+        "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+      },
+      "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+    },
+    "changed_control_index": 21,
+    "changed_control_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25
+    ],
+    "control_sha256": "ec38e098b3e887aff049e5d5536b9b037f0d81c081257d1e0a946419c3994c13",
+    "original_flow_fractions": [
+      0.7,
+      -0.6,
+      0.5,
+      0.4,
+      -0.30000000000000004
+    ],
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "shifted_flow_fractions": [
+      -0.05312447584339005,
+      0.010153474166611005,
+      -0.03015291223551472,
+      0.06040366186087142,
+      -0.0009833037727751336
+    ],
+    "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+  },
+  "minimum_claim": false,
+  "minimum_system": {
+    "B": "not computed; smooth implicit system is Hcc B + F_p = 0",
+    "F": "grad_c J(c,p)",
+    "F_c": "exact native-J Hessian"
+  },
+  "native_J": 0.06070843108137676,
+  "native_gradient": [
+    0.003213601919941157,
+    0.03576931578960876,
+    0.01010467879573261,
+    0.001094298932624348,
+    6.858526125887708e-05,
+    0.006256619667195278,
+    -0.013509793224741086,
+    0.011861327761692221,
+    0.003233115504235098,
+    -0.0011607169962785623,
+    0.00010830129366813657,
+    -0.032308906271628364,
+    0.00030766000261983617,
+    -0.00016430597784965542,
+    0.0002814227408782684,
+    4.0130211182093714e-10,
+    0.00013641714108528777,
+    2.2871105524544755e-05,
+    -0.0050477239449229355,
+    -0.00552500392241575,
+    0.01380233636387096,
+    -0.01191916886473407,
+    -0.02029540898556894,
+    -0.018713266806709032,
+    -0.06246855093165238,
+    -0.06235051976333053
+  ],
+  "old_Q_and_mixed_G": "not_applicable",
+  "optimizer_step_applied": false,
+  "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+  "phase": "finished",
+  "qualification_source_sha256": "25e349bcb375a4ff83c532ae94857a956d02863e4b743994b641facf803c4852",
+  "runtime_after": {
+    "device": "CPU FP64",
+    "python": "3.12.13",
+    "torch": "2.13.0"
+  },
+  "runtime_before": {
+    "device": "CPU FP64",
+    "python": "3.12.13",
+    "torch": "2.13.0"
+  },
+  "score_computed": false,
+  "signed_archive_count": 313,
+  "signed_source_count": 237,
+  "source_plan_sha256": "b6f3a08e02ec6da684ea8ea7c9611e6eedf3b8de9de8a9ebc6830347dd13d9ac",
+  "source_transition": {
+    "after": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9",
+    "before": "b0335b7a72ecd22084d5ab8ea0e46707240be15ef0039f4b31f96adbc937ee1a",
+    "path": "src/advar/transport.py"
+  },
+  "status": "hessian_column_refusal"
+}

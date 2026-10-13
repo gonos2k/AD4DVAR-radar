@@ -1,0 +1,142 @@
+{
+  "status": "completed",
+  "scope": "independent NumPy minmod RHS + SciPy DOP853 time integration of the pinned semidiscrete 4x5 model; not continuous-PDE truth or held-out weather",
+  "pinned_case_sha256": "1e810c23c73b93d89b2a10b46d9ddea44a8217b07dcd3ebfebb462858e3fa9b7",
+  "candidate_control_sha256": "96108bdcf2cd6abc05878bf2cfc9e2531f37cf82e152ad1a9eaf0a67de746411",
+  "candidate_receipt": "graphify-out/fv-root-cause-20260919/signed_span_20261012/attempt1/two_direction_subspace/candidate_01.json",
+  "provenance_digests": {
+    "reference_script_sha256": "6ea7b17ffd8f342030ca77301c421a41464ec0eec224e8c8df3dd1a7d8c14ac4",
+    "candidate_receipt_sha256": "e8c6d33ac4326558b4d773911448ee8da31978d20a5f3c382a76cbaf9729e0ee",
+    "fixed_case_sha256": "1e810c23c73b93d89b2a10b46d9ddea44a8217b07dcd3ebfebb462858e3fa9b7",
+    "current_cycle_plan_sha256": "7f26c76bad511e1345c2d3c27b2073908c574587fc3aefd433fb44b98a932441"
+  },
+  "closure": {
+    "signed_plan_sha_unchanged": true,
+    "all_signed_source_hashes_unchanged": true,
+    "all_signed_archive_hashes_unchanged": true,
+    "input_identity_unchanged": true,
+    "runtime_identity_unchanged": true,
+    "artifact_digests_unchanged": true
+  },
+  "signed_plan_sha256": "707bf06bf0432a3f46b6fcc8901908186d70336e075ea5dc72b3cf4658bcfe9b",
+  "signed_source_count": 237,
+  "signed_archive_count": 306,
+  "initial_field_source": "pinned problem.background_dbz full 4x5 input, checked equal to frozen.initial_background_dbz; forward_case.make_case copies this zero-flow case initial field before truth generation; converted to q by archived min_dbz",
+  "initial_field_dbz_range": [
+    14.78566495593843,
+    15.820178846686268
+  ],
+  "flow_fractions_from_pinned_original_control": [
+    0.7,
+    -0.6,
+    0.5,
+    0.4,
+    -0.30000000000000004
+  ],
+  "growth_per_600_seconds": 0.08,
+  "boundary_schedules": {
+    "initial": {
+      "steps": 180,
+      "constant_edges": true,
+      "equal_stages": true,
+      "support_all_one": true
+    },
+    "future": {
+      "steps": 1620,
+      "constant_edges": true,
+      "equal_stages": true,
+      "support_all_one": true
+    }
+  },
+  "times_seconds": [
+    1800.0,
+    2400.0,
+    3000.0,
+    3600.0,
+    4200.0,
+    4800.0,
+    5400.0,
+    6000.0,
+    6600.0,
+    7200.0,
+    7800.0,
+    8400.0,
+    9000.0,
+    9600.0,
+    10200.0,
+    10800.0,
+    11400.0,
+    12000.0
+  ],
+  "integrator": "SciPy solve_ivp DOP853, separate NumPy minmod-MUSCL semidiscrete RHS with additive growth source",
+  "runtime_versions": {
+    "python": "3.10.11",
+    "numpy": "2.2.6",
+    "scipy": "1.15.3",
+    "torch": "2.13.0"
+  },
+  "tolerance_runs": {
+    "rtol_1e-8_atol_1e-10_max_step_60s_nfev": 2684,
+    "rtol_1e-10_atol_1e-12_max_step_30s_nfev": 5828,
+    "max_abs_echo_difference": 4.281950353401953e-06,
+    "max_abs_dbz_difference": 3.5739018144909096e-07
+  },
+  "archived_same_kernel_terminal_truth_comparison": {
+    "max_abs_dbz_difference": 1.0712516846922426e-06,
+    "mean_abs_dbz_difference": 7.972494024954813e-07,
+    "purpose": "cross-check initial state/flow/boundary/time conventions; archived truth is not the independent reference"
+  },
+  "candidate_forecast_vs_independent_reference": {
+    "per_lead_mae_dbz": [
+      0.13039978660042806,
+      0.15838698120758216,
+      0.2296020797826886,
+      0.3349022891087543,
+      0.462372412392882,
+      0.6062167671959955,
+      0.7563768122353679,
+      0.9091931386755683,
+      1.0620273334282122,
+      1.2142655679329346,
+      1.3703038064947843,
+      1.523092881256037,
+      1.6724556520571248,
+      1.818429744372218,
+      1.9609880876219883,
+      2.1000986282867684,
+      2.2417652071977736,
+      2.380312275343212
+    ],
+    "mean_mae_dbz_all_18_leads": 1.1628438583994622,
+    "max_abs_error_dbz_all_leads": 4.311550908697132,
+    "terminal_mae_dbz": 2.380312275343212,
+    "terminal_max_abs_error_dbz": 4.311550908697132,
+    "analyzed_frame_persistence_mae_dbz_all_leads": 1.1458684693429098,
+    "per_lead_analyzed_frame_persistence_mae_dbz": [
+      0.2757490013088429,
+      0.4726792094119146,
+      0.6483565618247888,
+      0.8015760968422384,
+      0.9333021316002184,
+      1.044942410384895,
+      1.1382296805727323,
+      1.2150009427157646,
+      1.277210462635292,
+      1.3268694144718651,
+      1.3659852366393959,
+      1.3965809247304406,
+      1.4204514839022655,
+      1.4390004610795226,
+      1.4533409195476232,
+      1.464365588003281,
+      1.4727928412099025,
+      1.4791990812913958
+    ],
+    "candidate_minus_persistence_mean_mae_dbz": 0.016975389056552492,
+    "candidate_minus_persistence_terminal_mae_dbz": 0.9011131940518164
+  },
+  "elapsed_seconds": 2.438537208130583,
+  "artifacts": {
+    "arrays": "graphify-out/fv-root-cause-20260919/signed_span_20261012/independent_semidiscrete_reference.npz"
+  }
+}

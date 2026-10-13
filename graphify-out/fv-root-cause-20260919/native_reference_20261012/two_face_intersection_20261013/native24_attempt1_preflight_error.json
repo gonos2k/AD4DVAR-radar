@@ -1,0 +1,23 @@
+{
+  "cause": "driver requested budget.gradient_call_cap; frozen plan key is gradient_call_cap_phase",
+  "elapsed_seconds": 1.2,
+  "exception": "gradient_call_cap",
+  "exception_type": "KeyError",
+  "forecast_calls_started": 0,
+  "gradient_calls_completed": 0,
+  "gradient_calls_started": 0,
+  "hessian_rows_completed": 0,
+  "hessian_rows_started": 0,
+  "input_control_sha256": "58f5ddc2e3594d1b369c0bb62c932ede7de5a9a5d9e2051c209a1dd8422a597f",
+  "input_sha256": "bbe7706ee613727de290e878562f0706c39407b2d4b72d4c07135b761cb689a3",
+  "model_callback_started": false,
+  "model_case_loaded": true,
+  "native_J_calls_completed": 0,
+  "native_J_calls_started": 0,
+  "phase": "initial_ledger_construction",
+  "plan_sha256": "b3ddafac0f09bd3ba264256cf3c7c664f69856f9fd8544b7e1f56a96b0baab8d",
+  "profile_scalar_calls_started": 0,
+  "score_calls_started": 0,
+  "script_sha256_at_attempt": "e8b96d3cc3c5612a95178081de7a68480ea06abd81937611405415cc578b8728",
+  "status": "terminal_preflight_error_no_model_callbacks"
+}
