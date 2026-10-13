@@ -40,3 +40,12 @@
 - [x] 영향 시험과 GREEN/RED 검토를 수행했다. 최종 통합 보고·정적 HTML 수정의 마지막 검토를 추가로 마친다.
 
 과거 source closure 실패·예외·중단 기록을 덮어쓰지 않는다. 최종 연구 진행률을 PR 수나 시험 수로 환산하지 않는다.
+
+## 2026-10-14 — 실제 limiter 전환 후속 진단
+
+- [x] 기존 결합 방향에서 더 작은 여섯 배율의 exact minmod 선택·유동 부호·native 비용·새 gradient를 분리했다. 2⁻¹²까지 limiter 전환 없이 국소 하강, 2⁻¹⁰에서 x(1,1) stage47·48 전환과 AD 내적 부호 반전, 2⁻⁷에서 추가 전환·비용 증가를 확인했다.
+- [x] source/archive·입력·세 공통 제어/비용·검산 및 29시험·타입 검사·GREEN/RED를 기록했다. 새 확정점·최소점 자격은 없다.
+- [x] 이후 direct-J 누계512로 cap을 사용했다. 새 phase의 추가 gradient6회로 누계134가 되어 이전 chord cap128 준수는 주장하지 않는다.
+- [ ] 원래 사건 활성조건의 독립성·전체 비매끄러운 자격을 계획한다.
+
+상세: [limiter 진단](limiter_ray_20261014/FINDINGS.md), [새 장부](limiter_ray_20261014/ACCOUNTING.json). 과거 FINAL_ACCOUNTING과 raw 실행은 수정하지 않았다.
