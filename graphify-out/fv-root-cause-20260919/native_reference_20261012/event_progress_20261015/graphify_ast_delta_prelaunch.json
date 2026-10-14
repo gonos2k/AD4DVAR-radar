@@ -1,0 +1,4224 @@
+{
+  "nodes": [
+    {
+      "id": "advar_transport",
+      "label": "transport.py",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_fvstepresult",
+      "label": "FVStepResult",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L21",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_selectedface",
+      "label": "_SelectedFace",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L50",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_validated_selected_face",
+      "label": "_validated_selected_face()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L62",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_selected_face_extension",
+      "label": "selected_face_extension()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L83",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_selected_face_extensions",
+      "label": "selected_face_extensions()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L105",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_observe_minmod_stages",
+      "label": "observe_minmod_stages()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L131",
+      "_origin": "ast"
+    },
+    {
+      "id": "minmodstageobserver",
+      "label": "_MinmodStageObserver",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L131",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_check_tensor",
+      "label": "_check_tensor()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L175",
+      "_origin": "ast"
+    },
+    {
+      "id": "dtype",
+      "label": "dtype",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L175",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_advar_transport_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L175",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_check_nonnegative",
+      "label": "_check_nonnegative()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L189",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_check_support",
+      "label": "_check_support()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L194",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_validate_edges",
+      "label": "_validate_edges()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L203",
+      "_origin": "ast"
+    },
+    {
+      "id": "boundarystages",
+      "label": "_BoundaryStages",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L203",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_zero_edges",
+      "label": "_zero_edges()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L231",
+      "_origin": "ast"
+    },
+    {
+      "id": "edges",
+      "label": "_Edges",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L231",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_volume_parts",
+      "label": "_volume_parts()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L243",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_scale_by_growth",
+      "label": "_scale_by_growth()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L268",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_euler_donorcell",
+      "label": "_euler_donorcell()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L275",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_minmod",
+      "label": "_minmod()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L318",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_muscl_slopes",
+      "label": "_muscl_slopes()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L331",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_euler_minmod",
+      "label": "_euler_minmod()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L375",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_check_minmod_support",
+      "label": "_check_minmod_support()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L424",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_boundary_budget",
+      "label": "_boundary_budget()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L454",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_validate_divergence",
+      "label": "_validate_divergence()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L485",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_face_volume_fluxes",
+      "label": "face_volume_fluxes()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L500",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_finite_volume_step",
+      "label": "finite_volume_step()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L513",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_validate_psi_basis",
+      "label": "_validate_psi_basis()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L796",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_bounded_fv_coefficients",
+      "label": "bounded_fv_coefficients()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L834",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_validate_boundary_schedule",
+      "label": "_validate_boundary_schedule()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L894",
+      "_origin": "ast"
+    },
+    {
+      "id": "boundaryschedule",
+      "label": "BoundarySchedule",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L894",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_flatten_step_boundaries",
+      "label": "_flatten_step_boundaries()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L919",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_finite_volume_trajectory",
+      "label": "finite_volume_trajectory()",
+      "file_type": "code",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L936",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_1",
+      "label": "Small finite-volume transport baseline for the spatial-flow candidate.  The modu",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_22",
+      "label": "Result and mass-budget terms for one SSPRK2 finite-volume step.",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L22",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_89",
+      "label": "Extend one fixed signed-volume branch for local kink derivatives.      ``side``",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L89",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_106",
+      "label": "Extend two fixed signed-volume branches at one pair of face kinks.      Each arg",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L106",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_136",
+      "label": "Observe this call context's minmod stages without replacing model code.      By",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L136",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_269",
+      "label": "Scale a transported value without rounding a small integrating factor.",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L269",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_284",
+      "label": "Positive-coefficient Euler update for one stage.",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L284",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_332",
+      "label": "Return minmod slopes with zero reconstruction on the perimeter.",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L332",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_383",
+      "label": "Advance one minmod-MUSCL Euler stage with supplied exterior traces.",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L383",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_430",
+      "label": "Require full-known support wherever an exterior value can enter.",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L430",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_460",
+      "label": "Return incoming/outgoing boundary mass rates for one stage.      Directional pos",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L460",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_501",
+      "label": "Construct shared Cartesian face volume fluxes from vertex ``psi``.      ``psi``",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L501",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_527",
+      "label": "Advance one constant-growth Cartesian FV SSPRK2 substep.      ``log_growth`` is",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L527",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_803",
+      "label": "Validate the fixed, gauge-anchored basis outside the AD path.",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L803",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_844",
+      "label": "Map unconstrained controls to a fixed CFL-safe coefficient box.      For diverge",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L844",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_926",
+      "label": "Pack one interval's stage edges in the replay block's tensor order.",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L926",
+      "_origin": "ast"
+    },
+    {
+      "id": "advar_transport_rationale_953",
+      "label": "Advance a stationary-\u03c8 FV trajectory and return lead-boundary frames.      \u03c8 and",
+      "file_type": "rationale",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L953",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "label": "fv_point_3h_limiter_event_progress.py",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_sha",
+      "label": "sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_tensor_sha",
+      "label": "tensor_sha()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_load",
+      "label": "load()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L44",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_write",
+      "label": "write()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_positive_gap_active",
+      "label": "positive_gap_active()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L60",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_bisect_gap",
+      "label": "bisect_gap()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L64",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "label": "event_newton_model()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L87",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_supported_transition",
+      "label": "supported_transition()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L127",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_close_claims",
+      "label": "close_claims()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L150",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_budget",
+      "label": "Budget",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L159",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L160",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_take",
+      "label": ".take()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L163",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_done",
+      "label": ".done()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L180",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_execution",
+      "label": "Execution",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L184",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L185",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_value",
+      "label": ".value()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L198",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_tape",
+      "label": ".tape()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L250",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_gradient",
+      "label": ".gradient()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L272",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_hessian",
+      "label": ".hessian()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L280",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_normals",
+      "label": ".normals()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L292",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_model",
+      "label": ".model()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L318",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_qualify_two_faces",
+      "label": ".qualify_two_faces()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L336",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_retract",
+      "label": ".retract()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L388",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_active_stage",
+      "label": "active_stage()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L409",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L422",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_rationale_1",
+      "label": "Locate the observed limiter events, advance native J, and audit the endpoint.  O",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_rationale_65",
+      "label": "Bracket a positive-operand equality using actual stage values.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L65",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_rationale_89",
+      "label": "Form Q\u1d40(H_J+\u03bbH_h)Q with \u03bb fixed at the current point.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L89",
+      "_origin": "ast"
+    },
+    {
+      "id": "weather_scenarios_fv_point_3h_limiter_event_progress_rationale_337",
+      "label": "Close the existing four-sector gate only when no limiter is active.",
+      "file_type": "rationale",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L337",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_differentiable_stage_observer",
+      "label": "test_fv_differentiable_stage_observer.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_differentiable_stage_observer_trajectory",
+      "label": "_trajectory()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L12",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_differentiable_stage_observer_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L12",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_differentiable_stage_observer_stage_case",
+      "label": "_stage_case()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_differentiable_stage_observer_step",
+      "label": "_step()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_differentiable_stage_observer_test_default_observer_keeps_detached_isolated_snapshots",
+      "label": "test_default_observer_keeps_detached_isolated_snapshots()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L69",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_differentiable_stage_observer_test_differentiable_stage_copy_preserves_reverse_gap_derivative",
+      "label": "test_differentiable_stage_copy_preserves_reverse_gap_derivative()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L94",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_differentiable_stage_observer_test_nested_observers_keep_connected_outer_copy_isolated_from_inner_mutation",
+      "label": "test_nested_observers_keep_connected_outer_copy_isolated_from_inner_mutation()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L114",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_differentiable_stage_observer_test_replay_refusal_tracks_outer_and_inner_differentiable_scopes",
+      "label": "test_replay_refusal_tracks_outer_and_inner_differentiable_scopes()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L136",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_differentiable_stage_observer_test_inner_differentiable_scope_guards_only_its_lexical_extent",
+      "label": "test_inner_differentiable_scope_guards_only_its_lexical_extent()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L149",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_differentiable_stage_observer_rationale_1",
+      "label": "Derivative capture at minmod stages outside checkpoint replay.",
+      "file_type": "rationale",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_limiter_event_progress",
+      "label": "test_fv_point_3h_limiter_event_progress.py",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_limiter_event_progress_test_lagrangian_curvature_includes_curved_event_constraint",
+      "label": "test_lagrangian_curvature_includes_curved_event_constraint()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L11",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_limiter_event_progress_test_event_step_is_tangent_and_descending",
+      "label": "test_event_step_is_tangent_and_descending()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L25",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_limiter_event_progress_test_same_control_replay_refuses_any_additional_active_tie",
+      "label": "test_same_control_replay_refuses_any_additional_active_tie()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L34",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_limiter_event_progress_test_dependent_zero_event_normal_refuses_before_model_solve",
+      "label": "test_dependent_zero_event_normal_refuses_before_model_solve()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L46",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_limiter_event_progress_test_bisection_uses_actual_gap_and_refuses_unbracketed_event",
+      "label": "test_bisection_uses_actual_gap_and_refuses_unbracketed_event()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L52",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_limiter_event_progress_test_retraction_evaluates_native_value_on_curved_constraint",
+      "label": "test_retraction_evaluates_native_value_on_curved_constraint()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L64",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_limiter_event_progress_test_search_cannot_spend_terminal_reserved_native_call",
+      "label": "test_search_cannot_spend_terminal_reserved_native_call()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L78",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_limiter_event_progress_test_active_limiter_never_inherits_two_flux_face_p2",
+      "label": "test_active_limiter_never_inherits_two_flux_face_P2()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L88",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_limiter_event_progress_test_only_identified_selector_events_and_selected_flux_signs_can_change",
+      "label": "test_only_identified_selector_events_and_selected_flux_signs_can_change()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L99",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_test_fv_point_3h_limiter_event_progress_test_source_closure_failure_downgrades_terminal_minimum_claim",
+      "label": "test_source_closure_failure_downgrades_terminal_minimum_claim()",
+      "file_type": "code",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L113",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "advar_transport",
+      "target": "contextlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "contextvars",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "dataclasses",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "numbers",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "src_advar_matrix_free_py",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_fvstepresult",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_selectedface",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L50",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_validated_selected_face",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_validated_selected_face",
+      "target": "advar_transport_selectedface",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_selected_face_extension",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L83",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_selected_face_extensions",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L105",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_observe_minmod_stages",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_observe_minmod_stages",
+      "target": "minmodstageobserver",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L131",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_check_tensor",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L175",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_check_tensor",
+      "target": "dtype",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L175",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_check_tensor",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L175",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_check_nonnegative",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_check_nonnegative",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_check_support",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L194",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_check_support",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L194",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_validate_edges",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_validate_edges",
+      "target": "dtype",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_validate_edges",
+      "target": "boundarystages",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L203",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_zero_edges",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L231",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_zero_edges",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L231",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_zero_edges",
+      "target": "edges",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L231",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_volume_parts",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L243",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_volume_parts",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L243",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_volume_parts",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L243",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_volume_parts",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L243",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_scale_by_growth",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L268",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_scale_by_growth",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L268",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_scale_by_growth",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L268",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_scale_by_growth",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L268",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_euler_donorcell",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_donorcell",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_donorcell",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_donorcell",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_donorcell",
+      "target": "edges",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_donorcell",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_donorcell",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_donorcell",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_minmod",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L318",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_minmod",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L318",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_minmod",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L318",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_minmod",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L318",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_muscl_slopes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L331",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_muscl_slopes",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L331",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_muscl_slopes",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L331",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_muscl_slopes",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L331",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_euler_minmod",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L375",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_minmod",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L375",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_minmod",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L375",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_minmod",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L375",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_minmod",
+      "target": "edges",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L375",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_minmod",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L375",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_minmod",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L375",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_minmod",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L375",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_check_minmod_support",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L424",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_check_minmod_support",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L424",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_check_minmod_support",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L424",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_check_minmod_support",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L424",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_check_minmod_support",
+      "target": "boundarystages",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L424",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_boundary_budget",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L454",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_boundary_budget",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L454",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_boundary_budget",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L454",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_boundary_budget",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L454",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_boundary_budget",
+      "target": "edges",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L454",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_boundary_budget",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L454",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_boundary_budget",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L454",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_validate_divergence",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L485",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_validate_divergence",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L485",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_validate_divergence",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L485",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_face_volume_fluxes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L500",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_face_volume_fluxes",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L500",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_face_volume_fluxes",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L500",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_face_volume_fluxes",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L500",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_finite_volume_step",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L513",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L513",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L513",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L513",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L513",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L513",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L513",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L513",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "advar_transport_fvstepresult",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L513",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_validate_psi_basis",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L796",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_validate_psi_basis",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L796",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_validate_psi_basis",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L796",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_bounded_fv_coefficients",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L834",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_bounded_fv_coefficients",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L834",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_bounded_fv_coefficients",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L834",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_bounded_fv_coefficients",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L834",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_bounded_fv_coefficients",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L834",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_validate_boundary_schedule",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L894",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_validate_boundary_schedule",
+      "target": "dtype",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L894",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_validate_boundary_schedule",
+      "target": "boundaryschedule",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L894",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_flatten_step_boundaries",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L919",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_flatten_step_boundaries",
+      "target": "boundaryschedule",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L919",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_flatten_step_boundaries",
+      "target": "boundaryschedule",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L919",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_flatten_step_boundaries",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L919",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport",
+      "target": "advar_transport_finite_volume_trajectory",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L936",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L936",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L936",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L936",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L936",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L936",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "boundaryschedule",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L936",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "boundaryschedule",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L936",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L936",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "src_advar_transport_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L936",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_validated_selected_face",
+      "target": "advar_transport_selectedface",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_selected_face_extension",
+      "target": "advar_transport_validated_selected_face",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_selected_face_extensions",
+      "target": "advar_transport_validated_selected_face",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L119",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_check_support",
+      "target": "advar_transport_check_nonnegative",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L195",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_validate_edges",
+      "target": "advar_transport_check_tensor",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L221",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_donorcell",
+      "target": "advar_transport_volume_parts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L287",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_muscl_slopes",
+      "target": "advar_transport_minmod",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L338",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_minmod",
+      "target": "advar_transport_muscl_slopes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L389",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_minmod",
+      "target": "advar_transport_check_tensor",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L400",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_euler_minmod",
+      "target": "advar_transport_volume_parts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L403",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_check_minmod_support",
+      "target": "advar_transport_volume_parts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L435",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_boundary_budget",
+      "target": "advar_transport_volume_parts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L468",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_face_volume_fluxes",
+      "target": "advar_transport_check_tensor",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L507",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "advar_transport_check_tensor",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L551",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "advar_transport_check_nonnegative",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L564",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "advar_transport_check_support",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L565",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "advar_transport_validate_divergence",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L566",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "advar_transport_zero_edges",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L597",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "advar_transport_validate_edges",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L602",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "advar_transport_check_minmod_support",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L617",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "advar_transport_volume_parts",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L621",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "advar_transport_scale_by_growth",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L667",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "advar_transport_euler_donorcell",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L719",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "advar_transport_boundary_budget",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L732",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_step",
+      "target": "advar_transport_fvstepresult",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L785",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_bounded_fv_coefficients",
+      "target": "advar_transport_check_tensor",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L852",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_bounded_fv_coefficients",
+      "target": "advar_transport_validate_psi_basis",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L861",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_validate_boundary_schedule",
+      "target": "advar_transport_validate_edges",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L908",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "advar_transport_check_tensor",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L964",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "advar_transport_check_nonnegative",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L984",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "advar_transport_check_support",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L985",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "advar_transport_validate_psi_basis",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L1023",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "advar_transport_validate_boundary_schedule",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L1029",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "advar_transport_face_volume_fluxes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L1047",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_finite_volume_trajectory",
+      "target": "advar_transport_flatten_step_boundaries",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L1120",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_1",
+      "target": "advar_transport",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_22",
+      "target": "advar_transport_fvstepresult",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_89",
+      "target": "advar_transport_selected_face_extension",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L89",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_106",
+      "target": "advar_transport_selected_face_extensions",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_136",
+      "target": "advar_transport_observe_minmod_stages",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L136",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_269",
+      "target": "advar_transport_scale_by_growth",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L269",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_284",
+      "target": "advar_transport_euler_donorcell",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L284",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_332",
+      "target": "advar_transport_muscl_slopes",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L332",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_383",
+      "target": "advar_transport_euler_minmod",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L383",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_430",
+      "target": "advar_transport_check_minmod_support",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L430",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_460",
+      "target": "advar_transport_boundary_budget",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L460",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_501",
+      "target": "advar_transport_face_volume_fluxes",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L501",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_527",
+      "target": "advar_transport_finite_volume_step",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L527",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_803",
+      "target": "advar_transport_validate_psi_basis",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L803",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_844",
+      "target": "advar_transport_bounded_fv_coefficients",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L844",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_926",
+      "target": "advar_transport_flatten_step_boundaries",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L926",
+      "weight": 1.0
+    },
+    {
+      "source": "advar_transport_rationale_953",
+      "target": "advar_transport_finite_volume_trajectory",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "src/advar/transport.py",
+      "source_location": "L953",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "importlib_util",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "platform",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "resource",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "tarfile",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "contextlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "torch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_sha",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_tensor_sha",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_load",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_load",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_write",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_write",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_write",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_positive_gap_active",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_bisect_gap",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_supported_transition",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_supported_transition",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_supported_transition",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_supported_transition",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L127",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_close_claims",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L150",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_close_claims",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L150",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_budget",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L160",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_init",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L160",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_budget",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_take",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L163",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_budget",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_done",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L180",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L184",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L185",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_value",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L198",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_value",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L198",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_value",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L198",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_tape",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L250",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_tape",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L250",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_gradient",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L272",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_gradient",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L272",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_gradient",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L272",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_gradient",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L272",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_hessian",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L280",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_hessian",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L280",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_hessian",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L280",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_hessian",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L280",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_normals",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L292",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_normals",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L292",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_normals",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L292",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_model",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L318",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_model",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L318",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_qualify_two_faces",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L336",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_qualify_two_faces",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L336",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_qualify_two_faces",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L336",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_qualify_two_faces",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L336",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_retract",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L388",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_retract",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L388",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_retract",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L388",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_active_stage",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L409",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_active_stage",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L409",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L422",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L422",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_bisect_gap",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_positive_gap_active",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L76",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_take",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L178",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_value",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_take",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L234",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_value",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_done",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L237",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_value",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L242",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_value",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L247",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_tape",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_take",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L252",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_tape",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_done",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L266",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_gradient",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_take",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L273",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_gradient",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_done",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L275",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_hessian",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L282",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_hessian",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_take",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L285",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_hessian",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget_done",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L287",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_hessian",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L289",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_normals",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_tape",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L294",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_normals",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_gradient",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L295",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_normals",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L309",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_model",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_tape",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L319",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_model",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_gradient",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L322",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_model",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L323",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_model",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_hessian",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L325",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_model",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L330",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_qualify_two_faces",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_tape",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L368",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_qualify_two_faces",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_gradient",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L369",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_qualify_two_faces",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_hessian",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L370",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_qualify_two_faces",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L382",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_retract",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_value",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L391",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_active_stage",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_positive_gap_active",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L417",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_load",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L426",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L433",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "path",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L437",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L438",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_write",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L458",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L464",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L466",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_value",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L472",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_tape",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L475",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_gradient",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L476",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_bisect_gap",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L493",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_active_stage",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L495",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_supported_transition",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L497",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_normals",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L502",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_model",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L519",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_retract",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L532",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_qualify_two_faces",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L583",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_run",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_close_claims",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L588",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_rationale_1",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_rationale_65",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_bisect_gap",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_rationale_89",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L89",
+      "weight": 1.0
+    },
+    {
+      "source": "weather_scenarios_fv_point_3h_limiter_event_progress_rationale_337",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution_qualify_two_faces",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+      "source_location": "L337",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer",
+      "target": "tests_test_fv_differentiable_stage_observer_trajectory",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer_trajectory",
+      "target": "tests_test_fv_differentiable_stage_observer_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer_trajectory",
+      "target": "tests_test_fv_differentiable_stage_observer_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer",
+      "target": "tests_test_fv_differentiable_stage_observer_stage_case",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer",
+      "target": "tests_test_fv_differentiable_stage_observer_step",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer",
+      "target": "tests_test_fv_differentiable_stage_observer_test_default_observer_keeps_detached_isolated_snapshots",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer",
+      "target": "tests_test_fv_differentiable_stage_observer_test_differentiable_stage_copy_preserves_reverse_gap_derivative",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L94",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer",
+      "target": "tests_test_fv_differentiable_stage_observer_test_nested_observers_keep_connected_outer_copy_isolated_from_inner_mutation",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer",
+      "target": "tests_test_fv_differentiable_stage_observer_test_replay_refusal_tracks_outer_and_inner_differentiable_scopes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L136",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer",
+      "target": "tests_test_fv_differentiable_stage_observer_test_inner_differentiable_scope_guards_only_its_lexical_extent",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L149",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer_test_default_observer_keeps_detached_isolated_snapshots",
+      "target": "tests_test_fv_differentiable_stage_observer_stage_case",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer_test_default_observer_keeps_detached_isolated_snapshots",
+      "target": "tests_test_fv_differentiable_stage_observer_step",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer_test_differentiable_stage_copy_preserves_reverse_gap_derivative",
+      "target": "tests_test_fv_differentiable_stage_observer_stage_case",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer_test_differentiable_stage_copy_preserves_reverse_gap_derivative",
+      "target": "tests_test_fv_differentiable_stage_observer_step",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer_test_nested_observers_keep_connected_outer_copy_isolated_from_inner_mutation",
+      "target": "tests_test_fv_differentiable_stage_observer_stage_case",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L115",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer_test_nested_observers_keep_connected_outer_copy_isolated_from_inner_mutation",
+      "target": "tests_test_fv_differentiable_stage_observer_step",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L125",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer_test_replay_refusal_tracks_outer_and_inner_differentiable_scopes",
+      "target": "tests_test_fv_differentiable_stage_observer_trajectory",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L140",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer_test_inner_differentiable_scope_guards_only_its_lexical_extent",
+      "target": "tests_test_fv_differentiable_stage_observer_trajectory",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L153",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_differentiable_stage_observer_rationale_1",
+      "target": "tests_test_fv_differentiable_stage_observer",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_differentiable_stage_observer.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "examples_weather_scenarios_fv_point_3h_limiter_event_progress",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "tests_test_fv_point_3h_limiter_event_progress_test_lagrangian_curvature_includes_curved_event_constraint",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "tests_test_fv_point_3h_limiter_event_progress_test_event_step_is_tangent_and_descending",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "tests_test_fv_point_3h_limiter_event_progress_test_same_control_replay_refuses_any_additional_active_tie",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "tests_test_fv_point_3h_limiter_event_progress_test_dependent_zero_event_normal_refuses_before_model_solve",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "tests_test_fv_point_3h_limiter_event_progress_test_bisection_uses_actual_gap_and_refuses_unbracketed_event",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "tests_test_fv_point_3h_limiter_event_progress_test_retraction_evaluates_native_value_on_curved_constraint",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "tests_test_fv_point_3h_limiter_event_progress_test_search_cannot_spend_terminal_reserved_native_call",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L78",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "tests_test_fv_point_3h_limiter_event_progress_test_active_limiter_never_inherits_two_flux_face_p2",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L88",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "tests_test_fv_point_3h_limiter_event_progress_test_only_identified_selector_events_and_selected_flux_signs_can_change",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "tests_test_fv_point_3h_limiter_event_progress_test_source_closure_failure_downgrades_terminal_minimum_claim",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_execution",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_active_stage",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_bisect_gap",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_close_claims",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_positive_gap_active",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_supported_transition",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress_test_lagrangian_curvature_includes_curved_event_constraint",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress_test_event_step_is_tangent_and_descending",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress_test_same_control_replay_refuses_any_additional_active_tie",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_positive_gap_active",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress_test_same_control_replay_refuses_any_additional_active_tie",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_active_stage",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress_test_dependent_zero_event_normal_refuses_before_model_solve",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_event_newton_model",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress_test_bisection_uses_actual_gap_and_refuses_unbracketed_event",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_bisect_gap",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L56",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress_test_bisection_uses_actual_gap_and_refuses_unbracketed_event",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_positive_gap_active",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress_test_retraction_evaluates_native_value_on_curved_constraint",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_positive_gap_active",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L70",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress_test_search_cannot_spend_terminal_reserved_native_call",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_budget",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L84",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress_test_only_identified_selector_events_and_selected_flux_signs_can_change",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_supported_transition",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L105",
+      "weight": 1.0
+    },
+    {
+      "source": "tests_test_fv_point_3h_limiter_event_progress_test_source_closure_failure_downgrades_terminal_minimum_claim",
+      "target": "weather_scenarios_fv_point_3h_limiter_event_progress_close_claims",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/test_fv_point_3h_limiter_event_progress.py",
+      "source_location": "L116",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
