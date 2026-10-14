@@ -1,0 +1,140 @@
+{
+  "nodes": [
+    {
+      "id": "event_progress_20261015_check_terminal_replay",
+      "label": "check_terminal_replay.py",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "event_progress_20261015_check_terminal_replay_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L22",
+      "_origin": "ast"
+    },
+    {
+      "id": "event_progress_20261015_check_terminal_replay_rationale_1",
+      "label": "Independently compare terminal retained-graph gradients to native replay.",
+      "file_type": "rationale",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "event_progress_20261015_check_terminal_replay",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "event_progress_20261015_check_terminal_replay",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "event_progress_20261015_check_terminal_replay",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "event_progress_20261015_check_terminal_replay",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "event_progress_20261015_check_terminal_replay",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "event_progress_20261015_check_terminal_replay",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "event_progress_20261015_check_terminal_replay",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "event_progress_20261015_check_terminal_replay",
+      "target": "advar",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "event_progress_20261015_check_terminal_replay",
+      "target": "examples_weather_scenarios_fv_point_3h_netflux_current_cycle",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "event_progress_20261015_check_terminal_replay",
+      "target": "event_progress_20261015_check_terminal_replay_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "event_progress_20261015_check_terminal_replay_rationale_1",
+      "target": "event_progress_20261015_check_terminal_replay",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+      "source_location": "L1",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

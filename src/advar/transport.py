@@ -41,6 +41,9 @@ _MinmodStageObserver = Callable[[Tensor, Tensor, Tensor], None]
 _minmod_stage_observer: ContextVar[_MinmodStageObserver | None] = ContextVar(
     "advar_minmod_stage_observer", default=None,
 )
+_differentiable_minmod_stage_capture: ContextVar[bool] = ContextVar(
+    "advar_differentiable_minmod_stage_capture", default=False,
+)
 
 
 @dataclass(frozen=True)
@@ -125,16 +128,23 @@ def selected_face_extensions(*faces: tuple[str, int, int, int]) -> Iterator[None
 
 
 @contextmanager
-def observe_minmod_stages(observer: _MinmodStageObserver) -> Iterator[None]:
+def observe_minmod_stages(
+    observer: _MinmodStageObserver,
+    *,
+    differentiable: bool = False,
+) -> Iterator[None]:
     """Observe this call context's minmod stages without replacing model code.
 
-    Diagnostics receive detached copies and should run outside automatic
-    differentiation and checkpoint replay.
+    By default diagnostics receive detached copies. With ``differentiable=True``
+    callbacks receive connected copies for derivative capture; this mode cannot
+    be used with checkpoint-replayed trajectories.
     Nested observers run from innermost to outermost. A task inheriting this
     context cannot write to this observer after the lexical scope exits.
     """
     if not callable(observer):
         raise TypeError("minmod stage observer must be callable")
+    if not isinstance(differentiable, bool):
+        raise TypeError("differentiable must be a bool")
     previous = _minmod_stage_observer.get()
     active = True
 
@@ -142,16 +152,24 @@ def observe_minmod_stages(observer: _MinmodStageObserver) -> Iterator[None]:
         # Each observer gets its own diagnostic copy; neither model state nor
         # an enclosing observer can be changed by an inner callback.
         if active:
-            observer(q.detach().clone(), qx.detach().clone(), qy.detach().clone())
+            copies = tuple(
+                value.clone() if differentiable else value.detach().clone()
+                for value in (q, qx, qy)
+            )
+            observer(*copies)
         if previous is not None:
             previous(q, qx, qy)
 
     token = _minmod_stage_observer.set(notify)
+    differentiable_token = _differentiable_minmod_stage_capture.set(
+        _differentiable_minmod_stage_capture.get() or differentiable
+    )
     try:
         yield
     finally:
         active = False
         _minmod_stage_observer.reset(token)
+        _differentiable_minmod_stage_capture.reset(differentiable_token)
 
 
 def _check_tensor(name: str, value: object, *, dtype: Optional[torch.dtype] = None) -> Tensor:
@@ -938,6 +956,9 @@ def finite_volume_trajectory(
     tensor-only block so replay mode can retain the complete AD dependency on
     the initial echo, ψ controls, growth, and every supplied boundary trace.
     Boundary schedules contain one pair of SSPRK2 stage traces per substep.
+    Differentiable minmod-stage observation is incompatible with replay,
+    because recomputed stages would create side outputs outside the replayed
+    tensor block.
     """
 
     initial_echo = _check_tensor("initial_echo", initial_echo)
@@ -977,6 +998,8 @@ def finite_volume_trajectory(
         raise ValueError("substeps_per_interval must be a positive integer")
     if not isinstance(replay, bool):
         raise TypeError("replay must be a bool")
+    if replay and _differentiable_minmod_stage_capture.get():
+        raise ValueError("differentiable minmod-stage observation requires replay=False")
     if isinstance(interval_seconds, bool) or not isinstance(interval_seconds, Real):
         raise TypeError("interval_seconds must be a positive finite float")
     interval_value = float(interval_seconds)

@@ -1,0 +1,27 @@
+{
+  "scope": [
+    "src/advar/transport.py",
+    "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+    "tests/test_fv_differentiable_stage_observer.py",
+    "tests/test_fv_point_3h_limiter_event_progress.py"
+  ],
+  "method": "cached Graphify AST delta; merge into existing graph; communities retained; no semantic rebuild/HTML visualization",
+  "before": [
+    11769,
+    79381
+  ],
+  "after": [
+    11838,
+    79547
+  ],
+  "delta_nodes": 106,
+  "delta_edges": 346,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "sources": {
+    "src/advar/transport.py": "51721e9196a782568b7c33840f10c9fea0f678da6b2a632e949981731d83dca6",
+    "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py": "e486c6c28376938a9af0fad565ad1ea56070f3a1fd8044df28201d400af5ad7e",
+    "tests/test_fv_differentiable_stage_observer.py": "ea89c017422034330786b318579e0de3fdb4b29d272b4947eb73ac0b2e165c29",
+    "tests/test_fv_point_3h_limiter_event_progress.py": "fb0112749366abd496a060c25f3287b1a53a2ddad8056663188dfde37cf537fb"
+  }
+}

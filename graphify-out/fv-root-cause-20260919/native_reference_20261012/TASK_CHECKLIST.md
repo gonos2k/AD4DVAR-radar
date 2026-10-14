@@ -49,3 +49,12 @@
 - [ ] 원래 사건 활성조건의 독립성·전체 비매끄러운 자격을 계획한다.
 
 상세: [limiter 진단](limiter_ray_20261014/FINDINGS.md), [새 장부](limiter_ray_20261014/ACCOUNTING.json). 과거 FINAL_ACCOUNTING과 raw 실행은 수정하지 않았다.
+
+## 2026-10-15 — 사건 처리·실제 진행·동일 끝점 자격검사
+
+- [x] stage47·48 root를 별도 실제 제어점으로 구해 동시 활성이 아님을 확인했다. 선택된 profile의 법선 rank/conditioning을 기록했다.
+- [x] root 및 두 후속 보정을 native J로 채택하고 새30bed 끝점에서 gradient·검색 곡률·원래 replay 미분 대조를 수행했다. 추가 감소4.73144e−11로 작다.
+- [x] stage48의 실제 활성과 projected gradient1.14169e−3을 확인했다. 한 사건면의 접선 검색과 양의 곡률을 원래 비매끄러운 최소점/P2로 승격하지 않는다.
+- [ ] stage48 양측 limiting-gradient 혼합·활성구조 자격 및 y123/124 실제 전환 처리. 정상성/원래 사건-sector exact P2/적격해/정확 응답은 미완료다.
+
+새 phase·누계는 [사건 진행 결과](event_progress_20261015/FINDINGS.md)와 [장부](event_progress_20261015/ACCOUNTING.json)에 연결된다. 이전18-lead 검증은6ca 후보의 완료된 실패 포함 결과로 유지했다. 새30bed 예측은 미평가다.

@@ -1,0 +1,49 @@
+{
+  "scope": [
+    "src/advar/transport.py",
+    "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+    "tests/test_fv_differentiable_stage_observer.py",
+    "tests/test_fv_point_3h_limiter_event_progress.py"
+  ],
+  "method": "cached Graphify AST delta only; existing communities retained",
+  "before": [
+    11838,
+    79547
+  ],
+  "after": [
+    11839,
+    79551
+  ],
+  "delta_nodes": 107,
+  "delta_edges": 350,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "sources": {
+    "src/advar/transport.py": "51721e9196a782568b7c33840f10c9fea0f678da6b2a632e949981731d83dca6",
+    "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py": "48318e3d9ff7546c0ab3373cf82b4a69ef254adef1f50b8301dde2b4398e3d23",
+    "tests/test_fv_differentiable_stage_observer.py": "5012d1a5d67e742387e3cbe57bc572d1763a236b92169e3f68b715122685064b",
+    "tests/test_fv_point_3h_limiter_event_progress.py": "64a5024a1dac885c48324c9d28602d74b9d9252a1efcdc4e26b36f4e8d7646d9"
+  },
+  "terminal_check_delta": {
+    "source": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_progress_20261015/check_terminal_replay.py",
+    "source_sha256": "761f4e2d4af8b8053dffa0f32557c12d111a1bc70b501160982480bea8b47c40",
+    "before": [
+      11839,
+      79551
+    ],
+    "after": [
+      11842,
+      79553
+    ],
+    "nodes": 3,
+    "edges": 11,
+    "input_tokens": 0,
+    "output_tokens": 0
+  },
+  "cosmetic_test_eof_refresh": {
+    "source": "tests/test_fv_differentiable_stage_observer.py",
+    "nodes": 11,
+    "edges": 22,
+    "change": "remove trailing blank EOF; cached AST refreshed, structure unchanged"
+  }
+}

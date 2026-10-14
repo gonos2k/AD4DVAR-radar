@@ -1,0 +1,12 @@
+{
+  "executor_sha256": "1e8bef974658dc540f50cccc1f2df1cf57f35b93e0e54b7e74a1fa7a1bf6b750",
+  "raw_sha256": "8fc00825885011dd988bcf8b69db7e49645d7f2ad3e05c8eb11a45c0a2592400",
+  "scope": "same terminal control native replay=True/retained replay=False gradient closure; no candidate selection",
+  "cumulative_gradient_before": 159,
+  "additional_gradient_cap": 4,
+  "original_phase_gradient_cap": 128,
+  "direct_J_calls": 0,
+  "Hessian_calls": 0,
+  "score_calls": 0,
+  "seconds_cap": 30
+}

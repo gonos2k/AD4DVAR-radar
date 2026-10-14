@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "method": "archive/file rehash, control/SVD/Armijo/scalar arithmetic; no objective or derivative callbacks",
+  "source_and_archive_files": 117,
+  "input_files": 5,
+  "accepted_native_decreases": 3,
+  "root_controls": 2,
+  "source_closed": true,
+  "raw_sha256": "8fc00825885011dd988bcf8b69db7e49645d7f2ad3e05c8eb11a45c0a2592400",
+  "phase_tests": {
+    "passed": 48,
+    "seconds": 2.84,
+    "existing_TorchScript_warnings": 18
+  },
+  "type_check_errors": 0,
+  "minimum_claim": false,
+  "forecast_rerun": false,
+  "terminal_native_replay_gradient_comparison": {
+    "passed": 4,
+    "seconds": 3.9994475829880685,
+    "maximum_gap_inf": 4.343747583845925e-15,
+    "extra_gradients": 4,
+    "extra_direct_J": 0,
+    "cumulative_gradient_after": 163,
+    "executed_source_archived": true
+  },
+  "current_sources_type_errors": 0,
+  "GREEN_RED_final_review": true
+}

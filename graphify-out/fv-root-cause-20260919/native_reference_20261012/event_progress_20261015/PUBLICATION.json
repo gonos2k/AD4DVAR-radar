@@ -1,0 +1,19 @@
+{
+  "PR": 306,
+  "url": "https://github.com/gonos2k/AD4DVAR-radar/pull/306",
+  "state": "OPEN",
+  "draft": true,
+  "source_head": "1edf40fd09f24d71fbebc0363237501ceb23ae34",
+  "base_main": "d13d9a0c2a742381f54d1c5070d0342e033bf00b",
+  "UI_check": {
+    "status": "pass",
+    "seconds": 17,
+    "run": 38589089439
+  },
+  "Python_CPU_Wheel_CLI": "skipped",
+  "code_tests": 48,
+  "types_errors": 0,
+  "GREEN_RED_review_complete": true,
+  "minimum_claim": false,
+  "user_AGENTS_changes_preserved": true
+}

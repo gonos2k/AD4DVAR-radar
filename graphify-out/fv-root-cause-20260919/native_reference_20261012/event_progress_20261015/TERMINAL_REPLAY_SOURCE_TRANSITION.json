@@ -1,0 +1,6 @@
+{
+  "executed_executor_sha256": "1e8bef974658dc540f50cccc1f2df1cf57f35b93e0e54b7e74a1fa7a1bf6b750",
+  "current_executor_sha256": "761f4e2d4af8b8053dffa0f32557c12d111a1bc70b501160982480bea8b47c40",
+  "executed_source_archive": "terminal_replay_executed_source.tar.gz",
+  "reason": "dictionary type annotation only; no physical/derivative rerun; raw plan/result preserved"
+}
