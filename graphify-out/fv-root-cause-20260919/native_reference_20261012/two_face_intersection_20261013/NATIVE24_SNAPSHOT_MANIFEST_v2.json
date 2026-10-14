@@ -1,0 +1,41 @@
+{
+  "continuation_source_tar_sha256": "0b49facc69c9689335455d324e442bd4bf5da0e807ee408473acfba1b53ed97d",
+  "effective_physical_source_map_sha256": "0adbf01806578371ae9e40da1ff9303082fa027288a3b6014a7c84e09679010a",
+  "members": {
+    "examples/weather_scenarios/fv_face_flux_coordinates.py": "8283f5370766423f2e13f45e6ed7dac2b514b6826429f6a3c011ca58fc4285d5",
+    "examples/weather_scenarios/fv_point_3h_active_intersection_diagnostic.py": "2a77cb9fcdf246e9f310bf7bf64925ee293f32f9b2d9d8f4fa49802d899485c2",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/CONTINUATION_PLAN.json": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/CONTINUATION_PLAN_SHA256.txt": "8b58e78987e8d2eb52dedf951e098211872ec3778f8bf75d6ddb0ddec9867630",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/attempt1/retained_graph_face_qualification.json": "10e6a6a20b2d0b9acce3f70746ce1e960c090d4db4b583a7cd18533aead8d8a5",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/attempt1/retained_graph_source_snapshot_v9.tar.gz": "298e1895f83811ce6a9ec66b61098f19fd87d57ba14c7f8fd4d3d2b4a7ebd34e",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/attempt1/retained_graph_v9_readonly_terminal_closure.json": "b23238ff99cc508497365d77081b84f80dd8642ee3aa41ff6b610f00a25a28c8",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/source.tar.gz": "0b49facc69c9689335455d324e442bd4bf5da0e807ee408473acfba1b53ed97d",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/qualify_candidate.py": "4d8c29bd56890a65665484fcfcb051bb6972fdbce5f8c5ef4b41a5540966ae61",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/NATIVE24_PLAN.json": "69317b429e891b9200dfb3b0ddf8ed3459358f860857475913fadaf4c682be69",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/NATIVE24_PLAN_SHA256.txt": "593bc1ea2625b5f3659d3cb284e1f342d19e3d67158d59b139c4836b1d158dfe",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/TWO_FACE_PLAN.json": "21fa7a816bc6be2f41087905e2e329e06abb3194f4ebd10b8d01567a1fb511dd",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/TWO_FACE_PLAN_SHA256.txt": "64970d1411efb6e375465adcafd73532526e42b3145f8bb7aae84bd2aafc60c8",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/continue_native24.py": "e8b96d3cc3c5612a95178081de7a68480ea06abd81937611405415cc578b8728",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/diagnose.py": "5aa0be5899501e286d4a9d69aa207c53385f87513bdef0199abca97d7c59ce41",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/launch_snapshot.tar.gz": "435f868641c736458f256465cba322a19da1fbd76483334f2ff118721bea2f83",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/transport_before.py": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/transport_before.py.sha256": "21d1734878d91d133699eaacdf3ed0219248653c5d014ec6c5042c8198496526",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/two_face_intersection_20261013/two_face_diagnostic.json": "bbe7706ee613727de290e878562f0706c39407b2d4b72d4c07135b761cb689a3",
+    "src/advar/transport.py": "f6c680da7ca130fcbc505a03b73741591dc023f57a7745e47cfd49dd72622fab",
+    "tests/test_fv_selected_face_extension.py": "67f9752b64de97771dc682e24d474130df4fd1841377d95e72c471ce35c7267f"
+  },
+  "record_type": "native24_prelaunch_source_and_input_snapshot",
+  "source_bundle_sha256": "0b49facc69c9689335455d324e442bd4bf5da0e807ee408473acfba1b53ed97d",
+  "supersedes_unexecuted_plan_sha256": "69317b429e891b9200dfb3b0ddf8ed3459358f860857475913fadaf4c682be69",
+  "test_transition": {
+    "after": "67f9752b64de97771dc682e24d474130df4fd1841377d95e72c471ce35c7267f",
+    "before": "c537640bc96529264bdc51bcd139f1bd48ca8239e13d41e87351d991243a406d",
+    "path": "tests/test_fv_selected_face_extension.py"
+  },
+  "transport_transition": {
+    "after": "f6c680da7ca130fcbc505a03b73741591dc023f57a7745e47cfd49dd72622fab",
+    "before": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9"
+  },
+  "two_face_diagnostic_sha256": "bbe7706ee613727de290e878562f0706c39407b2d4b72d4c07135b761cb689a3",
+  "two_face_plan_sha256": "21fa7a816bc6be2f41087905e2e329e06abb3194f4ebd10b8d01567a1fb511dd"
+}

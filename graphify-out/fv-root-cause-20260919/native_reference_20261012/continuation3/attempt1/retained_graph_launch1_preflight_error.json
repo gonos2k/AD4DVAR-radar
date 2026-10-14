@@ -1,0 +1,23 @@
+{
+  "AD_gradient_calls": 0,
+  "HVP_calls": 0,
+  "Hessian_rows_started_returned": [
+    0,
+    0
+  ],
+  "accepted_steps": 0,
+  "current_control_sha256": "16793291a9848e432ee9c567fa39828848dbce9fee2eb2ab1d4ffd57cf07bbce",
+  "driver_sha256_at_failure": "c539777df784afc29c752918d6857ed0bb46bc6576d785bebafc9294b97d6a64",
+  "elapsed_seconds_charged": 1.0,
+  "exception_type": "ValueError",
+  "message": "fixed original input identity changed",
+  "native_J_callbacks": 0,
+  "phase": "input_identity_guard",
+  "plan_path": "graphify-out/fv-root-cause-20260919/native_reference_20261012/QUALIFICATION_CONTINUATION_PLAN_v8.json",
+  "plan_sha256": "cf8ccbd80f5762b28fe8838e7f79d1b7d7f3f3939c9224b919074263076296a6",
+  "profile_forward_calls": 0,
+  "root_cause": "compared the current v6 endpoint input_after against the older attempt2 control input_after; corrected anchor must be the current endpoint identity already sealed in fixed_metric_face_qualification.json",
+  "source_and_plan_preflight_passed": true,
+  "source_or_physics_mutations": false,
+  "status": "terminal_preflight_error_no_model_callbacks"
+}

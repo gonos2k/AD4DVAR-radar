@@ -1,0 +1,20 @@
+{
+  "scope": "independent scalar pseudo-Huber counterexample and bounds; no FV execution",
+  "coercive_does_not_imply_convex": {
+    "H_at_zero": -0.7888543819998317,
+    "symmetric_minima": [
+      -0.6954151425628275,
+      0.6954151425628275
+    ],
+    "gradient_at_minimum": 0.0,
+    "cost_at_minimum": 0.37298334620741647,
+    "cost_at_zero": 0.4721359549995796
+  },
+  "current_prior_bound": {
+    "J": 0.060988878373729814,
+    "control_norm_bound": 0.3492531413566092,
+    "tanh_derivative_lower_bound": 0.8872967646337785
+  },
+  "local_observation_nullity_at_least": 14,
+  "all_arithmetic_checks_passed": true
+}

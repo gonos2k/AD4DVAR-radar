@@ -1,0 +1,152 @@
+{
+  "archived_fixed_truth_terminal_metrics": {
+    "mae_dbz": 2.3786200848973165,
+    "mse_dbz2": 7.381651425330995,
+    "selection_use": false,
+    "source": "pinned current fixed-case truth"
+  },
+  "candidate_and_truth_generator_controls_match": false,
+  "candidate_control_sha256": "8eff6b1f2285ff626fcd8815b43e0b772cdef050501511837e4f51fcbaadb47c",
+  "candidate_forecast_receipt_sha256": "6a38d8ee7f5d42a73a364f1dca8ee9d9ffbae27c0aa543f38ac2692a100b897c",
+  "candidate_receipt_sha256": "43e1ab27c6298221916c6dd6d967f305d16bd114f160d503e64f1197da2f726c",
+  "candidate_state_error_vs_truth_generator": {
+    "candidate_initial_dbz_range": [
+      14.817855337273823,
+      15.759443668294587
+    ],
+    "flow_coefficients_candidate": [
+      -0.006876606285642552,
+      0.000679247605331288,
+      -0.001978569316034527,
+      0.002301041114366006,
+      -2.9236222909792952e-05
+    ],
+    "flow_coefficients_generator": [
+      0.077,
+      -0.048,
+      0.035,
+      0.016,
+      -0.009000000000000001
+    ],
+    "flow_flux_max_abs_error": 0.1620671513310878,
+    "flow_flux_relative_l2_error": 1.1361603368691249,
+    "flow_fraction_candidate": [
+      -0.06251460259675047,
+      0.0084905950666411,
+      -0.028265275943350383,
+      0.057526027859150154,
+      -0.0009745407636597651
+    ],
+    "flow_fraction_generator": [
+      0.7,
+      -0.6,
+      0.5,
+      0.4,
+      -0.30000000000000004
+    ],
+    "generator_initial_dbz_range": [
+      14.78566495593843,
+      15.820178846686268
+    ],
+    "growth_difference": -0.024961684347270044,
+    "growth_per_600_seconds_candidate": 0.05503831565272996,
+    "growth_per_600_seconds_generator": 0.08,
+    "initial_dbz_mae": 0.07256823633618001,
+    "initial_dbz_max_abs": 0.23559983011667285,
+    "initial_dbz_mse": 0.00879085281641768
+  },
+  "caveat": "The prior independent-reference receipt's 96108 control hash identifies the candidate forecast that producer compared against its independent truth. The independent_dbz array itself is generated from the pinned original control (zero field controls, flow fractions 0.7,-0.6,0.5,0.4,-0.3, growth 0.08 per 600 seconds).",
+  "fixed_case_sha256": "1e810c23c73b93d89b2a10b46d9ddea44a8217b07dcd3ebfebb462858e3fa9b7",
+  "forecast_fields_sha256": "40510dbb9904621286e0e71685b6982850ee2b48d1e04a96e0ac228c6e3ecbac",
+  "forecast_trajectories": 0,
+  "independent_reference_script_sha256": "6ea7b17ffd8f342030ca77301c421a41464ec0eec224e8c8df3dd1a7d8c14ac4",
+  "lead_comparisons_against_independent_truth": [
+    {
+      "absolute_model_time_seconds": 1800.0,
+      "candidate_forecast_field_sha256": "86f9bb8104725b289bf0e057692f37d1c5beb7e0158ab2623fa96df9f650f328",
+      "candidate_forecast_index": 1,
+      "candidate_truth_mae_dbz": 0.12559670060293993,
+      "candidate_truth_mse_dbz2": 0.022589196580985627,
+      "independent_truth_index": 0,
+      "lead_minutes_after_analysis": 10,
+      "persistence_truth_mae_dbz": 0.2773697299911809,
+      "persistence_truth_mse_dbz2": 0.09357926566646008
+    },
+    {
+      "absolute_model_time_seconds": 3000.0,
+      "candidate_forecast_field_sha256": "e1e2ac2bc7b390d4e51d1e9a39caa19f8532359d592f76745c7b0ff0a3d895ce",
+      "candidate_forecast_index": 3,
+      "candidate_truth_mae_dbz": 0.23167569551121775,
+      "candidate_truth_mse_dbz2": 0.09606457599963672,
+      "independent_truth_index": 2,
+      "lead_minutes_after_analysis": 30,
+      "persistence_truth_mae_dbz": 0.6467785360015738,
+      "persistence_truth_mse_dbz2": 0.48209151220405494
+    },
+    {
+      "absolute_model_time_seconds": 4800.0,
+      "candidate_forecast_field_sha256": "4f45ac9c5b27e3dbb59399aad091a91f645048af1fb2166097d8baab019d0b12",
+      "candidate_forecast_index": 6,
+      "candidate_truth_mae_dbz": 0.6101162828910338,
+      "candidate_truth_mse_dbz2": 0.5093872461644979,
+      "independent_truth_index": 5,
+      "lead_minutes_after_analysis": 60,
+      "persistence_truth_mae_dbz": 1.0433643845616798,
+      "persistence_truth_mse_dbz2": 1.3003985763861592
+    },
+    {
+      "absolute_model_time_seconds": 12000.0,
+      "candidate_forecast_field_sha256": "ecae7ce89a66f2e9ad4e6902c3ac9582002b2da1d76f70ed85ed582a2c02e777",
+      "candidate_forecast_index": 18,
+      "candidate_truth_mae_dbz": 2.3786207667789157,
+      "candidate_truth_mse_dbz2": 7.381655522066748,
+      "independent_truth_index": 17,
+      "lead_minutes_after_analysis": 180,
+      "persistence_truth_mae_dbz": 1.4776210554681808,
+      "persistence_truth_mse_dbz2": 2.856056789782442
+    }
+  ],
+  "native_J_evaluations": 0,
+  "new_truth_generation": false,
+  "prior_reference_candidate_control_sha256": "96108bdcf2cd6abc05878bf2cfc9e2531f37cf82e152ad1a9eaf0a67de746411",
+  "prior_reference_candidate_sha256_role": "metadata for the forecast previously compared by the independent-reference producer; not the truth generator control",
+  "reference_truth_generation": {
+    "flow_coefficients": [
+      0.077,
+      -0.048,
+      0.035,
+      0.016,
+      -0.009000000000000001
+    ],
+    "flow_fractions": [
+      0.7,
+      -0.6,
+      0.5,
+      0.4,
+      -0.30000000000000004
+    ],
+    "growth_per_600_seconds": 0.08,
+    "initial_field": "fixed problem.background_dbz (original first 20 field controls are zero)",
+    "integrator": "SciPy solve_ivp DOP853, separate NumPy minmod-MUSCL semidiscrete RHS with additive growth source",
+    "saved_reference_arrays_sha256": "3614d099c52f9c8b70ebb72061205fd56887728697f1abf5e87849868c9e8209",
+    "saved_reference_json_sha256": "7e7b340744d1ef6be8e39f3c2bc654530ff103aefeb31239651dd6708f2cfee2",
+    "source": "pinned fixed-case original control and independent NumPy minmod-MUSCL DOP853 run",
+    "terminal_reference_vs_archived_truth_mae_dbz": 7.972494024954813e-07
+  },
+  "selection_use": false,
+  "state_auxiliary_npz": "candidate_8eff6b1f_state_auxiliary.npz",
+  "state_auxiliary_sha256": "6ad1baa678c4ef768376482f6ffc18d34b373c4c63291fe16f677ffe0f3497d9",
+  "status": "derived_from_saved_arrays_no_new_forward",
+  "terminal_truth_at_180_minutes": {
+    "independent_reference_truth_vs_archived_fixed_truth": {
+      "interpretation": "independent semidiscrete truth differs from the archived fixed-case terminal field only by the recorded DOP853 cross-check tolerance",
+      "reference_generator_terminal_mae_dbz": 7.972494024954813e-07,
+      "reference_generator_terminal_max_abs_dbz": 1.0712516846922426e-06
+    },
+    "mae_dbz": 2.3786207667789157,
+    "mse_dbz2": 7.381655522066748,
+    "selection_use": false,
+    "terminal_reference_is_true_generator_trajectory": true
+  },
+  "truth_generator_control_sha256": "adc5bfd01e98e32b09ccc963f096a6f6a3c7307d600a0ba20f8ddc8dcad3721e"
+}

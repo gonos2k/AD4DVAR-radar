@@ -1,0 +1,160 @@
+{
+  "attempt_history": [
+    {
+      "attempt": 1,
+      "default_HVP_col0_calls": 1,
+      "default_scalar_gradient_calls": 1,
+      "elapsed_s": 9.65516020799987,
+      "error": "Boolean value of Tensor with more than one value is ambiguous",
+      "peak_rss_bytes": 356925440,
+      "replay_off_objective_calls": 0,
+      "status": "preflight_script_error"
+    },
+    {
+      "attempt": 2,
+      "default_HVP_col0_calls": 1,
+      "default_scalar_gradient_calls": 1,
+      "elapsed_s": 9.664993959013373,
+      "error": "dataclasses.replace changed fields beyond replay (derived init=False fields were rebuilt)",
+      "peak_rss_bytes": 358514688,
+      "replay_off_objective_calls": 0,
+      "status": "preflight_script_error"
+    },
+    {
+      "attempt": 3,
+      "default_HVP_col0_calls": 1,
+      "default_scalar_gradient_calls": 1,
+      "elapsed_s": 11.537622709060088,
+      "peak_rss_bytes": 477790208,
+      "replay_off_Hrow_AD_calls": 1,
+      "replay_off_objective_calls": 1,
+      "status": "complete"
+    }
+  ],
+  "baseline_replay": true,
+  "case_asset_sha256": "1e810c23c73b93d89b2a10b46d9ddea44a8217b07dcd3ebfebb462858e3fa9b7",
+  "configuration_change": {
+    "baseline": true,
+    "field": "problem.frozen.fv_transport.replay",
+    "probe": false
+  },
+  "control_sha256": "16793291a9848e432ee9c567fa39828848dbce9fee2eb2ab1d4ffd57cf07bbce",
+  "default_Hcol0_norm": 458.1187459458279,
+  "default_J": 0.06012110723735842,
+  "default_gradient_norm": 0.06263551244852048,
+  "elapsed_s": 11.537622709060088,
+  "equivalence": {
+    "J": {
+      "max_abs": 0.0,
+      "relative_max": 0.0,
+      "scale": 0.06012110723735842
+    },
+    "gradient": {
+      "max_abs": 2.400857290751901e-15,
+      "relative_max": 4.141319900249988e-14,
+      "scale": 0.057973239174471274
+    },
+    "replay_false_Hrow0_vs_default_Hcol0": {
+      "max_abs": 4.902744876744691e-13,
+      "relative_max": 1.6203028469247914e-15,
+      "scale": 302.58200718771303
+    }
+  },
+  "fixed_tensor_identity_checks": {
+    "control_same_bytes": true,
+    "frozen_other_fields_shared": true,
+    "only_fv_replay_changed": true,
+    "parameters_same_bytes": true,
+    "problem_copied_and_only_frozen_reference_replaced": true
+  },
+  "input_identity": {
+    "archived_input": {
+      "control_sha256": "adc5bfd01e98e32b09ccc963f096a6f6a3c7307d600a0ba20f8ddc8dcad3721e",
+      "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+      "problem": {
+        "fixed_problem_sha256": "16fa95b534c3b61cf5d1506770cbfc77edb527c40d1f4c536f5130cba24e1fc3",
+        "scope": "fixed point-observation identity; caller also binds code, control, parameters and branch"
+      },
+      "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+    },
+    "changed_control_index": 21,
+    "changed_control_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25
+    ],
+    "control_sha256": "16793291a9848e432ee9c567fa39828848dbce9fee2eb2ab1d4ffd57cf07bbce",
+    "original_flow_fractions": [
+      0.7,
+      -0.6,
+      0.5,
+      0.4,
+      -0.30000000000000004
+    ],
+    "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "shifted_flow_fractions": [
+      -0.06304026489937953,
+      0.008466456444377633,
+      -0.028606839343781724,
+      0.058549081627863396,
+      -0.0010288963418954803
+    ],
+    "terminal_truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+  },
+  "objective_calls": {
+    "default_jvp_hvp_col0": 1,
+    "default_scalar_gradient": 1,
+    "replay_false_Hrow0": 0,
+    "replay_false_retained_scalar_gradient_graph": 1
+  },
+  "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+  "passed": true,
+  "peak_rss_bytes": 477790208,
+  "physical_change": false,
+  "probe_replay": false,
+  "problem_source_sha256": "d2a1394654244de31e3252cebad4c6cf8be6f1cd1b5c270132d521a02378742f",
+  "replay_false_Hrow0_norm": 458.1187459458279,
+  "replay_false_J": 0.06012110723735842,
+  "replay_false_gradient_norm": 0.0626355124485234,
+  "rss_limit_bytes": 2147483648,
+  "status": "complete",
+  "target_J_stored": 0.06012110723735842,
+  "target_control_sha256_expected": "16793291a9848e432ee9c567fa39828848dbce9fee2eb2ab1d4ffd57cf07bbce",
+  "time_limit_s": 60.0,
+  "timings_s": {
+    "default_hvp_col0": 8.803513250080869,
+    "default_scalar_gradient": 1.364495832938701,
+    "replay_false_Hrow0": 0.7243100840132684,
+    "replay_false_scalar_gradient_graph": 0.43795225000940263
+  },
+  "total_probe_accounting": {
+    "default_HVP_col0_calls_total": 3,
+    "default_scalar_gradient_calls_total": 3,
+    "failed_preflight_attempts_each_recomputed_only_default_scalar_gradient_and_HVP_before_refusal": true,
+    "replay_off_Hrow_AD_calls_total": 1,
+    "replay_off_scalar_gradient_graph_calls_total": 1
+  },
+  "transport_source_sha256": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9"
+}

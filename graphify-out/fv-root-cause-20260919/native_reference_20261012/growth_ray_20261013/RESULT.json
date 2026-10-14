@@ -1,0 +1,635 @@
+{
+  "scope": "fixed flow/field controls; native J and growth partial only",
+  "status": "completed",
+  "rows": [
+    {
+      "delta": -2e-07,
+      "native_J": 0.060119181119933085,
+      "branch": {
+        "classification": "multiplefaces",
+        "stage_count": 360,
+        "expected_analysis_stage_count": 360,
+        "actual_selector_signature_sha256": "ec261453fe54124eba0b2855de27ab2b9eb6e83cf8432786b9bbc219f98606a7",
+        "selector_counts": {
+          "x": {
+            "left": 1033,
+            "right": 728,
+            "inactive_zero": 399,
+            "active_tie": 0
+          },
+          "y": {
+            "left": 1440,
+            "right": 237,
+            "inactive_zero": 483,
+            "active_tie": 0
+          }
+        },
+        "face_sign_counts_over_stages": {
+          "x": {
+            "negative": 8640,
+            "positive": 0,
+            "zero": 0
+          },
+          "y": {
+            "negative": 5760,
+            "positive": 2520,
+            "zero": 720
+          }
+        },
+        "unique_nearzero_face_entities": [
+          "y:2:1",
+          "y:4:3"
+        ],
+        "unique_near_tie_slope_entities": [],
+        "violation_counts": {
+          "y_face_flux_nonzero": 720
+        },
+        "normalized_branch_margins": {
+          "x_operand_over_q_scale": {
+            "value": 3.5217877229993044e-05,
+            "stage_index": 321,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 1,
+              "interval_start_seconds": 600,
+              "interval_end_seconds": 1200,
+              "forecast_lead_index": null,
+              "substep_index": 70,
+              "ssprk_euler_stage_index": 1
+            },
+            "first_flat_index": 2
+          },
+          "x_active_gap_over_q_scale": {
+            "value": 1.6495383084173195e-07,
+            "stage_index": 48,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 24,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 0
+          },
+          "y_operand_over_q_scale": {
+            "value": 2.3202688755042967e-07,
+            "stage_index": 124,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 62,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 5
+          },
+          "y_active_gap_over_q_scale": {
+            "value": 0.0035265855479847826,
+            "stage_index": 359,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 1,
+              "interval_start_seconds": 600,
+              "interval_end_seconds": 1200,
+              "forecast_lead_index": null,
+              "substep_index": 89,
+              "ssprk_euler_stage_index": 1
+            },
+            "first_flat_index": 3
+          },
+          "face_abs_over_global_max_flux": {
+            "value": 0.0,
+            "stage_index": 0,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 0,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 11
+          }
+        },
+        "strict_pointwise_branch": false,
+        "native_J_on_audited_path": 0.060119181119933085,
+        "objective_finite": true
+      },
+      "control_sha256": "68bbd5845981777bef3b3a76e0379990844dda83436575701ddb8e8c533c82cb",
+      "growth_partial": -0.0017127233786483897,
+      "native_J_change": 2.8578128752343446e-10,
+      "secant_slope": -0.0014289064376171723
+    },
+    {
+      "delta": -2e-08,
+      "native_J": 0.060119180857618706,
+      "branch": {
+        "classification": "multiplefaces",
+        "stage_count": 360,
+        "expected_analysis_stage_count": 360,
+        "actual_selector_signature_sha256": "ec261453fe54124eba0b2855de27ab2b9eb6e83cf8432786b9bbc219f98606a7",
+        "selector_counts": {
+          "x": {
+            "left": 1033,
+            "right": 728,
+            "inactive_zero": 399,
+            "active_tie": 0
+          },
+          "y": {
+            "left": 1440,
+            "right": 237,
+            "inactive_zero": 483,
+            "active_tie": 0
+          }
+        },
+        "face_sign_counts_over_stages": {
+          "x": {
+            "negative": 8640,
+            "positive": 0,
+            "zero": 0
+          },
+          "y": {
+            "negative": 5760,
+            "positive": 2520,
+            "zero": 720
+          }
+        },
+        "unique_nearzero_face_entities": [
+          "y:2:1",
+          "y:4:3"
+        ],
+        "unique_near_tie_slope_entities": [],
+        "violation_counts": {
+          "y_face_flux_nonzero": 720
+        },
+        "normalized_branch_margins": {
+          "x_operand_over_q_scale": {
+            "value": 3.522568202522592e-05,
+            "stage_index": 321,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 1,
+              "interval_start_seconds": 600,
+              "interval_end_seconds": 1200,
+              "forecast_lead_index": null,
+              "substep_index": 70,
+              "ssprk_euler_stage_index": 1
+            },
+            "first_flat_index": 2
+          },
+          "x_active_gap_over_q_scale": {
+            "value": 1.6495474146668598e-07,
+            "stage_index": 48,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 24,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 0
+          },
+          "y_operand_over_q_scale": {
+            "value": 2.3200924958056062e-07,
+            "stage_index": 124,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 62,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 5
+          },
+          "y_active_gap_over_q_scale": {
+            "value": 0.0035265855605638692,
+            "stage_index": 359,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 1,
+              "interval_start_seconds": 600,
+              "interval_end_seconds": 1200,
+              "forecast_lead_index": null,
+              "substep_index": 89,
+              "ssprk_euler_stage_index": 1
+            },
+            "first_flat_index": 3
+          },
+          "face_abs_over_global_max_flux": {
+            "value": 0.0,
+            "stage_index": 0,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 0,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 11
+          }
+        },
+        "strict_pointwise_branch": false,
+        "native_J_on_audited_path": 0.060119180857618706,
+        "objective_finite": true
+      },
+      "control_sha256": "163111e87fe686af8e2991b22522ef05756db99d7a4dfa155704cf8ff3a63760",
+      "growth_partial": -0.00120179190726602,
+      "native_J_change": 2.3466908971592204e-11,
+      "secant_slope": -0.0011733454485796102
+    },
+    {
+      "delta": 0.0,
+      "native_J": 0.0601191808341518,
+      "branch": {
+        "classification": "multiplefaces",
+        "stage_count": 360,
+        "expected_analysis_stage_count": 360,
+        "actual_selector_signature_sha256": "ec261453fe54124eba0b2855de27ab2b9eb6e83cf8432786b9bbc219f98606a7",
+        "selector_counts": {
+          "x": {
+            "left": 1033,
+            "right": 728,
+            "inactive_zero": 399,
+            "active_tie": 0
+          },
+          "y": {
+            "left": 1440,
+            "right": 237,
+            "inactive_zero": 483,
+            "active_tie": 0
+          }
+        },
+        "face_sign_counts_over_stages": {
+          "x": {
+            "negative": 8640,
+            "positive": 0,
+            "zero": 0
+          },
+          "y": {
+            "negative": 5760,
+            "positive": 2520,
+            "zero": 720
+          }
+        },
+        "unique_nearzero_face_entities": [
+          "y:2:1",
+          "y:4:3"
+        ],
+        "unique_near_tie_slope_entities": [],
+        "violation_counts": {
+          "y_face_flux_nonzero": 720
+        },
+        "normalized_branch_margins": {
+          "x_operand_over_q_scale": {
+            "value": 3.522654922521609e-05,
+            "stage_index": 321,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 1,
+              "interval_start_seconds": 600,
+              "interval_end_seconds": 1200,
+              "forecast_lead_index": null,
+              "substep_index": 70,
+              "ssprk_euler_stage_index": 1
+            },
+            "first_flat_index": 2
+          },
+          "x_active_gap_over_q_scale": {
+            "value": 1.6495484284463054e-07,
+            "stage_index": 48,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 24,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 0
+          },
+          "y_operand_over_q_scale": {
+            "value": 2.3200729120784578e-07,
+            "stage_index": 124,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 62,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 5
+          },
+          "y_active_gap_over_q_scale": {
+            "value": 0.003526585561961328,
+            "stage_index": 359,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 1,
+              "interval_start_seconds": 600,
+              "interval_end_seconds": 1200,
+              "forecast_lead_index": null,
+              "substep_index": 89,
+              "ssprk_euler_stage_index": 1
+            },
+            "first_flat_index": 3
+          },
+          "face_abs_over_global_max_flux": {
+            "value": 0.0,
+            "stage_index": 0,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 0,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 11
+          }
+        },
+        "strict_pointwise_branch": false,
+        "native_J_on_audited_path": 0.0601191808341518,
+        "objective_finite": true
+      },
+      "control_sha256": "6ca56498f82002634a5103fecd41b1ec9d67e8ff745ecbe9b554906043c0c4d5",
+      "growth_partial": null,
+      "native_J_change": 0.0,
+      "secant_slope": null
+    },
+    {
+      "delta": 2e-08,
+      "native_J": 0.06011918081182199,
+      "branch": {
+        "classification": "multiplefaces",
+        "stage_count": 360,
+        "expected_analysis_stage_count": 360,
+        "actual_selector_signature_sha256": "ec261453fe54124eba0b2855de27ab2b9eb6e83cf8432786b9bbc219f98606a7",
+        "selector_counts": {
+          "x": {
+            "left": 1033,
+            "right": 728,
+            "inactive_zero": 399,
+            "active_tie": 0
+          },
+          "y": {
+            "left": 1440,
+            "right": 237,
+            "inactive_zero": 483,
+            "active_tie": 0
+          }
+        },
+        "face_sign_counts_over_stages": {
+          "x": {
+            "negative": 8640,
+            "positive": 0,
+            "zero": 0
+          },
+          "y": {
+            "negative": 5760,
+            "positive": 2520,
+            "zero": 720
+          }
+        },
+        "unique_nearzero_face_entities": [
+          "y:2:1",
+          "y:4:3"
+        ],
+        "unique_near_tie_slope_entities": [],
+        "violation_counts": {
+          "y_face_flux_nonzero": 720
+        },
+        "normalized_branch_margins": {
+          "x_operand_over_q_scale": {
+            "value": 3.5227416422586104e-05,
+            "stage_index": 321,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 1,
+              "interval_start_seconds": 600,
+              "interval_end_seconds": 1200,
+              "forecast_lead_index": null,
+              "substep_index": 70,
+              "ssprk_euler_stage_index": 1
+            },
+            "first_flat_index": 2
+          },
+          "x_active_gap_over_q_scale": {
+            "value": 1.6495494553162056e-07,
+            "stage_index": 48,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 24,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 0
+          },
+          "y_operand_over_q_scale": {
+            "value": 2.3200533173821092e-07,
+            "stage_index": 124,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 62,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 5
+          },
+          "y_active_gap_over_q_scale": {
+            "value": 0.003526585563360522,
+            "stage_index": 359,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 1,
+              "interval_start_seconds": 600,
+              "interval_end_seconds": 1200,
+              "forecast_lead_index": null,
+              "substep_index": 89,
+              "ssprk_euler_stage_index": 1
+            },
+            "first_flat_index": 3
+          },
+          "face_abs_over_global_max_flux": {
+            "value": 0.0,
+            "stage_index": 0,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 0,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 11
+          }
+        },
+        "strict_pointwise_branch": false,
+        "native_J_on_audited_path": 0.06011918081182199,
+        "objective_finite": true
+      },
+      "control_sha256": "b51f2a5a64c6e69d142741149b2b414dea893dea0c214d1ff18a73d5056bccb6",
+      "growth_partial": -0.0010882515912631618,
+      "native_J_change": -2.232980467198331e-11,
+      "secant_slope": -0.0011164902335991655
+    },
+    {
+      "delta": 2e-07,
+      "native_J": 0.060119180661924884,
+      "branch": {
+        "classification": "multiplefaces",
+        "stage_count": 360,
+        "expected_analysis_stage_count": 360,
+        "actual_selector_signature_sha256": "ec261453fe54124eba0b2855de27ab2b9eb6e83cf8432786b9bbc219f98606a7",
+        "selector_counts": {
+          "x": {
+            "left": 1033,
+            "right": 728,
+            "inactive_zero": 399,
+            "active_tie": 0
+          },
+          "y": {
+            "left": 1440,
+            "right": 237,
+            "inactive_zero": 483,
+            "active_tie": 0
+          }
+        },
+        "face_sign_counts_over_stages": {
+          "x": {
+            "negative": 8640,
+            "positive": 0,
+            "zero": 0
+          },
+          "y": {
+            "negative": 5760,
+            "positive": 2520,
+            "zero": 720
+          }
+        },
+        "unique_nearzero_face_entities": [
+          "y:2:1",
+          "y:4:3"
+        ],
+        "unique_near_tie_slope_entities": [],
+        "violation_counts": {
+          "y_face_flux_nonzero": 720
+        },
+        "normalized_branch_margins": {
+          "x_operand_over_q_scale": {
+            "value": 3.523522121383994e-05,
+            "stage_index": 321,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 1,
+              "interval_start_seconds": 600,
+              "interval_end_seconds": 1200,
+              "forecast_lead_index": null,
+              "substep_index": 70,
+              "ssprk_euler_stage_index": 1
+            },
+            "first_flat_index": 2
+          },
+          "x_active_gap_over_q_scale": {
+            "value": 1.6495585512800729e-07,
+            "stage_index": 48,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 24,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 0
+          },
+          "y_operand_over_q_scale": {
+            "value": 2.3198768919926578e-07,
+            "stage_index": 124,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 62,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 5
+          },
+          "y_active_gap_over_q_scale": {
+            "value": 0.003526585575950956,
+            "stage_index": 359,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 1,
+              "interval_start_seconds": 600,
+              "interval_end_seconds": 1200,
+              "forecast_lead_index": null,
+              "substep_index": 89,
+              "ssprk_euler_stage_index": 1
+            },
+            "first_flat_index": 3
+          },
+          "face_abs_over_global_max_flux": {
+            "value": 0.0,
+            "stage_index": 0,
+            "stage_context": {
+              "phase": "analysis_replay",
+              "interval_index": 0,
+              "interval_start_seconds": 0,
+              "interval_end_seconds": 600,
+              "forecast_lead_index": null,
+              "substep_index": 0,
+              "ssprk_euler_stage_index": 0
+            },
+            "first_flat_index": 11
+          }
+        },
+        "strict_pointwise_branch": false,
+        "native_J_on_audited_path": 0.060119180661924884,
+        "objective_finite": true
+      },
+      "control_sha256": "74a31ec1f66fa1194d59294047efa01fdebda34247e67f738a5679ba603eee58",
+      "growth_partial": -0.0005773202332128302,
+      "native_J_change": -1.7222691328644402e-10,
+      "secant_slope": -0.0008611345664322201
+    }
+  ],
+  "native_J_calls": 5,
+  "gradient_calls": 4,
+  "cumulative_native_J_after": 498,
+  "cumulative_gradient_after": 128,
+  "Hessian_rows": 0,
+  "score_calls": 0,
+  "source_unchanged": true,
+  "input_unchanged": true,
+  "parameters_unchanged": true,
+  "baseline_stored_J": 0.0601191808341518,
+  "baseline_J": 0.0601191808341518,
+  "elapsed_seconds": 5.6573785841465,
+  "minimum_claim": false,
+  "interpretation": "Growth partial is along this fixed-flow ray, not a full Clarke stationarity certificate."
+}

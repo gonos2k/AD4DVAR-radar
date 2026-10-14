@@ -1,0 +1,20 @@
+{
+  "scope": "Measured phase runtimes plus inherited conservative charges; not total elapsed session wall time. Original reference-search cap closed before qualification.",
+  "original_compute_seconds_cap": 3600,
+  "after_chord_corrected_seconds": 3413.621247873987,
+  "observer_seconds": 2.4069994159508497,
+  "growth_ray_seconds": 5.6573785841465,
+  "coupled_ray_seconds": 2.299491916084662,
+  "direct_native_J_reference": 2000,
+  "direct_native_J_qualification_before_observer": 493,
+  "observer_J": 1,
+  "growth_ray_J": 5,
+  "coupled_ray_J": 7,
+  "direct_native_J_qualification_observer_total": 506,
+  "gradient_current_qualification_total": 128,
+  "limits": "Earlier PCG partial HVP counts and one full-H runtime are not measured; conservative inherited reservations remain. Do not infer all AD forward calls from direct-J counters.",
+  "charged_after_current_observers_seconds": 3423.985117790169,
+  "remaining_estimated_seconds": 176.01488220983083,
+  "direct_native_J_combined_tracked_reference_and_later_lineage": 2506,
+  "direct_J_count_limits": "2506 is the audited reference plus later tracked lineage and observers, not a complete census of every earlier qualification/debug call. Earlier interrupted AD/refinement calls are not reconstructed."
+}

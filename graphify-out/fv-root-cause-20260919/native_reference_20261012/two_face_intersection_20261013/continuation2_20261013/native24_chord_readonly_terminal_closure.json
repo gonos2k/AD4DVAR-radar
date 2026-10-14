@@ -1,0 +1,251 @@
+{
+  "accounting": {
+    "charged_before_seconds": 3406.363868373792,
+    "corrected_charged_at_end_seconds": 3413.621247873987,
+    "corrected_remaining_seconds": 186.37875212601284,
+    "forecast_calls": 0,
+    "gradient_added": 4,
+    "gradient_total": 124,
+    "hessian_rows_added": 0,
+    "hessian_rows_total": 288,
+    "ledger_reported_remaining_seconds": 186.49894687615233,
+    "native_J_added": 9,
+    "native_J_before": 484,
+    "native_J_total": 493,
+    "note": "ledger end value undercounts by the time spent in final source-closure/write; corrected remaining uses charged_before+elapsed",
+    "phase_elapsed_seconds": 7.257379500195384,
+    "score_calls": 0
+  },
+  "execution": {
+    "elapsed_seconds": 7.257379500195384,
+    "phase": "terminal_first_order_not_met",
+    "source_archive_closure": true,
+    "status": "one_chord_nonstationary"
+  },
+  "hashes": {
+    "input_control_sha256": "d88b6556ce2eec95c0cd3fee661152a1068e113b9c43bfce7aa812d966ae31a1",
+    "plan_sha256": "affeeb1667791ee7e2705d4fd66bfc0f04147f238adb5e3c8bfcdd5bb2cf9382",
+    "raw_result_sha256": "46c56f85adaf2134ddd22ca9fd7f8a62e5c3aac78cab34adf4c1f2fb31eab41c",
+    "snapshot_sha256": "4a73ba09951c4096fc0fea3632fed86ecef4dc4451a90cb50410f99857a9bbef",
+    "terminal_control_sha256": "6ca56498f82002634a5103fecd41b1ec9d67e8ff745ecbe9b554906043c0c4d5"
+  },
+  "point": {
+    "active_faces": [
+      "y:2:1",
+      "y:4:3"
+    ],
+    "all_normal_signs_strict": true,
+    "branch_classification": "multiplefaces",
+    "control": [
+      0.007949773694718392,
+      0.007289555252662043,
+      -0.037058533690378946,
+      -0.010796169663153624,
+      -0.0012519825461153862,
+      0.0034013623180266434,
+      -0.011340473433497833,
+      -0.02871084111672051,
+      0.004134893187800102,
+      -0.013369045766538754,
+      -0.038023268665685686,
+      -0.02546221555355502,
+      0.05199521306566007,
+      0.02928934057083511,
+      -0.014580013801346369,
+      0.0,
+      0.0,
+      0.00025993045470886487,
+      -0.026988432982530973,
+      -0.01991635214785729,
+      -0.06327416441600661,
+      0.00853093602810625,
+      -0.028701369623395954,
+      0.05870942806529402,
+      -0.0010216316656650347,
+      0.18523166200990385
+    ],
+    "control_sha256": "6ca56498f82002634a5103fecd41b1ec9d67e8ff745ecbe9b554906043c0c4d5",
+    "face_values": [
+      -0.0,
+      -0.0
+    ],
+    "first_order_pass": false,
+    "full_clarke_hull": {
+      "scope": "finite gradients at nearby points; not limiting-gradient certification",
+      "squared_norm": 2.804613605219137e-06,
+      "vector": [
+        -0.00023166231899251523,
+        -0.0004357983837371404,
+        -4.39792900439398e-05,
+        -6.641120955230145e-07,
+        5.80860015793848e-09,
+        5.385454983441226e-06,
+        -0.0007285829611621535,
+        -0.00016729346353776264,
+        -0.00010991337800124023,
+        3.5618027977767086e-05,
+        3.628327611424759e-05,
+        -0.0005494826150923247,
+        -0.0005366693528857172,
+        2.1018275896716315e-05,
+        3.863315399006001e-05,
+        0.0,
+        0.0,
+        -2.516642959315713e-07,
+        0.00022057199628744417,
+        6.219081978690866e-05,
+        9.612445394655e-05,
+        -3.333241687632873e-05,
+        7.146874648281689e-05,
+        -0.00012100828079112881,
+        -5.303263156535853e-07,
+        -0.0011450217443727817
+      ],
+      "weights": [
+        0.0,
+        0.28680967550878844,
+        0.4463362958025062,
+        0.26685402868870534
+      ]
+    },
+    "full_gradient_inf": 0.0011450217443727817,
+    "native_J": 0.0601191808341518,
+    "near_ties": [],
+    "normal_coefficients": [
+      {
+        "eta": [
+          -0.19473818935011222,
+          -0.039481018600250294
+        ],
+        "eta_roundoff_budget": [
+          5.820561281987847e-15,
+          2.10447299284564e-14
+        ],
+        "eta_sign_margin": [
+          0.19473818935011222,
+          0.039481018600250294
+        ],
+        "sides": [
+          -1,
+          -1
+        ],
+        "strict_sign_match": [
+          true,
+          true
+        ]
+      },
+      {
+        "eta": [
+          -0.19473818935011192,
+          0.03182764458451706
+        ],
+        "eta_roundoff_budget": [
+          5.3069067220912504e-15,
+          1.918756857135576e-14
+        ],
+        "eta_sign_margin": [
+          0.19473818935011192,
+          0.03182764458451706
+        ],
+        "sides": [
+          -1,
+          1
+        ],
+        "strict_sign_match": [
+          true,
+          true
+        ]
+      },
+      {
+        "eta": [
+          0.07831401377538305,
+          -0.039481018600250294
+        ],
+        "eta_roundoff_budget": [
+          1.946346492817906e-15,
+          7.0371798017668675e-15
+        ],
+        "eta_sign_margin": [
+          0.07831401377538305,
+          0.039481018600250294
+        ],
+        "sides": [
+          1,
+          -1
+        ],
+        "strict_sign_match": [
+          true,
+          true
+        ]
+      },
+      {
+        "eta": [
+          0.07831401377538301,
+          0.03182764458451845
+        ],
+        "eta_roundoff_budget": [
+          2.4575472874407344e-15,
+          8.885469363693035e-15
+        ],
+        "eta_sign_margin": [
+          0.07831401377538301,
+          0.03182764458451845
+        ],
+        "sides": [
+          1,
+          1
+        ],
+        "strict_sign_match": [
+          true,
+          true
+        ]
+      }
+    ],
+    "normal_rank_two": true,
+    "tangent_agreement_budget": 2.6076772319929307e-14,
+    "tangent_agreement_inf": 3.5439858513119926e-17,
+    "tangent_hull": {
+      "scope": "finite gradients at nearby points; not limiting-gradient certification",
+      "squared_norm": 2.813602971227348e-06,
+      "vector": [
+        -0.00023166231899251523,
+        -0.0004357983837371404,
+        -4.39792900439398e-05,
+        -6.641120955230145e-07,
+        5.808600157938479e-09,
+        5.385454983441226e-06,
+        -0.0007285829611621535,
+        -0.00016729346353776264,
+        -0.00010991337800124023,
+        3.5618027977767086e-05,
+        3.628327611424759e-05,
+        -0.0005494826150923247,
+        -0.0005366693528857172,
+        2.1018275896716315e-05,
+        3.863315399006001e-05,
+        0.0,
+        0.0,
+        -2.516642959315713e-07,
+        0.00022057199628744417,
+        6.219081978690866e-05,
+        9.612445394654999e-05,
+        -8.961699408555198e-05,
+        -0.00014771688252853473,
+        -0.0011450217443727817
+      ],
+      "weights": [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ]
+    }
+  },
+  "qualification": {
+    "exact_terminal_hessian": false,
+    "minimum_claim": false,
+    "reason": "the one permitted fixed-H chord decreased J slightly but final full/tangent Clarke residual remains far above 1e-10; no terminal P2 was run",
+    "response_claim": false
+  },
+  "record_type": "same_task_one_chord_read_only_terminal_closure"
+}

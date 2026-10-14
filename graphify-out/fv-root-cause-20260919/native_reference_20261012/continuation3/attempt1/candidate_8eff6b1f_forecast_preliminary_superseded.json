@@ -1,0 +1,80 @@
+{
+  "absolute_model_minutes_from_initial_condition": [
+    30,
+    50,
+    80,
+    200
+  ],
+  "allocation_wall_seconds": 30.0,
+  "analysis_lead": "end of interval 2; restored from the saved 26-control candidate",
+  "analysis_state_shape": [
+    4,
+    5
+  ],
+  "candidate_control_sha256": "8eff6b1f2285ff626fcd8815b43e0b772cdef050501511837e4f51fcbaadb47c",
+  "candidate_phase_status": "nonpositive_or_unresolved_face_curvature",
+  "candidate_receipt_sha256": "43e1ab27c6298221916c6dd6d967f305d16bd114f160d503e64f1197da2f726c",
+  "continuation_plan_sha256": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+  "continuation_source_bundle_sha256": "0b49facc69c9689335455d324e442bd4bf5da0e807ee408473acfba1b53ed97d",
+  "fixed_case_sha256": "1e810c23c73b93d89b2a10b46d9ddea44a8217b07dcd3ebfebb462858e3fa9b7",
+  "forecast_fields_npz": "candidate_8eff6b1f_forecast_fields.npz",
+  "forecast_fields_sha256": "64e7ecdf57ee2fc72881e48596646b5c344fe594a7952f35cf62a49acaf69945",
+  "forecast_fields_shape": [
+    19,
+    4,
+    5
+  ],
+  "forecast_leads_minutes_after_analysis": [
+    10,
+    30,
+    60,
+    180
+  ],
+  "forecast_seconds": 3.157810416072607,
+  "forecast_trajectories": 1,
+  "independent_reference_arrays_sha256": "3614d099c52f9c8b70ebb72061205fd56887728697f1abf5e87849868c9e8209",
+  "independent_reference_json_sha256": "7e7b340744d1ef6be8e39f3c2bc654530ff103aefeb31239651dd6708f2cfee2",
+  "initial_process_peak_rss_bytes": 200890384384,
+  "input_parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+  "minimum_claim": false,
+  "native_J_independent_evaluation": 0.06032493087285347,
+  "native_J_stored": 0.06032493087285347,
+  "output_fields": [
+    "analysis_dbz",
+    "analysis_echo",
+    "analysis_support",
+    "control",
+    "forecast_dbz",
+    "forecast_echo",
+    "forecast_support",
+    "lead_010_dbz",
+    "lead_030_dbz",
+    "lead_060_dbz",
+    "lead_180_dbz",
+    "parameters",
+    "terminal_truth_dbz"
+  ],
+  "runtime": {
+    "device": "CPU FP64",
+    "python": "3.10.11",
+    "torch": "2.13.0"
+  },
+  "sampled_process_peak_rss_bytes": 270901706752,
+  "score_selection_use": false,
+  "source_hashes_before_after_equal": true,
+  "status": "completed",
+  "successful_native_J_evaluations_added": 1,
+  "terminal_future_E_observation_only": {
+    "lead_minutes_after_analysis": 180,
+    "mean_absolute_dbz_error": 2.243244681117706,
+    "mean_squared_dbz_error": 6.529864741653903,
+    "selection_use": false
+  },
+  "transport_support_only_transition": {
+    "after": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9",
+    "before": "b0335b7a72ecd22084d5ab8ea0e46707240be15ef0039f4b31f96adbc937ee1a",
+    "path": "src/advar/transport.py",
+    "verified_current_sha256": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9"
+  },
+  "truth_sha256": "b927c1a39d16f05285cccb7a9ff48d182eea539bfba746f7aff446aee0974610"
+}

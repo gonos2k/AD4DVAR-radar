@@ -1,0 +1,279 @@
+{
+  "accepted_step_alphas": [
+    1.0,
+    0.125,
+    0.25,
+    0.125,
+    0.03125,
+    0.015625,
+    0.03125,
+    0.0078125
+  ],
+  "charged_seconds": 0.017764833057299256,
+  "elapsed_algebra_seconds": 0.017764833057299256,
+  "faces": {
+    "current_final_dccb": {
+      "active_faces_excluded": [
+        "y:2:1",
+        "y:4:3"
+      ],
+      "global_flux_scale": 0.025969727389113798,
+      "identically_zero_structural_faces": [],
+      "nonselected_face_count": 47,
+      "smallest_three_controllable_faces_by_linearized_flow_l2": [
+        {
+          "abs_over_global_max": 0.0023603533609326817,
+          "exact_root_distance_flow_l2": 0.00011955959272165722,
+          "exact_root_ray_parameter": 1.0000002653623028,
+          "face": "y:3:2",
+          "flow_gradient_norm": 0.5126962061021171,
+          "flux": -6.129773332540027e-05,
+          "linearized_distance_flow_l2": 0.00011955956099505679,
+          "root_flux_residual": -0.0,
+          "threshold_multiple": 83047550912.18065,
+          "within_zero_tolerance": false,
+          "zero_threshold_128eps": 7.381040458401969e-16
+        },
+        {
+          "abs_over_global_max": 0.007081060082798188,
+          "exact_root_distance_flow_l2": 0.0016390059754932517,
+          "exact_root_ray_parameter": 0.9999945530776664,
+          "face": "y:1:0",
+          "flow_gradient_norm": 0.1121973934651977,
+          "flux": 0.0001838931999762045,
+          "linearized_distance_flow_l2": 0.0016390149030801324,
+          "root_flux_residual": -0.0,
+          "threshold_multiple": 249142652736.54697,
+          "within_zero_tolerance": false,
+          "zero_threshold_128eps": 7.381040458401969e-16
+        },
+        {
+          "abs_over_global_max": 0.08088226528709691,
+          "exact_root_distance_flow_l2": 0.0018542452205816038,
+          "exact_root_ray_parameter": 1.0000029575935798,
+          "face": "y:4:4",
+          "flow_gradient_norm": 1.1328041022847606,
+          "flux": -0.0021004903801198887,
+          "linearized_distance_flow_l2": 0.0018542397364940636,
+          "root_flux_residual": -0.0,
+          "threshold_multiple": 2845791717248.838,
+          "within_zero_tolerance": false,
+          "zero_threshold_128eps": 7.381040458401969e-16
+        }
+      ],
+      "zero_threshold_128eps": 7.381040458401969e-16
+    },
+    "projected_initial_58f": {
+      "active_faces_excluded": [
+        "y:2:1",
+        "y:4:3"
+      ],
+      "global_flux_scale": 0.025915412430723324,
+      "identically_zero_structural_faces": [],
+      "nonselected_face_count": 47,
+      "smallest_three_controllable_faces_by_linearized_flow_l2": [
+        {
+          "abs_over_global_max": 0.002381284922189475,
+          "exact_root_distance_flow_l2": 0.00012036742102299706,
+          "exact_root_ray_parameter": 1.0000002671431503,
+          "face": "y:3:2",
+          "flow_gradient_norm": 0.5126968479929931,
+          "flux": -6.171198087360314e-05,
+          "linearized_distance_flow_l2": 0.00012036738886767361,
+          "root_flux_residual": -0.0,
+          "threshold_multiple": 83784014751.83984,
+          "within_zero_tolerance": false,
+          "zero_threshold_128eps": 7.365603218750983e-16
+        },
+        {
+          "abs_over_global_max": 0.007143854766568329,
+          "exact_root_distance_flow_l2": 0.001650077603795781,
+          "exact_root_ray_parameter": 0.9999945132255093,
+          "face": "y:1:0",
+          "flow_gradient_norm": 0.11219770900214736,
+          "flux": 0.00018513594262080694,
+          "linearized_distance_flow_l2": 0.0016500866574491607,
+          "root_flux_residual": -0.0,
+          "threshold_multiple": 251352044255.51614,
+          "within_zero_tolerance": false,
+          "zero_threshold_128eps": 7.365603218750983e-16
+        },
+        {
+          "abs_over_global_max": 0.08084432900108654,
+          "exact_root_distance_flow_l2": 0.0018494981902541718,
+          "exact_root_ray_parameter": 1.000002956986684,
+          "face": "y:4:4",
+          "flow_gradient_norm": 1.1328047440181042,
+          "flux": -0.002095114128748244,
+          "linearized_distance_flow_l2": 0.001849492721328823,
+          "root_flux_residual": -0.0,
+          "threshold_multiple": 2844456952846.1807,
+          "within_zero_tolerance": false,
+          "zero_threshold_128eps": 7.365603218750983e-16
+        }
+      ],
+      "zero_threshold_128eps": 7.365603218750983e-16
+    }
+  },
+  "finite_volume_trajectory_calls": 0,
+  "hessian_or_hvp_calls": 0,
+  "inputs": {
+    "active_faces_excluded": [
+      "y:4:3",
+      "y:2:1"
+    ],
+    "current_native24_sha256": "dccb0c9938f7cd8fa7fc386f9ae2158a8831b036acbc0ce0ae26240c43159376",
+    "flow_control_metric": "Euclidean L2 over five raw flow-control coordinates",
+    "projected_initial_sha256": "58f5ddc2e3594d1b369c0bb62c932ede7de5a9a5d9e2051c209a1dd8422a597f"
+  },
+  "last_accepted_step": {
+    "alpha": 0.0078125,
+    "control_sha256": "dccb0c9938f7cd8fa7fc386f9ae2158a8831b036acbc0ce0ae26240c43159376",
+    "iteration": 7,
+    "native_J": 0.060119180907603945,
+    "step_norm": 7.769899988266411e-07
+  },
+  "limiter_margins": {
+    "current_final_dccb": {
+      "x_active_gap_over_q_scale": {
+        "first_flat_index": 0,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 23
+        },
+        "stage_index": 47,
+        "value": 6.906797777454636e-08
+      },
+      "x_operand_over_q_scale": {
+        "first_flat_index": 2,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 1200,
+          "interval_index": 1,
+          "interval_start_seconds": 600,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 70
+        },
+        "stage_index": 321,
+        "value": 3.428413299346427e-05
+      },
+      "y_active_gap_over_q_scale": {
+        "first_flat_index": 3,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 1200,
+          "interval_index": 1,
+          "interval_start_seconds": 600,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 89
+        },
+        "stage_index": 359,
+        "value": 0.0035271941379380546
+      },
+      "y_operand_over_q_scale": {
+        "first_flat_index": 5,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 61
+        },
+        "stage_index": 123,
+        "value": 1.6802893314095586e-07
+      }
+    },
+    "projected_initial_58f": {
+      "x_active_gap_over_q_scale": {
+        "first_flat_index": 0,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 0,
+          "substep_index": 23
+        },
+        "stage_index": 46,
+        "value": 1.6629323472090421e-06
+      },
+      "x_operand_over_q_scale": {
+        "first_flat_index": 2,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 1200,
+          "interval_index": 1,
+          "interval_start_seconds": 600,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 0,
+          "substep_index": 69
+        },
+        "stage_index": 318,
+        "value": 4.9572339500019466e-05
+      },
+      "y_active_gap_over_q_scale": {
+        "first_flat_index": 3,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 1200,
+          "interval_index": 1,
+          "interval_start_seconds": 600,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 89
+        },
+        "stage_index": 359,
+        "value": 0.0030267163360641614
+      },
+      "y_operand_over_q_scale": {
+        "first_flat_index": 5,
+        "stage_context": {
+          "forecast_lead_index": null,
+          "interval_end_seconds": 600,
+          "interval_index": 0,
+          "interval_start_seconds": 0,
+          "phase": "analysis_replay",
+          "ssprk_euler_stage_index": 1,
+          "substep_index": 61
+        },
+        "stage_index": 123,
+        "value": 4.2563254058694835e-06
+      }
+    }
+  },
+  "method": "saved-control streamfunction/face-flux algebra and saved endpoint diagnostics only",
+  "minimum_claim": false,
+  "objective_calls": 0,
+  "sampled_stationarity_residual_max_components": {
+    "full_26D_clarke_hull": {
+      "abs": 0.0011848233293419996,
+      "dimension": 26,
+      "index": 25,
+      "value": -0.0011848233293419996
+    },
+    "tangent_24D_hull": {
+      "abs": 0.0011848233293419996,
+      "dimension": 24,
+      "index": 23,
+      "value": -0.0011848233293419996
+    }
+  },
+  "source_artifact_hashes": {
+    "native24_plan_sha256": "46aa85fead56aa0196499982019c242142c34ebcb1b1c347dc5e50b1746f96cf",
+    "native24_result_sha256": "5a06813f31372a07f24fe223b9e0424469de3d675188c25f94db791bfb41d638",
+    "source_archive_closure": true,
+    "transport_py_sha256": "f6c680da7ca130fcbc505a03b73741591dc023f57a7745e47cfd49dd72622fab",
+    "two_face_diagnostic_sha256": "bbe7706ee613727de290e878562f0706c39407b2d4b72d4c07135b761cb689a3"
+  },
+  "status": "complete"
+}

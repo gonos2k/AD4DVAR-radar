@@ -1,0 +1,25 @@
+{
+  "base_result_sha256": "5a06813f31372a07f24fe223b9e0424469de3d675188c25f94db791bfb41d638",
+  "coordinate_max_abs_difference": 0.0,
+  "coordinate_roundtrip_exact": true,
+  "current_control_sha256": "dccb0c9938f7cd8fa7fc386f9ae2158a8831b036acbc0ce0ae26240c43159376",
+  "current_coordinates_sha256": "bba8e97f49f355f19bea70162aa91369f4d03259913394d7606d35574680a2f2",
+  "elapsed_seconds_charged": 1.2,
+  "free": [
+    0,
+    1,
+    3
+  ],
+  "gradient_calls": 0,
+  "hessian_calls": 0,
+  "lift_matches_current_control_bytes": true,
+  "lifted_control_sha256": "dccb0c9938f7cd8fa7fc386f9ae2158a8831b036acbc0ce0ae26240c43159376",
+  "model_case_loaded": true,
+  "objective_or_fv_calls": 0,
+  "pivots": [
+    2,
+    4
+  ],
+  "reconstructed_coordinates_sha256": "bba8e97f49f355f19bea70162aa91369f4d03259913394d7606d35574680a2f2",
+  "status": "read_only_current_resume_chart_roundtrip_passed"
+}

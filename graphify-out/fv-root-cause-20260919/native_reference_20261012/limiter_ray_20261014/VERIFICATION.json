@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "method": "independent scalar arithmetic and archive/file/control rehash; no objective/AD/score callbacks",
+  "source_files": 132,
+  "input_files": 5,
+  "archive_members": 132,
+  "shared_old_ray_repeats_bitwise_equal": 3,
+  "gradient_dot_products_checked": 6,
+  "changed_selectors_checked": 6,
+  "plan_sha256": "bcf603bdabdf3c1215e20d8cd427786bf9b619f18d626c513ffedb8e0221fd2e",
+  "result_sha256": "e66cec6d758dfd7915561e86b8d197877862d2f75d22cee09410b1ef337d6596",
+  "minimum_claim": false,
+  "affected_tests": {
+    "passed": 29,
+    "seconds": 3.51,
+    "warnings": 18,
+    "warning_scope": "existing TorchScript deprecations",
+    "command": ".venv/bin/python -m pytest -q tests/test_fv_point_3h_limiter_ray_diagnostic.py tests/test_fv_selected_face_extension.py tests/test_fv_support_constant_preservation.py"
+  },
+  "type_check": {
+    "errors": 0,
+    "command": "uv tool run --from basedpyright basedpyright --level error --pythonpath .venv/bin/python examples/weather_scenarios/fv_point_3h_limiter_ray_diagnostic.py tests/test_fv_point_3h_limiter_ray_diagnostic.py",
+    "shared_venv_changed": false
+  },
+  "prior_chord_gradient_cap_128_honored": false,
+  "gradient_cap_transition": "New six-gradient diagnostic budget from128 to134 declared in pre-run PLAN; prior128 cumulative cap not inherited"
+}

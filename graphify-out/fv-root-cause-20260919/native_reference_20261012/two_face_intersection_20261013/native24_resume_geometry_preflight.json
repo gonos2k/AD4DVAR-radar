@@ -1,0 +1,54 @@
+{
+  "actual_active_faces": [
+    "y:2:1",
+    "y:4:3"
+  ],
+  "actual_tie_entities": [],
+  "control_sha256": "dccb0c9938f7cd8fa7fc386f9ae2158a8831b036acbc0ce0ae26240c43159376",
+  "face_fluxes_sorted_by_absolute_value": [
+    {
+      "axis": "y",
+      "column": 1,
+      "flux": 0.0,
+      "ratio": 0.0,
+      "row": 2
+    },
+    {
+      "axis": "y",
+      "column": 3,
+      "flux": 6.938893903907228e-18,
+      "ratio": 2.671916343186539e-16,
+      "row": 4
+    },
+    {
+      "axis": "y",
+      "column": 2,
+      "flux": -6.129773332540223e-05,
+      "ratio": 0.002360353360932756,
+      "row": 3
+    }
+  ],
+  "gradient_calls": 0,
+  "hessian_calls": 0,
+  "no_third_nearzero_face": true,
+  "normalized_limiter_margins": {
+    "x_active_gap": {
+      "stage_index": 47,
+      "value": 6.906797777454636e-08
+    },
+    "y_active_gap": {
+      "stage_index": 359,
+      "value": 0.0035271941379380546
+    },
+    "y_operand": {
+      "stage_index": 123,
+      "value": 1.6802893314095586e-07
+    }
+  },
+  "objective_or_fv_calls": 0,
+  "source_archive_closure": true,
+  "source_plan_sha256": "46aa85fead56aa0196499982019c242142c34ebcb1b1c347dc5e50b1746f96cf",
+  "source_result_sha256": "5a06813f31372a07f24fe223b9e0424469de3d675188c25f94db791bfb41d638",
+  "stage_count": 360,
+  "status": "saved_state_two_face_geometry_preflight_passed"
+}

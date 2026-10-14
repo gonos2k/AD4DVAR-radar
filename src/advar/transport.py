@@ -51,9 +51,29 @@ class _SelectedFace:
     side: int
 
 
-_selected_face: ContextVar[_SelectedFace | None] = ContextVar(
+_selected_face: ContextVar[tuple[_SelectedFace, ...] | None] = ContextVar(
     "advar_selected_face_extension", default=None,
 )
+
+
+def _validated_selected_face(
+    axis: str,
+    row: int,
+    column: int,
+    side: int,
+) -> _SelectedFace:
+    if axis not in ("x", "y"):
+        raise ValueError("axis must be 'x' or 'y'")
+    if any(
+        isinstance(value, bool) or not isinstance(value, Integral)
+        for value in (row, column)
+    ):
+        raise TypeError("row and column must be nonnegative integers")
+    if row < 0 or column < 0:
+        raise ValueError("row and column must be nonnegative integers")
+    if isinstance(side, bool) or not isinstance(side, Integral) or side not in (-1, 1):
+        raise ValueError("side must be -1 or +1")
+    return _SelectedFace(axis, int(row), int(column), int(side))
 
 
 @contextmanager
@@ -70,18 +90,34 @@ def selected_face_extension(
     This defines a local smooth extension at the zero-flux kink; outside the
     selected side it is a research chart, not a physical upwind rule.
     """
-    if axis not in ("x", "y"):
-        raise ValueError("axis must be 'x' or 'y'")
-    if any(
-        isinstance(value, bool) or not isinstance(value, Integral)
-        for value in (row, column)
-    ):
-        raise TypeError("row and column must be nonnegative integers")
-    if row < 0 or column < 0:
-        raise ValueError("row and column must be nonnegative integers")
-    if isinstance(side, bool) or not isinstance(side, Integral) or side not in (-1, 1):
-        raise ValueError("side must be -1 or +1")
-    token = _selected_face.set(_SelectedFace(axis, int(row), int(column), int(side)))
+    selected = _validated_selected_face(axis, row, column, side)
+    token = _selected_face.set((selected,))
+    try:
+        yield
+    finally:
+        _selected_face.reset(token)
+
+
+@contextmanager
+def selected_face_extensions(*faces: tuple[str, int, int, int]) -> Iterator[None]:
+    """Extend two fixed signed-volume branches at one pair of face kinks.
+
+    Each argument is ``(axis, row, column, side)``. The selected faces are
+    local smooth branch extensions for derivatives, not physical upwind rules
+    outside the selected signs. Nested scopes replace the active set and
+    restore it when the inner scope exits.
+    """
+    if len(faces) != 2:
+        raise ValueError("exactly two face extensions are required")
+    selected_faces = []
+    for face in faces:
+        if not isinstance(face, tuple) or len(face) != 4:
+            raise TypeError("each face extension must be (axis, row, column, side)")
+        selected_faces.append(_validated_selected_face(*face))
+    identities = {(face.axis, face.row, face.column) for face in selected_faces}
+    if len(identities) != 2:
+        raise ValueError("face extensions must select two distinct faces")
+    token = _selected_face.set(tuple(selected_faces))
     try:
         yield
     finally:
@@ -191,20 +227,23 @@ def _volume_parts(volume_flux: Tensor, axis: str | None = None) -> Tuple[Tensor,
     # also preserves subnormal fluxes that would vanish when multiplied by 0.5.
     zero = torch.zeros_like(volume_flux)
     plus, minus = torch.maximum(volume_flux, zero), torch.minimum(volume_flux, zero)
-    selected = _selected_face.get()
-    if selected is not None and axis == selected.axis:
-        if (
-            volume_flux.ndim != 2
-            or selected.row >= volume_flux.shape[0]
-            or selected.column >= volume_flux.shape[1]
-        ):
-            raise ValueError(f"selected {axis}-face index is outside the face-flux shape")
-        mask = torch.zeros_like(volume_flux, dtype=torch.bool)
-        mask[selected.row, selected.column] = True
-        if selected.side < 0:
-            plus, minus = torch.where(mask, zero, plus), torch.where(mask, volume_flux, minus)
-        else:
-            plus, minus = torch.where(mask, volume_flux, plus), torch.where(mask, zero, minus)
+    selected_faces = _selected_face.get()
+    if selected_faces is not None:
+        for selected in selected_faces:
+            if axis != selected.axis:
+                continue
+            if (
+                volume_flux.ndim != 2
+                or selected.row >= volume_flux.shape[0]
+                or selected.column >= volume_flux.shape[1]
+            ):
+                raise ValueError(f"selected {axis}-face index is outside the face-flux shape")
+            mask = torch.zeros_like(volume_flux, dtype=torch.bool)
+            mask[selected.row, selected.column] = True
+            if selected.side < 0:
+                plus, minus = torch.where(mask, zero, plus), torch.where(mask, volume_flux, minus)
+            else:
+                plus, minus = torch.where(mask, volume_flux, plus), torch.where(mask, zero, minus)
     return plus, minus
 
 
@@ -222,6 +261,7 @@ def _euler_donorcell(
     edges: _Edges,
     dt: Tensor,
     area: Tensor,
+    material_support: bool = False,
 ) -> Tensor:
     """Positive-coefficient Euler update for one stage."""
 
@@ -238,6 +278,15 @@ def _euler_donorcell(
     right_source = torch.cat((q[:, 1:], right[:, None]), dim=1)
     bottom_source = torch.cat((bottom[None, :], q[:-1, :]), dim=0)
     top_source = torch.cat((q[1:, :], top[None, :]), dim=0)
+    if material_support:
+        # Coverage is a material scalar. On the validated divergence-free
+        # domain this equals the conservative update, but incoming differences
+        # preserve constant coverage exactly without rounding fictitious holes.
+        return (q
+            + (dt * (qx_plus[:, :-1] / area)) * (left_source - q)
+            - (dt * (qx_minus[:, 1:] / area)) * (right_source - q)
+            + (dt * (qy_plus[:-1, :] / area)) * (bottom_source - q)
+            - (dt * (qy_minus[1:, :] / area)) * (top_source - q))
     incoming = (
         qx_plus[:, :-1] * left_source
         - qx_minus[:, 1:] * right_source
@@ -649,10 +698,10 @@ def finite_volume_step(
     # form preserves an unchanged subnormal instead of halving it twice.
     echo_new = grown_echo + 0.5 * (stage2 - grown_echo)
 
-    s1 = _euler_donorcell(support, qx, qy, support_edges[0], dt, area)
+    s1 = _euler_donorcell(support, qx, qy, support_edges[0], dt, area, material_support=True)
     _check_tensor("stage-1 support", s1, dtype=echo.dtype)
     _check_support("stage-1 support", s1)
-    s2 = _euler_donorcell(s1, qx, qy, support_edges[1], dt, area)
+    s2 = _euler_donorcell(s1, qx, qy, support_edges[1], dt, area, material_support=True)
     _check_tensor("stage-2 support", s2, dtype=echo.dtype)
     _check_support("stage-2 support", s2)
     support_new = 0.5 * (support + s2)

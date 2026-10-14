@@ -1,0 +1,82 @@
+{
+  "scope": "4×5 CPU FP64 · 같은 FV 모형의 합성 실증 · 알려진 미래 경계 · 실자료 성능 아님",
+  "metrics": {
+    "forecast_mae": [
+      0.0013897676576155149,
+      0.002000150092769637
+    ],
+    "persistence_mae": [
+      0.06495136890033529,
+      0.1277411294372813
+    ],
+    "gradient_max": 1.626980494773278e-11,
+    "adjoint_relative_residual": 3.248123338100677e-12,
+    "normal_products": 18,
+    "curvature": "irls_gauss_newton"
+  },
+  "checks": [
+    {
+      "label": "실제 분석 비용 감소",
+      "status": "pass",
+      "detail": "34.1012 → 0.035042; 10회 외부 반복"
+    },
+    {
+      "label": "분석 정상성 수치 기준",
+      "status": "pass",
+      "detail": "제어 기울기 최대 1.627e-11 ≤ 1e-8; 전역 정상성 인증은 아님"
+    },
+    {
+      "label": "GN 수반 실제 잔차",
+      "status": "pass",
+      "detail": "3.248e-12 ≤ 1e-10; 정상 연산 18/128회"
+    },
+    {
+      "label": "예측 에코 비음수",
+      "status": "pass",
+      "detail": "실제 FV 반환장의 모든 화소 확인"
+    },
+    {
+      "label": "고정 영역 persistence 비교",
+      "status": "pass",
+      "detail": "+1·+2분 각각 20화소 전체에서 MAE 비교; 같은 모형의 합성 사례"
+    },
+    {
+      "label": "관측 민감도 유한성",
+      "status": "pass",
+      "detail": "B=y[0] 직접·암시적 경로 포함; IRLS–GN 역행렬 근사"
+    },
+    {
+      "label": "일반 기상 시나리오의 성공",
+      "status": "unverified",
+      "detail": "이번 데모의 검증 범위 밖 · 완료로 판정하지 않음"
+    },
+    {
+      "label": "정확한 implicit FSO/FSOI 제품 적격성",
+      "status": "unverified",
+      "detail": "이번 데모의 검증 범위 밖 · 완료로 판정하지 않음"
+    },
+    {
+      "label": "전체 P1·FSO/FSOI D7",
+      "status": "unverified",
+      "detail": "이번 데모의 검증 범위 밖 · 완료로 판정하지 않음"
+    },
+    {
+      "label": "FSO/FSOI 기반 지속 학습·재적재",
+      "status": "unverified",
+      "detail": "이번 데모의 검증 범위 밖 · 완료로 판정하지 않음"
+    }
+  ],
+  "source": {
+    "generated_at": "2026-09-14T05:13:38.469142+00:00",
+    "files": {
+      "src/advar/variational.py": "c9c336803daea0d6781fc147fd026122d8720cd3cce945d737728d2c5f47c24d",
+      "src/advar/transport.py": "8bbf9c189c87322cef5b4a723c19fde62a7ae648410718747898ad42aee222e7",
+      "src/advar/matrix_free.py": "88c55bc4acb4e5e08a927bc98ded12caecaffed35b0dff32e64e63ab920c6b6f",
+      "src/advar/physics.py": "00b49438c2099ce514ef24a54b89eb21565315150b47e9c880513187c44bbed3",
+      "src/advar/fv_sensitivity.py": "51117966543fe656b21dc4174aeca7810275b8eff257503265a6925518adb8ce",
+      "examples/weather_scenarios/build_fv_response_demo.py": "b6ea2363e9b87f802271f921b814c3456f04e7dc5556f6726524e1c61730c3ec",
+      "examples/weather_scenarios/fv_sensitivity_probe.py": "90c2195f0ef9a371bb62401fb44d505be9af799a5a098117199a44ca0c29dccd"
+    },
+    "sha256": "7517ec21e5cb3179f523263ebb32440f992402eab7b84a1843fc0af4e4f33c83"
+  }
+}

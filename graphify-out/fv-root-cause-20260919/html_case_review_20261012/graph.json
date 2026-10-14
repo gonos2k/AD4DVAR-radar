@@ -1,0 +1,237 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "update_fv_case_review.py",
+      "file_type": "code",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "users_yhlee_advar_examples_weather_scenarios_update_fv_case_review_py",
+      "community": 0,
+      "norm_label": "update_fv_case_review.py"
+    },
+    {
+      "label": "load()",
+      "file_type": "code",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "weather_scenarios_update_fv_case_review_load",
+      "community": 2,
+      "norm_label": "load()"
+    },
+    {
+      "label": "case_records()",
+      "file_type": "code",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L23",
+      "_origin": "ast",
+      "id": "weather_scenarios_update_fv_case_review_case_records",
+      "community": 2,
+      "norm_label": "case_records()"
+    },
+    {
+      "label": "number_pair()",
+      "file_type": "code",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L88",
+      "_origin": "ast",
+      "id": "weather_scenarios_update_fv_case_review_number_pair",
+      "community": 0,
+      "norm_label": "number_pair()"
+    },
+    {
+      "label": "render_section()",
+      "file_type": "code",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L96",
+      "_origin": "ast",
+      "id": "weather_scenarios_update_fv_case_review_render_section",
+      "community": 0,
+      "norm_label": "render_section()"
+    },
+    {
+      "label": "update_page()",
+      "file_type": "code",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L160",
+      "_origin": "ast",
+      "id": "weather_scenarios_update_fv_case_review_update_page",
+      "community": 1,
+      "norm_label": "update_page()"
+    },
+    {
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L160",
+      "_origin": "ast",
+      "id": "path",
+      "community": 1,
+      "norm_label": "path"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L174",
+      "_origin": "ast",
+      "id": "weather_scenarios_update_fv_case_review_main",
+      "community": 1,
+      "norm_label": "main()"
+    },
+    {
+      "label": "Publish cached experiment outcomes in the existing standalone FV replay page.",
+      "file_type": "rationale",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "weather_scenarios_update_fv_case_review_rationale_1",
+      "community": 0,
+      "norm_label": "publish cached experiment outcomes in the existing standalone fv replay page."
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "users_yhlee_advar_examples_weather_scenarios_update_fv_case_review_py",
+      "target": "weather_scenarios_update_fv_case_review_case_records",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "users_yhlee_advar_examples_weather_scenarios_update_fv_case_review_py",
+      "target": "weather_scenarios_update_fv_case_review_load",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L174",
+      "weight": 1.0,
+      "source": "users_yhlee_advar_examples_weather_scenarios_update_fv_case_review_py",
+      "target": "weather_scenarios_update_fv_case_review_main",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L88",
+      "weight": 1.0,
+      "source": "users_yhlee_advar_examples_weather_scenarios_update_fv_case_review_py",
+      "target": "weather_scenarios_update_fv_case_review_number_pair",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L96",
+      "weight": 1.0,
+      "source": "users_yhlee_advar_examples_weather_scenarios_update_fv_case_review_py",
+      "target": "weather_scenarios_update_fv_case_review_render_section",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L160",
+      "weight": 1.0,
+      "source": "users_yhlee_advar_examples_weather_scenarios_update_fv_case_review_py",
+      "target": "weather_scenarios_update_fv_case_review_update_page",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "weather_scenarios_update_fv_case_review_rationale_1",
+      "target": "users_yhlee_advar_examples_weather_scenarios_update_fv_case_review_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "weather_scenarios_update_fv_case_review_case_records",
+      "target": "weather_scenarios_update_fv_case_review_load",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L185",
+      "weight": 1.0,
+      "source": "weather_scenarios_update_fv_case_review_main",
+      "target": "weather_scenarios_update_fv_case_review_case_records",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L107",
+      "weight": 1.0,
+      "source": "weather_scenarios_update_fv_case_review_render_section",
+      "target": "weather_scenarios_update_fv_case_review_number_pair",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L191",
+      "weight": 1.0,
+      "source": "weather_scenarios_update_fv_case_review_main",
+      "target": "weather_scenarios_update_fv_case_review_render_section",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L192",
+      "weight": 1.0,
+      "source": "weather_scenarios_update_fv_case_review_main",
+      "target": "weather_scenarios_update_fv_case_review_update_page",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/yhlee/ADVAR/examples/weather_scenarios/update_fv_case_review.py",
+      "source_location": "L160",
+      "weight": 1.0,
+      "source": "weather_scenarios_update_fv_case_review_update_page",
+      "target": "path",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "b481fb12d12e01baa31273920fa1cf057290ae0d"
+}

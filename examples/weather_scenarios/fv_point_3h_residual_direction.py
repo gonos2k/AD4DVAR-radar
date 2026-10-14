@@ -44,13 +44,20 @@ def build_residual_direction(
 
     The common-face gradient is the strict-interior minimum-norm mixture
     ``g*=(1-theta)gm+theta*gp``. The Euclidean control-metric projector is
-    ``P=I-n n.T/(n.T n)`` and ``d=-P g*``. A supplied ``model`` action returns
-    the *raw* ``DG[d]``; the raw residual direction is ``s_raw=P DG[d]``.
-    The returned direction scales ``s_raw`` to ``||d||`` by default (or to
-    ``||normalize_to||`` when given), preserving sign and direction. Diagnostics
-    retain both raw and scaled tensors so consumers can inspect the unscaled
-    derivative. The caller is responsible for computing a fresh action whenever
-    its evaluation point or requested direction changes.
+    ``P=I-n n.T/(n.T n)`` and the seed is ``d=-P g*``. A supplied ``model``
+    action returns the *raw* ``DG[d]``; the raw residual direction is
+    ``s_raw=P DG[d]``. The returned trial direction scales ``s_raw`` to
+    ``||d||`` by default (or to ``||normalize_to||`` when given), preserving
+    sign and direction. Diagnostics retain both raw and scaled tensors.
+
+    ``seed_merit_product`` is ``g*·s_raw = g*·P DG[d]``, the derivative of the
+    squared residual merit along the seed ``d``. It does not measure merit along
+    the returned direction ``s``. The latter requires a fresh caller-owned
+    action ``DG[s]`` and its product ``g*·DG[s]``. The old generic keys
+    ``merit_product``, ``merit_descent_budget``, and ``merit_descends`` remain
+    explicit seed-only aliases for the frozen ``direction_trial.py`` consumer.
+    The caller must compute fresh actions whenever its point or requested
+    direction changes.
 
     The mixture-weight derivative belongs inside ``model`` when ``G`` includes
     a control-dependent mixture. This helper does not assume either-side or
@@ -129,9 +136,10 @@ def build_residual_direction(
     side_budget = _roundoff(gm.dtype,
         torch.linalg.vector_norm(gm) * torch.linalg.vector_norm(direction),
         torch.linalg.vector_norm(gp) * torch.linalg.vector_norm(direction))
-    merit_product = torch.dot(mixed, raw)
-    merit_budget = _roundoff(gm.dtype,
+    seed_merit_product = torch.dot(mixed, raw)
+    seed_merit_budget = _roundoff(gm.dtype,
         torch.linalg.vector_norm(mixed) * torch.linalg.vector_norm(raw))
+    seed_merit_descends = bool(seed_merit_product < -seed_merit_budget)
     diagnostics: dict[str, Any] = {
         "theta": theta,
         "mixed_gradient": mixed,
@@ -144,9 +152,13 @@ def build_residual_direction(
         "side_products": side_products,
         "side_descent_budget": side_budget,
         "both_side_gradients_descend": bool(max(side_products) < -side_budget),
-        "merit_product": merit_product,
-        "merit_descent_budget": merit_budget,
-        "merit_descends": bool(merit_product < -merit_budget),
+        "seed_merit_product": seed_merit_product,
+        "seed_merit_descent_budget": seed_merit_budget,
+        "seed_merit_descends": seed_merit_descends,
+        # Backward-compatible names consumed by the frozen direction_trial.
+        "merit_product": seed_merit_product,
+        "merit_descent_budget": seed_merit_budget,
+        "merit_descends": seed_merit_descends,
         "normal_jump": normal_jump,
         "common_face_tangent_jump_norm": torch.linalg.vector_norm(tangent_jump),
         "common_face_jump_budget": jump_budget,
@@ -155,6 +167,6 @@ def build_residual_direction(
         "descent_chart_error": tangent_chart_error,
         "direction_chart_error": direction_chart_error,
         "finite": bool(all(torch.isfinite(value).all() for value in
-            (theta, mixed, descent, action, raw, raw_norm, direction, merit_product))),
+            (theta, mixed, descent, action, raw, raw_norm, direction, seed_merit_product))),
     }
     return direction, diagnostics

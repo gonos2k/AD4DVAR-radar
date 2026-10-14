@@ -1,0 +1,29 @@
+{
+  "chart_dimension": [
+    26,
+    24
+  ],
+  "chart_lift_exact_control_match": true,
+  "elapsed_seconds": 2.1,
+  "fixed_identity_exact_match": true,
+  "free_flow_indices": [
+    0,
+    1,
+    3
+  ],
+  "gradient_calls": 0,
+  "hessian_calls": 0,
+  "model_case_loaded": true,
+  "objective_or_fv_calls": 0,
+  "original_control_sha256": "7748a8733f714d650a2e378f06e9d43a773f1e29d526fdedca37a5d6d2390806",
+  "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+  "pivot_flow_indices": [
+    2,
+    4
+  ],
+  "plan_predecessor_sha256": "0bf59b8cfff59fd2254900faf52993df3a33866e63772061fa1255d803fbabff",
+  "projected_control_sha256": "58f5ddc2e3594d1b369c0bb62c932ede7de5a9a5d9e2051c209a1dd8422a597f",
+  "score_or_forecast_calls": 0,
+  "status": "read_only_identity_and_chart_preflight_passed",
+  "two_face_input_sha256": "bbe7706ee613727de290e878562f0706c39407b2d4b72d4c07135b761cb689a3"
+}

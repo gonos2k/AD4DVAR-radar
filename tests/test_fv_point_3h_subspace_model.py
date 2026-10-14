@@ -39,6 +39,37 @@ def test_radius_active_kkt_is_feasible_and_beats_axes():
     assert bool((result.coefficients >= 0.0).all())
 
 
+def test_signed_quadrant_can_cancel_residual_when_nonnegative_cone_cannot():
+    # This is a standalone Euclidean linear-residual example, not an FV run.
+    # The Hessian scales the two model columns differently, so the exact
+    # residual cancellation needs a negative coefficient on the second axis.
+    dtype = torch.float64
+    G = torch.tensor([1.0, 1.0], dtype=dtype)
+    hessian = torch.diag(torch.tensor([1.0, 10.0], dtype=dtype))
+    D = torch.tensor([[-1.0, -1.0], [-1.0, -10.0]], dtype=dtype)
+    V = hessian @ D
+    radius = 2.0
+
+    cone = solve_two_direction_subspace(G, D, V, radius)
+    torch.testing.assert_close(cone.coefficients,
+        torch.tensor([11.0 / 101.0, 0.0], dtype=dtype), atol=2e-13, rtol=2e-13)
+    torch.testing.assert_close(cone.predicted_R,
+        torch.tensor(8181.0 / 10201.0, dtype=dtype), atol=2e-13, rtol=2e-13)
+    assert torch.linalg.vector_norm(cone.direction) < radius
+
+    signs = torch.tensor([1.0, -1.0], dtype=dtype)
+    signed = solve_two_direction_subspace(G, D * signs, V * signs, radius)
+    original_coefficients = signed.coefficients * signs
+    torch.testing.assert_close(original_coefficients,
+        torch.tensor([1.1, -0.1], dtype=dtype), atol=2e-13, rtol=2e-13)
+    torch.testing.assert_close(G + V @ original_coefficients,
+        torch.zeros_like(G), atol=2e-13, rtol=0.0)
+    torch.testing.assert_close(signed.predicted_R,
+        torch.zeros((), dtype=dtype), atol=2e-26, rtol=0.0)
+    assert torch.linalg.vector_norm(D @ original_coefficients) < radius
+    assert torch.dot(G, D @ original_coefficients) < 0.0
+
+
 def test_radius_active_coefficients_have_implicit_kkt_gradient():
     D = torch.eye(2, dtype=torch.float64)
     V = torch.eye(2, dtype=torch.float64, requires_grad=True)

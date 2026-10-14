@@ -1,0 +1,68 @@
+{
+  "accounting": {
+    "budget_cap_seconds": 3600.0,
+    "charged_before_phase_seconds": 3007.825617709005,
+    "derived_remaining_after_phase_seconds": 539.2112374160961,
+    "gradient_calls_this_phase": 19,
+    "native_J_value_calls_before_phase": 127,
+    "native_J_value_calls_cumulative": 249,
+    "peak_rss_bytes": 487358464,
+    "profile_scalar_calls": 1,
+    "remaining_before_phase_seconds": 592.1743822909948,
+    "remaining_estimate_excludes_unrecorded_or_unmeasured_attempts": true,
+    "replay_on_HVP_calls_this_phase": 0,
+    "retained_Hessian_rows_returned": 25,
+    "retained_Hessian_rows_started": 25,
+    "retained_phase_elapsed_seconds": 52.96314487489872
+  },
+  "current_hessian_caveat": {
+    "control_sha256": "16793291a9848e432ee9c567fa39828848dbce9fee2eb2ab1d4ffd57cf07bbce",
+    "same_as_terminal_control": false,
+    "use": "approximate metric only; not a terminal-point curvature certificate"
+  },
+  "derived_from": {
+    "continuation_plan_sha256": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+    "frozen_plan_path_in_snapshot": "retained_graph_source_snapshot_v9/plans/QUALIFICATION_CONTINUATION_PLAN_v9.json",
+    "frozen_plan_sha256": "09cc1bb5d34094833b5b4cda13e491f06a1c77ecbec9b359bc6107761958f701",
+    "immutable_snapshot_path": "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/attempt1/retained_graph_source_snapshot_v9.tar.gz",
+    "immutable_snapshot_sha256": "298e1895f83811ce6a9ec66b61098f19fd87d57ba14c7f8fd4d3d2b4a7ebd34e",
+    "raw_result_path": "graphify-out/fv-root-cause-20260919/native_reference_20261012/continuation3/attempt1/retained_graph_face_qualification.json",
+    "raw_result_sha256": "10e6a6a20b2d0b9acce3f70746ce1e960c090d4db4b583a7cd18533aead8d8a5"
+  },
+  "execution_status": {
+    "additional_model_callbacks_during_closure": 0,
+    "metadata_finalization": "failed_after_numerical_phase_with_KeyError_ledger (reported by executor; raw JSON has no final ledger)",
+    "numerical_phase_status": "retained_graph_chord_cycle_limit",
+    "phase": "retained_graph_cycle_limit"
+  },
+  "limitations": [
+    "No stationarity/minimum certificate.",
+    "No exact Hessian at the terminal control.",
+    "No forecast or response qualification in this phase.",
+    "Raw result was left unchanged; this closure is a separate derived record."
+  ],
+  "record_type": "read_only_numeric_terminal_closure",
+  "terminal_candidate": {
+    "accepted_steps": 8,
+    "branch_classification": "singleface",
+    "control_sha256": "7748a8733f714d650a2e378f06e9d43a773f1e29d526fdedca37a5d6d2390806",
+    "face_q": 6.938893903907228e-18,
+    "first_order_pass": false,
+    "minimum_qualified": false,
+    "mixed_gradient_inf": 0.012121895076183303,
+    "native_J": 0.06012109894172103,
+    "nearzero_face_count": 1,
+    "normal_slopes": {
+      "-1": -0.18527151135675124,
+      "1": 0.060569086597724496
+    },
+    "reason_not_qualified": "mixed/tangent gradient infinity norm exceeds frozen 1e-10 threshold; final exact Hessian was not computed at this terminal control",
+    "strict_outward": true,
+    "tangent_gradient_agreement_inf": 8.239936510889834e-18,
+    "tangent_gradient_inf_by_side": {
+      "-1": 0.012121895076183303,
+      "1": 0.012121895076183303
+    },
+    "theta": 0.7536245554977843
+  }
+}

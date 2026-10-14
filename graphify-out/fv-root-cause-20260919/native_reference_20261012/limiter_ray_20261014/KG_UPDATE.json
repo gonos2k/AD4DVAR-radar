@@ -1,0 +1,23 @@
+{
+  "scope": [
+    "examples/weather_scenarios/fv_point_3h_limiter_ray_diagnostic.py",
+    "tests/test_fv_point_3h_limiter_ray_diagnostic.py"
+  ],
+  "method": "Graphify cached structural AST delta merged into existing graph; existing communities retained; no full semantic rebuild or HTML graph visualization",
+  "before": [
+    11747,
+    79336
+  ],
+  "after": [
+    11769,
+    79381
+  ],
+  "delta_nodes": 22,
+  "delta_edges": 67,
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "sources": {
+    "examples/weather_scenarios/fv_point_3h_limiter_ray_diagnostic.py": "6ab75231ba0bb43d6dc546d380d688f76ba5a076837b1937d8a3f73328ce2179",
+    "tests/test_fv_point_3h_limiter_ray_diagnostic.py": "7cf1f77b1ca99f3d5f47094d4ec451a533dfe733b1b2e9d212b17affc65d31b9"
+  }
+}

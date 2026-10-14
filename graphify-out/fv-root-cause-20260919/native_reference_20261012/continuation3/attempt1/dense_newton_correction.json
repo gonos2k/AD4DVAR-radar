@@ -1,0 +1,223 @@
+{
+  "HVP_calls": 0,
+  "H_source_qualification_sha256": "4d8c29bd56890a65665484fcfcb051bb6972fdbce5f8c5ef4b41a5540966ae61",
+  "base_J": 0.06070843108137676,
+  "base_control_sha256": "ec38e098b3e887aff049e5d5536b9b037f0d81c081257d1e0a946419c3994c13",
+  "base_native_plan_sha256": "b6f3a08e02ec6da684ea8ea7c9611e6eedf3b8de9de8a9ebc6830347dd13d9ac",
+  "continuation_plan_sha256": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01",
+  "elapsed_seconds": 10.787183666136116,
+  "gradient_inf": 0.06246855093165238,
+  "input_parameters_truth_unchanged": true,
+  "model_source_and_archive_closure": true,
+  "newton_slope": -0.0015470882438551625,
+  "optimizer_step_applied": false,
+  "runtime_unchanged": true,
+  "source_transition": {
+    "after": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9",
+    "before": "b0335b7a72ecd22084d5ab8ea0e46707240be15ef0039f4b31f96adbc937ee1a",
+    "path": "src/advar/transport.py"
+  },
+  "status": "dense_newton_same_branch_armijo_refused",
+  "trials": [
+    {
+      "J": 0.06323958477092037,
+      "accepted": false,
+      "alpha": 1.0,
+      "armijo_bound": 0.060708276372552376,
+      "branch_same": false,
+      "branch_signature_sha256": "3bb01ed6b277018f50283a5c2b5d92a9c5e9f5baaedc1623ddf1eb2568067537"
+    },
+    {
+      "J": 0.06160246786450018,
+      "accepted": false,
+      "alpha": 0.5,
+      "armijo_bound": 0.060708353726964565,
+      "branch_same": false,
+      "branch_signature_sha256": "747372568cced98d3a4f76fa055fc2ec8bf6c652e6c8260627753decb22d0c07"
+    },
+    {
+      "J": 0.061033627278802655,
+      "accepted": false,
+      "alpha": 0.25,
+      "armijo_bound": 0.06070839240417066,
+      "branch_same": false,
+      "branch_signature_sha256": "84da260b425c9e5793fb49eaba5e05afce99ee81c88647776dbf0cc8e2b54227"
+    },
+    {
+      "J": 0.06083693633127088,
+      "accepted": false,
+      "alpha": 0.125,
+      "armijo_bound": 0.060708411742773714,
+      "branch_same": false,
+      "branch_signature_sha256": "2875b85c74a6dd8734da5a7323cf21a951d7096d8c38dab7446c53c323313523"
+    },
+    {
+      "J": 0.060763044533116595,
+      "accepted": false,
+      "alpha": 0.0625,
+      "armijo_bound": 0.060708421412075234,
+      "branch_same": false,
+      "branch_signature_sha256": "191796f9f29085e606ff7ae8582b34054772d6768ac00f33ea39ee77e0353a89"
+    },
+    {
+      "J": 0.060732683475729146,
+      "accepted": false,
+      "alpha": 0.03125,
+      "armijo_bound": 0.060708426246726,
+      "branch_same": false,
+      "branch_signature_sha256": "6c16d624ea1828441db00e5c0867f5da1b936b3c98ae9deff0a8677dc8ef5faa"
+    },
+    {
+      "J": 0.06071976401165683,
+      "accepted": false,
+      "alpha": 0.015625,
+      "armijo_bound": 0.06070842866405138,
+      "branch_same": false,
+      "branch_signature_sha256": "d1ab7e0483372f3079c281413490d8560c60788e4ee8f7a7280fe0ecaa2c13b4"
+    },
+    {
+      "J": 0.06071390939025338,
+      "accepted": false,
+      "alpha": 0.0078125,
+      "armijo_bound": 0.06070842987271407,
+      "branch_same": false,
+      "branch_signature_sha256": "7485376a372977c564d44c1931cc246c39f2cb871b54cb3cdf0f98fcc26ebd3a"
+    },
+    {
+      "J": 0.060711123600977676,
+      "accepted": false,
+      "alpha": 0.00390625,
+      "armijo_bound": 0.06070843047704542,
+      "branch_same": false,
+      "branch_signature_sha256": "7f1c71763301ce2d85d04a880ea73516d6f7179576dfce02deb821bd1d39bf5b"
+    },
+    {
+      "J": 0.06070976687663832,
+      "accepted": false,
+      "alpha": 0.001953125,
+      "armijo_bound": 0.060708430779211085,
+      "branch_same": false,
+      "branch_signature_sha256": "c9d3eed78566589d6128bcc03abd0e502acb19215f654b4e402633c22280a2a6"
+    },
+    {
+      "J": 0.06070909669345642,
+      "accepted": false,
+      "alpha": 0.0009765625,
+      "armijo_bound": 0.060708430930293926,
+      "branch_same": false,
+      "branch_signature_sha256": "c9d3eed78566589d6128bcc03abd0e502acb19215f654b4e402633c22280a2a6"
+    },
+    {
+      "J": 0.060708763315476755,
+      "accepted": false,
+      "alpha": 0.00048828125,
+      "armijo_bound": 0.06070843100583534,
+      "branch_same": false,
+      "branch_signature_sha256": "c9d3eed78566589d6128bcc03abd0e502acb19215f654b4e402633c22280a2a6"
+    },
+    {
+      "J": 0.06070859705511672,
+      "accepted": false,
+      "alpha": 0.000244140625,
+      "armijo_bound": 0.06070843104360605,
+      "branch_same": false,
+      "branch_signature_sha256": "c9d3eed78566589d6128bcc03abd0e502acb19215f654b4e402633c22280a2a6"
+    },
+    {
+      "J": 0.06070851403210482,
+      "accepted": false,
+      "alpha": 0.0001220703125,
+      "armijo_bound": 0.06070843106249141,
+      "branch_same": false,
+      "branch_signature_sha256": "c9d3eed78566589d6128bcc03abd0e502acb19215f654b4e402633c22280a2a6"
+    },
+    {
+      "J": 0.06070847254739999,
+      "accepted": false,
+      "alpha": 6.103515625e-05,
+      "armijo_bound": 0.060708431071934084,
+      "branch_same": false,
+      "branch_signature_sha256": "c9d3eed78566589d6128bcc03abd0e502acb19215f654b4e402633c22280a2a6"
+    },
+    {
+      "J": 0.06070845181174717,
+      "accepted": false,
+      "alpha": 3.0517578125e-05,
+      "armijo_bound": 0.06070843107665542,
+      "branch_same": false,
+      "branch_signature_sha256": "c9d3eed78566589d6128bcc03abd0e502acb19215f654b4e402633c22280a2a6"
+    },
+    {
+      "J": 0.060708441445593106,
+      "accepted": false,
+      "alpha": 1.52587890625e-05,
+      "armijo_bound": 0.06070843107901609,
+      "branch_same": false,
+      "branch_signature_sha256": "c9d3eed78566589d6128bcc03abd0e502acb19215f654b4e402633c22280a2a6"
+    },
+    {
+      "J": 0.06070843626293519,
+      "accepted": false,
+      "alpha": 7.62939453125e-06,
+      "armijo_bound": 0.060708431080196426,
+      "branch_same": false,
+      "branch_signature_sha256": "c9d3eed78566589d6128bcc03abd0e502acb19215f654b4e402633c22280a2a6"
+    },
+    {
+      "J": 0.06070843367172084,
+      "accepted": false,
+      "alpha": 3.814697265625e-06,
+      "armijo_bound": 0.06070843108078659,
+      "branch_same": false,
+      "branch_signature_sha256": "c9d3eed78566589d6128bcc03abd0e502acb19215f654b4e402633c22280a2a6"
+    },
+    {
+      "J": 0.06070843237613627,
+      "accepted": false,
+      "alpha": 1.9073486328125e-06,
+      "armijo_bound": 0.060708431081081676,
+      "branch_same": false,
+      "branch_signature_sha256": "c9d3eed78566589d6128bcc03abd0e502acb19215f654b4e402633c22280a2a6"
+    },
+    {
+      "J": 0.0607084317283495,
+      "accepted": false,
+      "alpha": 9.5367431640625e-07,
+      "armijo_bound": 0.06070843108122922,
+      "branch_same": false,
+      "branch_signature_sha256": "c9d3eed78566589d6128bcc03abd0e502acb19215f654b4e402633c22280a2a6"
+    },
+    {
+      "J": 0.06070843140444922,
+      "accepted": false,
+      "alpha": 4.76837158203125e-07,
+      "armijo_bound": 0.060708431081302985,
+      "branch_same": false,
+      "branch_signature_sha256": "c9d3eed78566589d6128bcc03abd0e502acb19215f654b4e402633c22280a2a6"
+    },
+    {
+      "J": 0.0607084312426781,
+      "accepted": false,
+      "alpha": 2.384185791015625e-07,
+      "armijo_bound": 0.06070843108133987,
+      "branch_same": false,
+      "branch_signature_sha256": "92501e2b9a7ddcc184f7766bec94716513d12e3df7696b492a39ae8f71fb28f9"
+    },
+    {
+      "J": 0.06070843116184338,
+      "accepted": false,
+      "alpha": 1.1920928955078125e-07,
+      "armijo_bound": 0.060708431081358316,
+      "branch_same": false,
+      "branch_signature_sha256": "92501e2b9a7ddcc184f7766bec94716513d12e3df7696b492a39ae8f71fb28f9"
+    },
+    {
+      "J": 0.06070843112143683,
+      "accepted": false,
+      "alpha": 5.960464477539063e-08,
+      "armijo_bound": 0.06070843108136754,
+      "branch_same": false,
+      "branch_signature_sha256": "92501e2b9a7ddcc184f7766bec94716513d12e3df7696b492a39ae8f71fb28f9"
+    }
+  ]
+}

@@ -1,0 +1,607 @@
+{
+  "algebra_runtime_breakdown": {
+    "additional_exact_root_algebra_seconds": 0.20048129092901945,
+    "case_setup_and_import_seconds_excluded_from_face_algebra_timing": true,
+    "physical_calls": 0
+  },
+  "controls": {
+    "initial_167": {
+      "face_flux_analysis": {
+        "closest_nonselected_faces_by_linearized_control_distance": [
+          {
+            "abs_flux": 1.0256355138793527e-07,
+            "abs_over_global_max": 3.957634595582062e-06,
+            "axis": "y",
+            "column": 1,
+            "control_grad_norm": 0.24888211750900113,
+            "flux": -1.0256355138793527e-07,
+            "linearized_euclidean_control_distance": 4.120969092294304e-07,
+            "row": 2,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 6.178506228941838e-05,
+            "abs_over_global_max": 0.0023841091371915816,
+            "axis": "y",
+            "column": 2,
+            "control_grad_norm": 0.5126968522808658,
+            "flux": -6.178506228941838e-05,
+            "linearized_euclidean_control_distance": 0.00012050993099441004,
+            "row": 3,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.00018504749621410695,
+            "abs_over_global_max": 0.007140454507788601,
+            "axis": "y",
+            "column": 0,
+            "control_grad_norm": 0.11219771100929879,
+            "flux": 0.00018504749621410695,
+            "linearized_euclidean_control_distance": 0.001649298319452974,
+            "row": 1,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.0020950281430596254,
+            "abs_over_global_max": 0.08084115405023061,
+            "axis": "y",
+            "column": 4,
+            "control_grad_norm": 1.1328047469194886,
+            "flux": -0.0020950281430596254,
+            "linearized_euclidean_control_distance": 0.0018494168114644425,
+            "row": 4,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.0020950281430596185,
+            "abs_over_global_max": 0.08084115405023033,
+            "axis": "y",
+            "column": 2,
+            "control_grad_norm": 0.6742415093611382,
+            "flux": 0.0020950281430596185,
+            "linearized_euclidean_control_distance": 0.003107236967722016,
+            "row": 4,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.002218546985862775,
+            "abs_over_global_max": 0.08560739350731625,
+            "axis": "y",
+            "column": 3,
+            "control_grad_norm": 0.6832217400319575,
+            "flux": -0.002218546985862775,
+            "linearized_euclidean_control_distance": 0.0032471844144757503,
+            "row": 3,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.004375308909436115,
+            "abs_over_global_max": 0.16883067787744024,
+            "axis": "y",
+            "column": 4,
+            "control_grad_norm": 0.8594787903164023,
+            "flux": -0.004375308909436115,
+            "linearized_euclidean_control_distance": 0.005090653729599796,
+            "row": 3,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.0020949768612839315,
+            "abs_over_global_max": 0.08083917523293281,
+            "axis": "y",
+            "column": 1,
+            "control_grad_norm": 0.3562332660813455,
+            "flux": 0.0020949768612839315,
+            "linearized_euclidean_control_distance": 0.005880913044222955,
+            "row": 3,
+            "within_128eps_zero_threshold": false
+          }
+        ],
+        "closest_nonselected_faces_by_normalized_flux": [
+          {
+            "abs_flux": 1.0256355138793527e-07,
+            "abs_over_global_max": 3.957634595582062e-06,
+            "axis": "y",
+            "column": 1,
+            "control_grad_norm": 0.24888211750900113,
+            "flux": -1.0256355138793527e-07,
+            "linearized_euclidean_control_distance": 4.120969092294304e-07,
+            "row": 2,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 6.178506228941838e-05,
+            "abs_over_global_max": 0.0023841091371915816,
+            "axis": "y",
+            "column": 2,
+            "control_grad_norm": 0.5126968522808658,
+            "flux": -6.178506228941838e-05,
+            "linearized_euclidean_control_distance": 0.00012050993099441004,
+            "row": 3,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.00018504749621410695,
+            "abs_over_global_max": 0.007140454507788601,
+            "axis": "y",
+            "column": 0,
+            "control_grad_norm": 0.11219771100929879,
+            "flux": 0.00018504749621410695,
+            "linearized_euclidean_control_distance": 0.001649298319452974,
+            "row": 1,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.0018482981481074787,
+            "abs_over_global_max": 0.07132054803984564,
+            "axis": "y",
+            "column": 0,
+            "control_grad_norm": 0.08243994676157843,
+            "flux": -0.0018482981481074787,
+            "linearized_euclidean_control_distance": 0.02241993379074922,
+            "row": 0,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.0020949768612839315,
+            "abs_over_global_max": 0.08083917523293281,
+            "axis": "y",
+            "column": 1,
+            "control_grad_norm": 0.3562332660813455,
+            "flux": 0.0020949768612839315,
+            "linearized_euclidean_control_distance": 0.005880913044222955,
+            "row": 3,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.0020950281430596185,
+            "abs_over_global_max": 0.08084115405023033,
+            "axis": "y",
+            "column": 2,
+            "control_grad_norm": 0.6742415093611382,
+            "flux": 0.0020950281430596185,
+            "linearized_euclidean_control_distance": 0.003107236967722016,
+            "row": 4,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.0020950281430596254,
+            "abs_over_global_max": 0.08084115405023061,
+            "axis": "y",
+            "column": 4,
+            "control_grad_norm": 1.1328047469194886,
+            "flux": -0.0020950281430596254,
+            "linearized_euclidean_control_distance": 0.0018494168114644425,
+            "row": 4,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.0020951819883866987,
+            "abs_over_global_max": 0.08084709050212364,
+            "axis": "y",
+            "column": 1,
+            "control_grad_norm": 0.15154672397459867,
+            "flux": -0.0020951819883866987,
+            "linearized_euclidean_control_distance": 0.013825320227561501,
+            "row": 1,
+            "within_128eps_zero_threshold": false
+          }
+        ],
+        "global_flux_scale": 0.02591536659357783,
+        "selected_qy_4_3": 6.938893903907228e-18,
+        "zero_tolerance_128eps": 7.36559019105068e-16
+      },
+      "flow_coefficients": [
+        -0.006934429138931748,
+        0.0006773165155502107,
+        -0.002002478754064721,
+        0.002341963265114536,
+        -3.086689025686441e-05
+      ],
+      "native_J_saved": 0.06012110723735842,
+      "sha256": "16793291a9848e432ee9c567fa39828848dbce9fee2eb2ab1d4ffd57cf07bbce"
+    },
+    "retained_final_7748": {
+      "face_flux_analysis": {
+        "closest_nonselected_faces_by_linearized_control_distance": [
+          {
+            "abs_flux": 3.6667349469221566e-09,
+            "abs_over_global_max": 1.4148860664384716e-07,
+            "axis": "y",
+            "column": 1,
+            "control_grad_norm": 0.24888211369521804,
+            "flux": -3.6667349469221566e-09,
+            "linearized_euclidean_control_distance": 1.4732818250701832e-08,
+            "row": 2,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 6.171473092480423e-05,
+            "abs_over_global_max": 0.0023813914597999634,
+            "axis": "y",
+            "column": 2,
+            "control_grad_norm": 0.5126968482059654,
+            "flux": -6.171473092480423e-05,
+            "linearized_euclidean_control_distance": 0.00012037275271099699,
+            "row": 3,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.00018513319256959967,
+            "abs_over_global_max": 0.00714374991358103,
+            "axis": "y",
+            "column": 0,
+            "control_grad_norm": 0.11219770911633062,
+            "flux": 0.00018513319256959967,
+            "linearized_euclidean_control_distance": 0.0016500621450091012,
+            "row": 1,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.002095110462013307,
+            "abs_over_global_max": 0.08084420181066959,
+            "axis": "y",
+            "column": 4,
+            "control_grad_norm": 1.1328047441670903,
+            "flux": -0.002095110462013307,
+            "linearized_euclidean_control_distance": 0.0018494894842215413,
+            "row": 4,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.002095110462013307,
+            "abs_over_global_max": 0.08084420181066959,
+            "axis": "y",
+            "column": 2,
+            "control_grad_norm": 0.6742415037627773,
+            "flux": 0.002095110462013307,
+            "linearized_euclidean_control_distance": 0.0031073590847211373,
+            "row": 4,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.0022185380904954505,
+            "abs_over_global_max": 0.08560691398596654,
+            "axis": "y",
+            "column": 3,
+            "control_grad_norm": 0.6832217372275806,
+            "flux": -0.0022185380904954505,
+            "linearized_euclidean_control_distance": 0.003247171408067272,
+            "row": 3,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.004375361450066093,
+            "abs_over_global_max": 0.16883243651213298,
+            "axis": "y",
+            "column": 4,
+            "control_grad_norm": 0.859478788355786,
+            "flux": -0.004375361450066093,
+            "linearized_euclidean_control_distance": 0.005090714872017166,
+            "row": 3,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.002095108628645821,
+            "abs_over_global_max": 0.0808441310663658,
+            "axis": "y",
+            "column": 1,
+            "control_grad_norm": 0.3562332598925912,
+            "flux": 0.002095108628645821,
+            "linearized_euclidean_control_distance": 0.005881283037068248,
+            "row": 3,
+            "within_128eps_zero_threshold": false
+          }
+        ],
+        "closest_nonselected_faces_by_normalized_flux": [
+          {
+            "abs_flux": 3.6667349469221566e-09,
+            "abs_over_global_max": 1.4148860664384716e-07,
+            "axis": "y",
+            "column": 1,
+            "control_grad_norm": 0.24888211369521804,
+            "flux": -3.6667349469221566e-09,
+            "linearized_euclidean_control_distance": 1.4732818250701832e-08,
+            "row": 2,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 6.171473092480423e-05,
+            "abs_over_global_max": 0.0023813914597999634,
+            "axis": "y",
+            "column": 2,
+            "control_grad_norm": 0.5126968482059654,
+            "flux": -6.171473092480423e-05,
+            "linearized_euclidean_control_distance": 0.00012037275271099699,
+            "row": 3,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.00018513319256959967,
+            "abs_over_global_max": 0.00714374991358103,
+            "axis": "y",
+            "column": 0,
+            "control_grad_norm": 0.11219770911633062,
+            "flux": 0.00018513319256959967,
+            "linearized_euclidean_control_distance": 0.0016500621450091012,
+            "row": 1,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.001848266205253835,
+            "abs_over_global_max": 0.07131920192589468,
+            "axis": "y",
+            "column": 0,
+            "control_grad_norm": 0.0824399472936106,
+            "flux": -0.001848266205253835,
+            "linearized_euclidean_control_distance": 0.022419546177913224,
+            "row": 0,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.002095108628645821,
+            "abs_over_global_max": 0.0808441310663658,
+            "axis": "y",
+            "column": 1,
+            "control_grad_norm": 0.3562332598925912,
+            "flux": 0.002095108628645821,
+            "linearized_euclidean_control_distance": 0.005881283037068248,
+            "row": 3,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.002095110462013307,
+            "abs_over_global_max": 0.08084420181066959,
+            "axis": "y",
+            "column": 4,
+            "control_grad_norm": 1.1328047441670903,
+            "flux": -0.002095110462013307,
+            "linearized_euclidean_control_distance": 0.0018494894842215413,
+            "row": 4,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.002095110462013307,
+            "abs_over_global_max": 0.08084420181066959,
+            "axis": "y",
+            "column": 2,
+            "control_grad_norm": 0.6742415037627773,
+            "flux": 0.002095110462013307,
+            "linearized_euclidean_control_distance": 0.0031073590847211373,
+            "row": 4,
+            "within_128eps_zero_threshold": false
+          },
+          {
+            "abs_flux": 0.0020951159621157194,
+            "abs_over_global_max": 0.08084441404357925,
+            "axis": "y",
+            "column": 1,
+            "control_grad_norm": 0.15154672268187666,
+            "flux": -0.0020951159621157194,
+            "linearized_euclidean_control_distance": 0.013824884662888672,
+            "row": 1,
+            "within_128eps_zero_threshold": false
+          }
+        ],
+        "global_flux_scale": 0.02591540784730464,
+        "selected_qy_4_3": 6.938893903907228e-18,
+        "zero_tolerance_128eps": 7.365601916065043e-16
+      },
+      "flow_coefficients": [
+        -0.006934414699764787,
+        0.0006772851791325071,
+        -0.002002542949044765,
+        0.002341962052242656,
+        -3.085644877866938e-05
+      ],
+      "native_J_saved": 0.06012109894172103,
+      "sha256": "7748a8733f714d650a2e378f06e9d43a773f1e29d526fdedca37a5d6d2390806"
+    }
+  },
+  "elapsed_algebra_s": 0.20208508288487792,
+  "hvp_calls": 0,
+  "input_hashes": {
+    "fixed_metric_initial_control": "16793291a9848e432ee9c567fa39828848dbce9fee2eb2ab1d4ffd57cf07bbce",
+    "parameters": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+    "retained_final_control": "7748a8733f714d650a2e378f06e9d43a773f1e29d526fdedca37a5d6d2390806"
+  },
+  "method": "cached streamfunction basis and analytic face-volume-flux algebra only; no trajectory/objective/FV/HVP calls",
+  "objective_calls": 0,
+  "physical_forward_calls": 0,
+  "saved_branch_margins": {
+    "initial_167": {
+      "classification": "singleface",
+      "normalized_branch_margins": {
+        "face_abs_over_global_max_flux": {
+          "first_flat_index": 23,
+          "stage_context": {
+            "forecast_lead_index": null,
+            "interval_end_seconds": 600,
+            "interval_index": 0,
+            "interval_start_seconds": 0,
+            "phase": "analysis_replay",
+            "ssprk_euler_stage_index": 0,
+            "substep_index": 0
+          },
+          "stage_index": 0,
+          "value": 2.6775210294060734e-16
+        },
+        "x_active_gap_over_q_scale": {
+          "first_flat_index": 0,
+          "stage_context": {
+            "forecast_lead_index": null,
+            "interval_end_seconds": 600,
+            "interval_index": 0,
+            "interval_start_seconds": 0,
+            "phase": "analysis_replay",
+            "ssprk_euler_stage_index": 0,
+            "substep_index": 23
+          },
+          "stage_index": 46,
+          "value": 3.304354903883394e-06
+        },
+        "x_operand_over_q_scale": {
+          "first_flat_index": 2,
+          "stage_context": {
+            "forecast_lead_index": null,
+            "interval_end_seconds": 1200,
+            "interval_index": 1,
+            "interval_start_seconds": 600,
+            "phase": "analysis_replay",
+            "ssprk_euler_stage_index": 0,
+            "substep_index": 69
+          },
+          "stage_index": 318,
+          "value": 4.933435262496264e-05
+        },
+        "y_active_gap_over_q_scale": {
+          "first_flat_index": 3,
+          "stage_context": {
+            "forecast_lead_index": null,
+            "interval_end_seconds": 1200,
+            "interval_index": 1,
+            "interval_start_seconds": 600,
+            "phase": "analysis_replay",
+            "ssprk_euler_stage_index": 1,
+            "substep_index": 89
+          },
+          "stage_index": 359,
+          "value": 0.0030251879975373972
+        },
+        "y_operand_over_q_scale": {
+          "first_flat_index": 5,
+          "stage_context": {
+            "forecast_lead_index": null,
+            "interval_end_seconds": 600,
+            "interval_index": 0,
+            "interval_start_seconds": 0,
+            "phase": "analysis_replay",
+            "ssprk_euler_stage_index": 1,
+            "substep_index": 61
+          },
+          "stage_index": 123,
+          "value": 4.035218072606467e-06
+        }
+      },
+      "stage_count": 360,
+      "strict_pointwise_branch": false,
+      "unique_near_tie_slope_entities": [],
+      "unique_nearzero_face_entities": [
+        "y:4:3"
+      ],
+      "violation_counts": {
+        "y_face_flux_nonzero": 360
+      }
+    },
+    "retained_final_7748": {
+      "classification": "singleface",
+      "normalized_branch_margins": {
+        "face_abs_over_global_max_flux": {
+          "first_flat_index": 23,
+          "stage_context": {
+            "forecast_lead_index": null,
+            "interval_end_seconds": 600,
+            "interval_index": 0,
+            "interval_start_seconds": 0,
+            "phase": "analysis_replay",
+            "ssprk_euler_stage_index": 0,
+            "substep_index": 0
+          },
+          "stage_index": 0,
+          "value": 2.677516767164795e-16
+        },
+        "x_active_gap_over_q_scale": {
+          "first_flat_index": 0,
+          "stage_context": {
+            "forecast_lead_index": null,
+            "interval_end_seconds": 600,
+            "interval_index": 0,
+            "interval_start_seconds": 0,
+            "phase": "analysis_replay",
+            "ssprk_euler_stage_index": 0,
+            "substep_index": 23
+          },
+          "stage_index": 46,
+          "value": 1.6628505634512302e-06
+        },
+        "x_operand_over_q_scale": {
+          "first_flat_index": 2,
+          "stage_context": {
+            "forecast_lead_index": null,
+            "interval_end_seconds": 1200,
+            "interval_index": 1,
+            "interval_start_seconds": 600,
+            "phase": "analysis_replay",
+            "ssprk_euler_stage_index": 0,
+            "substep_index": 69
+          },
+          "stage_index": 318,
+          "value": 4.9573414714428564e-05
+        },
+        "y_active_gap_over_q_scale": {
+          "first_flat_index": 3,
+          "stage_context": {
+            "forecast_lead_index": null,
+            "interval_end_seconds": 1200,
+            "interval_index": 1,
+            "interval_start_seconds": 600,
+            "phase": "analysis_replay",
+            "ssprk_euler_stage_index": 1,
+            "substep_index": 89
+          },
+          "stage_index": 359,
+          "value": 0.0030267236601737675
+        },
+        "y_operand_over_q_scale": {
+          "first_flat_index": 5,
+          "stage_context": {
+            "forecast_lead_index": null,
+            "interval_end_seconds": 600,
+            "interval_index": 0,
+            "interval_start_seconds": 0,
+            "phase": "analysis_replay",
+            "ssprk_euler_stage_index": 1,
+            "substep_index": 61
+          },
+          "stage_index": 123,
+          "value": 4.257375001205169e-06
+        }
+      },
+      "stage_count": 360,
+      "strict_pointwise_branch": false,
+      "unique_near_tie_slope_entities": [],
+      "unique_nearzero_face_entities": [
+        "y:4:3"
+      ],
+      "violation_counts": {
+        "y_face_flux_nonzero": 360
+      }
+    }
+  },
+  "second_face_exact_ray_check_qy_2_1": {
+    "initial_167": {
+      "flow_control_distance_to_exact_root_along_negative_gradient_ray": 4.1209690997303355e-07,
+      "linearized_distance": 4.120969092294304e-07,
+      "ray_parameter_for_exact_root": 1.0000000018044375,
+      "residual_at_linearized_unit_step": -1.8388068845354155e-16,
+      "root_flux_residual": -0.0
+    },
+    "retained_final_7748": {
+      "flow_control_distance_to_exact_root_along_negative_gradient_ray": 1.4732818250701832e-08,
+      "linearized_distance": 1.4732818250701832e-08,
+      "ray_parameter_for_exact_root": 1.0,
+      "residual_at_linearized_unit_step": -0.0,
+      "root_flux_residual": -0.0
+    }
+  },
+  "source_hashes": {
+    "fixed_case_asset": "1e810c23c73b93d89b2a10b46d9ddea44a8217b07dcd3ebfebb462858e3fa9b7",
+    "transport.py": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9"
+  },
+  "status": "complete",
+  "unavailable_saved_control": {
+    "accepted_iteration": 6,
+    "control_sha256": "ff3d49fdb20aa7806062d0fa2911e0fbe07b8bfa941d7ba26918b90950b2cd6b",
+    "reason": "retained output stores this intermediate digest but not its 26-vector; exact fluxes cannot be reconstructed from digest/norm alone"
+  }
+}

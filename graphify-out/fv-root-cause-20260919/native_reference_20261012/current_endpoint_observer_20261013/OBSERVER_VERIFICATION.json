@@ -1,0 +1,17 @@
+{
+  "crossover_minute": 10,
+  "fields_sha256": "ab7f324178c5bd5145bf596e2b0c27ee8f04894591a0978a6dfda9e4e9087967",
+  "forecast_aggregate_mse_dbz2": 2.434426339665855,
+  "forecast_mean_mae_dbz": 1.163358211095943,
+  "forecast_trajectories": 1,
+  "lead_count": 18,
+  "metric_recomputed_from_saved_npz": true,
+  "native_J_calls": 1,
+  "observer_plan_sha256": "d1d61d4f8c821c8513c2a09fdc8e7a43f6bc5f38046892cb68d85ceba20a3429",
+  "persistence_mean_mae_dbz": 1.1445733035178245,
+  "result_sha256": "90f2abcb750c41f1d668e002add9f4db525b03ddfe38ac737bbc06b5b547d1fe",
+  "score_calls": 0,
+  "selection_use": false,
+  "source_archive_pin_count": 45,
+  "status": "passed"
+}

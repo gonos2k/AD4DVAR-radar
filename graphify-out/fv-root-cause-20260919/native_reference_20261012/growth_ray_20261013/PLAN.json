@@ -1,0 +1,30 @@
+{
+  "scope": "fixed flow/field controls; native J and growth partial only",
+  "input_sha256": "46c56f85adaf2134ddd22ca9fd7f8a62e5c3aac78cab34adf4c1f2fb31eab41c",
+  "control_sha256": "6ca56498f82002634a5103fecd41b1ec9d67e8ff745ecbe9b554906043c0c4d5",
+  "parameters_sha256": "8871db49c227c03f9c155c3250da5acc9c30de3be18334921c464010cd4ad6ed",
+  "case_sha256": "1e810c23c73b93d89b2a10b46d9ddea44a8217b07dcd3ebfebb462858e3fa9b7",
+  "source_hashes": {
+    "src/advar/transport.py": "f6c680da7ca130fcbc505a03b73741591dc023f57a7745e47cfd49dd72622fab",
+    "src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "src/advar/matrix_free.py": "d30f6d888a5ec2c693b6787930a29d604c5da58a7030114957a1e8bb3e7e788d",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/growth_directional_check.py": "9303e787e84571f1c28f240e82956b6b3a1611a2e2c1b3464f8d49ae8ffab2ff",
+    "graphify-out/fv-root-cause-20260919/native_reference_20261012/qualify_candidate.py": "4d8c29bd56890a65665484fcfcb051bb6972fdbce5f8c5ef4b41a5540966ae61"
+  },
+  "perturbations": [
+    -2e-07,
+    -2e-08,
+    0.0,
+    2e-08,
+    2e-07
+  ],
+  "native_J_cap": 5,
+  "growth_gradient_cap": 4,
+  "seconds_cap": 30,
+  "cumulative_native_J_before": 493,
+  "cumulative_gradient_before": 124,
+  "original_remaining_seconds_estimate": 186.379,
+  "no_optimizer": true,
+  "no_score": true,
+  "no_minimum_claim": true
+}

@@ -1,0 +1,26 @@
+{
+  "child_sha256": "ba2364d8ddca0bc5b16a7093008506d16b7f85a4baa78dc1f937c7d955450a4e",
+  "execution_status": "completed",
+  "resource": {
+    "child_pid": 12643,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/signed_span_20261012/forecast_validation.py",
+      "--child",
+      "--plan-sha256",
+      "9f7e281b626292126f3345546d9a350996d6b6f72b9b8b35a68d36a35cfd6b05"
+    ],
+    "elapsed_seconds": 9.97116812481545,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 2147483648,
+    "rss_samples": 37,
+    "sampled_peak_rss_bytes": 772358144,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 90.0
+  }
+}

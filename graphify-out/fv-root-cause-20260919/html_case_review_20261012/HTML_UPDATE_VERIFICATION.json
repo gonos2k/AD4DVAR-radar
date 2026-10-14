@@ -1,0 +1,39 @@
+{
+  "data_literal_sha256_unchanged": "8e5e9772bb57111871e58e07f216bc87d3d9688240d6223e655e3bc829c4a498",
+  "second_build_byte_identical": true,
+  "signed_span_svg_byte_unchanged": true,
+  "case_count": 18,
+  "evidence_source_count": 37,
+  "all_evidence_source_hashes_match": true,
+  "no_in_progress_or_superseded_sources_pinned": true,
+  "A_latest_6ca_chord_and_open_stationarity_gate_rendered": true,
+  "finite_gradient_hull_proxy_limited_to_finite_sample_wording": true,
+  "B_response_gate_explicitly_unexecuted": true,
+  "C_current_6ca_observer_metrics_rendered": true,
+  "native_curve_18_leads_aligned": true,
+  "first_mae_reversal_lead_minutes": 110,
+  "previous_8eff_curve_preserved": true,
+  "relative_links_checked": 1031,
+  "missing_relative_links": [],
+  "png_visually_inspected": true,
+  "browser_visual_check": false,
+  "graphify_ast_update": {
+    "files_scanned": 660,
+    "nodes": 11747,
+    "edges": 79336,
+    "communities": 495,
+    "semantic_rebuild": false
+  },
+  "markers": [
+    1,
+    1
+  ],
+  "current_artifact_hashes": {
+    "examples/weather_scenarios/fv_response.html": "8b282d8b028cde73987fbdbcb308388fcd0cdd0aeb27f68ee471ee08e3a9dc0c",
+    "examples/weather_scenarios/fv_response_template.html": "8a1dbf87b048a3d300dd9cab5ca5cfcd1f1cfe6469c0dec377e77d7de7af9782",
+    "examples/weather_scenarios/update_fv_case_review.py": "595648c0650684fd432c78de8c9a14c809d2fb9d963c2fad6ed1a5137406dc0b",
+    "graphify-out/fv-root-cause-20260919/html_case_review_20261012/CASE_REVIEW.json": "185a5ceb7fc392ad1034d910194a1ec5fbdc248569b61214d7feb31bcb5281a3"
+  },
+  "post_review_whitespace_edit": "Embedded SVG lines trimmed; source SVG bytes unchanged",
+  "coupled_ray_provenance_scope": "Executor/helper inventory is post-run, original pre-run PLAN left unchanged"
+}

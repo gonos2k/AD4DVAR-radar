@@ -1,0 +1,658 @@
+{
+  "nodes": [
+    {
+      "id": "observe_current_endpoint",
+      "label": "observe_current_endpoint.py",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "observe_current_endpoint_sha_bytes",
+      "label": "_sha_bytes()",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L44",
+      "_origin": "ast"
+    },
+    {
+      "id": "observe_current_endpoint_sha",
+      "label": "_sha()",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L48",
+      "_origin": "ast"
+    },
+    {
+      "id": "path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L48",
+      "_origin": "ast"
+    },
+    {
+      "id": "observe_current_endpoint_tensor_sha",
+      "label": "_tensor_sha()",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "observe_current_endpoint_read",
+      "label": "_read()",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L60",
+      "_origin": "ast"
+    },
+    {
+      "id": "any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L60",
+      "_origin": "ast"
+    },
+    {
+      "id": "observe_current_endpoint_runtime",
+      "label": "_runtime()",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L67",
+      "_origin": "ast"
+    },
+    {
+      "id": "observe_current_endpoint_verify_inputs",
+      "label": "_verify_inputs()",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L72",
+      "_origin": "ast"
+    },
+    {
+      "id": "ndarray",
+      "label": "ndarray",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L72",
+      "_origin": "ast"
+    },
+    {
+      "id": "observe_current_endpoint_initial_dbz",
+      "label": "_initial_dbz()",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L181",
+      "_origin": "ast"
+    },
+    {
+      "id": "observe_current_endpoint_metrics",
+      "label": "_metrics()",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L189",
+      "_origin": "ast"
+    },
+    {
+      "id": "observe_current_endpoint_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L230",
+      "_origin": "ast"
+    },
+    {
+      "id": "observe_current_endpoint_rationale_1",
+      "label": "One sealed observation run for the current native24 chord endpoint.",
+      "file_type": "rationale",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "links": [
+    {
+      "source": "observe_current_endpoint",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "platform",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "resource",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "numpy",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "observe_current_endpoint_sha_bytes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "observe_current_endpoint_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_sha",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "observe_current_endpoint_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_tensor_sha",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "observe_current_endpoint_read",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_read",
+      "target": "path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_read",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "observe_current_endpoint_runtime",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "observe_current_endpoint_verify_inputs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_verify_inputs",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_verify_inputs",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_verify_inputs",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_verify_inputs",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_verify_inputs",
+      "target": "tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_verify_inputs",
+      "target": "ndarray",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_verify_inputs",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_verify_inputs",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "observe_current_endpoint_initial_dbz",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L181",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_initial_dbz",
+      "target": "tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L181",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_initial_dbz",
+      "target": "any",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L181",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_initial_dbz",
+      "target": "tensor",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L181",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "observe_current_endpoint_metrics",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_metrics",
+      "target": "ndarray",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_metrics",
+      "target": "ndarray",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_metrics",
+      "target": "ndarray",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_metrics",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L189",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint",
+      "target": "observe_current_endpoint_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L230",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_run",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L230",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_sha",
+      "target": "observe_current_endpoint_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_tensor_sha",
+      "target": "observe_current_endpoint_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_verify_inputs",
+      "target": "observe_current_endpoint_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L74",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_verify_inputs",
+      "target": "observe_current_endpoint_runtime",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L78",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_verify_inputs",
+      "target": "observe_current_endpoint_read",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_verify_inputs",
+      "target": "observe_current_endpoint_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_run",
+      "target": "observe_current_endpoint_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L237",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_run",
+      "target": "observe_current_endpoint_read",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L238",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_run",
+      "target": "observe_current_endpoint_verify_inputs",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L248",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_run",
+      "target": "observe_current_endpoint_metrics",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L318",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_run",
+      "target": "observe_current_endpoint_initial_dbz",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L320",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_run",
+      "target": "observe_current_endpoint_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L346",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_run",
+      "target": "observe_current_endpoint_runtime",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L403",
+      "weight": 1.0
+    },
+    {
+      "source": "observe_current_endpoint_rationale_1",
+      "target": "observe_current_endpoint",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "observe_current_endpoint.py",
+      "source_location": "L1",
+      "weight": 1.0
+    }
+  ]
+}

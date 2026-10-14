@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 import pytest
 import torch
 
@@ -117,6 +119,49 @@ def test_adverse_curvature_is_measured_and_marked_conditional():
         lambda vector: -vector, normal, gm, gp, chart, 0)
     assert info["finite"]
     assert not info["both_side_gradients_descend"]
-    assert not info["merit_descends"]
-    assert float(info["merit_product"]) > 0.0
+    assert not info["seed_merit_descends"]
+    assert float(info["seed_merit_product"]) > 0.0
+    assert info["merit_descends"] is info["seed_merit_descends"]
+    torch.testing.assert_close(info["merit_product"], info["seed_merit_product"])
+    torch.testing.assert_close(info["merit_descent_budget"],
+        info["seed_merit_descent_budget"])
+    # The returned s can have a different actual merit sign; this legacy alias
+    # reports only the seed slope and must not be read as G dot DG[s].
+    mixed = info["mixed_gradient"]
+    actual_returned_merit = torch.dot(mixed, -direction)
+    torch.testing.assert_close(actual_returned_merit,
+        torch.tensor(-1.0, dtype=dtype))
     assert torch.isfinite(direction).all()
+
+
+def test_seed_merit_and_returned_direction_merit_are_distinct_for_hessian_2_3():
+    dtype = torch.float64
+    gm = torch.tensor([-1.0, -1.0, -1.0], dtype=dtype)
+    gp = torch.tensor([-1.0, -1.0, 1.0], dtype=dtype)
+    normal = torch.tensor([0.0, 0.0, 1.0], dtype=dtype)
+    chart = torch.tensor([[1.0, 0.0], [0.0, 1.0], [0.0, 0.0]], dtype=dtype)
+    hessian_diagonal = torch.tensor([2.0, 3.0, 5.0], dtype=dtype)
+    action_inputs = []
+
+    def action(vector: torch.Tensor) -> torch.Tensor:
+        action_inputs.append(vector.clone())
+        return hessian_diagonal * vector
+
+    direction, info = residual.build_residual_direction(
+        action, normal, gm, gp, chart, 2)
+    mixed = info["mixed_gradient"]
+    seed = info["descent_direction"]
+    raw = info["residual_direction_raw"]
+    actual_DG_s = hessian_diagonal * direction
+
+    assert len(action_inputs) == 1
+    torch.testing.assert_close(action_inputs[0], seed, rtol=0.0, atol=0.0)
+    torch.testing.assert_close(seed, torch.tensor([1.0, 1.0, 0.0], dtype=dtype))
+    torch.testing.assert_close(direction.norm(), seed.norm())
+    torch.testing.assert_close(info["seed_merit_product"], torch.tensor(-5.0, dtype=dtype))
+    torch.testing.assert_close(torch.dot(mixed, actual_DG_s),
+        torch.tensor(-math.sqrt(26.0), dtype=dtype))
+    torch.testing.assert_close(info["merit_product"], info["seed_merit_product"])
+    assert abs(float(info["seed_merit_product"])) != pytest.approx(
+        abs(float(torch.dot(mixed, actual_DG_s))))
+    torch.testing.assert_close(raw, torch.tensor([2.0, 3.0, 0.0], dtype=dtype))

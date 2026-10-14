@@ -1,0 +1,11 @@
+{
+  "plan_sha256": "bb7643a4645a087ac2249f4d3dca2d5fb6c4c0766099f574e33d46e11089d3f5",
+  "source_bundle_sha256": "e1e78d868c73c578aa78733dec1146498492bd1e32af184497cbe1be989f7e4d",
+  "source_count": 237,
+  "archive_count": 306,
+  "new_HVP_cap": 0,
+  "cached_HVP_count": 4,
+  "same_radius": 3.751435583391765e-05,
+  "source_receipt_admission": true,
+  "prior_guarded_seconds_charged": 54.004789291881025
+}

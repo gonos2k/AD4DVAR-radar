@@ -1,0 +1,8 @@
+{
+  "status": "source_inventory_preflight_failed",
+  "executor_sha256": "f993191ab05bef1fe74ded3edbc660891418f76f9f5756e47b86471790c55aab",
+  "error": "Torch synthetic module __file__=_classes.py is not a real repository source file",
+  "native_J_started": 0,
+  "gradient_started": 0,
+  "output_directory_created": false
+}

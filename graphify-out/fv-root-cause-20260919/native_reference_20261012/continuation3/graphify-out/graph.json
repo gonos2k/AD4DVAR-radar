@@ -1,0 +1,1385 @@
+{
+  "nodes": [
+    {
+      "id": "derive_candidate_truth_comparison",
+      "label": "derive_candidate_truth_comparison.py",
+      "file_type": "code",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "derive_candidate_truth_comparison_sha_bytes",
+      "label": "_sha_bytes()",
+      "file_type": "code",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L29",
+      "_origin": "ast"
+    },
+    {
+      "id": "derive_candidate_truth_comparison_sha",
+      "label": "_sha()",
+      "file_type": "code",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L33",
+      "_origin": "ast"
+    },
+    {
+      "id": "derive_candidate_truth_comparison_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L33",
+      "_origin": "ast"
+    },
+    {
+      "id": "derive_candidate_truth_comparison_tensor_sha",
+      "label": "_tensor_sha()",
+      "file_type": "code",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L37",
+      "_origin": "ast"
+    },
+    {
+      "id": "derive_candidate_truth_comparison_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L37",
+      "_origin": "ast"
+    },
+    {
+      "id": "derive_candidate_truth_comparison_read",
+      "label": "_read()",
+      "file_type": "code",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L41",
+      "_origin": "ast"
+    },
+    {
+      "id": "derive_candidate_truth_comparison_flow_flux",
+      "label": "_flow_flux()",
+      "file_type": "code",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L48",
+      "_origin": "ast"
+    },
+    {
+      "id": "derive_candidate_truth_comparison_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L59",
+      "_origin": "ast"
+    },
+    {
+      "id": "derive_candidate_truth_comparison_rationale_1",
+      "label": "Correctly compare saved candidate fields with the saved generator truth; no FV c",
+      "file_type": "rationale",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "restore_candidate_forecast",
+      "label": "restore_candidate_forecast.py",
+      "file_type": "code",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "restore_candidate_forecast_sha_bytes",
+      "label": "_sha_bytes()",
+      "file_type": "code",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L45",
+      "_origin": "ast"
+    },
+    {
+      "id": "restore_candidate_forecast_sha",
+      "label": "_sha()",
+      "file_type": "code",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L49",
+      "_origin": "ast"
+    },
+    {
+      "id": "restore_candidate_forecast_py_path",
+      "label": "Path",
+      "file_type": "code",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L49",
+      "_origin": "ast"
+    },
+    {
+      "id": "restore_candidate_forecast_tensor_sha",
+      "label": "_tensor_sha()",
+      "file_type": "code",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "restore_candidate_forecast_py_tensor",
+      "label": "Tensor",
+      "file_type": "code",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "restore_candidate_forecast_read",
+      "label": "_read()",
+      "file_type": "code",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L61",
+      "_origin": "ast"
+    },
+    {
+      "id": "any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L61",
+      "_origin": "ast"
+    },
+    {
+      "id": "restore_candidate_forecast_validate",
+      "label": "_validate()",
+      "file_type": "code",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L68",
+      "_origin": "ast"
+    },
+    {
+      "id": "restore_candidate_forecast_run",
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L106",
+      "_origin": "ast"
+    },
+    {
+      "id": "restore_candidate_forecast_rationale_1",
+      "label": "Restore one stored native candidate and observe its forecast; no optimization.",
+      "file_type": "rationale",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "attempt1_continuation_findings",
+      "label": "CONTINUATION_FINDINGS.md",
+      "file_type": "document",
+      "source_file": "attempt1/CONTINUATION_FINDINGS.md",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "attempt1_continuation_findings_native_powell_continuation",
+      "label": "Native Powell continuation",
+      "file_type": "document",
+      "source_file": "attempt1/CONTINUATION_FINDINGS.md",
+      "source_location": "L1",
+      "_origin": "ast"
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "links": [
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "numpy",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "derive_candidate_truth_comparison_sha_bytes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "derive_candidate_truth_comparison_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_sha",
+      "target": "derive_candidate_truth_comparison_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "derive_candidate_truth_comparison_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_tensor_sha",
+      "target": "derive_candidate_truth_comparison_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "derive_candidate_truth_comparison_read",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_read",
+      "target": "derive_candidate_truth_comparison_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "derive_candidate_truth_comparison_flow_flux",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_flow_flux",
+      "target": "derive_candidate_truth_comparison_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_flow_flux",
+      "target": "derive_candidate_truth_comparison_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_flow_flux",
+      "target": "derive_candidate_truth_comparison_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_flow_flux",
+      "target": "derive_candidate_truth_comparison_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "derive_candidate_truth_comparison_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_sha",
+      "target": "derive_candidate_truth_comparison_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_tensor_sha",
+      "target": "derive_candidate_truth_comparison_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_run",
+      "target": "derive_candidate_truth_comparison_read",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_run",
+      "target": "derive_candidate_truth_comparison_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L80",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_run",
+      "target": "derive_candidate_truth_comparison_flow_flux",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_run",
+      "target": "derive_candidate_truth_comparison_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L137",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_run",
+      "target": "derive_candidate_truth_comparison_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L174",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_rationale_1",
+      "target": "derive_candidate_truth_comparison",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "hashlib",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "math",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "platform",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "resource",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "sys",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "tarfile",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "time",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "numpy",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "torch",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_sha_bytes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_sha",
+      "target": "restore_candidate_forecast_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_tensor_sha",
+      "target": "restore_candidate_forecast_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_read",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_read",
+      "target": "restore_candidate_forecast_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_read",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_validate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_validate",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_sha",
+      "target": "restore_candidate_forecast_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_tensor_sha",
+      "target": "restore_candidate_forecast_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_validate",
+      "target": "restore_candidate_forecast_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_validate",
+      "target": "restore_candidate_forecast_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "restore_candidate_forecast_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L112",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "restore_candidate_forecast_read",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "restore_candidate_forecast_validate",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L115",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "restore_candidate_forecast_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_rationale_1",
+      "target": "restore_candidate_forecast",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "attempt1_continuation_findings",
+      "target": "attempt1_continuation_findings_native_powell_continuation",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "attempt1/CONTINUATION_FINDINGS.md",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "derive_candidate_truth_comparison_sha_bytes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "derive_candidate_truth_comparison_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_sha",
+      "target": "derive_candidate_truth_comparison_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "derive_candidate_truth_comparison_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_tensor_sha",
+      "target": "derive_candidate_truth_comparison_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "derive_candidate_truth_comparison_read",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_read",
+      "target": "derive_candidate_truth_comparison_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "derive_candidate_truth_comparison_flow_flux",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_flow_flux",
+      "target": "derive_candidate_truth_comparison_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_flow_flux",
+      "target": "derive_candidate_truth_comparison_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_flow_flux",
+      "target": "derive_candidate_truth_comparison_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_flow_flux",
+      "target": "derive_candidate_truth_comparison_py_tensor",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison",
+      "target": "derive_candidate_truth_comparison_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_sha",
+      "target": "derive_candidate_truth_comparison_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_tensor_sha",
+      "target": "derive_candidate_truth_comparison_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_run",
+      "target": "derive_candidate_truth_comparison_read",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_run",
+      "target": "derive_candidate_truth_comparison_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L80",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_run",
+      "target": "derive_candidate_truth_comparison_flow_flux",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L104",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_run",
+      "target": "derive_candidate_truth_comparison_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L137",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_run",
+      "target": "derive_candidate_truth_comparison_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L174",
+      "weight": 1.0
+    },
+    {
+      "source": "derive_candidate_truth_comparison_rationale_1",
+      "target": "derive_candidate_truth_comparison",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "derive_candidate_truth_comparison.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_sha_bytes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_sha",
+      "target": "restore_candidate_forecast_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_tensor_sha",
+      "target": "restore_candidate_forecast_py_tensor",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_read",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_read",
+      "target": "restore_candidate_forecast_py_path",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_read",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_validate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_validate",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_sha",
+      "target": "restore_candidate_forecast_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_tensor_sha",
+      "target": "restore_candidate_forecast_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_validate",
+      "target": "restore_candidate_forecast_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_validate",
+      "target": "restore_candidate_forecast_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "restore_candidate_forecast_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L112",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "restore_candidate_forecast_read",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "restore_candidate_forecast_validate",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L115",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "restore_candidate_forecast_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_rationale_1",
+      "target": "restore_candidate_forecast",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "attempt1_continuation_findings",
+      "target": "attempt1_continuation_findings_native_powell_continuation",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "attempt1/CONTINUATION_FINDINGS.md",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_sha_bytes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L49",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_tensor_sha",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_read",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_read",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_validate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_validate",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast",
+      "target": "restore_candidate_forecast_run",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_sha",
+      "target": "restore_candidate_forecast_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_tensor_sha",
+      "target": "restore_candidate_forecast_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_validate",
+      "target": "restore_candidate_forecast_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_validate",
+      "target": "restore_candidate_forecast_sha_bytes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "restore_candidate_forecast_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L112",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "restore_candidate_forecast_read",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "restore_candidate_forecast_validate",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L115",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_run",
+      "target": "restore_candidate_forecast_tensor_sha",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L123",
+      "weight": 1.0
+    },
+    {
+      "source": "restore_candidate_forecast_rationale_1",
+      "target": "restore_candidate_forecast",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "restore_candidate_forecast.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "attempt1_continuation_findings",
+      "target": "attempt1_continuation_findings_native_powell_continuation",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "attempt1/CONTINUATION_FINDINGS.md",
+      "source_location": "L1",
+      "weight": 1.0
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "files": {
+    "inputs/fixed_metric_face_qualification.json": {
+      "bytes": 330236,
+      "sha256": "4418f5d6b6794d43dbb4043abd336c2ab3d8a1ef58ebc199d7295318a3472062"
+    },
+    "inputs/modified_newton_face_qualification_attempt2.json": {
+      "bytes": 249597,
+      "sha256": "9b23c181ade095b754d7acad9a0abc13bb4ec8a04312e28793570940b8d0fb2c"
+    },
+    "inputs/replay_off_equivalence_probe.json": {
+      "bytes": 5148,
+      "sha256": "113afa5ec1854d1e4cda1fa02366b1499d160cedb0bde9ea085a09b9ddbeff73"
+    },
+    "plans/QUALIFICATION_CONTINUATION_PLAN_v8.json": {
+      "bytes": 39011,
+      "sha256": "cf8ccbd80f5762b28fe8838e7f79d1b7d7f3f3939c9224b919074263076296a6"
+    },
+    "plans/continuation3_CONTINUATION_PLAN.json": {
+      "bytes": 90836,
+      "sha256": "67fa44ac8c6c08f79df99a9fe2c5bee10b385a7769bb65ad6caafafeb9c52a01"
+    },
+    "source/continue_face_retained_graph_newton.py": {
+      "bytes": 23908,
+      "sha256": "c539777df784afc29c752918d6857ed0bb46bc6576d785bebafc9294b97d6a64"
+    }
+  }
+}

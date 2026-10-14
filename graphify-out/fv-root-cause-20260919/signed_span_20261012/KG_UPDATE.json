@@ -1,0 +1,28 @@
+{
+  "consulted": "residual_direction_20261012/graph_delta_final/graphify-out/graph.json and existing replay graph",
+  "refresh": "scoped changed/new code AST; no full semantic rebuild",
+  "nodes": 131,
+  "links": 259,
+  "source_hashes": {
+    "examples/weather_scenarios/fv_point_3h_netflux_subspace_trial.py": "da52b66155ca1ed6eca5071f8192bb348aacb5140a32e882a959f5be77b0e576",
+    "examples/weather_scenarios/fv_point_3h_residual_direction.py": "4e82d20acaaba53aa91841052958d88e78c1be562a1f1a1362befeba2f4311d4",
+    "examples/weather_scenarios/update_fv_case_review.py": "19f33e60ecb4b987118ab5a94ceb8c150d9fccfeb00919fa24f3a12e56522082",
+    "tests/test_fv_point_3h_residual_direction.py": "d03e5712b33866790247631b7ec0503df3795fb921648994bc05b2d6b1419235",
+    "tests/test_fv_point_3h_subspace_model.py": "a7ff1b3d1857aa6cd079205d74c8596a324bf51d7d780fee114ef299cd003c4f",
+    "tests/test_fv_point_3h_signed_span_trial.py": "25c735a40a31c9755c8e952fa9d9fae7b6ef4c4917bbfb63081ae14a8a0a29d5",
+    "graphify-out/fv-root-cause-20260919/signed_span_20261012/signed_trial.py": "d90ad6708f389cb7b320938bea6471aac6ae1305aac517aa36f4af08b2c1ce32",
+    "graphify-out/fv-root-cause-20260919/signed_span_20261012/audit_stored_model.py": "5b37c9cde5728af3720f6e316e33272e623a0f964db7e7603ec3dd567b601b4d",
+    "graphify-out/fv-root-cause-20260919/signed_span_20261012/forecast_validation.py": "04cd746b7c570b624947dade7d932ef4812695e342b9c8bc79430fb4fab2b7a0",
+    "graphify-out/fv-root-cause-20260919/signed_span_20261012/independent_semidiscrete_reference.py": "6ea7b17ffd8f342030ca77301c421a41464ec0eec224e8c8df3dd1a7d8c14ac4",
+    "graphify-out/fv-root-cause-20260919/signed_span_20261012/physical_recovery.py": "4d2e0af43ea9b6510481748b3c0c395d00b10f06608476e742a20a58bcdf479e",
+    "graphify-out/fv-root-cause-20260919/signed_span_20261012/verify_run.py": "d98e64567b63103a61a26238e2b70492bfaff3da5a049bc0d051e4faea5de9cb",
+    "graphify-out/fv-root-cause-20260919/signed_span_20261012/plot_forecast.py": "c6e3eb5f16a8acb33100c615efa5fa85e058e96a1c51d4c50afac5b6e5e3c575",
+    "graphify-out/fv-root-cause-20260919/signed_span_20261012/forecast_validation_attempt1/reference_comparison/compare_forecast_reference.py": "343fe1a9c9fb9d599c678379abec7450dc1f34bcab78f007bf9a0ed8d60491f3"
+  },
+  "findings": [
+    "signedactualJRgainat2a4d",
+    "future18leadcheckcompletedaverage/latepersistencefailure",
+    "generatingcontrolcannotminimizeoriginalJpriorbound"
+  ],
+  "limits": "noeligibleminimum/exactresponse/heldoutweatherclaim"
+}

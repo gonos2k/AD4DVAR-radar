@@ -1,0 +1,46 @@
+Traceback (most recent call last):
+  File "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/native_reference_20261012/reference_search.py", line 439, in <module>
+    main()
+  File "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/native_reference_20261012/reference_search.py", line 419, in main
+    result = _run_search(args.plan_sha256)
+  File "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/native_reference_20261012/reference_search.py", line 354, in _run_search
+    result = minimize(objective, x0.numpy(), method="Powell",
+  File "/Users/yhlee/Library/Python/3.10/lib/python/site-packages/scipy/optimize/_minimize.py", line 729, in minimize
+    res = _minimize_powell(fun, x0, args, callback, bounds, **options)
+  File "/Users/yhlee/Library/Python/3.10/lib/python/site-packages/scipy/optimize/_optimize.py", line 3529, in _minimize_powell
+    fval, x, direc1 = _linesearch_powell(func, x, direc1,
+  File "/Users/yhlee/Library/Python/3.10/lib/python/site-packages/scipy/optimize/_optimize.py", line 3217, in _linesearch_powell
+    res = _minimize_scalar_bounded(myfunc, bound, xatol=tol / 100)
+  File "/Users/yhlee/Library/Python/3.10/lib/python/site-packages/scipy/optimize/_optimize.py", line 2351, in _minimize_scalar_bounded
+    fu = func(x, *args)
+  File "/Users/yhlee/Library/Python/3.10/lib/python/site-packages/scipy/optimize/_optimize.py", line 3198, in myfunc
+    return func(p + alpha*xi)
+  File "/Users/yhlee/Library/Python/3.10/lib/python/site-packages/scipy/optimize/_optimize.py", line 542, in function_wrapper
+    fx = function(np.copy(x), *(wrapper_args + args))
+  File "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/native_reference_20261012/reference_search.py", line 326, in objective
+    result = problem.objective(array, parameters)
+  File "/Users/yhlee/ADVAR/src/advar/fv_point_research_problem.py", line 363, in objective
+    for residual in self._observation_residual_groups(control, parameters, contract):
+  File "/Users/yhlee/ADVAR/src/advar/fv_point_research_problem.py", line 325, in _observation_residual_groups
+    predicted_echo = v.analysis_trajectory(control, contract).frames_linear
+  File "/Users/yhlee/ADVAR/src/advar/variational.py", line 4823, in analysis_trajectory
+    return _analysis_trajectory(
+  File "/Users/yhlee/ADVAR/src/advar/variational.py", line 4926, in _analysis_trajectory
+    frames, support_frames = finite_volume_trajectory(
+  File "/Users/yhlee/ADVAR/src/advar/transport.py", line 1053, in finite_volume_trajectory
+    state = cast(Tensor, recompute(
+  File "/Users/yhlee/ADVAR/src/advar/matrix_free.py", line 76, in recompute
+    result = Recomputed.apply(*inputs)
+  File "/Users/yhlee/Library/Python/3.10/lib/python/site-packages/torch/autograd/function.py", line 625, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/Users/yhlee/ADVAR/src/advar/matrix_free.py", line 40, in forward
+    result = function(*args)
+  File "/Users/yhlee/ADVAR/src/advar/transport.py", line 1032, in interval_block
+    return raw_interval_block(
+  File "/Users/yhlee/ADVAR/src/advar/transport.py", line 1001, in interval_block
+    result = finite_volume_step(
+  File "/Users/yhlee/ADVAR/src/advar/transport.py", line 550, in finite_volume_step
+    _check_minmod_support(support, qx, qy, support_edges)
+  File "/Users/yhlee/ADVAR/src/advar/transport.py", line 367, in _check_minmod_support
+    raise ValueError("minmod reconstruction requires fully known initial support")
+ValueError: minmod reconstruction requires fully known initial support

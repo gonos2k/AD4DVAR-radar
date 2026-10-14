@@ -1,0 +1,43 @@
+{
+  "HVP_calls": 0,
+  "H_checkpoint_sha256": "1d63d543bc0b074c3b179fa2d28551e132e996cc0a86c593048563f6a2face8a",
+  "base_J": 0.06070843108137676,
+  "base_classification": "smooth_regular",
+  "base_control_sha256": "ec38e098b3e887aff049e5d5536b9b037f0d81c081257d1e0a946419c3994c13",
+  "base_min_flow_face": {
+    "axis": "y",
+    "column": 3,
+    "global_max_abs_flux": 0.02559120211530641,
+    "minimum_abs_flux": 1.2243608904505265e-12,
+    "normalized_minimum": 4.7843039374778775e-11,
+    "row": 4,
+    "signed_flux": 1.2243608904505265e-12
+  },
+  "base_selector_sha256": "29d4614c0176bf50293a778d84af89732f57890ed4ee31cb06a5a087e6cec2a7",
+  "branch_signature_changed": true,
+  "current_cont3_source_archive_closure": true,
+  "score_computed": false,
+  "source_transition": {
+    "after": "c9dde24c12237d5ffee6b8ca0766b4d5619abf6110f3e858ee447bf49c1f7da9",
+    "before": "b0335b7a72ecd22084d5ab8ea0e46707240be15ef0039f4b31f96adbc937ee1a",
+    "path": "src/advar/transport.py"
+  },
+  "status": "dense_newton_ray_event_classified",
+  "trial_J": 0.06070843112143683,
+  "trial_alpha": 5.960464477539063e-08,
+  "trial_classification": "smooth_regular",
+  "trial_control_sha256": "2bb91efad66d38701c9273983c0047394a8150decdb7f3ebe3c90531af496ce7",
+  "trial_min_flow_face": {
+    "axis": "y",
+    "column": 3,
+    "global_max_abs_flux": 0.025591201749535372,
+    "minimum_abs_flux": 4.5063495990316227e-10,
+    "normalized_minimum": 1.760898000467461e-08,
+    "row": 4,
+    "signed_flux": -4.5063495990316227e-10
+  },
+  "trial_selector_sha256": "92501e2b9a7ddcc184f7766bec94716513d12e3df7696b492a39ae8f71fb28f9",
+  "trial_slope_tie_entities": [],
+  "trial_violation_counts": {},
+  "trial_zero_face_entities": []
+}

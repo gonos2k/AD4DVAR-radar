@@ -1,0 +1,28 @@
+{
+  "charged_prior_guarded_seconds": 54.004789291881025,
+  "child_sha256": "94201cff3bac7eabb88172c4acd349245ee08525f630719243ce3f01316ba486",
+  "execution_status": "completed",
+  "resource": {
+    "child_pid": 88708,
+    "child_process_group_cleanup_error": null,
+    "child_process_group_cleanup_sent": false,
+    "command": [
+      "/Users/yhlee/ADVAR/.venv/bin/python",
+      "/Users/yhlee/ADVAR/graphify-out/fv-root-cause-20260919/signed_span_20261012/signed_trial.py",
+      "--child",
+      "--plan-sha256",
+      "707bf06bf0432a3f46b6fcc8901908186d70336e075ea5dc72b3cf4658bcfe9b"
+    ],
+    "elapsed_seconds": 35.82440720894374,
+    "exit_code": 0,
+    "monitor_error": null,
+    "received_sigterm": false,
+    "resource_termination": null,
+    "rss_limit_bytes": 2147483648,
+    "rss_samples": 124,
+    "sampled_peak_rss_bytes": 1217134592,
+    "sampling": "child RSS via ps (KiB), every 0.25s; sampled guard, not an OS hard allocation limit",
+    "wall_limit_seconds": 605.995210708119
+  },
+  "total_guarded_seconds": 89.82919650082476
+}

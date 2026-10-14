@@ -1,0 +1,11 @@
+{
+  "base_control_sha256": "b69f27abcd0939ec12e1fed0ebbf9187e88df2883f85bd7c5476eaf144dd1579",
+  "forecast_score_evaluations_started": 0,
+  "minimum_claim": false,
+  "native_J_evaluations_started": 0,
+  "phase_plan_sha256": "",
+  "reason": "RED has not qualified the active face as a two-sided local minimum",
+  "response_claim": false,
+  "selection_use": false,
+  "status": "gate_pending_base"
+}
