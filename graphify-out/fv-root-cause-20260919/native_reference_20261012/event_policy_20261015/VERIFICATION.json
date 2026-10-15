@@ -1,0 +1,25 @@
+{
+  "checks": {
+    "plan_hash": true,
+    "plan_content": true,
+    "source_archive": true,
+    "source_closure": true,
+    "input_closure": true,
+    "trace_hashes": true,
+    "terminal_control_hash": true,
+    "accepted_native_armijo_chain": true,
+    "count_caps": true,
+    "cumulative_counts": true,
+    "actual_prior_cancellation_scales": true,
+    "exact_stepped_release_derivatives": true,
+    "claim_gates": true
+  },
+  "all_passed": true,
+  "scope": "saved-source/input/control/trace/Armijo/derivative arithmetic; no FV, optimizer, P2 or adjoint rerun",
+  "accepted_steps": 12,
+  "J_start": 0.0601191807868374,
+  "J_end": 0.06011917924338052,
+  "decrease": 1.5434568831351747e-09,
+  "relative_decrease_percent": 2.5673285346448063e-06,
+  "result_sha256": "f29020c80a39070e2c1c00b3b72060247144a3eac1fe1abb634a8752fc312508"
+}

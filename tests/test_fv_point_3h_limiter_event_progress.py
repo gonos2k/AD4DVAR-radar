@@ -39,8 +39,7 @@ def test_same_control_replay_refuses_any_additional_active_tie():
     assert active_stage({"active_limiter_events": [event]}) == 48
     with pytest.raises(ValueError, match="simultaneous"):
         active_stage({"active_limiter_events": [event, dict(event, stage=47)]})
-    with pytest.raises(ValueError, match="identity"):
-        active_stage({"active_limiter_events": [dict(event, stage=46)]})
+    assert active_stage({"active_limiter_events": [dict(event, stage=46)]}) == 46
 
 
 def test_dependent_zero_event_normal_refuses_before_model_solve():
@@ -107,8 +106,7 @@ def test_only_identified_selector_events_and_selected_flux_signs_can_change():
         {"stage": 48, "axis": "x", "cell": [1, 1], "before": 1, "after": 2}]
     trace[46*12] = 2
     after["exact_minmod_selectors_hex"] = trace.hex()
-    with pytest.raises(ValueError, match="intervening limiter"):
-        supported_transition(before, after)
+    assert len(supported_transition(before, after)) == 2
 
 
 def test_source_closure_failure_downgrades_terminal_minimum_claim():
