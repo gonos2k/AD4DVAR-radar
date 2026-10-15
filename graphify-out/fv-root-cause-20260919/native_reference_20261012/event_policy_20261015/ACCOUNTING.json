@@ -1,0 +1,23 @@
+{
+  "phase": "event_policy_20261015/attempt1",
+  "counts": {
+    "direct_J_started": 311,
+    "direct_J_completed": 311,
+    "gradient_started": 327,
+    "gradient_completed": 327,
+    "Hessian_row_started": 336,
+    "Hessian_row_completed": 336,
+    "profile_forward_started": 131,
+    "profile_forward_completed": 131
+  },
+  "inherited_direct_J": 594,
+  "inherited_gradient": 163,
+  "cumulative_direct_J_completed": 905,
+  "cumulative_gradient_completed": 490,
+  "phase_wall_seconds": 349.10752337495796,
+  "phase_peak_RSS_bytes": 784859136,
+  "inherited_estimated_charged_seconds_before": 3540.6231334559816,
+  "inherited_estimated_charged_seconds_after": 3889.7306568309396,
+  "historical_limit": "older Hessian/AD totals and wall ledger incomplete; this sum is a charge ledger, not whole-session measured wall time",
+  "budget_reset": false
+}

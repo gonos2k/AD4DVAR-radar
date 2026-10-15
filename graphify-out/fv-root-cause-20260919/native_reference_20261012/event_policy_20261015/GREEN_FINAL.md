@@ -1,0 +1,17 @@
+# GREEN final review
+
+The frozen attempt is internally consistent for its stated, bounded scope. `attempt1/RESULT.json` ended with `status=step_cap_reached`, 12 accepted native-Armijo steps, and six located transitions. The saved objective fell from `0.0601191807868374` to `0.06011917924338052` (decrease `1.5434568831351747e-9`, or `2.5673e-6%`). The accepted chain is verified from saved controls, hashes, slopes, and native objective values; this establishes accepted progress, not convergence.
+
+The event progression is supported by the captured stage traces and family records: stage 48 and then stage 47 were released; a y-axis right-operand zero appeared at stage 124 and the changed trace was located at stage 123; stage 123 and then stage 47 were released; stage 47 was subsequently maintained, followed by simultaneous maintenance of the actual stage-47 and stage-123 events. These are conditional located transitions on the sampled accepted path, not a proof that no earlier crossing or recrossing occurred between samples.
+
+The family error scale now derives from the objective’s actual prior and smoothness terms. Each family record saves the prior cost, its 26-component full-control gradient, and its 24-component chart gradient. `verify_saved.py` independently recomputes the cancellation scale from those values and the saved family gradients, and checks the exact stepped release derivatives. Both checks pass.
+
+The terminal native audit is not a minimum qualification: the actual active set is stage 47 plus stage 123, the limiting-family chart hull infinity norm is `1.1755242589376992e-7`, and the frozen runner gates first-order/P2 work at `1e-10` ([runner gate](../../../../examples/weather_scenarios/fv_point_3h_limiter_event_progress.py:688)). It therefore records `first_order_complete=false`, `P2_complete=false`, `minimum_claim=false`, and `response_claim=false`, with reason `current side-by-flux limiting family is nonstationary`. Skipping P2 is consistent with the gate; no terminal stationarity or curvature claim should be made.
+
+Saved verification reports all 13 checks passing, including frozen plan content/hash, archived and current source closure, input closure, trace hashes, terminal control hash, the native-Armijo chain, count caps/cumulative counts, prior-cancellation scales, and stepped-direction derivatives. Its result hash matches the finalized `RESULT.json`. The attempt used 311 additional direct-J evaluations, 327 gradients, 336 Hessian rows, and 131 profile forwards in 349.11 seconds, below the frozen phase caps; cumulative direct-J and gradient counts are 905 and 490. This verifier is arithmetic/provenance-only and did not rerun the FV, optimizer, or P2 calculation.
+
+The `TASK_CHECKLIST.md` still leaves the frozen-plan, progression, terminal-review, and final-review boxes unchecked despite their corresponding evidence now being present. The GREEN review is recorded here; the RED review and any checklist reconciliation remain outstanding. The plan also explicitly does not certify complete historical Hessian/AD totals, a global-first transition, or a response/minimum claim.
+
+## Root reconciliation
+
+RED_FINAL.md is now present. The plan/progression/terminal checklist entries have been reconciled to the saved evidence; only final publication bookkeeping was pending at the GREEN snapshot. All311 raw traces are preserved and additionally packed unchanged into TRACES.tar.gz; verify_saved.py reads the archive directly and its same13 checks pass.

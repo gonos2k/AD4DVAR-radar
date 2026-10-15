@@ -54,8 +54,28 @@ class _SelectedFace:
     side: int
 
 
+@dataclass
+class _MinmodStageSequence:
+    count: int = 0
+
+
+@dataclass
+class _SelectedMinmodExtension:
+    stage: int
+    axis: str
+    row: int
+    column: int
+    selector: int
+    sequence: _MinmodStageSequence
+    applied: bool = False
+    shadowed: bool = False
+
+
 _selected_face: ContextVar[tuple[_SelectedFace, ...] | None] = ContextVar(
     "advar_selected_face_extension", default=None,
+)
+_selected_minmod_extensions: ContextVar[tuple[_SelectedMinmodExtension, ...]] = ContextVar(
+    "advar_selected_minmod_extensions", default=(),
 )
 
 
@@ -125,6 +145,67 @@ def selected_face_extensions(*faces: tuple[str, int, int, int]) -> Iterator[None
         yield
     finally:
         _selected_face.reset(token)
+
+
+def _validated_selected_minmod_extension(
+    stage: int,
+    axis: str,
+    row: int,
+    column: int,
+    selector: int,
+) -> tuple[int, str, int, int, int]:
+    if isinstance(stage, bool) or not isinstance(stage, Integral):
+        raise TypeError("stage must be a nonnegative integer")
+    if stage < 0:
+        raise ValueError("stage must be a nonnegative integer")
+    if axis not in ("x", "y"):
+        raise ValueError("axis must be 'x' or 'y'")
+    if any(isinstance(value, bool) or not isinstance(value, Integral)
+           for value in (row, column)):
+        raise TypeError("row and column must be integers")
+    if row < 0 or column < 0:
+        raise ValueError("row and column must be nonnegative")
+    if isinstance(selector, bool) or not isinstance(selector, Integral):
+        raise TypeError("selector must be 0, 1, or 2")
+    if selector not in (0, 1, 2):
+        raise ValueError("selector must be 0, 1, or 2")
+    return int(stage), axis, int(row), int(column), int(selector)
+
+
+@contextmanager
+def selected_minmod_extension(
+    stage: int,
+    axis: str,
+    row: int,
+    column: int,
+    selector: int,
+) -> Iterator[None]:
+    """Fix one minmod slope operand at one 0-based Euler-stage ordinal.
+
+    ``selector`` is 0 for the inactive zero extension, 1 for the left slope,
+    or 2 for the right slope. The scope must enclose the complete
+    ``replay=False`` trajectory whose global minmod Euler-stage ordinal is
+    being selected. Nested scopes select one event at a time and share that
+    trajectory's stage count. Nested distinct scopes compose; nesting the same
+    stage/cell replaces the outer selection until the inner scope exits. The
+    caller limits a model to at most two active events. This is a local
+    derivative extension, not a different physical limiter.
+    """
+    stage, axis, row, column, selector = _validated_selected_minmod_extension(
+        stage, axis, row, column, selector,
+    )
+    previous = _selected_minmod_extensions.get()
+    sequence = previous[-1].sequence if previous else _MinmodStageSequence()
+    extension = _SelectedMinmodExtension(stage, axis, row, column, selector, sequence)
+    token = _selected_minmod_extensions.set((*previous, extension))
+    differentiable_token = _differentiable_minmod_stage_capture.set(True)
+    try:
+        yield
+        if not extension.applied and not extension.shadowed:
+            raise ValueError(f"selected minmod stage {stage} was not reached")
+    finally:
+        _selected_minmod_extensions.reset(token)
+        _differentiable_minmod_stage_capture.reset(differentiable_token)
 
 
 @contextmanager
@@ -372,6 +453,47 @@ def _muscl_slopes(q: Tensor) -> Tuple[Tensor, Tensor]:
     return sx, sy
 
 
+def _apply_selected_minmod_extension(
+    q: Tensor,
+    sx: Tensor,
+    sy: Tensor,
+    extensions: tuple[_SelectedMinmodExtension, ...],
+    stage_ordinal: int,
+) -> tuple[Tensor, Tensor]:
+    height, width = q.shape
+    active: dict[tuple[int, str, int, int], _SelectedMinmodExtension] = {}
+    for extension in extensions:
+        identity = (extension.stage, extension.axis, extension.row, extension.column)
+        if extension.stage == stage_ordinal:
+            if identity in active:
+                active[identity].shadowed = True
+            active[identity] = extension
+
+    for extension in active.values():
+        row, column = extension.row, extension.column
+        if not (1 <= row < height - 1 and 1 <= column < width - 1):
+            raise ValueError("selected minmod cell must be interior at its Euler stage")
+        if extension.selector == 0:
+            replacement = q.new_zeros(())
+        elif extension.axis == "x":
+            left = q[row, column] - q[row, column - 1]
+            right = q[row, column + 1] - q[row, column]
+            replacement = left if extension.selector == 1 else right
+        else:
+            left = q[row, column] - q[row - 1, column]
+            right = q[row + 1, column] - q[row, column]
+            replacement = left if extension.selector == 1 else right
+
+        row_index = torch.tensor([row], dtype=torch.long, device=q.device)
+        column_index = torch.tensor([column], dtype=torch.long, device=q.device)
+        if extension.axis == "x":
+            sx = sx.index_put((row_index, column_index), replacement.reshape(1))
+        else:
+            sy = sy.index_put((row_index, column_index), replacement.reshape(1))
+        extension.applied = True
+    return sx, sy
+
+
 def _euler_minmod(
     q: Tensor,
     qx: Tensor,
@@ -382,11 +504,21 @@ def _euler_minmod(
 ) -> Tensor:
     """Advance one minmod-MUSCL Euler stage with supplied exterior traces."""
 
+    selected_minmod = _selected_minmod_extensions.get()
+    if not selected_minmod:
+        stage_ordinal = None
+    else:
+        sequence = selected_minmod[-1].sequence
+        stage_ordinal = sequence.count
+        sequence.count += 1
+
     observer = _minmod_stage_observer.get()
     if observer is not None:
         observer(q, qx, qy)
 
     sx, sy = _muscl_slopes(q)
+    if stage_ordinal is not None:
+        sx, sy = _apply_selected_minmod_extension(q, sx, sy, selected_minmod, stage_ordinal)
     left_face = q - 0.5 * sx
     right_face = q + 0.5 * sx
     bottom_face = q - 0.5 * sy

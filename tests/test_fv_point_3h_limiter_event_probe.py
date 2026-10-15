@@ -13,7 +13,10 @@ def _trajectory(control: Tensor, *, stages: int = 360, fail_after: int | None = 
     if observer is None:
         raise AssertionError("event probe did not install its observer")
     selected = transport._selected_face.get()
-    if selected is None or (selected.axis, selected.row, selected.column) != ("y", 4, 3):
+    if selected is None or len(selected) != 1:
+        raise AssertionError("event probe did not bind exactly one selected face")
+    selected_face = selected[0]
+    if (selected_face.axis, selected_face.row, selected_face.column) != ("y", 4, 3):
         raise AssertionError("event probe did not bind the selected Qy face")
     background = control[5] * torch.ones((4, 5), dtype=control.dtype)
     center = 10.0 + 0.01 * control[0]

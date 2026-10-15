@@ -1,0 +1,55 @@
+{
+  "scope": [
+    "src/advar/transport.py",
+    "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+    "examples/weather_scenarios/fv_minmod_events.py",
+    "tests/test_fv_point_3h_limiter_event_progress.py",
+    "tests/test_fv_selected_minmod_extension.py",
+    "tests/test_fv_minmod_event_policy.py",
+    "tests/test_fv_adaptive_event_progress.py",
+    "tests/test_fv_point_3h_limiter_event_probe.py"
+  ],
+  "method": "cached deterministic Graphify AST delta; existing communities retained; no semantic rebuild",
+  "before": [
+    11842,
+    79553
+  ],
+  "after": [
+    11893,
+    79408
+  ],
+  "delta_nodes": 172,
+  "delta_edges": 413,
+  "sources": {
+    "src/advar/transport.py": "6a9f1f48cfc8ebe3d1687845fec5f0c8cff63c57bdfa6b9e56a172bbc478d035",
+    "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py": "7903987b6959dc44744b3d8d97cda52cd097559c7c14124f0afe8ed431c9186c",
+    "examples/weather_scenarios/fv_minmod_events.py": "94dcd1c1de9652fc4ffe601dc0f87d1bd84f96086cac01eec9a9ec56e6833b91",
+    "tests/test_fv_point_3h_limiter_event_progress.py": "73c06a48a032a5cc2636483ccab9b802fa656c5a01270d347eb752a903001d13",
+    "tests/test_fv_selected_minmod_extension.py": "f0de45e3f1029b578a06d797d3df98dc738ed4ec05963a80f7dfcf49ee23f1c6",
+    "tests/test_fv_minmod_event_policy.py": "aa2085f14d02fb1abc1dd609f93d079a3facf488d89bdd9c5a88c986e09c78be",
+    "tests/test_fv_adaptive_event_progress.py": "0dee9cacd1763a0dc58e1c681234b15c1bc5c8685a3ba33bb2179ef0ad02f17b",
+    "tests/test_fv_point_3h_limiter_event_probe.py": "995c53bb0a0341742221713bc1e2da99186a53a5f14eccd3c2b52391ad6f41a8"
+  },
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "saved_verification_delta": {
+    "source": "graphify-out/fv-root-cause-20260919/native_reference_20261012/event_policy_20261015/verify_saved.py",
+    "source_sha256": "43fba5d3bf7d1574cce745c61ac4363735019c14b70f829076ef3d630dc9f46f",
+    "before": [
+      11895,
+      79409
+    ],
+    "after": [
+      11895,
+      79409
+    ],
+    "nodes": 2,
+    "edges": 1
+  },
+  "cosmetic_eof_refresh": {
+    "source": "tests/test_fv_selected_minmod_extension.py",
+    "nodes": 15,
+    "edges": 32,
+    "change": "single trailing newline; AST unchanged and cache refreshed"
+  }
+}
