@@ -1,0 +1,42 @@
+{
+  "base": "4bfe7837b68abe6df10e7069847d6c1f9400fcef",
+  "scope": [
+    "examples/weather_scenarios/fv_minmod_events.py",
+    "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py",
+    "src/advar/ensemble_sensitivity.py",
+    "src/advar/intervention.py",
+    "src/advar/ledger.py",
+    "src/advar/promotion.py",
+    "src/advar/sensitivity.py",
+    "tests/test_fv_adaptive_event_progress.py",
+    "tests/test_fv_minmod_event_policy.py",
+    "tests/test_fv_point_3h_limiter_event_progress.py",
+    "tests/test_fv_point_3h_model_guided_continuation.py"
+  ],
+  "method": "cached deterministic AST delta; retain existing communities; no full semantic rebuild",
+  "before": [
+    11895,
+    79409
+  ],
+  "after": [
+    11875,
+    69549
+  ],
+  "delta_nodes": 2252,
+  "delta_edges": 41316,
+  "source_hashes": {
+    "examples/weather_scenarios/fv_minmod_events.py": "a638fa10388c054312d4e2174b48fc2d5d054004bbf6ff50616b6bc0bfa14ce1",
+    "examples/weather_scenarios/fv_point_3h_limiter_event_progress.py": "bd48c2d5452a645d5eb7766356896c83d817d1d0d9071919a8c53f1fd7fe5a46",
+    "src/advar/ensemble_sensitivity.py": "7fc7e6e80dfe3a37d596fea9a6e820d00d067f6d7caf7a8d696aa4354353d517",
+    "src/advar/intervention.py": "ad02e3f84fd254629f71f4e956cb2754786888e0b6dbed3f911d2005490ee1b4",
+    "src/advar/ledger.py": "b5914b96f95289d14295277a1757281914face16e86ec17ed4c3d4bfc64f16f1",
+    "src/advar/promotion.py": "bfbd786d30e9971ba4cc0b826ded4e452a29ee9ebcd4c0a48eb7813c2c539c27",
+    "src/advar/sensitivity.py": "4f8a7f60736d75deb31e36d673c6daa1d7dd09163a00891d1c00ad4d021e8bfa",
+    "tests/test_fv_adaptive_event_progress.py": "8e5062397a952e0fec0ee4821a2a5a5f396973b6b52d84aed3fb55b20e83f7cf",
+    "tests/test_fv_minmod_event_policy.py": "e65b04ed2f2f420c435c3f69bedd2b3660844f3a4faf1ff9b5762f1917e668ba",
+    "tests/test_fv_point_3h_limiter_event_progress.py": "8774c0afd347475f0489d30b7ac65238021c1a4e926bdc03dab1ed77be4f0737",
+    "tests/test_fv_point_3h_model_guided_continuation.py": "3329c72bebfd891d8a336536e1c1d093de8b5507cd970ca472e2a9005b64f234"
+  },
+  "input_tokens": 0,
+  "output_tokens": 0
+}

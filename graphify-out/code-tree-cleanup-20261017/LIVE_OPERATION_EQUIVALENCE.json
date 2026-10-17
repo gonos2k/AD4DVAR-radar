@@ -1,0 +1,40 @@
+{
+  "base": "4bfe7837b68abe6df10e7069847d6c1f9400fcef",
+  "scope": "retained budget, AD, dynamic event, Newton, retraction, qualification and runner operations AST equality; no optimizer/FV rerun",
+  "checks": {
+    "event_newton_model": true,
+    "close_claims": true,
+    "run": true,
+    "Budget.__init__": true,
+    "Budget.take": true,
+    "Budget.done": true,
+    "Execution.__init__": true,
+    "Execution.gradient": true,
+    "Execution.hessian": true,
+    "EventExecution.value": true,
+    "EventExecution.operands": true,
+    "EventExecution.actual_events": true,
+    "EventExecution.changes": true,
+    "EventExecution.changed_trace": true,
+    "EventExecution.tape": true,
+    "EventExecution.family": true,
+    "EventExecution.search_model": true,
+    "EventExecution.restore_events": true,
+    "EventExecution.locate": true,
+    "EventExecution.terminal_qualification": true
+  },
+  "all_passed": true,
+  "removed_operations": [
+    "Execution.model",
+    "Execution.normals",
+    "Execution.qualify_two_faces",
+    "Execution.retract",
+    "Execution.tape",
+    "active_stage",
+    "bisect_gap",
+    "positive_gap_active",
+    "supported_transition"
+  ],
+  "native_audit_change": "Execution.value removes only legacy stage47/48 gap metadata; full360-stage selector/active union and native objective call preserved",
+  "native_audit_matches_after_only_legacy_metadata_removal": true
+}

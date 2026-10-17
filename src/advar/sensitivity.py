@@ -30,6 +30,7 @@ from ._contract_registry import (
     CURRENT_VERIFICATION_BUNDLE_CONTRACT,
 )
 from ._digest import dataclass_digest, json_digest, tensor_digest
+from ._digest import validate_sha256_digest as _require_sha256
 from .calibration import OperationalCalibrationManifest, OperationalDataIdentity
 from .matrix_free import pcg
 from .nowcast import (
@@ -158,13 +159,6 @@ def _canonical_verification_time(value: str) -> str:
     if parsed.tzinfo is None or parsed.utcoffset() is None:
         raise ValueError("verification valid times must include timezones")
     return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
-def _require_sha256(name: str, value: str) -> None:
-    if not isinstance(value, str) or len(value) != 64 or any(
-        character not in "0123456789abcdef" for character in value
-    ):
-        raise ValueError(f"{name} must be a lowercase SHA-256 digest")
 
 
 def _load_learning_policy_trust_store(

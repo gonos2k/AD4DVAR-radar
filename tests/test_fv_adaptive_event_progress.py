@@ -73,13 +73,9 @@ def test_family_refuses_sector_average_release_direction_that_enters_one_sector(
     execution.parameters = torch.zeros(1, dtype=torch.float64)
     execution.profile = SimpleNamespace(contract=lambda _parameters: None)
     execution.state = {}
+    execution.budget = SimpleNamespace(take=lambda _kind: None, done=lambda _kind: None)
     execution.geo = SimpleNamespace(geometry=SimpleNamespace(
         minimum_sampled_hull=lambda _vertices: {"vector": [0.0] * 24, "weights": [0.5, 0.5]}))
-
-    def gradient(value, variable, *, graph=False):
-        return torch.autograd.grad(value, variable, retain_graph=True, create_graph=graph)[0]
-
-    execution.gradient = gradient
     event = m.MinmodEvent(48, "x", 1, 1, "gap", 1)
     native_j = 1.0
 
@@ -107,3 +103,79 @@ def test_family_refuses_sector_average_release_direction_that_enters_one_sector(
     assert decision["decision"] == "unresolved"
     assert decision["stepped_direction_valid"] is False
     assert all(value < 0 for value in decision["stepped_direction_derivatives"])
+
+
+def family_fixture(monkeypatch, normal, gradient_by_side, gradient_by_flux=None):
+    from advar import variational as v
+
+    monkeypatch.setattr(m, "write", lambda *_args: None)
+    monkeypatch.setattr(v, "_control_prior_residual", lambda control, _contract: control * 0.0)
+    monkeypatch.setattr(v, "_field_smoothness_prior_cost", lambda control, _contract: control.sum() * 0.0)
+    execution = object.__new__(m.EventExecution)
+    execution.lift = lambda z: torch.cat((z, z.new_zeros(2)))
+    execution.parameters = torch.zeros(1, dtype=torch.float64)
+    execution.profile = SimpleNamespace(contract=lambda _parameters: None)
+    execution.state = {}
+    execution.budget = SimpleNamespace(take=lambda _kind: None, done=lambda _kind: None)
+    execution.geo = SimpleNamespace(geometry=SimpleNamespace(
+        minimum_sampled_hull=lambda _vertices: {"vector": [0.0] * 24, "weights": [1.0]}))
+
+    def tape(point, *, events=(), signs=(), sides=(1, 1), full_control=False):
+        assert full_control
+        variable = point.detach().clone().requires_grad_(True)
+        objective_gradient = torch.zeros_like(variable)
+        objective_gradient[0] = gradient_by_side[signs[0]]
+        if gradient_by_flux is not None:
+            objective_gradient[1] = gradient_by_flux[sides]
+        phi = 1.0 + torch.dot(objective_gradient, variable - variable.detach())
+        gap_normal = torch.zeros_like(variable)
+        gap_normal[0] = normal
+        gap = torch.dot(gap_normal, variable - variable.detach())
+        return variable, phi, {events[0].key: gap}
+
+    execution.tape = tape
+    event = m.MinmodEvent(48, "x", 1, 1, "gap", 1)
+    family = execution.family(torch.zeros(24, dtype=torch.float64),
+        {"control_sha256": "fixture", "native_J": 1.0}, [event])
+    return family["decisions"][0]
+
+
+@pytest.mark.parametrize(("normal", "gradient", "side"), [
+    (1.0, 1.0, -1),
+    (1.0, -1.0, 1),
+])
+def test_actual_family_proposes_descent_on_each_outgoing_side(monkeypatch, normal, gradient, side):
+    decision = family_fixture(monkeypatch, normal, {-1: gradient, 1: gradient})
+    assert decision["decision"] == "release"
+    assert decision["side"] == side
+    assert decision["stepped_direction_valid"]
+    assert decision["derivative"] < -decision["error_budget"]
+
+
+def test_actual_family_maintains_when_both_outgoing_derivatives_are_positive(monkeypatch):
+    decision = family_fixture(monkeypatch, 1.0, {-1: -1.0, 1: 1.0})
+    assert decision["decision"] == "maintain"
+    assert min(map(min, decision["outgoing"].values())) > decision["error_budget"]
+
+
+def test_actual_family_leaves_roundoff_sized_outgoing_sign_unresolved(monkeypatch):
+    decision = family_fixture(monkeypatch, 1.0, {-1: 0.0, 1: 0.0})
+    assert decision["decision"] == "unresolved"
+
+
+def test_actual_family_rejects_flux_sector_tangent_gradient_disagreement(monkeypatch):
+    perturbations = {(s0, s1): 0.0 for s0 in (-1, 1) for s1 in (-1, 1)}
+    perturbations[(1, 1)] = 1.0e-6
+    with pytest.raises(ValueError, match="flux-sector tangent gradient disagreement"):
+        family_fixture(monkeypatch, 1.0, {-1: -1.0, 1: 1.0}, perturbations)
+
+
+def test_actual_family_rejects_zero_event_normal(monkeypatch):
+    with pytest.raises(ValueError, match="zero normal"):
+        family_fixture(monkeypatch, 0.0, {-1: 1.0, 1: 1.0})
+
+
+@pytest.mark.parametrize("normal", [float("nan"), float("inf")])
+def test_actual_family_rejects_nonfinite_event_derivative(monkeypatch, normal):
+    with pytest.raises(ValueError, match="nonfinite derivative"):
+        family_fixture(monkeypatch, normal, {-1: 1.0, 1: 1.0})

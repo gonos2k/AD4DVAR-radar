@@ -13,6 +13,7 @@ import torch
 from torch import Tensor
 
 from ._digest import json_digest, tensor_digest
+from ._digest import validate_sha256_digest as _require_digest
 
 
 PRECISION_OPERATOR_TRUST_STORE_CONTRACT = (
@@ -77,15 +78,6 @@ def _load_precision_operator_trust_store(
         approved_operator_digests=approved,
         content_digest=json_digest(canonical),
     )
-
-
-def _require_digest(name: str, value: str) -> None:
-    if (
-        not isinstance(value, str)
-        or len(value) != 64
-        or any(character not in "0123456789abcdef" for character in value)
-    ):
-        raise ValueError(f"{name} must be a lowercase SHA-256 digest")
 
 
 def _owned_float_tensor(name: str, value: Tensor) -> Tensor:
