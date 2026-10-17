@@ -69,31 +69,6 @@ def classify_change(identity: tuple[int, str, int, int], old: int, new: int,
     return MinmodEvent(*identity, "left_zero" if active == 1 else "right_zero", 1 if other > 0 else -1)
 
 
-def outgoing_decision(minus: Tensor, plus: Tensor, normal: Tensor) -> dict[str, Any]:
-    """Compare outgoing costs after verifying flux-sector tangent agreement."""
-    if not bool(torch.isfinite(normal).all()) or float(normal.norm()) == 0:
-        raise ValueError("event chart normal is not finite and nonzero")
-    unit = normal / normal.norm()
-    scale = max(float(minus.norm()), float(plus.norm()))
-    budget = 128 * 360 * torch.finfo(normal.dtype).eps * scale
-    agreement = max(float((minus-minus[:1]).abs().max()), float((plus-plus[:1]).abs().max()))
-    if agreement > budget:
-        return {"decision": "unresolved", "reason": "flux-sector tangent gradients disagree", "budget": budget}
-    a_minus = -(minus @ unit)
-    a_plus = plus @ unit
-    means = [float(a_minus.mean()), float(a_plus.mean())]
-    if min(means) < -budget:
-        side = -1 if means[0] <= means[1] else 1
-        return {"decision": "release", "side": side, "outgoing_minus": a_minus.tolist(),
-                "outgoing_plus": a_plus.tolist(), "budget": budget}
-    if min(means) > budget:
-        return {"decision": "maintain", "outgoing_minus": a_minus.tolist(),
-                "outgoing_plus": a_plus.tolist(), "budget": budget,
-                "scope": "normal necessary condition; tangent stationarity/P2 still required"}
-    return {"decision": "unresolved", "outgoing_minus": a_minus.tolist(),
-            "outgoing_plus": a_plus.tolist(), "budget": budget, "reason": "normal sign unresolved"}
-
-
 def event_action(decisions: list[dict[str,Any]], hull_inf: float) -> str:
     if any(d["decision"]=="unresolved" for d in decisions):
         return "unresolved"

@@ -14,7 +14,7 @@ import resource
 import sys
 import tarfile
 import time
-from contextlib import ExitStack, nullcontext
+from contextlib import ExitStack
 from dataclasses import asdict
 from itertools import product
 from pathlib import Path
@@ -29,10 +29,6 @@ sys.path.insert(0, str(ROOT))
 from examples.weather_scenarios.fv_minmod_events import MinmodEvent, classify_event, classify_change, event_action
 HERE = ROOT / "graphify-out/fv-root-cause-20260919/native_reference_20261012"
 OUT = HERE / "event_policy_20261015/attempt1"
-ENDPOINT = HERE / "two_face_intersection_20261013/continuation2_20261013/native24_chord_extension_result.json"
-PRIOR = HERE / "limiter_ray_20261014"
-# Historical gap labels retained in the base audit; the policy reads full traces.
-REFERENCE_STAGES = (47, 48)
 FACES = (("y", 4, 3), ("y", 2, 1))
 SECTORS = ((-1, -1), (-1, 1), (1, -1), (1, 1))
 EPS = torch.finfo(torch.float64).eps
@@ -60,33 +56,6 @@ def write(path: Path, value: dict[str, Any]) -> None:
     temp = path.with_suffix(".tmp")
     temp.write_text(json.dumps(value, indent=2, allow_nan=False) + "\n")
     temp.replace(path)
-
-
-def positive_gap_active(left: float, right: float, scale: float) -> bool:
-    return left > 0 and right > 0 and abs(right - left) <= 128 * EPS * scale
-
-
-def bisect_gap(evaluate, stage: int, lower: float, upper: float):
-    """Bracket a positive-operand equality using actual stage values."""
-    a, b = [evaluate(alpha)["events"][str(stage)] for alpha in (lower, upper)]
-    if min(a["left"], a["right"], b["left"], b["right"]) <= 0:
-        raise ValueError("event bracket left its positive operand domain")
-    left, right = a["gap"], b["gap"]
-    if left <= 0 or right >= 0:
-        raise ValueError("identified event lacks its positive-to-negative bracket")
-    for _ in range(64):
-        middle = (lower + upper) / 2
-        row = evaluate(middle)
-        event = row["events"][str(stage)]
-        if positive_gap_active(event["left"], event["right"], event["q_scale"]):
-            return middle, row, [lower, upper]
-        if event["left"] <= 0 or event["right"] <= 0:
-            raise ValueError("identified event left its positive slope domain")
-        if event["gap"] > 0:
-            lower = middle
-        else:
-            upper = middle
-    raise ValueError("event equality not resolved after sixty-four bisections")
 
 
 def event_newton_model(g: Tensor, hessian: Tensor, normal: Tensor | None,
@@ -132,29 +101,6 @@ def event_newton_model(g: Tensor, hessian: Tensor, normal: Tensor | None,
         "hessian": hessian.tolist(), "event_hessian": None if event_hessian is None else event_hessian.tolist(),
         "reduced_lagrangian_hessian": reduced.tolist(), "slope": float(g @ direction),
         "interpretation": "same-point selected AD branch and fixed multiplier; search model only"}
-
-
-def supported_transition(before: dict[str, Any], after: dict[str, Any]) -> list[dict[str, Any]]:
-    a = bytes.fromhex(before["exact_minmod_selectors_hex"])
-    b = bytes.fromhex(after["exact_minmod_selectors_hex"])
-    if len(a) != 4320 or len(b) != 4320:
-        raise ValueError("incomplete exact selector trace")
-    changes = []
-    for index, (old, new) in enumerate(zip(a, b)):
-        if old == new:
-            continue
-        stage, interior = divmod(index, 12)
-        axis, cell = divmod(interior, 6)
-        row, col = divmod(cell, 3)
-        change = {"stage": stage, "axis": "x" if axis == 0 else "y", "cell": [row+1, col+1],
-                  "before": old, "after": new}
-        changes.append(change)
-        if old not in (0,1,2,3) or new not in (0,1,2,3) or {old,new}=={0,3}:
-            raise ValueError(f"unresolved simultaneous limiter transition: {change}")
-    for index, (old, new) in enumerate(zip(before["flux_signs"], after["flux_signs"])):
-        if old != new and index not in (35, 47):
-            raise ValueError(f"unsupported intervening flux-face transition at flattened index {index}")
-    return changes
 
 
 def close_claims(state: dict[str, Any], sources_ok: bool, inputs_ok: bool) -> None:
@@ -208,7 +154,6 @@ class Execution:
     def value(self, z: Tensor, purpose: str) -> dict[str, Any]:
         from advar import transport
         audit = self.q.AnalysisBranchAudit()
-        events: dict[str, Any] = {}
         active = []
         exact_trace = bytearray()
         flux_signs = []
@@ -234,11 +179,6 @@ class Execution:
                 for row, col in torch.nonzero(tied).tolist():
                     active.append({"stage": counter, "axis": axis, "cell": [row + 1, col + 1],
                         "left": float(left[row, col]), "right": float(right[row, col]), "q_scale": scale})
-            if counter in REFERENCE_STAGES:
-                left, right = q[1, 1] - q[1, 0], q[1, 2] - q[1, 1]
-                events[str(counter)] = {"left": float(left), "right": float(right),
-                    "gap": float(right - left), "q_scale": scale,
-                    "active": positive_gap_active(float(left), float(right), scale)}
             counter += 1
 
         self.budget.take("direct_J")
@@ -250,34 +190,12 @@ class Execution:
         control = self.lift(z)
         row = {"index": len(self.state["evaluations"]), "purpose": purpose,
             "coordinates": z.tolist(), "control_sha256": tensor_sha(control), "native_J": value,
-            "events": events, "active_limiter_events": active, "branch": audit.report(),
+            "active_limiter_events": active, "branch": audit.report(),
             "exact_minmod_selectors_hex": exact_trace.hex(), "flux_signs": flux_signs,
             "exact_selector_encoding": "360 stages; x then y; each interior2x3;0inactive/1left/2right/3tie"}
         self.state["evaluations"].append(row)
         write(OUT / "RESULT.json", self.state)
         return row
-
-    def tape(self, point: Tensor, *, full_control: bool = False, sides=(1, 1)):
-        from advar import transport
-        self.budget.take("profile_forward")
-        variable = point.detach().clone().requires_grad_(True)
-        stages: dict[int, tuple[Tensor, Tensor, Tensor]] = {}
-        counter = 0
-
-        def capture(q, _qx, _qy):
-            nonlocal counter
-            if counter in REFERENCE_STAGES:
-                stages[counter] = (q[1, 1] - q[1, 0], q[1, 2] - q[1, 1], q.abs().max())
-            counter += 1
-
-        faces = tuple((*face, side) for face, side in zip(FACES, sides))
-        with transport.selected_face_extensions(*faces), transport.observe_minmod_stages(capture, differentiable=True):
-            value = self.profile.objective(variable if full_control else self.lift(variable), self.parameters)
-        self.budget.done("profile_forward")
-        if counter != 360:
-            raise ValueError("differentiable profile did not capture exactly 360 forward stages")
-        gaps = {stage: operands[1] - operands[0] for stage, operands in stages.items()}
-        return variable, value, gaps
 
     def gradient(self, value: Tensor, variable: Tensor, *, graph: bool = False) -> Tensor:
         self.budget.take("gradient")
@@ -298,141 +216,6 @@ class Execution:
             partial["rows"] = [row.tolist() for row in rows]
             write(OUT / "RESULT.json", self.state)
         return torch.stack(rows)
-
-    def normals(self, z: Tensor) -> dict[str, Any]:
-        from advar import transport
-        c, phi, gaps = self.tape(self.lift(z), full_control=True)
-        normals = torch.stack([self.gradient(gaps[stage], c) for stage in REFERENCE_STAGES])
-        jac = torch.func.jacrev(self.lift)(z)
-        fv = self.problem.frozen.fv_transport
-
-        def fluxes(control):
-            psi = torch.einsum("k,kij->ij", fv.coefficient_limits * torch.tanh(control[20:25]), fv.psi_basis)
-            qx, qy = transport.face_volume_fluxes(psi)
-            return torch.stack([qy[4, 3], qy[2, 1]])
-
-        face_normals = torch.func.jacrev(fluxes)(c.detach())
-        rows = torch.cat((face_normals, normals))
-        normalized = rows / rows.norm(dim=1)[:, None]
-        singular = torch.linalg.svdvals(normalized)
-        triples = [torch.linalg.svdvals(normalized[[0, 1, i]]) for i in (2, 3)]
-        return {"control_sha256": tensor_sha(c), "profile_J": float(phi),
-            "gaps": {str(s): float(v) for s, v in gaps.items()},
-            "full_event_normals": normals.tolist(), "chart_event_normals": (normals @ jac).tolist(),
-            "full_flux_normals": face_normals.tolist(),
-            "normalized_four_row_singular_values": singular.tolist(),
-            "flux_plus_each_event_singular_values": [v.tolist() for v in triples],
-            "each_event_independent_of_flux_faces": [float(v[-1]) > 128 * EPS * float(v[0]) for v in triples],
-            "stage47_and48_joint_rank": int((singular > 128 * EPS * singular[0]).sum())}
-
-    def model(self, z: Tensor, stage: int | None, native_j: float):
-        variable, phi, gaps = self.tape(z)
-        if abs(float(phi) - native_j) > 128 * EPS * abs(native_j):
-            raise ValueError("profile/native current-point objective mismatch")
-        g = self.gradient(phi, variable, graph=True)
-        self.state["model_in_progress"] = {"control_sha256": tensor_sha(self.lift(z)),
-            "native_J": native_j, "tangent_gradient": g.detach().tolist(), "active_stage": stage}
-        hessian = self.hessian(g, variable, "current_objective")
-        normal = event_hessian = None
-        if stage is not None:
-            normal = self.gradient(gaps[stage], variable, graph=True)
-            event_hessian = self.hessian(normal, variable, "current_event_gap")
-        direction, record = event_newton_model(g.detach(), hessian.detach(),
-            None if normal is None else normal.detach(), None if event_hessian is None else event_hessian.detach())
-        record.update(control_sha256=tensor_sha(self.lift(z)), tangent_gradient=g.detach().tolist(),
-            native_J=native_j, active_stage=stage, profile_J=float(phi))
-        return direction, None if normal is None else normal.detach(), record
-
-    def qualify_two_faces(self, z: Tensor, terminal: dict[str, Any], gradients: list[Tensor]) -> None:
-        """Close the existing four-sector gate only when no limiter is active."""
-        branch = terminal["branch"]
-        supported = (branch["unique_nearzero_face_entities"] == ["y:2:1", "y:4:3"]
-            and not terminal["active_limiter_events"] and not branch["unique_near_tie_slope_entities"])
-        if not supported:
-            terminal["unresolved_reason"] = "terminal active family exceeds exactly two flux faces"
-            return
-        jac = torch.func.jacrev(self.lift)(z)
-        full = torch.stack(gradients)
-        tangents = full @ jac
-        normals = torch.tensor(terminal["normal_audit"]["full_flux_normals"], dtype=z.dtype)
-        eta = torch.linalg.solve(normals @ normals.T, normals @ full.T).T
-        side = torch.tensor(SECTORS, dtype=z.dtype)
-        eta_budget = 128 * EPS * full.norm(dim=1)[:, None] / normals.norm(dim=1)[None]
-        tangent_error_budget = 128 * EPS * (full.abs() @ jac.abs()).max()
-        full_hull = terminal["full_flux_sector_gradient_hull_proxy"]
-        tangent_hull = self.geo.geometry.minimum_sampled_hull(tangents)
-        full_inf = max(map(abs, full_hull["vector"]))
-        tangent_inf = max(map(abs, tangent_hull["vector"]))
-        tangent_agreement = float((tangents - tangents[:1]).abs().max())
-        normal_pass = bool((side * eta > eta_budget).all())
-        passed = full_inf < 1e-10 and tangent_inf < 1e-10 and normal_pass and tangent_agreement <= float(tangent_error_budget)
-        terminal["two_face_first_order"] = {"full_hull_inf": full_inf, "tangent_hull_inf": tangent_inf,
-            "tangent_hull": tangent_hull, "normal_coefficients": eta.tolist(), "strict_normal_signs": normal_pass,
-            "tangent_agreement_inf": tangent_agreement, "component_product_error_budget": float(tangent_error_budget), "passed": passed}
-        terminal["first_order_complete"] = True
-        if not passed:
-            terminal["unresolved_reason"] = "same-point two-face stationarity or strict normal sign gate failed"
-            return
-        curvature = []
-        for sides, reference in zip(SECTORS, tangents):
-            variable, phi, _ = self.tape(z, sides=sides)
-            gradient = self.gradient(phi, variable, graph=True)
-            matrix = self.hessian(gradient, variable, "terminal_four_flux_sectors")
-            scale = float(matrix.norm())
-            symmetry = float((matrix - matrix.T).norm()) / max(scale, torch.finfo(z.dtype).tiny)
-            eig = torch.linalg.eigvalsh((matrix + matrix.T) / 2)
-            floor = max(128 * EPS * scale, 1e-8 * float(eig.abs().max()))
-            match = (abs(float(phi) - terminal["native_J"]) <= 128 * EPS * abs(terminal["native_J"])
-                and float((gradient - reference).abs().max()) <= float(tangent_error_budget))
-            curvature.append({"sides": list(sides), "control_sha256": terminal["control_sha256"],
-                "hessian": matrix.tolist(), "lambda_min": float(eig[0]), "positive_floor": floor,
-                "symmetry_relative": symmetry, "profile_match": match,
-                "passed": symmetry < 1e-8 and float(eig[0]) > floor and match})
-            terminal["four_sector_curvature"] = curvature
-            write(OUT / "RESULT.json", self.state)
-        terminal["P2_complete"] = True
-        terminal["minimum_claim"] = all(row["passed"] for row in curvature)
-        terminal["unresolved_reason"] = None if terminal["minimum_claim"] else "same-point four-sector P2 failed"
-        self.state["minimum_claim"] = terminal["minimum_claim"]
-
-    def retract(self, z: Tensor, stage: int | None, normal: Tensor | None,
-                reference: dict[str, Any]):
-        previous_gap = math.inf
-        for index in range(6):
-            row = self.value(z, "trial_retraction")
-            row["selector_changes_from_reference"] = supported_transition(reference, row)
-            if any(c["stage"]!=stage for c in row["selector_changes_from_reference"]):
-                raise ValueError("intervening limiter event must be located before scalar retraction")
-            reached = active_stage(row)
-            if reached is not None and reached != stage:
-                raise ValueError("retraction reached a different active event")
-            if stage is None or row["events"][str(stage)]["active"]:
-                return z, row
-            event = row["events"][str(stage)]
-            if event["left"] <= 0 or event["right"] <= 0:
-                raise ValueError("target event left its positive-operand domain")
-            if normal is None:
-                raise ValueError("event retraction lacks a chart normal")
-            correction = event["gap"] * normal / (normal @ normal)
-            if float(correction.norm()) > 0.01:
-                raise ValueError("event retraction exceeded local radius")
-            if index and abs(event["gap"]) >= previous_gap:
-                raise ValueError("event retraction residual failed to decrease")
-            previous_gap = abs(event["gap"])
-            z = z - correction
-        raise ValueError("event retraction did not converge within six corrections")
-
-
-def active_stage(row: dict[str, Any]) -> int | None:
-    events = row["active_limiter_events"]
-    if not events:
-        return None
-    if len(events) != 1:
-        raise ValueError("unsupported simultaneous limiter events; one-event search only")
-    event = events[0]
-    if not positive_gap_active(event["left"], event["right"], event["q_scale"]):
-        raise ValueError("unsupported current active limiter identity/domain")
-    return event["stage"]
 
 
 

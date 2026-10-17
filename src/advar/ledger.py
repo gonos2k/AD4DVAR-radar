@@ -308,7 +308,6 @@ from .promotion import (
     validate_trusted_process_start_receipt,
     validate_trusted_process_completion_receipt,
     validate_process_log_artifact,
-    validate_resolved_source_coverage_artifact,
     _new_prior_holdout_evaluation,
     _new_regime_reference_evidence,
     _new_physical_event_catalog_evidence,

@@ -1,0 +1,647 @@
+{
+  "base": "4bfe7837b68abe6df10e7069847d6c1f9400fcef",
+  "tracked_modules": 546,
+  "module_counts": {
+    "examples": 220,
+    "src": 33,
+    "tests": 293
+  },
+  "identical_files": [],
+  "identical_module_AST": [],
+  "identical_function_body_candidates": [
+    [
+      {
+        "file": "examples/weather_scenarios/fv_external_background_phase1.py",
+        "line": 100,
+        "function": "_forecast"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_learning_probe.py",
+        "line": 107,
+        "function": "_forecast"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_original_cases.py",
+        "line": 114,
+        "function": "_psi_basis"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_rotation_demo.py",
+        "line": 70,
+        "function": "_psi_basis"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_block_modified_newton_search.py",
+        "line": 37,
+        "function": "write"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_field_continuation.py",
+        "line": 44,
+        "function": "save"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_field_precision_continuation.py",
+        "line": 36,
+        "function": "save"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_coupled_original_j_continuation.py",
+        "line": 36,
+        "function": "write"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_precision_hessian_audit.py",
+        "line": 38,
+        "function": "write"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+        "line": 75,
+        "function": "_sha"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_event_direction_resume.py",
+        "line": 73,
+        "function": "_sha"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_event_direction_comparison.py",
+        "line": 676,
+        "function": "main"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_event_direction_resume.py",
+        "line": 636,
+        "function": "main"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_committed_continuation.py",
+        "line": 523,
+        "function": "main"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+        "line": 454,
+        "function": "main"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation_progress.py",
+        "line": 463,
+        "function": "main"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+        "line": 528,
+        "function": "main"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_followup.py",
+        "line": 423,
+        "function": "main"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_candidate_commit.py",
+        "line": 401,
+        "function": "main"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_diagnostic.py",
+        "line": 425,
+        "function": "main"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_extension.py",
+        "line": 391,
+        "function": "main"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_released_resume.py",
+        "line": 423,
+        "function": "main"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_committed_continuation.py",
+        "line": 63,
+        "function": "_sha"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+        "line": 63,
+        "function": "_sha"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation_progress.py",
+        "line": 64,
+        "function": "_sha"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+        "line": 63,
+        "function": "_sha"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_followup.py",
+        "line": 63,
+        "function": "_sha"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_candidate_commit.py",
+        "line": 63,
+        "function": "_sha"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_diagnostic.py",
+        "line": 63,
+        "function": "_sha"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_extension.py",
+        "line": 63,
+        "function": "_sha"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_prepared_search.py",
+        "line": 73,
+        "function": "_sha"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_released_resume.py",
+        "line": 63,
+        "function": "_sha"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_committed_continuation.py",
+        "line": 164,
+        "function": "_base_model_closure"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+        "line": 152,
+        "function": "_base_model_closure"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation_progress.py",
+        "line": 153,
+        "function": "_base_model_closure"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+        "line": 169,
+        "function": "_base_model_closure"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_followup.py",
+        "line": 172,
+        "function": "_base_model_closure"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_candidate_commit.py",
+        "line": 151,
+        "function": "_base_model_closure"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_diagnostic.py",
+        "line": 175,
+        "function": "_base_model_closure"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_extension.py",
+        "line": 155,
+        "function": "_base_model_closure"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_released_resume.py",
+        "line": 172,
+        "function": "_base_model_closure"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_committed_continuation.py",
+        "line": 174,
+        "function": "_full_G_match"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+        "line": 179,
+        "function": "_full_G_match"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_committed_continuation.py",
+        "line": 181,
+        "function": "_sanitize_json_leaves"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+        "line": 186,
+        "function": "_sanitize_json_leaves"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_committed_continuation.py",
+        "line": 198,
+        "function": "_safe_candidate_facts"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+        "line": 203,
+        "function": "_safe_candidate_facts"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_committed_continuation.py",
+        "line": 237,
+        "function": "_persist_search_progress"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+        "line": 242,
+        "function": "_persist_search_progress"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_committed_continuation.py",
+        "line": 501,
+        "function": "run"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+        "line": 432,
+        "function": "run"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation_progress.py",
+        "line": 441,
+        "function": "run"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_finite_continuation.py",
+        "line": 506,
+        "function": "run"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_followup.py",
+        "line": 401,
+        "function": "run"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_candidate_commit.py",
+        "line": 379,
+        "function": "run"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_diagnostic.py",
+        "line": 403,
+        "function": "run"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_extension.py",
+        "line": 369,
+        "function": "run"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_released_resume.py",
+        "line": 401,
+        "function": "run"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+        "line": 102,
+        "function": "_load_parent"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation_progress.py",
+        "line": 103,
+        "function": "_load_parent"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+        "line": 142,
+        "function": "_event_selector_snapshot"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation_progress.py",
+        "line": 143,
+        "function": "_event_selector_snapshot"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_followup.py",
+        "line": 162,
+        "function": "_event_selector_snapshot"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_candidate_commit.py",
+        "line": 141,
+        "function": "_event_selector_snapshot"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_diagnostic.py",
+        "line": 165,
+        "function": "_event_selector_snapshot"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_extension.py",
+        "line": 145,
+        "function": "_event_selector_snapshot"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_released_resume.py",
+        "line": 162,
+        "function": "_event_selector_snapshot"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation.py",
+        "line": 162,
+        "function": "_commit_closed_point"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_continuation_progress.py",
+        "line": 163,
+        "function": "_commit_closed_point"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_candidate_commit.py",
+        "line": 121,
+        "function": "_finish_without_candidate"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_diagnostic.py",
+        "line": 145,
+        "function": "_finish_without_candidate"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_extension.py",
+        "line": 125,
+        "function": "_finish_without_candidate"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_commit.py",
+        "line": 585,
+        "function": "main"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_prepared_search.py",
+        "line": 434,
+        "function": "main"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_diagnostic.py",
+        "line": 192,
+        "function": "diagnostic_samples"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_gn_local_extension.py",
+        "line": 165,
+        "function": "diagnostic_samples"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_merit_continuation.py",
+        "line": 145,
+        "function": "_write_json"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_merit_step_probe.py",
+        "line": 182,
+        "function": "_write_json"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_seed_hessian_probe.py",
+        "line": 71,
+        "function": "_write_json"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_seed_linear_probe.py",
+        "line": 363,
+        "function": "_write_json"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_seed_hessian_probe.py",
+        "line": 446,
+        "function": "_valid_resource"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_seed_linear_probe.py",
+        "line": 519,
+        "function": "_valid_resource"
+      },
+      {
+        "file": "examples/weather_scenarios/fv_point_3h_shifted_branch_probe.py",
+        "line": 313,
+        "function": "_valid_resource"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/muscl_experiment.py",
+        "line": 17,
+        "function": "_tensor"
+      },
+      {
+        "file": "src/advar/transport.py",
+        "line": 256,
+        "function": "_check_tensor"
+      }
+    ],
+    [
+      {
+        "file": "examples/weather_scenarios/muscl_experiment.py",
+        "line": 31,
+        "function": "_minmod"
+      },
+      {
+        "file": "src/advar/transport.py",
+        "line": 399,
+        "function": "_minmod"
+      }
+    ],
+    [
+      {
+        "file": "src/advar/_digest.py",
+        "line": 42,
+        "function": "validate_sha256_digest"
+      },
+      {
+        "file": "src/advar/ensemble_sensitivity.py",
+        "line": 82,
+        "function": "_require_digest"
+      },
+      {
+        "file": "src/advar/intervention.py",
+        "line": 164,
+        "function": "_require_digest"
+      },
+      {
+        "file": "src/advar/promotion.py",
+        "line": 330,
+        "function": "_require_digest"
+      },
+      {
+        "file": "src/advar/sensitivity.py",
+        "line": 163,
+        "function": "_require_sha256"
+      }
+    ],
+    [
+      {
+        "file": "tests/test_fv_point_3h_block_modified_newton_search.py",
+        "line": 12,
+        "function": "_indefinite_original"
+      },
+      {
+        "file": "tests/test_fv_point_3h_coupled_original_j_continuation.py",
+        "line": 10,
+        "function": "_indefinite"
+      }
+    ],
+    [
+      {
+        "file": "tests/test_fv_point_3h_field_continuation.py",
+        "line": 22,
+        "function": "test_field_restriction_keeps_full_original_objective_and_frozen_dynamics_prior"
+      },
+      {
+        "file": "tests/test_fv_point_3h_field_precision_continuation.py",
+        "line": 23,
+        "function": "test_field_restriction_keeps_full_original_objective_and_frozen_dynamics_prior"
+      }
+    ],
+    [
+      {
+        "file": "tests/test_fv_point_3h_field_continuation.py",
+        "line": 33,
+        "function": "test_fresh_twenty_dimensional_hff_and_independent_21st_hvp_are_audited"
+      },
+      {
+        "file": "tests/test_fv_point_3h_field_precision_continuation.py",
+        "line": 34,
+        "function": "test_fresh_twenty_dimensional_hff_and_independent_21st_hvp_are_audited"
+      }
+    ],
+    [
+      {
+        "file": "tests/test_fv_point_3h_field_continuation.py",
+        "line": 45,
+        "function": "test_fresh_hff_gate_refuses_indefinite_field_curvature"
+      },
+      {
+        "file": "tests/test_fv_point_3h_field_precision_continuation.py",
+        "line": 46,
+        "function": "test_fresh_hff_gate_refuses_indefinite_field_curvature"
+      }
+    ],
+    [
+      {
+        "file": "tests/test_fv_point_3h_gn_committed_continuation.py",
+        "line": 17,
+        "function": "_model"
+      },
+      {
+        "file": "tests/test_fv_point_3h_gn_continuation_progress.py",
+        "line": 13,
+        "function": "_model"
+      },
+      {
+        "file": "tests/test_fv_point_3h_search_progress_finite.py",
+        "line": 16,
+        "function": "_model"
+      }
+    ],
+    [
+      {
+        "file": "tests/test_fv_point_3h_gn_followup.py",
+        "line": 10,
+        "function": "test_parent_p2_archive_is_the_closed_29b52_point"
+      },
+      {
+        "file": "tests/test_fv_point_3h_gn_released_resume.py",
+        "line": 10,
+        "function": "test_parent_p2_archive_is_the_closed_15516_point"
+      }
+    ],
+    [
+      {
+        "file": "tests/test_fv_point_active_face_binding.py",
+        "line": 18,
+        "function": "_budget"
+      },
+      {
+        "file": "tests/test_fv_point_paired_face_binding.py",
+        "line": 24,
+        "function": "_gamma_budget"
+      }
+    ],
+    [
+      {
+        "file": "tests/test_fv_point_active_face_stationarity.py",
+        "line": 19,
+        "function": "test_only_named_structural_zero_is_exempt_from_other_face_margin"
+      },
+      {
+        "file": "tests/test_fv_point_paired_face_stationarity.py",
+        "line": 21,
+        "function": "test_only_named_structural_zero_is_exempt_from_other_face_margin"
+      }
+    ],
+    [
+      {
+        "file": "tests/test_fv_point_active_face_stationarity.py",
+        "line": 29,
+        "function": "test_limiter_refusal_is_numeric_but_broken_structural_zero_is_invariant_error"
+      },
+      {
+        "file": "tests/test_fv_point_paired_face_stationarity.py",
+        "line": 31,
+        "function": "test_limiter_refusal_is_numeric_but_broken_structural_zero_is_invariant_error"
+      }
+    ],
+    [
+      {
+        "file": "tests/test_fv_point_active_face_stationarity.py",
+        "line": 61,
+        "function": "test_saved_newton_branch_or_budget_metadata_cannot_be_rebound"
+      },
+      {
+        "file": "tests/test_fv_point_paired_face_stationarity.py",
+        "line": 63,
+        "function": "test_saved_newton_branch_or_budget_metadata_cannot_be_rebound"
+      }
+    ]
+  ],
+  "interpretation": "AST matches are candidates, not deletion authority; independent or historical paths may intentionally share equations/tests"
+}
