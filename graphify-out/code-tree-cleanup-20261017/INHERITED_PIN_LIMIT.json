@@ -1,0 +1,18 @@
+{
+  "base": "4bfe7837b68abe6df10e7069847d6c1f9400fcef",
+  "test": "test_initial_expected_refusal_keeps_terminal_record_without_optimization",
+  "inherited": true,
+  "reason": "historical one-face refusal source pins already differ from main before cleanup",
+  "mismatches": [
+    {
+      "source": "src/advar/fv_point_research_problem.py",
+      "expected": "ffdb27fd40aa6943ab4c04860695303e4270291377a7b86535c06416704eec19",
+      "main_sha256": "d2a1394654244de31e3252cebad4c6cf8be6f1cd1b5c270132d521a02378742f"
+    },
+    {
+      "source": "src/advar/transport.py",
+      "expected": "604709c561700def1f78b1eaac0beeb304d0b82554ea20bb16f8bb4fb44ae6bf",
+      "main_sha256": "6a9f1f48cfc8ebe3d1687845fec5f0c8cff63c57bdfa6b9e56a172bbc478d035"
+    }
+  ]
+}

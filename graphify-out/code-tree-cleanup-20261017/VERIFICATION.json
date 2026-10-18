@@ -1,0 +1,49 @@
+{
+  "base": "4bfe7837b68abe6df10e7069847d6c1f9400fcef",
+  "changed_python_files": 11,
+  "source_net_lines_removed": 273,
+  "all_python_net_lines_removed": 308,
+  "focused_pytest_total": 103,
+  "tests": {
+    "event": {
+      "passed": 36,
+      "complete": true
+    },
+    "duplicate_import_and_ledger": {
+      "passed": 63,
+      "subtests_passed": 41,
+      "complete": true
+    },
+    "digest_contract": {
+      "passed": 4,
+      "complete": true
+    },
+    "restored_historical_producer_pin": {
+      "passed": 1,
+      "complete": true,
+      "scope": "extra pin check; not in focused103 total"
+    },
+    "broad_core": {
+      "passed": 131,
+      "subtests_passed": 114,
+      "complete": false,
+      "status": "interrupted after420.54s; no full354 suite claim"
+    },
+    "exploratory_probe": {
+      "passed": 19,
+      "failed": 2,
+      "status": "one temporary producer edit reverted; one failure already present at base per inherited pin record"
+    }
+  },
+  "types": {
+    "core": "0 errors,0 warnings,0 notes",
+    "event_and_tests": "0 errors,0 warnings,0 notes"
+  },
+  "checks": {
+    "digest_equivalence": true,
+    "live_operations_AST": true,
+    "source_manifest": true
+  },
+  "test_logs_sha256": "849ff7dace1edf77e1e80d74ec0813a8a5270b603d55768c3779c8f92bea45b9",
+  "scope": "cleanup and existing contract/path regression checks; no production optimization, forecast, P2 or adjoint rerun"
+}

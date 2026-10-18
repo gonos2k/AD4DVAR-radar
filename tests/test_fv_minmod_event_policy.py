@@ -5,7 +5,6 @@ from examples.weather_scenarios.fv_minmod_events import (
     MinmodEvent,
     classify_change,
     classify_event,
-    outgoing_decision,
 )
 
 
@@ -94,87 +93,3 @@ def test_selector_change_classifier_refuses_coincident_or_unbracketed_events():
 
     with pytest.raises(ValueError, match="unresolved simultaneous"):
         classify_change((48, "x", 1, 1), 0, 3, (-0.1, 0.2), (0.1, 0.2))
-
-
-def _four_sector_rows(vector: torch.Tensor) -> torch.Tensor:
-    return vector.reshape(1, -1).expand(4, -1).clone()
-
-
-def test_outgoing_decision_proposes_release_for_negative_minus_side_cost():
-    normal = torch.tensor([1.0, 0.0], dtype=DTYPE)
-    minus = _four_sector_rows(torch.tensor([2.0, 0.0], dtype=DTYPE))
-    plus = _four_sector_rows(torch.tensor([1.0, 1.0], dtype=DTYPE))
-
-    decision = outgoing_decision(minus, plus, normal)
-
-    assert decision["decision"] == "release"
-    assert decision["side"] == -1
-    assert all(value < 0 for value in decision["outgoing_minus"])
-    assert all(value > 0 for value in decision["outgoing_plus"])
-
-
-def test_outgoing_decision_proposes_release_for_negative_plus_side_cost():
-    normal = torch.tensor([1.0, 0.0], dtype=DTYPE)
-    minus = _four_sector_rows(torch.tensor([-1.0, 0.0], dtype=DTYPE))
-    plus = _four_sector_rows(torch.tensor([-2.0, 0.0], dtype=DTYPE))
-
-    decision = outgoing_decision(minus, plus, normal)
-
-    assert decision["decision"] == "release"
-    assert decision["side"] == 1
-    assert all(value > 0 for value in decision["outgoing_minus"])
-    assert all(value < 0 for value in decision["outgoing_plus"])
-
-
-def test_outgoing_decision_maintain_is_only_normal_necessary_condition():
-    normal = torch.tensor([1.0, 0.0], dtype=DTYPE)
-    tangent_component = torch.tensor([0.0, 4.0], dtype=DTYPE)
-    minus = _four_sector_rows(torch.tensor([-1.0, 0.0], dtype=DTYPE) + tangent_component)
-    plus = _four_sector_rows(torch.tensor([1.0, 0.0], dtype=DTYPE) + tangent_component)
-
-    decision = outgoing_decision(minus, plus, normal)
-
-    assert decision["decision"] == "maintain"
-    assert all(value > 0 for value in decision["outgoing_minus"])
-    assert all(value > 0 for value in decision["outgoing_plus"])
-    assert bool((minus[:, 1] != 0).any() and (plus[:, 1] != 0).any())
-    assert "tangent stationarity" in decision["scope"]
-
-
-def test_outgoing_decision_keeps_roundoff_sign_unresolved():
-    normal = torch.tensor([1.0, 0.0], dtype=DTYPE)
-    minus = _four_sector_rows(torch.tensor([-1.0, 0.0], dtype=DTYPE))
-    plus = _four_sector_rows(torch.tensor([0.0, 1.0], dtype=DTYPE))
-
-    decision = outgoing_decision(minus, plus, normal)
-
-    assert decision["decision"] == "unresolved"
-    assert decision["reason"] == "normal sign unresolved"
-
-
-@pytest.mark.parametrize(
-    "normal",
-    [
-        torch.tensor([0.0, 0.0], dtype=DTYPE),
-        torch.tensor([float("nan"), 0.0], dtype=DTYPE),
-        torch.tensor([float("inf"), 0.0], dtype=DTYPE),
-    ],
-)
-def test_outgoing_decision_requires_finite_nonzero_normal(normal):
-    minus = _four_sector_rows(torch.tensor([-1.0, 0.0], dtype=DTYPE))
-    plus = _four_sector_rows(torch.tensor([1.0, 0.0], dtype=DTYPE))
-
-    with pytest.raises(ValueError, match="normal is not finite and nonzero"):
-        outgoing_decision(minus, plus, normal)
-
-
-def test_outgoing_decision_refuses_flux_sector_tangent_disagreement():
-    normal = torch.tensor([1.0, 0.0], dtype=DTYPE)
-    minus = _four_sector_rows(torch.tensor([-1.0, 0.0], dtype=DTYPE))
-    plus = _four_sector_rows(torch.tensor([1.0, 0.0], dtype=DTYPE))
-    plus[-1, 1] = 1.0e-6
-
-    decision = outgoing_decision(minus, plus, normal)
-
-    assert decision["decision"] == "unresolved"
-    assert decision["reason"] == "flux-sector tangent gradients disagree"

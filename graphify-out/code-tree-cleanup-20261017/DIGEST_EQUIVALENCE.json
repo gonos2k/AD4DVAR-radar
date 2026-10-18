@@ -1,0 +1,12 @@
+{
+  "base": "4bfe7837b68abe6df10e7069847d6c1f9400fcef",
+  "cases_per_module": 14,
+  "checks": {
+    "ensemble_sensitivity": true,
+    "intervention": true,
+    "promotion": true,
+    "sensitivity": true
+  },
+  "scope": "old validator AST versus existing shared validator; exact return/exception type/message equality",
+  "all_passed": true
+}
